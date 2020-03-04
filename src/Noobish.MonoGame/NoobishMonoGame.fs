@@ -16,11 +16,11 @@ open Microsoft.Xna.Framework.Content
 
 type NoobishUI = {
     Debug: bool
-    MeasureText: string -> int*int
+    MeasureText: string -> string -> int*int
     Width: int
     Height: int
     Scale: float32
-    Theme: IDictionary<string, Theme>
+    Theme: Theme
 
     mutable Tree: LayoutComponent[]
 
@@ -29,14 +29,14 @@ type NoobishUI = {
 
 module NoobishMonoGame =
 
-    let create measureText width height scale = {
+    let create measureText defaultFont width height scale = {
         Debug = false
         MeasureText = measureText
         Width = width
         Height = height
         Scale = scale
         Tree = [||]
-        Theme = Theme.createDefaultTheme()
+        Theme = Theme.createDefaultTheme defaultFont
         State = Dictionary<string, LayoutComponentState>()
     }
 
@@ -59,7 +59,7 @@ module NoobishMonoGame =
 
     let private drawBackground (state: IReadOnlyDictionary<string, LayoutComponentState>) (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) (time: TimeSpan) scrollX scrollY =
         let cs = state.[c.Id]
-        let pixel = content.Load<Texture2D>("Graphics/Pixel")
+        let pixel = content.Load<Texture2D>("Pixel")
 
         let bounds = c.RectangleWithMargin
         let dest = Rectangle(int (bounds.X + scrollX), int (bounds.Y + scrollY), int bounds.Width, int bounds.Height)
@@ -81,7 +81,7 @@ module NoobishMonoGame =
 
     let private drawBorders  (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
         if c.BorderSize > 0.0f then
-            let pixel = content.Load<Texture2D>("Graphics/Pixel")
+            let pixel = content.Load<Texture2D>("Pixel")
             let bounds = c.RectangleWithMargin
 
             let scrolledStartY = bounds.Y + scrollY
@@ -107,7 +107,7 @@ module NoobishMonoGame =
 
             let bounds = c.RectangleWithPadding
 
-            let font = content.Load<SpriteFont>("GeonBit.UI/themes/ui/fonts/Bold")
+            let font = content.Load<SpriteFont>(c.TextFont)
 
             let mutable startY = 0.0f
 
@@ -149,7 +149,7 @@ module NoobishMonoGame =
 
         if c.ScrollVertical && progress > 0.0f then
 
-            let pixel = content.Load<Texture2D>("Graphics/Pixel")
+            let pixel = content.Load<Texture2D>("Pixel")
 
             let scrollBarWidth = 2.0f
             let bounds = c.RectangleWithMargin
@@ -262,7 +262,7 @@ module NoobishMonoGame =
 
 
 
-            let pixel = content.Load<Texture2D>("Graphics/Pixel")
+            let pixel = content.Load<Texture2D>("Pixel")
             spriteBatch.Draw(pixel, outerRectangle, Nullable(outerRectangle), debugColor)
 
         spriteBatch.End()

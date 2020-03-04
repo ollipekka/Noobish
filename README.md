@@ -3,6 +3,6 @@
 ## ToDo
 
 * Nine Patch support
-* Keyboardi input
+* Keyboard input
 * API stabilization
-
+* Multiple theme support

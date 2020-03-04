@@ -39,6 +39,7 @@ type Attribute =
 
 | Alignment of Alignment
 | Text of string
+| TextFont of string
 | TextHorizontalAlign of NoobishHorizontalTextAlign
 | TextVerticalAlign of NoobishVerticalTextAlign
 | TextColor of int
@@ -102,6 +103,7 @@ type LayoutComponent = {
     TextVerticalAlignment: NoobishVerticalTextAlign
 
     Text: string[]
+    TextFont: string
     TextColor: int
     TextColorDisabled: int
     TextWrap: bool
@@ -189,6 +191,7 @@ module Components =
     // Attributes
     let name v = Name v
     let text value = Text(value)
+    let textFont f = TextFont(f)
     let textColor c = TextColor (c)
     let textHorizontalLeft = TextHorizontalAlign(NoobishHorizontalTextAlign.Left)
     let textHorizontalRight = TextHorizontalAlign(NoobishHorizontalTextAlign.Right)
@@ -285,19 +288,20 @@ module Logic =
             ScrollY = 0.0f
         }
 
-    let private createLayoutComponent (theme: IDictionary<string, Theme>) (measureText: string -> int*int) (scale:float32) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
+    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (scale:float32) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
 
         let scale (v: float32) = v * scale
         let scaleTuple (left, right, top, bottom) =
             (scale (float32 left), scale (float32 right), scale (float32 top), scale (float32 bottom))
 
-        let theme = if theme.ContainsKey themeId then theme.[themeId] else Theme.empty
+        let theme = if theme.ComponentThemes.ContainsKey themeId then theme.ComponentThemes.[themeId] else theme.ComponentThemes.["Empty"]
         let mutable name = ""
         let mutable enabled = true
         let mutable disabledColor = theme.ColorDisabled
         let mutable textVerticalAlign = theme.TextVerticalAlignment
         let mutable textHorizontalAlign = theme.TextHorizontalAlignment
         let mutable text = ""
+        let mutable textFont = theme.TextFont
         let mutable textColor = theme.TextColor
         let mutable textColorDisabled = theme.TextColorDisabled
         let mutable textWrap = false
@@ -368,6 +372,7 @@ module Logic =
                 alignment <- value
             // Text
             | Text(value) -> text <- value
+            | TextFont(value) -> textFont <- value
             | TextHorizontalAlign (value) -> textHorizontalAlign <- value
             | TextVerticalAlign (value) -> textVerticalAlign <- value
             | TextColor (c) -> textColor <- c
@@ -411,7 +416,7 @@ module Logic =
         let mutable startPosY = startY
 
         if not (String.IsNullOrWhiteSpace text) then
-            let (textWidth, textHeight) = measureText text
+            let (textWidth, textHeight) = measureText textFont text
             minWidth <- max minWidth ((float32 textWidth + paddingLeft + paddingRight + marginLeft + marginRight))
             minHeight <- max minHeight ((float32 textHeight + paddingTop + paddingBottom + marginTop + marginBottom))
 
@@ -452,7 +457,7 @@ module Logic =
 
         let cid = sprintf "%s%s%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startPosX startPosY width height colspan rowspan
         let paddedWidth = width - marginLeft - marginRight - paddingLeft - paddingRight
-        let textLines = if textWrap then splitLines measureText paddedWidth text else [|text|]
+        let textLines = if textWrap then splitLines (measureText textFont) paddedWidth text else [|text|]
 
         printfn "%s %f %f" cid width height
         {
@@ -463,6 +468,7 @@ module Logic =
             TextVerticalAlignment = textVerticalAlign
             TextHorizontalAlignment = textHorizontalAlign
             Text = textLines
+            TextFont = textFont
             TextColor = textColor
             TextColorDisabled = textColorDisabled
             TextWrap = textWrap
@@ -511,8 +517,8 @@ module Logic =
         }
 
     let rec private layoutComponent
-        (measureText: string -> int*int)
-        (theme: IDictionary<string, Theme>)
+        (measureText: string -> string -> int*int)
+        (theme: Theme)
         (scale: float32)
         (startX: float32)
         (startY: float32)
@@ -592,7 +598,7 @@ module Logic =
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
 
-    let layout (measureText: string -> int*int) (theme: IDictionary<string, Theme>) (scale: float32) (width: float32) (height: float32)  (components: list<Component>) =
+    let layout (measureText: string -> string -> int*int) (theme: Theme) (scale: float32) (width: float32) (height: float32)  (components: list<Component>) =
         components
             |> List.map(fun c ->
                 layoutComponent measureText theme scale 0.0f 0.0f 0 0 width height c

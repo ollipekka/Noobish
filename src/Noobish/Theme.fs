@@ -1,6 +1,9 @@
 namespace Noobish
+open System.Collections
+open System.Collections.Generic
 
-type Theme = {
+type ComponentTheme = {
+    TextFont: string
     TextColor: int
     TextColorDisabled: int
     TextHorizontalAlignment: NoobishHorizontalTextAlign
@@ -25,11 +28,15 @@ type Theme = {
     ScrollPinColor: int
 }
 
+type Theme = {
+    DefaultFont: string
+    ComponentThemes: IDictionary<string, ComponentTheme>
+}
 
 module Theme =
-    open System.Collections.Generic
-    let empty =
+    let empty defaultFont =
         {
+            TextFont = defaultFont
             TextColor = 0x00000000
             TextColorDisabled = 0x00000000
             TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
@@ -55,7 +62,8 @@ module Theme =
             ScrollPinColor = 0x00000000
         }
 
-    let createDefaultTheme(): IDictionary<string, Theme> =
+    let createDefaultTheme defaultFont: Theme=
+
         let textColor = 0xbbbbbbFF
         let textColorDisabled = 0x806d5fff
         let backgroundDisabled = 0x4d4b39ff
@@ -67,230 +75,245 @@ module Theme =
 
         let textureColor = 0xffffffff
         let textureColorDisabled = 0xccccccff
-        dict [
-            "Label", {
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
-                TextVerticalAlignment = NoobishVerticalTextAlign.Center
+        let componentThemes =
+            dict [
+                "Label", {
+                    TextFont = defaultFont
+                    TextColor = textColor
+                    TextColorDisabled = textColorDisabled
+                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
+                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
 
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
+                    TextureColor = textureColor
+                    TextureColorDisabled = textureColorDisabled
 
-                BorderSize = 0
-                BorderColor = 0x00000000
-                BorderColorDisabled = 0x00000000
+                    BorderSize = 0
+                    BorderColor = 0x00000000
+                    BorderColorDisabled = 0x00000000
 
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
+                    Color = 0x00000000
+                    ColorDisabled = 0x00000000
 
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
+                    PressedColor = 0x00000000
+                    HoverColor = 0x00000000
 
-                Padding = (0, 0, 0, 0)
-                Margin =  (5, 5, 2, 2)
+                    Padding = (0, 0, 0, 0)
+                    Margin =  (5, 5, 2, 2)
 
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-            }
-            "Paragraph", {
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
-                TextVerticalAlignment = NoobishVerticalTextAlign.Top
+                    ScrollBarColor = 0x00000000
+                    ScrollPinColor = 0x00000000
+                }
+                "Paragraph", {
+                    TextFont = defaultFont
+                    TextColor = textColor
+                    TextColorDisabled = textColorDisabled
+                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
+                    TextVerticalAlignment = NoobishVerticalTextAlign.Top
 
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
+                    TextureColor = textureColor
+                    TextureColorDisabled = textureColorDisabled
 
-                BorderSize = 0
-                BorderColor = 0x00000000
-                BorderColorDisabled = 0x00000000
+                    BorderSize = 0
+                    BorderColor = 0x00000000
+                    BorderColorDisabled = 0x00000000
 
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
+                    Color = 0x00000000
+                    ColorDisabled = 0x00000000
 
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
+                    PressedColor = 0x00000000
+                    HoverColor = 0x00000000
 
-                Padding = (0, 0, 0, 0)
-                Margin =  (5, 5, 2, 2)
+                    Padding = (0, 0, 0, 0)
+                    Margin =  (5, 5, 2, 2)
 
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-            }
-            "Header", {
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
-                TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    ScrollBarColor = 0x00000000
+                    ScrollPinColor = 0x00000000
+                }
+                "Header", {
+                    TextFont = defaultFont
+                    TextColor = textColor
+                    TextColorDisabled = textColorDisabled
+                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
+                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
 
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
+                    TextureColor = textureColor
+                    TextureColorDisabled = textureColorDisabled
 
-                BorderSize = 0
-                BorderColor = 0x00000000
-                BorderColorDisabled = 0x00000000
+                    BorderSize = 0
+                    BorderColor = 0x00000000
+                    BorderColorDisabled = 0x00000000
 
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
+                    Color = 0x00000000
+                    ColorDisabled = 0x00000000
 
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
+                    PressedColor = 0x00000000
+                    HoverColor = 0x00000000
 
-                Padding = (0, 0, 0, 0)
-                Margin =  (5, 5, 2, 2)
+                    Padding = (0, 0, 0, 0)
+                    Margin =  (5, 5, 2, 2)
 
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-            }
-            "Button", {
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    ScrollBarColor = 0x00000000
+                    ScrollPinColor = 0x00000000
+                }
+                "Button", {
+                    TextFont = defaultFont
+                    TextColor = textColor
+                    TextColorDisabled = textColorDisabled
+                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
+                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
 
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
+                    TextureColor = textureColor
+                    TextureColorDisabled = textureColorDisabled
 
-                BorderSize = 2
-                BorderColor = borderColor
-                BorderColorDisabled = borderColorDisabled
+                    BorderSize = 2
+                    BorderColor = borderColor
+                    BorderColorDisabled = borderColorDisabled
 
-                Color = backgroundColor
-                ColorDisabled = backgroundDisabled
+                    Color = backgroundColor
+                    ColorDisabled = backgroundDisabled
 
-                PressedColor = backgroundColorLight
-                HoverColor = backgroundColorLight
+                    PressedColor = backgroundColorLight
+                    HoverColor = backgroundColorLight
 
-                Padding = (5, 5, 5, 5)
-                Margin =  (2, 2, 2, 2)
+                    Padding = (5, 5, 5, 5)
+                    Margin =  (2, 2, 2, 2)
 
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-            }
-            "Panel", {
-                TextColor = 0xffffffff
-                TextColorDisabled = 0x00000000
-                TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    ScrollBarColor = 0x00000000
+                    ScrollPinColor = 0x00000000
+                }
+                "Panel", {
+                    TextFont = defaultFont
+                    TextColor = 0xffffffff
+                    TextColorDisabled = 0x00000000
+                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
+                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
 
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
+                    TextureColor = textureColor
+                    TextureColorDisabled = textureColorDisabled
 
-                BorderSize = 2
-                BorderColor = borderColor
-                BorderColorDisabled = borderColorDisabled
+                    BorderSize = 2
+                    BorderColor = borderColor
+                    BorderColorDisabled = borderColorDisabled
 
-                Color = backgroundColorDark
-                ColorDisabled = 0x00000000
+                    Color = backgroundColorDark
+                    ColorDisabled = 0x00000000
 
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
+                    PressedColor = 0x00000000
+                    HoverColor = 0x00000000
 
-                Padding = (5, 5, 5, 5)
-                Margin =  (2, 2, 2, 2)
+                    Padding = (5, 5, 5, 5)
+                    Margin =  (2, 2, 2, 2)
 
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-            }
-            "Division", {
-                TextColor = 0xffffffff
-                TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                TextVerticalAlignment = NoobishVerticalTextAlign.Center
-                TextColorDisabled = 0x00000000
+                    ScrollBarColor = 0x00000000
+                    ScrollPinColor = 0x00000000
+                }
+                "Division", {
+                    TextFont = defaultFont
+                    TextColor = 0xffffffff
+                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
+                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextColorDisabled = 0x00000000
 
-                TextureColor = 0x00000000
-                TextureColorDisabled = 0x00000000
+                    TextureColor = 0x00000000
+                    TextureColorDisabled = 0x00000000
 
-                BorderSize = 0
-                BorderColor = 0x00000000
-                BorderColorDisabled = 0x00000000
+                    BorderSize = 0
+                    BorderColor = 0x00000000
+                    BorderColorDisabled = 0x00000000
 
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
+                    Color = 0x00000000
+                    ColorDisabled = 0x00000000
 
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
+                    PressedColor = 0x00000000
+                    HoverColor = 0x00000000
 
-                Padding = (0, 0, 0, 0)
-                Margin =  (0, 0, 0, 0)
+                    Padding = (0, 0, 0, 0)
+                    Margin =  (0, 0, 0, 0)
 
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-            }
-            "HorizontalRule", {
-                TextColor = 0x00000000
-                TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                TextVerticalAlignment = NoobishVerticalTextAlign.Center
-                TextColorDisabled = 0x00000000
+                    ScrollBarColor = 0x00000000
+                    ScrollPinColor = 0x00000000
+                }
+                "HorizontalRule", {
+                    TextFont = defaultFont
+                    TextColor = 0x00000000
+                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
+                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextColorDisabled = 0x00000000
 
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
+                    TextureColor = textureColor
+                    TextureColorDisabled = textureColorDisabled
 
-                BorderSize = 0
-                BorderColor = 0x00000000
-                BorderColorDisabled = borderColorDisabled
+                    BorderSize = 0
+                    BorderColor = 0x00000000
+                    BorderColorDisabled = borderColorDisabled
 
-                Color = borderColor
-                ColorDisabled = borderColorDisabled
+                    Color = borderColor
+                    ColorDisabled = borderColorDisabled
 
-                PressedColor = 0xccaaaaff
-                HoverColor = 0xccaaaaff
+                    PressedColor = 0xccaaaaff
+                    HoverColor = 0xccaaaaff
 
-                Padding = (5, 5, 0, 0)
-                Margin =  (5, 5, 0, 0)
+                    Padding = (5, 5, 0, 0)
+                    Margin =  (5, 5, 0, 0)
 
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-            }
-            "Image", {
-                TextColor = 0x00000000
-                TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                TextVerticalAlignment = NoobishVerticalTextAlign.Center
-                TextColorDisabled = 0x00000000
+                    ScrollBarColor = 0x00000000
+                    ScrollPinColor = 0x00000000
+                }
+                "Image", {
+                    TextFont = defaultFont
+                    TextColor = 0x00000000
+                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
+                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextColorDisabled = 0x00000000
 
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
+                    TextureColor = textureColor
+                    TextureColorDisabled = textureColorDisabled
 
-                BorderSize = 0
-                BorderColor = 0x00000000
-                BorderColorDisabled = 0x00000000
+                    BorderSize = 0
+                    BorderColor = 0x00000000
+                    BorderColorDisabled = 0x00000000
 
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
+                    Color = 0x00000000
+                    ColorDisabled = 0x00000000
 
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
+                    PressedColor = 0x00000000
+                    HoverColor = 0x00000000
 
-                Padding = (5, 5, 5, 5)
-                Margin =  (5, 5, 0, 0)
+                    Padding = (5, 5, 5, 5)
+                    Margin =  (5, 5, 0, 0)
 
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-            }
-            "Scroll", {
-                TextColor = 0xffffffff
-                TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                TextVerticalAlignment = NoobishVerticalTextAlign.Center
-                TextColorDisabled = 0x00000000
+                    ScrollBarColor = 0x00000000
+                    ScrollPinColor = 0x00000000
+                }
+                "Scroll", {
+                    TextFont = defaultFont
+                    TextColor = 0xffffffff
+                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
+                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextColorDisabled = 0x00000000
 
-                TextureColor = 0x00000000
-                TextureColorDisabled = 0x00000000
+                    TextureColor = 0x00000000
+                    TextureColorDisabled = 0x00000000
 
-                BorderSize = 0
-                BorderColor = 0x00000000
-                BorderColorDisabled = 0x00000000
+                    BorderSize = 0
+                    BorderColor = 0x00000000
+                    BorderColorDisabled = 0x00000000
 
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
+                    Color = 0x00000000
+                    ColorDisabled = 0x00000000
 
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
+                    PressedColor = 0x00000000
+                    HoverColor = 0x00000000
 
-                Padding = (2, 2, 2, 2)
-                Margin =  (0, 0, 0, 0)
+                    Padding = (2, 2, 2, 2)
+                    Margin =  (0, 0, 0, 0)
 
-                ScrollBarColor = backgroundColor
-                ScrollPinColor = backgroundColorLight
-            }
-        ]
+                    ScrollBarColor = backgroundColor
+                    ScrollPinColor = backgroundColorLight
+                }
+                "Empty", empty defaultFont
+            ]
+        {
+            DefaultFont = defaultFont
+            ComponentThemes = componentThemes
+        }
