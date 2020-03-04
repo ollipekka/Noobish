@@ -1,0 +1,1 @@
+src\Noobish.MonoGame.Demo\bin\Debug\net48\Noobish.MonoGame.Demo.exe
