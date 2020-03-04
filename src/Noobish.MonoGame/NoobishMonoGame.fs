@@ -67,6 +67,8 @@ module NoobishMonoGame =
         let color =
             if not c.Enabled then
                 toColor c.ColorDisabled
+            elif c.Toggled then
+                toColor c.PressedColor
             else
                 match cs.State with
                 | ComponentState.Normal ->
@@ -354,8 +356,10 @@ module Program =
                 |> Set.ofArray
 
             let tree = Program.view program model dispatch
+            let width = (float32 ui.Width)
+            let height = (float32 ui.Height)
 
-            ui.Tree <- Logic.layout ui.MeasureText ui.Theme ui.Scale (float32 ui.Width) (float32 ui.Height) tree
+            ui.Tree <- Logic.layout ui.MeasureText ui.Theme ui.Scale width height tree
 
             let newComponents =
                 ui.Tree

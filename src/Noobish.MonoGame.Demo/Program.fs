@@ -18,9 +18,11 @@ type DemoMessage =
     | ShowButtons
     | ShowLabels
 
+type ViewState = | Containers | Buttons | Labels
+
 type DemoModel =
     {
-        Text: string
+        State: ViewState
     }
 
 let createGraphicsDevice (game: Game) =
@@ -72,36 +74,42 @@ type DemoGame () as game =
             |> NoobishMonoGame.withDebug false
 
         let init () =
-            { Text = ""}, Cmd.ofMsg (ShowButtons)
+            { State = Buttons}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
             | ShowButtons ->
-                model, Cmd.none
+                {model with State = Buttons}, Cmd.none
             | ShowContainers ->
-                model, Cmd.none
+                {model with State = Containers}, Cmd.none
             | ShowLabels ->
-                model, Cmd.none
+                {model with State = Labels}, Cmd.none
 
         let view (model: DemoModel) dispatch =
 
+            let title =
+                match model.State with
+                | Buttons -> "Buttons"
+                | Containers -> "Containers"
+                | Labels -> "Labels"
+
             let scrollItems =
                 [
-                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; block]
-                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; block]
-                    button [text "Labels"; onClick (fun () -> dispatch ShowLabels); fillHorizontal; block]
-
+                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); block]
+                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); block]
+                    button [text "Labels"; onClick (fun () -> dispatch ShowLabels); fillHorizontal; toggled (model.State = Labels);block]
                 ]
 
             [
                 grid 12 8
                     [
-                        panel [label [text "Noobish"]] [colspan 12; rowspan 1]
+                        panel [label [text "Noobish"]] [colspan 3; rowspan 1]
+                        panel [label [text title]] [colspan 9; rowspan 1]
                         panel [scroll scrollItems []] [colspan 3; rowspan 7]
                         panel [] [colspan 9; rowspan 7]
                     ]
                     [
-
+                        padding 10
                     ]
             ]
 

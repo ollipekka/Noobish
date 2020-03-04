@@ -99,6 +99,7 @@ type LayoutComponent = {
     Name: string
     ThemeId: string
     Enabled: bool
+    Toggled: bool
     TextHorizontalAlignment: NoobishHorizontalTextAlign
     TextVerticalAlignment: NoobishVerticalTextAlign
 
@@ -297,6 +298,7 @@ module Logic =
         let theme = if theme.ComponentThemes.ContainsKey themeId then theme.ComponentThemes.[themeId] else theme.ComponentThemes.["Empty"]
         let mutable name = ""
         let mutable enabled = true
+        let mutable toggled = false
         let mutable disabledColor = theme.ColorDisabled
         let mutable textVerticalAlign = theme.TextVerticalAlignment
         let mutable textHorizontalAlign = theme.TextHorizontalAlignment
@@ -317,7 +319,6 @@ module Logic =
         let mutable fill = NoFill
         let mutable alignment = Left
         let mutable onClick = fun () -> ()
-        let mutable state = ComponentState.Normal
         let mutable borderSize = scale (float32 theme.BorderSize)
         let mutable borderColor = theme.BorderColor
         let mutable borderColorDisabled = theme.BorderColorDisabled
@@ -382,9 +383,7 @@ module Logic =
             | BorderColor(c) -> borderColor <-c
             | OnClick(v) -> onClick <- v
             | Toggled(value) ->
-                if value then
-                    state <- ComponentState.Toggled
-                else ()
+                toggled <- value
             | Fill(value) -> fill <- value
             | FgColor (c) -> color <- c
             | Block -> isBlock <- true
@@ -465,6 +464,7 @@ module Logic =
             Name = name
             ThemeId = themeId
             Enabled = enabled
+            Toggled = toggled
             TextVerticalAlignment = textVerticalAlign
             TextHorizontalAlignment = textHorizontalAlign
             Text = textLines
