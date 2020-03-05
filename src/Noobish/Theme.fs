@@ -6,8 +6,7 @@ type ComponentTheme = {
     TextFont: string
     TextColor: int
     TextColorDisabled: int
-    TextHorizontalAlignment: NoobishHorizontalTextAlign
-    TextVerticalAlignment: NoobishVerticalTextAlign
+    TextAlignment: NoobishTextAlign
 
     TextureColor: int
     TextureColorDisabled: int
@@ -39,8 +38,7 @@ module Theme =
             TextFont = defaultFont
             TextColor = 0x00000000
             TextColorDisabled = 0x00000000
-            TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
-            TextVerticalAlignment = NoobishVerticalTextAlign.Center
+            TextAlignment = NoobishTextAlign.Left
 
             TextureColor = 0x00000000
             TextureColorDisabled = 0x00000000
@@ -81,8 +79,7 @@ module Theme =
                     TextFont = defaultFont
                     TextColor = textColor
                     TextColorDisabled = textColorDisabled
-                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
-                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextAlignment = NoobishTextAlign.Left
 
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
@@ -107,8 +104,7 @@ module Theme =
                     TextFont = defaultFont
                     TextColor = textColor
                     TextColorDisabled = textColorDisabled
-                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
-                    TextVerticalAlignment = NoobishVerticalTextAlign.Top
+                    TextAlignment = NoobishTextAlign.TopLeft
 
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
@@ -133,8 +129,7 @@ module Theme =
                     TextFont = defaultFont
                     TextColor = textColor
                     TextColorDisabled = textColorDisabled
-                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Left
-                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextAlignment = NoobishTextAlign.Left
 
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
@@ -159,8 +154,7 @@ module Theme =
                     TextFont = defaultFont
                     TextColor = textColor
                     TextColorDisabled = textColorDisabled
-                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextAlignment = NoobishTextAlign.Center
 
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
@@ -185,8 +179,7 @@ module Theme =
                     TextFont = defaultFont
                     TextColor = 0xffffffff
                     TextColorDisabled = 0x00000000
-                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextAlignment = NoobishTextAlign.Center
 
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
@@ -210,8 +203,7 @@ module Theme =
                 "Division", {
                     TextFont = defaultFont
                     TextColor = 0xffffffff
-                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextAlignment = NoobishTextAlign.Center
                     TextColorDisabled = 0x00000000
 
                     TextureColor = 0x00000000
@@ -233,11 +225,10 @@ module Theme =
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
                 }
-                "HorizontalRule", {
+                "Rule", {
                     TextFont = defaultFont
                     TextColor = 0x00000000
-                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextAlignment = NoobishTextAlign.Center
                     TextColorDisabled = 0x00000000
 
                     TextureColor = textureColor
@@ -262,8 +253,7 @@ module Theme =
                 "Image", {
                     TextFont = defaultFont
                     TextColor = 0x00000000
-                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextAlignment = NoobishTextAlign.Center
                     TextColorDisabled = 0x00000000
 
                     TextureColor = textureColor
@@ -288,8 +278,7 @@ module Theme =
                 "Scroll", {
                     TextFont = defaultFont
                     TextColor = 0xffffffff
-                    TextHorizontalAlignment = NoobishHorizontalTextAlign.Center
-                    TextVerticalAlignment = NoobishVerticalTextAlign.Center
+                    TextAlignment = NoobishTextAlign.Center
                     TextColorDisabled = 0x00000000
 
                     TextureColor = 0x00000000

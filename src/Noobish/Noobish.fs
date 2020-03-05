@@ -1,19 +1,22 @@
 namespace Noobish
 open System
 open System.Collections.Generic
-type Alignment =
+
+
+[<RequireQualifiedAccess>]
+type NoobishAlignment =
 | Top
 | Bottom
 | Left
 | Right
 | Center
 
-type Fill =
-| NoFill
-| FillParent
-| FillHorizontal
-| FillVertical
+type NoobishFill =
+| Horizontal | Vertical | Both
 
+type NoobishSizeHint =
+| Content
+| Fill of NoobishFill
 
 [<RequireQualifiedAccess>]
 type NoobishScroll = Vertical | Horizontal | Both
@@ -37,16 +40,15 @@ type Attribute =
 | MarginTop of int
 | MarginBottom of int
 
-| Alignment of Alignment
+| Alignment of NoobishAlignment
 | Text of string
 | TextFont of string
-| TextHorizontalAlign of NoobishHorizontalTextAlign
-| TextVerticalAlign of NoobishVerticalTextAlign
+| TextAlign of NoobishTextAlign
 | TextColor of int
 | TextWrap
+| SizeHint of NoobishSizeHint
 | OnClick of (unit -> unit)
 | Toggled of bool
-| Fill of Fill
 | Block
 | MinSize of widht: int * height: int
 | FgColor of int
@@ -100,8 +102,7 @@ type LayoutComponent = {
     ThemeId: string
     Enabled: bool
     Toggled: bool
-    TextHorizontalAlignment: NoobishHorizontalTextAlign
-    TextVerticalAlignment: NoobishVerticalTextAlign
+    TextAlignment: NoobishTextAlign
 
     Text: string[]
     TextFont: string
@@ -194,12 +195,7 @@ module Components =
     let text value = Text(value)
     let textFont f = TextFont(f)
     let textColor c = TextColor (c)
-    let textHorizontalLeft = TextHorizontalAlign(NoobishHorizontalTextAlign.Left)
-    let textHorizontalRight = TextHorizontalAlign(NoobishHorizontalTextAlign.Right)
-    let textHorizontalCenter = TextHorizontalAlign(NoobishHorizontalTextAlign.Center)
-    let textVerticalTop = TextVerticalAlign(NoobishVerticalTextAlign.Top)
-    let textVerticalBottom = TextVerticalAlign(NoobishVerticalTextAlign.Bottom)
-    let textVerticalCenter = TextVerticalAlign(NoobishVerticalTextAlign.Center)
+    let textAlign v = TextAlign (v)
     let textWrap = TextWrap
 
     let texture t = Texture (NoobishTexture.Basic t)
@@ -217,17 +213,20 @@ module Components =
     let marginTop tm = MarginTop tm
     let marginBottom bm = MarginBottom bm
     let margin value = Margin(value, value, value, value)
-    let top = Alignment(Top)
-    let bottom = Alignment(Bottom)
-    let center = Alignment(Center)
-    let left = Alignment(Left)
-    let right = Alignment(Right)
+    let top = Alignment(NoobishAlignment.Top)
+    let bottom = Alignment(NoobishAlignment.Bottom)
+    let center = Alignment(NoobishAlignment.Center)
+    let left = Alignment(NoobishAlignment.Left)
+    let right = Alignment(NoobishAlignment.Right)
     let block = Block
     let onClick action = OnClick(action)
     let toggled value = Toggled (value)
-    let fill = Fill(FillParent)
-    let fillHorizontal = Fill(FillHorizontal)
-    let fillVertical = Fill(FillVertical)
+
+    let fill = SizeHint (Fill (Both))
+    let fillHorizontal = SizeHint (Fill (Horizontal))
+    let fillVertical = SizeHint (Fill (Vertical))
+
+    let sizeContent = SizeHint Content
     let minSize w h = MinSize(w, h)
     let color c = FgColor (c)
     let enabled v = Enabled(v)
@@ -242,40 +241,47 @@ module Components =
     let colspan s = ColSpan s
     let rowspan s = RowSpan s
 
+
     // Components
     let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: block :: Margin(5, 5, 0, 0) :: attributes }
     let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
-    let paragraph attributes ={ ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textVerticalTop :: textHorizontalLeft :: attributes }
+    let paragraph attributes ={ ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign TopLeft :: sizeContent :: attributes }
     let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
-    let scroll children attributes = { ThemeId = "Scroll"; Children = children; Attributes = attributes}
-    let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = block :: attributes}
-    let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: attributes}
-    let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: attributes}
-    let div children attributes = { ThemeId = "Division"; Children = children; Attributes = attributes}
-    let space attributes = { ThemeId = "Space"; Children = []; Attributes = attributes}
+    let scroll children attributes = { ThemeId = "Scroll"; Children = children; Attributes = fill :: attributes}
+    let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = block :: fill :: attributes}
+    let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill:: attributes}
+    let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
+    let div children attributes = { ThemeId = "Division"; Children = children; Attributes = fill :: attributes}
+    let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
 
 
 module Logic =
+
+    let private clamp n minVal maxVal = max (min n maxVal) minVal
+
     let splitLines (measureString: string -> int * int) width (text: string) =
+        let width = int width
+
         let lines = ResizeArray<string>()
-        let mutable leftIndex = 0
-        let mutable rightIndex = 0
-        let mutable cursor = 0
-        let mutable lastIndex = text.Length - 1
-        while (rightIndex < lastIndex) do
-            let nextSpace = text.IndexOf (' ', cursor)
-            rightIndex <- if nextSpace = -1 then lastIndex else nextSpace
 
-            let substr = text.[leftIndex..rightIndex]
-            let (textWidth, _textHeight) = measureString substr
+        let words = text.Split [|' '|]
 
-            cursor <- rightIndex + 1
-            if (float32 textWidth) > width || rightIndex = lastIndex then
-                lines.Add(substr)
-                leftIndex <- cursor
+        let mutable line = ""
 
+        for word in words do
+            let (lineWidth, _lineHeight) = measureString (line + word)
+
+            if (lineWidth > width) then
+                lines.Add line
+                line <- ""
+
+            line <- sprintf "%s%s " line word
+
+
+        if line.Length > 0 then
+            lines.Add line
 
         lines.ToArray()
 
@@ -300,8 +306,7 @@ module Logic =
         let mutable enabled = true
         let mutable toggled = false
         let mutable disabledColor = theme.ColorDisabled
-        let mutable textVerticalAlign = theme.TextVerticalAlignment
-        let mutable textHorizontalAlign = theme.TextHorizontalAlignment
+        let mutable textAlign = theme.TextAlignment
         let mutable text = ""
         let mutable textFont = theme.TextFont
         let mutable textColor = theme.TextColor
@@ -314,10 +319,11 @@ module Logic =
         let mutable marginLeft, marginRight, marginTop, marginBottom = scaleTuple theme.Margin
 
 
+        let mutable sizeHint = NoobishSizeHint.Content
+
         let mutable minWidth, minHeight = 0.0f, 0.0f
         let mutable isBlock = false
-        let mutable fill = NoFill
-        let mutable alignment = Left
+        let mutable alignment = NoobishAlignment.Left
         let mutable onClick = fun () -> ()
         let mutable borderSize = scale (float32 theme.BorderSize)
         let mutable borderColor = theme.BorderColor
@@ -374,8 +380,7 @@ module Logic =
             // Text
             | Text(value) -> text <- value
             | TextFont(value) -> textFont <- value
-            | TextHorizontalAlign (value) -> textHorizontalAlign <- value
-            | TextVerticalAlign (value) -> textVerticalAlign <- value
+            | TextAlign (value) -> textAlign <- value
             | TextColor (c) -> textColor <- c
             | TextWrap -> textWrap <- true
             // Border
@@ -384,7 +389,7 @@ module Logic =
             | OnClick(v) -> onClick <- v
             | Toggled(value) ->
                 toggled <- value
-            | Fill(value) -> fill <- value
+            | SizeHint(value) -> sizeHint <- value
             | FgColor (c) -> color <- c
             | Block -> isBlock <- true
             | Enabled (v) -> enabled <- v
@@ -413,50 +418,61 @@ module Logic =
 
         let mutable startPosX = startX
         let mutable startPosY = startY
-
+        let mutable textLines = [||]
         if not (String.IsNullOrWhiteSpace text) then
-            let (textWidth, textHeight) = measureText textFont text
-            minWidth <- max minWidth ((float32 textWidth + paddingLeft + paddingRight + marginLeft + marginRight))
-            minHeight <- max minHeight ((float32 textHeight + paddingTop + paddingBottom + marginTop + marginBottom))
+            let paddedWidth = parentWidth - marginLeft - marginRight - paddingLeft - paddingRight
+            textLines <- if textWrap then splitLines (measureText textFont) paddedWidth text else [|text|]
 
-        let maxWidth = parentWidth
-        let maxHeight = parentHeight
+            let (contentWidth, contentHeight) =
+                textLines
+                    |> Array.fold (
+                        fun (accX, accY) l ->
+                            let (sizeX, sizeY) = measureText textFont l
+                            printfn "size %i %i" sizeX sizeY
+                            (max accX sizeX, accY + sizeY)
+                        ) (0, 0)
 
-        match fill with
-        | FillParent ->
-            minWidth <- parentWidth
-            minHeight <- parentHeight
-        | FillHorizontal ->
-            minWidth <- parentWidth
-        | FillVertical ->
-            minHeight <- parentHeight
-        | NoFill ->()
+            printfn "contentSize: %f %f %f %f" minWidth (float32 contentWidth) minHeight (float32 contentHeight)
+            minWidth <- max minWidth ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
+            minHeight <- max minHeight ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
 
-        let width =
-            if colspan > 0 then parentWidth * float32 colspan
-            elif minWidth <= Single.Epsilon then maxWidth
-            else (min minWidth maxWidth)
 
-        let height =
-            if rowspan > 0 then parentHeight * float32 rowspan
-            elif minHeight <= Single.Epsilon then maxHeight else (min minHeight maxHeight)
 
+        let width, height =
+            match sizeHint with
+            | NoobishSizeHint.Content ->
+                minWidth, minHeight
+            | NoobishSizeHint.Fill (f) ->
+                match f with
+                | Horizontal ->
+                    let width = if colspan > 0 then parentWidth * float32 colspan else parentWidth
+                    let height = minHeight
+                    width, height
+                | Vertical ->
+                    let width = minWidth
+                    let height = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
+                    width, height
+                | Both ->
+                    let width = if colspan > 0 then parentWidth * float32 colspan else parentWidth
+                    let height = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
+                    width, height
+
+        printfn "contentSize 2: %f %f %f %f" minWidth width minHeight height
         match alignment with
-        | Center ->
+        | NoobishAlignment.Center ->
             startPosX <- startPosX + parentWidth / 2.0f - width / 2.0f
             startPosY <- startPosY + parentHeight / 2.0f - height / 2.0f
-        | Top -> ()
-        | Bottom ->
+        | NoobishAlignment.Top -> ()
+        | NoobishAlignment.Bottom ->
             startPosY <- startPosY + parentHeight -  height - marginLeft - marginRight
-        | Left -> ()
-        | Right ->
+        | NoobishAlignment.Left -> ()
+        | NoobishAlignment.Right ->
             let margins = marginRight - marginLeft
             startPosX <- startPosX + parentWidth -  width - margins
 
 
+
         let cid = sprintf "%s%s%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startPosX startPosY width height colspan rowspan
-        let paddedWidth = width - marginLeft - marginRight - paddingLeft - paddingRight
-        let textLines = if textWrap then splitLines (measureText textFont) paddedWidth text else [|text|]
 
         printfn "%s %f %f" cid width height
         {
@@ -465,8 +481,7 @@ module Logic =
             ThemeId = themeId
             Enabled = enabled
             Toggled = toggled
-            TextVerticalAlignment = textVerticalAlign
-            TextHorizontalAlignment = textHorizontalAlign
+            TextAlignment = textAlign
             Text = textLines
             TextFont = textFont
             TextColor = textColor

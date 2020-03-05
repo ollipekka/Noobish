@@ -117,24 +117,38 @@ module NoobishMonoGame =
                 let size = font.MeasureString (line)
                 let textSizeX, textSizeY = ceil (size.X), ceil (size.Y)
 
-                let textX =
-                    match c.TextHorizontalAlignment with
-                    | NoobishHorizontalTextAlign.Left -> bounds.X + scrollX
-                    | NoobishHorizontalTextAlign.Right -> bounds.X + bounds.Width - textSizeX
-                    | NoobishHorizontalTextAlign.Center ->  bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
+                let leftX () = bounds.X + scrollX
+                let rightX () = bounds.X + bounds.Width - textSizeX
 
-                let textY =
-                    match c.TextVerticalAlignment with
-                    | NoobishVerticalTextAlign.Top ->
-                        bounds.Y + scrollY
-                    | NoobishVerticalTextAlign.Center ->
-                        bounds.Y + scrollY + bounds.Height / 2.0f - textSizeY / 2.0f
-                    | NoobishVerticalTextAlign.Bottom ->
-                        raise (NotImplementedException("Bottom not implemented! Needs to reverse the draw order?"))
+                let topY () =
+                    bounds.Y + scrollY
 
+                let bottomY () =
+                    bounds.Y + scrollY + bounds.Height - textSizeY
+
+                let centerX () =
+                    bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
+
+                let centerY () =
+                    bounds.Y + scrollY + bounds.Height / 2.0f - textSizeY / 2.0f
+
+                let textX, textY =
+                    match c.TextAlignment with
+                    | TopLeft -> leftX(), topY()
+                    | TopCenter -> centerX(), topY()
+                    | TopRight -> rightX(), topY()
+                    | Left -> leftX(), centerY()
+                    | Center ->  centerX(), centerY()
+                    | Right -> rightX(), centerY()
+                    | BottomLeft -> leftX(), bottomY()
+                    | BottomCenter -> centerX(), bottomY()
+                    | BottomRight -> rightX(), bottomY()
+
+                //printfn "text start y %s %f" line (startY + textY)
                 let textColor = toColor (if c.Enabled then c.TextColor else c.TextColorDisabled)
                 spriteBatch.DrawString(font, line, Vector2(floor textX, floor (startY + textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
                 startY <- startY + float32 font.LineSpacing
+            //printfn "%s %f %f" c.ThemeId c.Height startY
     let private drawScrollBars
         (state: IReadOnlyDictionary<string, LayoutComponentState>)
         (content: ContentManager)
@@ -256,22 +270,22 @@ module NoobishMonoGame =
 
         if debug then
 
+            let childRect = c.RectangleWithPadding
+            let debugRect = createRectangle (childRect.X + totalScrollX, childRect.Y + totalScrollY, childRect.Width, childRect.Height)
+
             let debugColor =
-                if c.ThemeId = "Scroll" then Color.Multiply(Color.Red, 0.1f)
+                if c.ThemeId = "Scroll" then Color.Multiply(Color.Transparent, 0.1f)
                 elif c.ThemeId = "Button" then Color.Multiply(Color.Green, 0.1f)
                 else Color.Multiply(Color.Yellow, 0.1f)
 
-
-
-
             let pixel = content.Load<Texture2D>("Pixel")
-            spriteBatch.Draw(pixel, outerRectangle, Nullable(outerRectangle), debugColor)
+            spriteBatch.Draw(pixel, debugRect, Nullable(debugRect), debugColor)
 
         spriteBatch.End()
 
         graphics.SetRenderTarget mainRenderTarget
         spriteBatch.Begin()
-        spriteBatch.Draw(secondaryRenderTarget, outerRectangle, Nullable(outerRectangle), Color.White)
+        spriteBatch.Draw(secondaryRenderTarget, parentRectangle, Nullable(parentRectangle), Color.White)
         spriteBatch.End()
 
         let innerRectangle =

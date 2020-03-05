@@ -12,6 +12,12 @@ open Noobish
 open Noobish.Components
 open Noobish.NoobishMonoGame
 
+let loremIpsum1 =
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+
+let loremIpsum2 =
+    "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"
+
 
 type DemoMessage =
     | ShowContainers
@@ -24,6 +30,49 @@ type DemoModel =
     {
         State: ViewState
     }
+
+module Labels =
+
+    let view _dispatch =
+
+        [
+            grid 2 2
+                [
+                panelWithGrid 3 3
+                    [
+                        label [text "Top Left"; textAlign TopLeft; fill]
+                        label [text "Top"; textAlign TopCenter; fill]
+                        label [text "Top Right"; textAlign TopRight; fill]
+                        label [text "Left"; textAlign Left; fill]
+                        label [text "Center"; textAlign Center; fill]
+                        label [text "Right"; textAlign Right; fill]
+                        label [text "Bottom Left"; textAlign BottomLeft; fill]
+                        label [text "Bottom Center"; textAlign BottomCenter; fill]
+                        label [text "Bottom Right"; textAlign BottomRight; fill]
+                    ]
+                    [
+
+                    ]
+                panel
+                    [
+                        scroll
+                            [
+                                paragraph [text (loremIpsum1); block]
+                                paragraph [text (loremIpsum2); block]
+                            ]
+                            [
+                                scrollVertical
+                            ]
+                    ]
+                    [
+
+                    ]
+                ]
+                [
+
+                ]
+
+        ]
 
 let createGraphicsDevice (game: Game) =
     let graphics = new GraphicsDeviceManager(game)
@@ -68,10 +117,10 @@ type DemoGame () as game =
             let font = game.Content.Load<SpriteFont>(font)
             let size = font.MeasureString text
 
-            int (ceil (size.X)), int (ceil (size.Y * 1.5f))
+            int (ceil (size.X)), int (ceil (size.Y))
 
         nui <- NoobishMonoGame.create measureText "AnonymousPro" this.GraphicsDevice.Viewport.Width this.GraphicsDevice.Viewport.Height 1.0f
-            |> NoobishMonoGame.withDebug false
+            |> NoobishMonoGame.withDebug true
 
         let init () =
             { State = Buttons}, Cmd.ofMsg (ShowButtons)
@@ -87,18 +136,20 @@ type DemoGame () as game =
 
         let view (model: DemoModel) dispatch =
 
-            let title =
-                match model.State with
-                | Buttons -> "Buttons"
-                | Containers -> "Containers"
-                | Labels -> "Labels"
 
             let scrollItems =
                 [
-                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); block]
                     button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); block]
                     button [text "Labels"; onClick (fun () -> dispatch ShowLabels); fillHorizontal; toggled (model.State = Labels);block]
+                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); block]
                 ]
+            let title, content  =
+                match model.State with
+                | Buttons -> "Buttons", []
+                | Containers -> "Containers", []
+                | Labels -> "Labels", Labels.view dispatch
+
+
 
             [
                 grid 12 8
@@ -106,7 +157,7 @@ type DemoGame () as game =
                         panel [label [text "Noobish"]] [colspan 3; rowspan 1]
                         panel [label [text title]] [colspan 9; rowspan 1]
                         panel [scroll scrollItems []] [colspan 3; rowspan 7]
-                        panel [] [colspan 9; rowspan 7]
+                        panel content [colspan 9; rowspan 7]
                     ]
                     [
                         padding 10

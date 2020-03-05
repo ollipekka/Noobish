@@ -4,11 +4,9 @@ namespace Noobish
 type NoobishLayout = Default | Grid of cols: int * rows: int
 
 
-[<RequireQualifiedAccess>]
-type NoobishHorizontalTextAlign = Left | Right | Center
-
-[<RequireQualifiedAccess>]
-type NoobishVerticalTextAlign = Top | Bottom | Center
-
+type NoobishTextAlign =
+    | TopLeft | TopCenter | TopRight
+    | Left  | Center | Right
+    | BottomLeft | BottomCenter | BottomRight
 
 type NoobishTextureSize = Stretch | BestFitMax | BestFitMin | Original | Custom of width: int * height: int
