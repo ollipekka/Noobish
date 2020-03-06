@@ -105,7 +105,7 @@ module NoobishMonoGame =
 
 
     let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
-        if not (c.Text |> Array.isEmpty) then
+        if not (c.Text |> String.IsNullOrEmpty) then
 
             let bounds = c.RectangleWithPadding
 
@@ -113,41 +113,40 @@ module NoobishMonoGame =
 
             let mutable startY = 0.0f
 
-            for line in c.Text do
-                let size = font.MeasureString (line)
-                let textSizeX, textSizeY = ceil (size.X), ceil (size.Y)
+            let size = font.MeasureString (c.Text)
+            let textSizeX, textSizeY = ceil (size.X), ceil (size.Y)
 
-                let leftX () = bounds.X + scrollX
-                let rightX () = bounds.X + bounds.Width - textSizeX
+            let leftX () = bounds.X + scrollX
+            let rightX () = bounds.X + bounds.Width - textSizeX
 
-                let topY () =
-                    bounds.Y + scrollY
+            let topY () =
+                bounds.Y + scrollY
 
-                let bottomY () =
-                    bounds.Y + scrollY + bounds.Height - textSizeY
+            let bottomY () =
+                bounds.Y + scrollY + bounds.Height - textSizeY
 
-                let centerX () =
-                    bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
+            let centerX () =
+                bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
 
-                let centerY () =
-                    bounds.Y + scrollY + bounds.Height / 2.0f - textSizeY / 2.0f
+            let centerY () =
+                bounds.Y + scrollY + bounds.Height / 2.0f - textSizeY / 2.0f
 
-                let textX, textY =
-                    match c.TextAlignment with
-                    | TopLeft -> leftX(), topY()
-                    | TopCenter -> centerX(), topY()
-                    | TopRight -> rightX(), topY()
-                    | Left -> leftX(), centerY()
-                    | Center ->  centerX(), centerY()
-                    | Right -> rightX(), centerY()
-                    | BottomLeft -> leftX(), bottomY()
-                    | BottomCenter -> centerX(), bottomY()
-                    | BottomRight -> rightX(), bottomY()
+            let textX, textY =
+                match c.TextAlignment with
+                | TopLeft -> leftX(), topY()
+                | TopCenter -> centerX(), topY()
+                | TopRight -> rightX(), topY()
+                | Left -> leftX(), centerY()
+                | Center ->  centerX(), centerY()
+                | Right -> rightX(), centerY()
+                | BottomLeft -> leftX(), bottomY()
+                | BottomCenter -> centerX(), bottomY()
+                | BottomRight -> rightX(), bottomY()
 
-                //printfn "text start y %s %f" line (startY + textY)
-                let textColor = toColor (if c.Enabled then c.TextColor else c.TextColorDisabled)
-                spriteBatch.DrawString(font, line, Vector2(floor textX, floor (startY + textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
-                startY <- startY + float32 font.LineSpacing
+            //printfn "text start y %s %f" line (startY + textY)
+            let textColor = toColor (if c.Enabled then c.TextColor else c.TextColorDisabled)
+            spriteBatch.DrawString(font, c.Text, Vector2(floor textX, floor (textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
+
             //printfn "%s %f %f" c.ThemeId c.Height startY
     let private drawScrollBars
         (state: IReadOnlyDictionary<string, LayoutComponentState>)

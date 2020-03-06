@@ -104,7 +104,7 @@ type LayoutComponent = {
     Toggled: bool
     TextAlignment: NoobishTextAlign
 
-    Text: string[]
+    Text: string
     TextFont: string
     TextColor: int
     TextColorDisabled: int
@@ -264,26 +264,46 @@ module Logic =
     let splitLines (measureString: string -> int * int) width (text: string) =
         let width = int width
 
-        let lines = ResizeArray<string>()
 
         let words = text.Split [|' '|]
 
         let mutable line = ""
 
+        let mutable newText = ""
+
+        let addLine () =
+            printfn "Adding %s" line
+            newText <- sprintf "%s%s\n" newText (line.Trim())
+            line <- ""
+
+
         for word in words do
             let (lineWidth, _lineHeight) = measureString (line + word)
 
-            if (lineWidth > width) then
-                lines.Add line
-                line <- ""
+            let lineBreak = word.IndexOf '\n'
 
-            line <- sprintf "%s%s " line word
+            if lineBreak > - 1 then
+                let parts = word.Split '\n'
+                for part in parts do
+                    if part <> "" then
+                        line <- sprintf "%s%s " line part
+                    else
+                        line <- sprintf "%s\n" line
+                        addLine ()
+
+                if line.Length > 0 then
+                    addLine()
+            else
+                if (lineWidth > width) then
+                    addLine ()
+
+                line <- sprintf "%s%s " line word
 
 
         if line.Length > 0 then
-            lines.Add line
+            addLine()
 
-        lines.ToArray()
+        newText
 
     let createLayoutComponentState () =
         {
@@ -418,19 +438,12 @@ module Logic =
 
         let mutable startPosX = startX
         let mutable startPosY = startY
-        let mutable textLines = [||]
+        let mutable textLines = ""
         if not (String.IsNullOrWhiteSpace text) then
             let paddedWidth = parentWidth - marginLeft - marginRight - paddingLeft - paddingRight
-            textLines <- if textWrap then splitLines (measureText textFont) paddedWidth text else [|text|]
+            textLines <- if textWrap then splitLines (measureText textFont) paddedWidth text else text
 
-            let (contentWidth, contentHeight) =
-                textLines
-                    |> Array.fold (
-                        fun (accX, accY) l ->
-                            let (sizeX, sizeY) = measureText textFont l
-                            printfn "size %i %i" sizeX sizeY
-                            (max accX sizeX, accY + sizeY)
-                        ) (0, 0)
+            let (contentWidth, contentHeight) = measureText textFont textLines
 
             printfn "contentSize: %f %f %f %f" minWidth (float32 contentWidth) minHeight (float32 contentHeight)
             minWidth <- max minWidth ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
@@ -441,7 +454,8 @@ module Logic =
         let width, height =
             match sizeHint with
             | NoobishSizeHint.Content ->
-                minWidth, minHeight
+                let width = if colspan > 0 then parentWidth * float32 colspan else parentWidth
+                max width minWidth, minHeight
             | NoobishSizeHint.Fill (f) ->
                 match f with
                 | Horizontal ->
