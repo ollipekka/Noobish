@@ -10,7 +10,6 @@ open Microsoft.Xna.Framework.Input.Touch
 open Elmish
 open Noobish
 open Noobish.Components
-open Noobish.NoobishMonoGame
 
 let loremIpsum1 =
     "Scroll me!\n\n Lorem\nipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -120,7 +119,7 @@ type DemoGame () as game =
             int (ceil (size.X)), int (ceil (size.Y))
 
         nui <- NoobishMonoGame.create measureText "AnonymousPro" this.GraphicsDevice.Viewport.Width this.GraphicsDevice.Viewport.Height 1.0f
-            |> NoobishMonoGame.withDebug true
+            |> NoobishMonoGame.withDebug false
 
         let init () =
             { State = Buttons}, Cmd.ofMsg (ShowButtons)

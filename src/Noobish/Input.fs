@@ -3,10 +3,7 @@ module Noobish.Input
 open System
 open System.Collections.Generic
 
-
-
-
-let private clamp n minVal maxVal = max (min n maxVal) minVal
+open Noobish.Utils
 
 let rec press
     (state: IReadOnlyDictionary<string, LayoutComponentState>)

@@ -259,8 +259,6 @@ module Components =
 
 module Logic =
 
-    let private clamp n minVal maxVal = max (min n maxVal) minVal
-
     let splitLines (measureString: string -> int * int) width (text: string) =
         let width = int width
 

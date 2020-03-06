@@ -27,6 +27,7 @@ type NoobishUI = {
     State: Dictionary<string, LayoutComponentState>
 }
 
+[<RequireQualifiedAccess>]
 module NoobishMonoGame =
 
     let create measureText defaultFont width height scale = {
