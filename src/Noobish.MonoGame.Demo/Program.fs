@@ -17,17 +17,18 @@ let loremIpsum1 =
 let loremIpsum2 =
     "Part 2\n Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"
 
-
 type DemoMessage =
     | ShowContainers
     | ShowButtons
     | ShowText
+    | ChangePadding of int
 
 type ViewState = | Containers | Buttons | Text
 
 type DemoModel =
     {
         State: ViewState
+        Padding: int
     }
 
 module Text =
@@ -107,6 +108,48 @@ module Text =
 
         ]
 
+module Buttons =
+    let view model dispatch =
+
+        [
+            grid 2 2
+                [
+                panel
+                    [
+                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; fillHorizontal; block]
+                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding;fillHorizontal; block]
+                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding;fillHorizontal; block]
+                    ]
+                    [
+                        padding model.Padding;
+
+                    ]
+                panel
+                    [
+                    ]
+                    [
+
+                    ]
+                panel
+                    [
+                    ]
+                    [
+
+                    ]
+                panelWithGrid 2 1
+                    [
+
+                    ]
+                    [
+
+                    ]
+                ]
+                [
+
+                ]
+
+        ]
+
 let createGraphicsDevice (game: Game) =
     let graphics = new GraphicsDeviceManager(game)
     graphics.GraphicsProfile <- GraphicsProfile.HiDef
@@ -155,7 +198,7 @@ type DemoGame () as game =
             |> NoobishMonoGame.withDebug false
 
         let init () =
-            { State = Buttons}, Cmd.ofMsg (ShowButtons)
+            { State = Buttons; Padding = 5}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -165,6 +208,8 @@ type DemoGame () as game =
                 {model with State = Containers}, Cmd.none
             | ShowText ->
                 {model with State = Text}, Cmd.none
+            | ChangePadding padding ->
+                {model with Padding = padding}, Cmd.none
 
         let view (model: DemoModel) dispatch =
 
@@ -178,7 +223,7 @@ type DemoGame () as game =
 
             let title, content  =
                 match model.State with
-                | Buttons -> "Buttons", []
+                | Buttons -> "Buttons", Buttons.view model dispatch
                 | Containers -> "Containers", []
                 | Text -> "Labels", Text.view dispatch
 
@@ -198,7 +243,6 @@ type DemoGame () as game =
         base.Initialize()
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
-
 
         uiRenderTarget1 <-
             new RenderTarget2D(
