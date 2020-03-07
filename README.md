@@ -26,9 +26,19 @@ Layouts
 * Grid system
 * Column / Row layout
 
+## Scaling
+
+Noobish supports scaling the UI components for larger screens.
+
+Due to use of spritefonts, text will not be scaled. In future, there might be downscaling supported for text
+
 ## Theme
 
 Noobish monogame implementation supports only a signle theme. Each component can be themed separately.
+
+NinePatch support
+
+* ToDo
 
 ## Attributes
 

@@ -21,16 +21,16 @@ let loremIpsum2 =
 type DemoMessage =
     | ShowContainers
     | ShowButtons
-    | ShowLabels
+    | ShowText
 
-type ViewState = | Containers | Buttons | Labels
+type ViewState = | Containers | Buttons | Text
 
 type DemoModel =
     {
         State: ViewState
     }
 
-module Labels =
+module Text =
 
     let view _dispatch =
 
@@ -56,12 +56,19 @@ module Labels =
                     [
                         scroll
                             [
-                                paragraph [text (loremIpsum1); block]
-                                paragraph [text (loremIpsum2); block]
+                                paragraph [text loremIpsum1; block]
+                                paragraph [text loremIpsum2; block]
                             ]
                             [
                                 scrollVertical
                             ]
+                    ]
+                    [
+
+                    ]
+                panel
+                    [
+                        paragraph [text loremIpsum2; textAlign TopCenter]
                     ]
                     [
 
@@ -106,7 +113,6 @@ type DemoGame () as game =
     let mutable previousTouchState = Unchecked.defaultof<TouchCollection>
     let mutable touchState = Unchecked.defaultof<TouchCollection>
 
-
     let mutable uiRenderTarget1 = Unchecked.defaultof<RenderTarget2D>
     let mutable uiRenderTarget2 = Unchecked.defaultof<RenderTarget2D>
 
@@ -130,8 +136,8 @@ type DemoGame () as game =
                 {model with State = Buttons}, Cmd.none
             | ShowContainers ->
                 {model with State = Containers}, Cmd.none
-            | ShowLabels ->
-                {model with State = Labels}, Cmd.none
+            | ShowText ->
+                {model with State = Text}, Cmd.none
 
         let view (model: DemoModel) dispatch =
 
@@ -139,14 +145,14 @@ type DemoGame () as game =
             let scrollItems =
                 [
                     button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); block]
-                    button [text "Labels"; onClick (fun () -> dispatch ShowLabels); fillHorizontal; toggled (model.State = Labels);block]
+                    button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text);block]
                     button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); block]
                 ]
             let title, content  =
                 match model.State with
                 | Buttons -> "Buttons", []
                 | Containers -> "Containers", []
-                | Labels -> "Labels", Labels.view dispatch
+                | Text -> "Labels", Text.view dispatch
 
 
 

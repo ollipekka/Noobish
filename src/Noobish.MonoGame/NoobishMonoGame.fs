@@ -106,15 +106,15 @@ module NoobishMonoGame =
 
 
     let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
-        if not (c.Text |> String.IsNullOrEmpty) then
+        let mutable startY = 0.0f
 
+        for line in c.Text do
             let bounds = c.RectangleWithPadding
 
             let font = content.Load<SpriteFont>(c.TextFont)
 
-            let mutable startY = 0.0f
+            let size = font.MeasureString (line)
 
-            let size = font.MeasureString (c.Text)
             let textSizeX, textSizeY = ceil (size.X), ceil (size.Y)
 
             let leftX () = bounds.X + scrollX
@@ -144,11 +144,10 @@ module NoobishMonoGame =
                 | BottomCenter -> centerX(), bottomY()
                 | BottomRight -> rightX(), bottomY()
 
-            //printfn "text start y %s %f" line (startY + textY)
             let textColor = toColor (if c.Enabled then c.TextColor else c.TextColorDisabled)
-            spriteBatch.DrawString(font, c.Text, Vector2(floor textX, floor (textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
+            spriteBatch.DrawString(font, line, Vector2(floor textX, floor (startY + textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
+            startY <- startY + float32 font.LineSpacing
 
-            //printfn "%s %f %f" c.ThemeId c.Height startY
     let private drawScrollBars
         (state: IReadOnlyDictionary<string, LayoutComponentState>)
         (content: ContentManager)

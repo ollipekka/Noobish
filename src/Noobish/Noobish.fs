@@ -1,75 +1,146 @@
 namespace Noobish
+
 open System
-open System.Collections.Generic
 
 
-[<RequireQualifiedAccess>]
-type NoobishAlignment =
-| Top
-| Bottom
-| Left
-| Right
-| Center
+module Components =
+    [<RequireQualifiedAccess>]
+    type NoobishAlignment =
+    | Top
+    | Bottom
+    | Left
+    | Right
+    | Center
 
-type NoobishFill =
-| Horizontal | Vertical | Both
+    [<RequireQualifiedAccess>]
+    type NoobishFill =
+    | Horizontal | Vertical | Both
 
-type NoobishSizeHint =
-| Content
-| Fill of NoobishFill
+    [<RequireQualifiedAccess>]
+    type NoobishSizeHint =
+    | Content
+    | Fill of NoobishFill
 
-[<RequireQualifiedAccess>]
-type NoobishScroll = Vertical | Horizontal | Both
+    [<RequireQualifiedAccess>]
+    type NoobishScroll = Vertical | Horizontal | Both
 
-[<RequireQualifiedAccess>]
-type NoobishTexture =
-    | NinePatch of string
-    | Basic of string
+    [<RequireQualifiedAccess>]
+    type NoobishTexture =
+        | NinePatch of string
+        | Basic of string
 
-type Attribute =
-| Name of string
-| Padding of left: int * right: int* top: int * bottom: int
-| PaddingLeft of int
-| PaddingRight of int
-| PaddingTop of int
-| PaddingBottom of int
+    type Attribute =
+    | Name of string
+    | Padding of left: int * right: int* top: int * bottom: int
+    | PaddingLeft of int
+    | PaddingRight of int
+    | PaddingTop of int
+    | PaddingBottom of int
 
-| Margin of left: int * right: int* top: int * bottom: int
-| MarginLeft of int
-| MarginRight of int
-| MarginTop of int
-| MarginBottom of int
+    | Margin of left: int * right: int* top: int * bottom: int
+    | MarginLeft of int
+    | MarginRight of int
+    | MarginTop of int
+    | MarginBottom of int
 
-| Alignment of NoobishAlignment
-| Text of string
-| TextFont of string
-| TextAlign of NoobishTextAlign
-| TextColor of int
-| TextWrap
-| SizeHint of NoobishSizeHint
-| OnClick of (unit -> unit)
-| Toggled of bool
-| Block
-| MinSize of widht: int * height: int
-| FgColor of int
-| Enabled of bool
-| DisabledColor of int
-| BorderColor of int
-| BorderSize of int
-| Texture of NoobishTexture
-| TextureColor of int
-| TextureColorDisabled of int
-| TextureSize of NoobishTextureSize
-| Scroll of NoobishScroll
-| Layout of NoobishLayout
-| RowSpan of int
-| ColSpan of int
+    | Alignment of NoobishAlignment
+    | Text of string
+    | TextFont of string
+    | TextAlign of NoobishTextAlign
+    | TextColor of int
+    | TextWrap
+    | SizeHint of NoobishSizeHint
+    | OnClick of (unit -> unit)
+    | Toggled of bool
+    | Block
+    | MinSize of widht: int * height: int
+    | FgColor of int
+    | Enabled of bool
+    | DisabledColor of int
+    | BorderColor of int
+    | BorderSize of int
+    | Texture of NoobishTexture
+    | TextureColor of int
+    | TextureColorDisabled of int
+    | TextureSize of NoobishTextureSize
+    | Scroll of NoobishScroll
+    | Layout of NoobishLayout
+    | RowSpan of int
+    | ColSpan of int
 
-type Component = {
-    ThemeId: string
-    Children: list<Component>
-    Attributes: list<Attribute>
-}
+    type Component = {
+        ThemeId: string
+        Children: list<Component>
+        Attributes: list<Attribute>
+    }
+
+    // Attributes
+    let name v = Name v
+    let text value = Text(value)
+    let textFont f = TextFont(f)
+    let textColor c = TextColor (c)
+    let textAlign v = TextAlign (v)
+    let textWrap = TextWrap
+
+    let texture t = Texture (NoobishTexture.Basic t)
+    let ninePatch t = Texture (NoobishTexture.NinePatch t)
+    let textureColor c = TextureColor c
+    let textureSize s = TextureSize s
+
+    let paddingLeft lp = PaddingLeft lp
+    let paddingRight rp = PaddingRight rp
+    let paddingTop tp = PaddingTop tp
+    let paddingBottom bp = PaddingBottom bp
+    let padding value = Padding(value, value, value, value)
+    let marginLeft lm = MarginLeft lm
+    let marginRight rm = MarginRight rm
+    let marginTop tm = MarginTop tm
+    let marginBottom bm = MarginBottom bm
+    let margin value = Margin(value, value, value, value)
+    let top = Alignment(NoobishAlignment.Top)
+    let bottom = Alignment(NoobishAlignment.Bottom)
+    let center = Alignment(NoobishAlignment.Center)
+    let left = Alignment(NoobishAlignment.Left)
+    let right = Alignment(NoobishAlignment.Right)
+    let block = Block
+    let onClick action = OnClick(action)
+    let toggled value = Toggled (value)
+
+    let fill = SizeHint (NoobishSizeHint.Fill (NoobishFill.Both))
+    let fillHorizontal = SizeHint (NoobishSizeHint.Fill (NoobishFill.Horizontal))
+    let fillVertical = SizeHint (NoobishSizeHint.Fill (NoobishFill.Vertical))
+
+    let sizeContent = SizeHint NoobishSizeHint.Content
+    let minSize w h = MinSize(w, h)
+    let color c = FgColor (c)
+    let enabled v = Enabled(v)
+
+    let borderSize v = BorderSize(v)
+    let borderColor c = BorderColor(c)
+    let scrollVertical = Scroll (NoobishScroll.Vertical)
+    let scrollHorizontal = Scroll (NoobishScroll.Horizontal)
+    let scrollBoth = Scroll (NoobishScroll.Both)
+
+    let gridLayout cols rows = Layout (NoobishLayout.Grid (cols, rows))
+    let colspan s = ColSpan s
+    let rowspan s = RowSpan s
+
+
+    // Components
+    let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: block :: Margin(5, 5, 0, 0) :: attributes }
+    let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
+    let paragraph attributes ={ ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign TopLeft :: sizeContent :: attributes }
+    let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
+    let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
+    let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
+    let scroll children attributes = { ThemeId = "Scroll"; Children = children; Attributes = fill :: attributes}
+    let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = block :: fill :: attributes}
+    let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill:: attributes}
+    let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
+    let div children attributes = { ThemeId = "Division"; Children = children; Attributes = fill :: attributes}
+    let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
+
+
 
 [<RequireQualifiedAccess>]
 type ComponentState =
@@ -104,7 +175,7 @@ type LayoutComponent = {
     Toggled: bool
     TextAlignment: NoobishTextAlign
 
-    Text: string
+    Text: string[]
     TextFont: string
     TextColor: int
     TextColorDisabled: int
@@ -188,77 +259,9 @@ type LayoutComponent = {
         not (x < startX || x > endX || y < startY || y > endY)
 
 
-module Components =
-
-    // Attributes
-    let name v = Name v
-    let text value = Text(value)
-    let textFont f = TextFont(f)
-    let textColor c = TextColor (c)
-    let textAlign v = TextAlign (v)
-    let textWrap = TextWrap
-
-    let texture t = Texture (NoobishTexture.Basic t)
-    let ninePatch t = Texture (NoobishTexture.NinePatch t)
-    let textureColor c = TextureColor c
-    let textureSize s = TextureSize s
-
-    let paddingLeft lp = PaddingLeft lp
-    let paddingRight rp = PaddingRight rp
-    let paddingTop tp = PaddingTop tp
-    let paddingBottom bp = PaddingBottom bp
-    let padding value = Padding(value, value, value, value)
-    let marginLeft lm = MarginLeft lm
-    let marginRight rm = MarginRight rm
-    let marginTop tm = MarginTop tm
-    let marginBottom bm = MarginBottom bm
-    let margin value = Margin(value, value, value, value)
-    let top = Alignment(NoobishAlignment.Top)
-    let bottom = Alignment(NoobishAlignment.Bottom)
-    let center = Alignment(NoobishAlignment.Center)
-    let left = Alignment(NoobishAlignment.Left)
-    let right = Alignment(NoobishAlignment.Right)
-    let block = Block
-    let onClick action = OnClick(action)
-    let toggled value = Toggled (value)
-
-    let fill = SizeHint (Fill (Both))
-    let fillHorizontal = SizeHint (Fill (Horizontal))
-    let fillVertical = SizeHint (Fill (Vertical))
-
-    let sizeContent = SizeHint Content
-    let minSize w h = MinSize(w, h)
-    let color c = FgColor (c)
-    let enabled v = Enabled(v)
-
-    let borderSize v = BorderSize(v)
-    let borderColor c = BorderColor(c)
-    let scrollVertical = Scroll (NoobishScroll.Vertical)
-    let scrollHorizontal = Scroll (NoobishScroll.Horizontal)
-    let scrollBoth = Scroll (NoobishScroll.Both)
-
-    let gridLayout cols rows = Layout (NoobishLayout.Grid (cols, rows))
-    let colspan s = ColSpan s
-    let rowspan s = RowSpan s
-
-
-    // Components
-    let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: block :: Margin(5, 5, 0, 0) :: attributes }
-    let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
-    let paragraph attributes ={ ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign TopLeft :: sizeContent :: attributes }
-    let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
-    let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
-    let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
-    let scroll children attributes = { ThemeId = "Scroll"; Children = children; Attributes = fill :: attributes}
-    let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = block :: fill :: attributes}
-    let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill:: attributes}
-    let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
-    let div children attributes = { ThemeId = "Division"; Children = children; Attributes = fill :: attributes}
-    let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
-
 
 module Logic =
-
+    open Components
     let splitLines (measureString: string -> int * int) width (text: string) =
         let width = int width
 
@@ -456,15 +459,15 @@ module Logic =
                 max width minWidth, minHeight
             | NoobishSizeHint.Fill (f) ->
                 match f with
-                | Horizontal ->
+                | NoobishFill.Horizontal ->
                     let width = if colspan > 0 then parentWidth * float32 colspan else parentWidth
                     let height = minHeight
                     width, height
-                | Vertical ->
+                | NoobishFill.Vertical ->
                     let width = minWidth
                     let height = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
                     width, height
-                | Both ->
+                | NoobishFill.Both ->
                     let width = if colspan > 0 then parentWidth * float32 colspan else parentWidth
                     let height = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
                     width, height
@@ -494,7 +497,7 @@ module Logic =
             Enabled = enabled
             Toggled = toggled
             TextAlignment = textAlign
-            Text = textLines
+            Text = textLines.Split '\n'
             TextFont = textFont
             TextColor = textColor
             TextColorDisabled = textColorDisabled

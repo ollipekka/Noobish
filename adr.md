@@ -8,3 +8,7 @@
 ## Color datatype
 
 * Hex decimal int used for color in the format of 0xRRGGBBAA.
+
+## Qualified access
+
+* Internal types should for attributes should be placed inside Component module. In case types are required outside, they should be prefixed with Noobish and `[<RequireQualifiedAccess>]` should be used to avoid name collisions between discriminated unions.
