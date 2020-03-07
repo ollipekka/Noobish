@@ -451,12 +451,18 @@ module Logic =
             minHeight <- max minHeight ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
 
 
+        if not (String.IsNullOrEmpty texture) then
+
+            let contentWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
+            let contentHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
+
+            minWidth <- max minWidth contentWidth
+            minHeight <- max minHeight contentHeight
 
         let width, height =
             match sizeHint with
             | NoobishSizeHint.Content ->
-                let width = if colspan > 0 then parentWidth * float32 colspan else parentWidth
-                max width minWidth, minHeight
+                minWidth, minHeight
             | NoobishSizeHint.Fill (f) ->
                 match f with
                 | NoobishFill.Horizontal ->

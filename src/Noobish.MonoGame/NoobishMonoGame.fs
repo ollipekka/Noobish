@@ -21,6 +21,8 @@ type NoobishUI = {
     Height: int
     Scale: float32
     Theme: Theme
+    FontPath: string
+    GraphicsPath: string
 
     mutable Tree: LayoutComponent[]
 
@@ -39,10 +41,20 @@ module NoobishMonoGame =
         Tree = [||]
         Theme = Theme.createDefaultTheme defaultFont
         State = Dictionary<string, LayoutComponentState>()
+        FontPath = ""
+        GraphicsPath = ""
     }
 
     let withDebug d ui = {
         ui with Debug = d
+    }
+
+    let withFontPath p ui = {
+        ui with FontPath = p
+    }
+
+    let withGraphicsPath p ui = {
+        ui with GraphicsPath = p
     }
 
 
@@ -58,9 +70,9 @@ module NoobishMonoGame =
 
         Color(r, g, b, a)
 
-    let private drawBackground (state: IReadOnlyDictionary<string, LayoutComponentState>) (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) (time: TimeSpan) scrollX scrollY =
+    let private drawBackground (state: IReadOnlyDictionary<string, LayoutComponentState>) (content: ContentManager) graphicsPath (spriteBatch: SpriteBatch) (c: LayoutComponent) (time: TimeSpan) scrollX scrollY =
         let cs = state.[c.Id]
-        let pixel = content.Load<Texture2D>("Pixel")
+        let pixel = content.Load<Texture2D>(sprintf "%s%s" graphicsPath "Pixel")
 
         let bounds = c.RectangleWithMargin
         let dest = Rectangle(int (bounds.X + scrollX), int (bounds.Y + scrollY), int bounds.Width, int bounds.Height)
@@ -82,9 +94,9 @@ module NoobishMonoGame =
 
         spriteBatch.Draw(pixel, dest, Nullable(), color)
 
-    let private drawBorders  (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
+    let private drawBorders  (content: ContentManager) graphicsPath (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
         if c.BorderSize > 0.0f then
-            let pixel = content.Load<Texture2D>("Pixel")
+            let pixel = content.Load<Texture2D>(sprintf "%s%s" graphicsPath "Pixel")
             let bounds = c.RectangleWithMargin
 
             let scrolledStartY = bounds.Y + scrollY
@@ -105,13 +117,13 @@ module NoobishMonoGame =
             spriteBatch.Draw(pixel, top, Nullable(), borderColor)
 
 
-    let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
+    let private drawText (content: ContentManager) fontPath (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
         let mutable startY = 0.0f
 
         for line in c.Text do
             let bounds = c.RectangleWithPadding
 
-            let font = content.Load<SpriteFont>(c.TextFont)
+            let font = content.Load<SpriteFont>(sprintf "%s%s" fontPath c.TextFont)
 
             let size = font.MeasureString (line)
 
@@ -151,6 +163,7 @@ module NoobishMonoGame =
     let private drawScrollBars
         (state: IReadOnlyDictionary<string, LayoutComponentState>)
         (content: ContentManager)
+        (graphicsPath: string)
         (spriteBatch: SpriteBatch)
         (c: LayoutComponent)
         time
@@ -164,7 +177,7 @@ module NoobishMonoGame =
 
         if c.ScrollVertical && progress > 0.0f then
 
-            let pixel = content.Load<Texture2D>("Pixel")
+            let pixel = content.Load<Texture2D>(sprintf "%s%s" graphicsPath "Pixel")
 
             let scrollBarWidth = 2.0f
             let bounds = c.RectangleWithMargin
@@ -222,6 +235,8 @@ module NoobishMonoGame =
     let rec private drawComponent
         (state: IReadOnlyDictionary<string, LayoutComponentState>)
         (content: ContentManager)
+        (graphicsPath: string)
+        (fontPath: string)
         (graphics: GraphicsDevice)
         (spriteBatch: SpriteBatch)
         (mainRenderTarget: RenderTarget2D)
@@ -249,11 +264,11 @@ module NoobishMonoGame =
         graphics.Clear (Color.TransparentBlack)
         spriteBatch.Begin()
 
-        drawBackground state content spriteBatch c time totalScrollX totalScrollY
-        drawBorders content spriteBatch c totalScrollX totalScrollY
+        drawBackground state content graphicsPath spriteBatch c time totalScrollX totalScrollY
+        drawBorders content graphicsPath spriteBatch c totalScrollX totalScrollY
         drawImage content spriteBatch c totalScrollX totalScrollY
-        drawText content spriteBatch c totalScrollX totalScrollY
-        drawScrollBars state content spriteBatch c time totalScrollX totalScrollY
+        drawText content fontPath spriteBatch c totalScrollX totalScrollY
+        drawScrollBars state content graphicsPath spriteBatch c time totalScrollX totalScrollY
 
         let sourceStartX = max startX (float32 parentRectangle.X)
         let sourceStartY = max startY (float32 parentRectangle.Y)
@@ -277,7 +292,7 @@ module NoobishMonoGame =
                 elif c.ThemeId = "Button" then Color.Multiply(Color.Green, 0.1f)
                 else Color.Multiply(Color.Yellow, 0.1f)
 
-            let pixel = content.Load<Texture2D>("Pixel")
+            let pixel = content.Load<Texture2D>(sprintf "%s%s" graphicsPath "Pixel")
             spriteBatch.Draw(pixel, debugRect, Nullable(debugRect), debugColor)
 
         spriteBatch.End()
@@ -295,7 +310,7 @@ module NoobishMonoGame =
                 c.PaddedHeight )
 
         c.Children |> Array.iter(fun c ->
-            drawComponent state content graphics spriteBatch mainRenderTarget secondaryRenderTarget debug time c totalScrollX totalScrollY innerRectangle
+            drawComponent state content graphicsPath fontPath graphics spriteBatch mainRenderTarget secondaryRenderTarget debug time c totalScrollX totalScrollY innerRectangle
         )
 
     let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (mainRenderTarget: RenderTarget2D) (secondaryRenderTarget: RenderTarget2D) (ui: NoobishUI)  (time: TimeSpan) =
@@ -310,7 +325,7 @@ module NoobishMonoGame =
 
         ui.Tree |> Array.iter(fun c ->
             let source = Rectangle(0, 0, mainRenderTarget.Width, mainRenderTarget.Height)
-            drawComponent ui.State content graphics spriteBatch mainRenderTarget secondaryRenderTarget ui.Debug time c 0.0f 0.0f source
+            drawComponent ui.State content ui.GraphicsPath ui.FontPath graphics spriteBatch mainRenderTarget secondaryRenderTarget ui.Debug time c 0.0f 0.0f source
         )
 
         graphics.SetRenderTarget(null)

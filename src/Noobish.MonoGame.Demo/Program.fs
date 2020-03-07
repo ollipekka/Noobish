@@ -73,6 +73,33 @@ module Text =
                     [
 
                     ]
+                panelWithGrid 2 1
+                    [
+                        div
+                            [
+                                label [text "Font size 22"; textFont "AnonymousPro22"; block]
+                                label [text "Regular"; textFont "AnonymousPro22"; textColor 0xac3232aa; block]
+                                label [text "Bold"; textFont "AnonymousProBold22"; textColor 0x4b692faa; block]
+                                label [text "Italic"; textFont "AnonymousProItalic22"; textColor 0x3f3f74aa; block]
+                            ]
+                            [
+
+                            ]
+                        div
+                            [
+                                label [text "Font size 16"; block]
+                                label [text "Regular"; textColor 0xac3232aa; block]
+                                label [text "Bold"; textFont "AnonymousProBold16"; textColor 0x4b692faa; block]
+                                label [text "Italic"; textFont "AnonymousProItalic16"; textColor 0x3f3f74aa; block]
+                            ]
+                            [
+
+                            ]
+
+                    ]
+                    [
+
+                    ]
                 ]
                 [
 
@@ -124,7 +151,7 @@ type DemoGame () as game =
 
             int (ceil (size.X)), int (ceil (size.Y))
 
-        nui <- NoobishMonoGame.create measureText "AnonymousPro" this.GraphicsDevice.Viewport.Width this.GraphicsDevice.Viewport.Height 1.0f
+        nui <- NoobishMonoGame.create measureText "AnonymousPro16" this.GraphicsDevice.Viewport.Width this.GraphicsDevice.Viewport.Height 1.0f
             |> NoobishMonoGame.withDebug false
 
         let init () =
@@ -148,19 +175,18 @@ type DemoGame () as game =
                     button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text);block]
                     button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); block]
                 ]
+
             let title, content  =
                 match model.State with
                 | Buttons -> "Buttons", []
                 | Containers -> "Containers", []
                 | Text -> "Labels", Text.view dispatch
 
-
-
             [
                 grid 12 8
                     [
-                        panel [label [text "Noobish"]] [colspan 3; rowspan 1]
-                        panel [label [text title]] [colspan 9; rowspan 1]
+                        panel [label [text "Noobish"; textFont "AnonymousProBold22"]] [colspan 3; rowspan 1]
+                        panel [label [text title; textFont "AnonymousProBold22"]] [colspan 9; rowspan 1]
                         panel [scroll scrollItems []] [colspan 3; rowspan 7]
                         panel content [colspan 9; rowspan 7]
                     ]
