@@ -116,9 +116,9 @@ module Buttons =
                 [
                 panel
                     [
-                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; fillHorizontal; block]
-                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding;fillHorizontal; block]
-                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding;fillHorizontal; block]
+                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; fillHorizontal]
+                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding; fillHorizontal]
+                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding; fillHorizontal]
                     ]
                     [
                         padding model.Padding;
@@ -194,8 +194,19 @@ type DemoGame () as game =
 
             int (ceil (size.X)), int (ceil (size.Y))
 
-        nui <- NoobishMonoGame.create measureText "AnonymousPro16" this.GraphicsDevice.Viewport.Width this.GraphicsDevice.Viewport.Height 1.0f
-            |> NoobishMonoGame.withDebug false
+        let width = this.GraphicsDevice.Viewport.Width
+        let height = this.GraphicsDevice.Viewport.Height
+
+        let settings = {
+            Scale = 1.0f
+            DefaultFont = "AnonymousPro16"
+            Pixel = "Pixel"
+            FontPrefix = ""
+            GraphicsPrefix = ""
+        }
+
+        nui <- NoobishMonoGame.create game.Content width height settings
+            |> NoobishMonoGame.overrideDebug false
 
         let init () =
             { State = Buttons; Padding = 5}, Cmd.ofMsg (ShowButtons)
@@ -216,9 +227,9 @@ type DemoGame () as game =
 
             let scrollItems =
                 [
-                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); block]
-                    button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text);block]
-                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); block]
+                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons)]
+                    button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text)]
+                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers)]
                 ]
 
             let title, content  =

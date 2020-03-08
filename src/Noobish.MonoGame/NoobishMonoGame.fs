@@ -5,6 +5,7 @@ open System.Collections.Generic
 
 open Elmish
 open Noobish
+open Noobish.Components
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
@@ -19,10 +20,8 @@ type NoobishUI = {
     MeasureText: string -> string -> int*int
     Width: int
     Height: int
-    Scale: float32
     Theme: Theme
-    FontPath: string
-    GraphicsPath: string
+    Settings: NoobishSettings
 
     mutable Tree: LayoutComponent[]
 
@@ -32,29 +31,31 @@ type NoobishUI = {
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
 
-    let create measureText defaultFont width height scale = {
-        Debug = false
-        MeasureText = measureText
-        Width = width
-        Height = height
-        Scale = scale
-        Tree = [||]
-        Theme = Theme.createDefaultTheme defaultFont
-        State = Dictionary<string, LayoutComponentState>()
-        FontPath = ""
-        GraphicsPath = ""
+    open Components
+    let create (content: ContentManager) width height (settings: NoobishSettings) =
+        let measureText (font: string) (text: string) =
+            let font = content.Load<SpriteFont> font
+            let size = font.MeasureString text
+
+            int (ceil (size.X)), int (ceil (size.Y))
+
+        {
+            Debug = false
+            MeasureText = measureText
+            Width = width
+            Height = height
+            Tree = [||]
+            Theme = Theme.createDefaultTheme settings.DefaultFont
+            State = Dictionary<string, LayoutComponentState>()
+            Settings = settings
+        }
+
+    let overrideMeasureText measureText ui = {
+        ui with MeasureText = measureText
     }
 
-    let withDebug d ui = {
+    let overrideDebug d ui = {
         ui with Debug = d
-    }
-
-    let withFontPath p ui = {
-        ui with FontPath = p
-    }
-
-    let withGraphicsPath p ui = {
-        ui with GraphicsPath = p
     }
 
 
@@ -70,9 +71,9 @@ module NoobishMonoGame =
 
         Color(r, g, b, a)
 
-    let private drawBackground (state: IReadOnlyDictionary<string, LayoutComponentState>) (content: ContentManager) graphicsPath (spriteBatch: SpriteBatch) (c: LayoutComponent) (time: TimeSpan) scrollX scrollY =
+    let private drawBackground (state: IReadOnlyDictionary<string, LayoutComponentState>) (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (time: TimeSpan) scrollX scrollY =
         let cs = state.[c.Id]
-        let pixel = content.Load<Texture2D>(sprintf "%s%s" graphicsPath "Pixel")
+        let pixel = content.Load<Texture2D> settings.Pixel
 
         let bounds = c.RectangleWithMargin
         let dest = Rectangle(int (bounds.X + scrollX), int (bounds.Y + scrollY), int bounds.Width, int bounds.Height)
@@ -94,9 +95,9 @@ module NoobishMonoGame =
 
         spriteBatch.Draw(pixel, dest, Nullable(), color)
 
-    let private drawBorders  (content: ContentManager) graphicsPath (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
+    let private drawBorders  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
         if c.BorderSize > 0.0f then
-            let pixel = content.Load<Texture2D>(sprintf "%s%s" graphicsPath "Pixel")
+            let pixel = content.Load<Texture2D> settings.Pixel
             let bounds = c.RectangleWithMargin
 
             let scrolledStartY = bounds.Y + scrollY
@@ -117,13 +118,13 @@ module NoobishMonoGame =
             spriteBatch.Draw(pixel, top, Nullable(), borderColor)
 
 
-    let private drawText (content: ContentManager) fontPath (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
+    let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
         let mutable startY = 0.0f
 
         for line in c.Text do
             let bounds = c.RectangleWithPadding
 
-            let font = content.Load<SpriteFont>(sprintf "%s%s" fontPath c.TextFont)
+            let font = content.Load<SpriteFont> c.TextFont
 
             let size = font.MeasureString (line)
 
@@ -163,7 +164,7 @@ module NoobishMonoGame =
     let private drawScrollBars
         (state: IReadOnlyDictionary<string, LayoutComponentState>)
         (content: ContentManager)
-        (graphicsPath: string)
+        (settings: NoobishSettings)
         (spriteBatch: SpriteBatch)
         (c: LayoutComponent)
         time
@@ -177,7 +178,7 @@ module NoobishMonoGame =
 
         if c.ScrollVertical && progress > 0.0f then
 
-            let pixel = content.Load<Texture2D>(sprintf "%s%s" graphicsPath "Pixel")
+            let pixel = content.Load<Texture2D> settings.Pixel
 
             let scrollBarWidth = 2.0f
             let bounds = c.RectangleWithMargin
@@ -235,8 +236,7 @@ module NoobishMonoGame =
     let rec private drawComponent
         (state: IReadOnlyDictionary<string, LayoutComponentState>)
         (content: ContentManager)
-        (graphicsPath: string)
-        (fontPath: string)
+        (settings: NoobishSettings)
         (graphics: GraphicsDevice)
         (spriteBatch: SpriteBatch)
         (mainRenderTarget: RenderTarget2D)
@@ -264,11 +264,11 @@ module NoobishMonoGame =
         graphics.Clear (Color.TransparentBlack)
         spriteBatch.Begin()
 
-        drawBackground state content graphicsPath spriteBatch c time totalScrollX totalScrollY
-        drawBorders content graphicsPath spriteBatch c totalScrollX totalScrollY
+        drawBackground state content settings spriteBatch c time totalScrollX totalScrollY
+        drawBorders content settings spriteBatch c totalScrollX totalScrollY
         drawImage content spriteBatch c totalScrollX totalScrollY
-        drawText content fontPath spriteBatch c totalScrollX totalScrollY
-        drawScrollBars state content graphicsPath spriteBatch c time totalScrollX totalScrollY
+        drawText content spriteBatch c totalScrollX totalScrollY
+        drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
 
         let sourceStartX = max startX (float32 parentRectangle.X)
         let sourceStartY = max startY (float32 parentRectangle.Y)
@@ -292,7 +292,7 @@ module NoobishMonoGame =
                 elif c.ThemeId = "Button" then Color.Multiply(Color.Green, 0.1f)
                 else Color.Multiply(Color.Yellow, 0.1f)
 
-            let pixel = content.Load<Texture2D>(sprintf "%s%s" graphicsPath "Pixel")
+            let pixel = content.Load<Texture2D> settings.Pixel
             spriteBatch.Draw(pixel, debugRect, Nullable(debugRect), debugColor)
 
         spriteBatch.End()
@@ -310,7 +310,7 @@ module NoobishMonoGame =
                 c.PaddedHeight )
 
         c.Children |> Array.iter(fun c ->
-            drawComponent state content graphicsPath fontPath graphics spriteBatch mainRenderTarget secondaryRenderTarget debug time c totalScrollX totalScrollY innerRectangle
+            drawComponent state content settings graphics spriteBatch mainRenderTarget secondaryRenderTarget debug time c totalScrollX totalScrollY innerRectangle
         )
 
     let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (mainRenderTarget: RenderTarget2D) (secondaryRenderTarget: RenderTarget2D) (ui: NoobishUI)  (time: TimeSpan) =
@@ -325,7 +325,7 @@ module NoobishMonoGame =
 
         ui.Tree |> Array.iter(fun c ->
             let source = Rectangle(0, 0, mainRenderTarget.Width, mainRenderTarget.Height)
-            drawComponent ui.State content ui.GraphicsPath ui.FontPath graphics spriteBatch mainRenderTarget secondaryRenderTarget ui.Debug time c 0.0f 0.0f source
+            drawComponent ui.State content ui.Settings graphics spriteBatch mainRenderTarget secondaryRenderTarget ui.Debug time c 0.0f 0.0f source
         )
 
         graphics.SetRenderTarget(null)
@@ -354,7 +354,7 @@ module NoobishMonoGame =
 
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
 
-            Input.scroll ui.State ui.Tree (float32 mousePosition.X) (float32 mousePosition.Y) ui.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
+            Input.scroll ui.State ui.Tree (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
 
 
@@ -387,7 +387,7 @@ module Program =
             let width = (float32 ui.Width)
             let height = (float32 ui.Height)
 
-            ui.Tree <- Logic.layout ui.MeasureText ui.Theme ui.Scale width height tree
+            ui.Tree <- Logic.layout ui.MeasureText ui.Theme ui.Settings width height tree
 
             let newComponents =
                 ui.Tree

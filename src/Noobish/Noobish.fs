@@ -4,6 +4,15 @@ open System
 
 
 module Components =
+
+    type NoobishSettings = {
+        Scale: float32
+        Pixel: string
+        DefaultFont: string
+        FontPrefix: string
+        GraphicsPrefix: string
+    }
+
     [<RequireQualifiedAccess>]
     type NoobishAlignment =
     | Top
@@ -316,9 +325,9 @@ module Logic =
             ScrollY = 0.0f
         }
 
-    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (scale:float32) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
+    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
 
-        let scale (v: float32) = v * scale
+        let scale (v: float32) = v * settings.Scale
         let scaleTuple (left, right, top, bottom) =
             (scale (float32 left), scale (float32 right), scale (float32 top), scale (float32 bottom))
 
@@ -329,7 +338,7 @@ module Logic =
         let mutable disabledColor = theme.ColorDisabled
         let mutable textAlign = theme.TextAlignment
         let mutable text = ""
-        let mutable textFont = theme.TextFont
+        let mutable textFont = if theme.TextFont <> "" then sprintf "%s%s" settings.FontPrefix theme.TextFont else ""
         let mutable textColor = theme.TextColor
         let mutable textColorDisabled = theme.TextColorDisabled
         let mutable textWrap = false
@@ -400,7 +409,7 @@ module Logic =
                 alignment <- value
             // Text
             | Text(value) -> text <- value
-            | TextFont(value) -> textFont <- value
+            | TextFont(value) -> textFont <- if value <> "" then sprintf "%s%s" settings.FontPrefix value else ""
             | TextAlign (value) -> textAlign <- value
             | TextColor (c) -> textColor <- c
             | TextWrap -> textWrap <- true
@@ -509,7 +518,7 @@ module Logic =
             TextColorDisabled = textColorDisabled
             TextWrap = textWrap
 
-            Texture = texture
+            Texture = if texture <> "" then sprintf "%s%s" settings.GraphicsPrefix texture else ""
             TextureColor = textureColor
             TextureColorDisabled = textureColorDisabled
             TextureSize = textureSize
@@ -555,7 +564,7 @@ module Logic =
     let rec private layoutComponent
         (measureText: string -> string -> int*int)
         (theme: Theme)
-        (scale: float32)
+        (settings: NoobishSettings)
         (startX: float32)
         (startY: float32)
         (colspan: int)
@@ -564,7 +573,7 @@ module Logic =
         (parentHeight: float32)
         (c: Component): LayoutComponent  =
 
-        let parentComponent = createLayoutComponent theme measureText scale parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
+        let parentComponent = createLayoutComponent theme measureText settings parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
 
@@ -579,7 +588,7 @@ module Logic =
                 let childStartY = parentBounds.Y + offsetY
                 let childWidth = if parentComponent.ScrollHorizontal then parentBounds.Width else parentBounds.Width - offsetX
                 let childHeight = if parentComponent.ScrollVertical then parentBounds.Height else parentBounds.Height - offsetY
-                let childComponent = layoutComponent measureText theme scale childStartX childStartY 0 0 childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings childStartX childStartY 0 0 childWidth childHeight child
                 newChildren.Add(childComponent)
 
 
@@ -618,7 +627,7 @@ module Logic =
                 let childStartY = parentBounds.Y + (float32 row) * rowHeight
                 let childWidth = colWidth
                 let childHeight = rowHeight
-                let childComponent = layoutComponent measureText theme scale childStartX childStartY 1 1 childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings childStartX childStartY 1 1 childWidth childHeight child
                 newChildren.Add(childComponent)
 
                 for c = col to col + childComponent.ColSpan - 1 do
@@ -634,10 +643,10 @@ module Logic =
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
 
-    let layout (measureText: string -> string -> int*int) (theme: Theme) (scale: float32) (width: float32) (height: float32)  (components: list<Component>) =
+    let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (width: float32) (height: float32)  (components: list<Component>) =
         components
             |> List.map(fun c ->
-                layoutComponent measureText theme scale 0.0f 0.0f 0 0 width height c
+                layoutComponent measureText theme settings 0.0f 0.0f 0 0 width height c
             ) |> List.toArray
 
 
