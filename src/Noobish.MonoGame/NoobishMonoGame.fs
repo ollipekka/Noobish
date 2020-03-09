@@ -31,7 +31,6 @@ type NoobishUI = {
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
 
-    open Components
     let create (content: ContentManager) width height (settings: NoobishSettings) =
         let measureText (font: string) (text: string) =
             let font = content.Load<SpriteFont> font

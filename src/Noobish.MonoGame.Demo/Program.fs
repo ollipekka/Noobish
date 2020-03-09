@@ -224,7 +224,6 @@ type DemoGame () as game =
 
         let view (model: DemoModel) dispatch =
 
-
             let scrollItems =
                 [
                     button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons)]

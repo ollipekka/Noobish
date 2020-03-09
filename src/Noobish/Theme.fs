@@ -225,7 +225,7 @@ module Theme =
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
                 }
-                "Rule", {
+                "HorizontalRule", {
                     TextFont = defaultFont
                     TextColor = 0x00000000
                     TextAlignment = NoobishTextAlign.Center

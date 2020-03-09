@@ -136,7 +136,7 @@ module Components =
 
 
     // Components
-    let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: block :: Margin(5, 5, 0, 0) :: attributes }
+    let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
     let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
     let paragraph attributes ={ ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign TopLeft :: sizeContent :: attributes }
     let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
@@ -351,7 +351,8 @@ module Logic =
 
         let mutable sizeHint = NoobishSizeHint.Content
 
-        let mutable minWidth, minHeight = 0.0f, 0.0f
+
+
         let mutable isBlock = false
         let mutable alignment = NoobishAlignment.Left
         let mutable onClick = fun () -> ()
@@ -371,6 +372,10 @@ module Logic =
 
         let mutable rowspan = rowspan
         let mutable colspan = colspan
+
+        let mutable minWidth = 0.0f
+        let mutable minHeight = 0.0f
+
 
         for a in attributes do
             match a with
@@ -446,6 +451,9 @@ module Logic =
             | ColSpan (cs) -> colspan <- cs
             | RowSpan (rs) -> rowspan <- rs
 
+        let maxWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
+        let maxHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
+
         let mutable startPosX = startX
         let mutable startPosY = startY
         let mutable textLines = ""
@@ -456,17 +464,13 @@ module Logic =
             let (contentWidth, contentHeight) = measureText textFont textLines
 
             printfn "contentSize: %f %f %f %f" minWidth (float32 contentWidth) minHeight (float32 contentHeight)
-            minWidth <- max minWidth ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
-            minHeight <- max minHeight ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
+            minWidth <- ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
+            minHeight <- ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
 
 
         if not (String.IsNullOrEmpty texture) then
-
-            let contentWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
-            let contentHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
-
-            minWidth <- max minWidth contentWidth
-            minHeight <- max minHeight contentHeight
+            minWidth <- maxWidth
+            minHeight <- maxHeight
 
         let width, height =
             match sizeHint with
@@ -475,19 +479,19 @@ module Logic =
             | NoobishSizeHint.Fill (f) ->
                 match f with
                 | NoobishFill.Horizontal ->
-                    let width = if colspan > 0 then parentWidth * float32 colspan else parentWidth
+                    let width = maxWidth
                     let height = minHeight
                     width, height
                 | NoobishFill.Vertical ->
                     let width = minWidth
-                    let height = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
+                    let height = maxHeight
                     width, height
                 | NoobishFill.Both ->
-                    let width = if colspan > 0 then parentWidth * float32 colspan else parentWidth
-                    let height = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
+                    let width = maxWidth
+                    let height = maxHeight
                     width, height
 
-        printfn "contentSize 2: %f %f %f %f" minWidth width minHeight height
+        printfn "contentSize 2: %s %f %f %f %f" themeId minWidth width minHeight height
         match alignment with
         | NoobishAlignment.Center ->
             startPosX <- startPosX + parentWidth / 2.0f - width / 2.0f
@@ -591,16 +595,18 @@ module Logic =
                 let childComponent = layoutComponent measureText theme settings childStartX childStartY 0 0 childWidth childHeight child
                 newChildren.Add(childComponent)
 
-
                 let childEndX = offsetX + childComponent.OuterWidth
                 if childComponent.IsBlock || (childEndX + parentComponent.PaddingLeft + parentComponent.PaddingRight) >= parentBounds.Width then
-                    offsetY <- offsetY + childComponent.OuterHeight
                     offsetX <- 0.0f
-
+                    offsetY <- offsetY + childComponent.OuterHeight
                 else
                     offsetX <- childEndX
 
+            let childHeight () = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
+
+            printfn "Container size %s %f childHeight %f" parentComponent.ThemeId parentComponent.OuterHeight offsetY
             {parentComponent with
+                OuterHeight = if parentComponent.OuterHeight <= Single.Epsilon then childHeight() else parentComponent.OuterHeight
                 OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
                 OverflowHeight = if parentComponent.ScrollVertical then offsetY else parentComponent.PaddedHeight
                 Children = newChildren.ToArray()}
