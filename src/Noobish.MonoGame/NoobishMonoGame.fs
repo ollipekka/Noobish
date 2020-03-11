@@ -179,19 +179,18 @@ module NoobishMonoGame =
 
             let pixel = content.Load<Texture2D> settings.Pixel
 
-            let scrollBarWidth = 2.0f
+            let scrollBarWidth = c.ScrollBarWidth
             let bounds = c.RectangleWithMargin
-
-            let right = createRectangle(bounds.X + bounds.Width - c.BorderSize - scrollBarWidth, bounds.Y, scrollBarWidth, bounds.Height)
-
-            let color = Color.Multiply(Color.DarkRed, progress)
+            let x = bounds.X + bounds.Width - c.BorderSize - scrollBarWidth
+            let right = createRectangle(x,  bounds.Y, scrollBarWidth, bounds.Height)
+            let color = Color.Multiply(c.ScrollBarColor |> toColor, progress)
             spriteBatch.Draw(pixel, right, Nullable(), color)
 
             let pinPosition =  - ( cs.ScrollY / c.OverflowHeight) * bounds.Height
             let pinHeight = ( c.Height / c.OverflowHeight) * bounds.Height
-            let color = Color.Multiply(Color.Red, progress)
+            let color = Color.Multiply(c.ScrollPinColor |> toColor, progress)
 
-            let right = createRectangle(bounds.X + bounds.Width - c.BorderSize - scrollBarWidth, bounds.Y + pinPosition, scrollBarWidth, pinHeight)
+            let right = createRectangle(x, bounds.Y + pinPosition, scrollBarWidth, pinHeight)
             spriteBatch.Draw(pixel, right, Nullable(), color)
 
 

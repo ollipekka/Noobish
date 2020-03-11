@@ -14,14 +14,6 @@ module Components =
     }
 
     [<RequireQualifiedAccess>]
-    type NoobishAlignment =
-    | Top
-    | Bottom
-    | Left
-    | Right
-    | Center
-
-    [<RequireQualifiedAccess>]
     type NoobishFill =
     | Horizontal | Vertical | Both
 
@@ -52,12 +44,12 @@ module Components =
     | MarginTop of int
     | MarginBottom of int
 
-    | Alignment of NoobishAlignment
     | Text of string
     | TextFont of string
     | TextAlign of NoobishTextAlign
     | TextColor of int
     | TextWrap
+
     | SizeHint of NoobishSizeHint
     | OnClick of (unit -> unit)
     | Toggled of bool
@@ -73,6 +65,9 @@ module Components =
     | TextureColorDisabled of int
     | TextureSize of NoobishTextureSize
     | Scroll of NoobishScroll
+    | ScrollBarColor of int
+    | ScrollPinColor of int
+    | ScrollBarWidth of int
     | Layout of NoobishLayout
     | RowSpan of int
     | ColSpan of int
@@ -106,11 +101,6 @@ module Components =
     let marginTop tm = MarginTop tm
     let marginBottom bm = MarginBottom bm
     let margin value = Margin(value, value, value, value)
-    let top = Alignment(NoobishAlignment.Top)
-    let bottom = Alignment(NoobishAlignment.Bottom)
-    let center = Alignment(NoobishAlignment.Center)
-    let left = Alignment(NoobishAlignment.Left)
-    let right = Alignment(NoobishAlignment.Right)
     let block = Block
     let onClick action = OnClick(action)
     let toggled value = Toggled (value)
@@ -143,12 +133,22 @@ module Components =
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
     let scroll children attributes = { ThemeId = "Scroll"; Children = children; Attributes = fill :: attributes}
+    let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
+
     let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = block :: fill :: attributes}
     let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill:: attributes}
     let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
     let div children attributes = { ThemeId = "Division"; Children = children; Attributes = fill :: attributes}
-    let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
+    let window children attributes =
+        grid 12 8
+            [
+                space [colspan 12; rowspan 1]
+                space [colspan 3; rowspan 7]
+                panel children ([colspan 6; rowspan 6;] @ attributes)
+            ]
+            [
 
+            ]
 
 
 [<RequireQualifiedAccess>]
@@ -217,6 +217,9 @@ type LayoutComponent = {
     BorderColor: int
     BorderColorDisabled: int
 
+    ScrollBarColor: int
+    ScrollPinColor: int
+    ScrollBarWidth: float32
     ScrollHorizontal: bool
     ScrollVertical: bool
     OverflowWidth: float32
@@ -238,10 +241,10 @@ type LayoutComponent = {
 
     member l.RectangleWithPadding =
         {
-            X = l.StartX + l.PaddingLeft + l.MarginLeft
-            Y = l.StartY + l.PaddingTop + l.MarginTop
-            Width = l.PaddedWidth
-            Height = l.PaddedHeight
+            X = l.StartX + l.PaddingLeft + l.MarginLeft + l.BorderSize
+            Y = l.StartY + l.PaddingTop + l.MarginTop + l.BorderSize
+            Width = l.PaddedWidth - l.BorderSize * 2.0f
+            Height = l.PaddedHeight - l.BorderSize * 2.0f
         }
 
     member l.OuterRectangle with get() =
@@ -327,9 +330,9 @@ module Logic =
 
     let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
 
-        let scale (v: float32) = v * settings.Scale
+        let scale (v: int) = float32 v * settings.Scale
         let scaleTuple (left, right, top, bottom) =
-            (scale (float32 left), scale (float32 right), scale (float32 top), scale (float32 bottom))
+            (scale left, scale right, scale top, scale bottom)
 
         let theme = if theme.ComponentThemes.ContainsKey themeId then theme.ComponentThemes.[themeId] else theme.ComponentThemes.["Empty"]
         let mutable name = ""
@@ -354,9 +357,8 @@ module Logic =
 
 
         let mutable isBlock = false
-        let mutable alignment = NoobishAlignment.Left
         let mutable onClick = fun () -> ()
-        let mutable borderSize = scale (float32 theme.BorderSize)
+        let mutable borderSize = scale theme.BorderSize
         let mutable borderColor = theme.BorderColor
         let mutable borderColorDisabled = theme.BorderColorDisabled
 
@@ -367,6 +369,9 @@ module Logic =
 
         let mutable scrollHorizontal = false
         let mutable scrollVertical = false
+        let mutable scrollBarColor = theme.ScrollBarColor
+        let mutable scrollPinColor = theme.ScrollPinColor
+        let mutable scrollBarWidth = scale theme.ScrollBarWidth
 
         let mutable layout = NoobishLayout.Default
 
@@ -382,36 +387,34 @@ module Logic =
             | Name v ->
                 name <- v
             | Padding (left, right, top, bottom) ->
-                paddingLeft <- scale (float32 left)
-                paddingRight <- scale (float32 right)
-                paddingTop <- scale (float32 top)
-                paddingBottom <- scale (float32 bottom)
+                paddingLeft <- scale left
+                paddingRight <- scale right
+                paddingTop <- scale top
+                paddingBottom <- scale bottom
             | PaddingLeft left ->
-                paddingLeft <- scale (float32 left)
+                paddingLeft <- scale left
             | PaddingRight right ->
-                paddingRight <- scale (float32 right)
+                paddingRight <- scale right
             | PaddingTop top ->
-                paddingTop <- scale (float32 top)
+                paddingTop <- scale top
             | PaddingBottom bottom ->
-                paddingBottom <- scale (float32 bottom)
+                paddingBottom <- float32 bottom
             | Margin (left, right, top, bottom) ->
-                marginLeft <- scale (float32 left)
-                marginRight <- scale (float32 right)
-                marginTop <- scale (float32 top)
-                marginBottom <- scale (float32 bottom)
+                marginLeft <- float32 left
+                marginRight <- float32 right
+                marginTop <- float32 top
+                marginBottom <- float32 bottom
             | MarginLeft left ->
-                marginLeft <- scale (float32 left)
+                marginLeft <- float32 left
             | MarginRight right ->
-                marginLeft <- scale (float32 right)
+                marginLeft <- float32 right
             | MarginTop top ->
-                marginTop <- scale (float32 top)
+                marginTop <- float32 top
             | MarginBottom bottom ->
-                marginBottom <- scale (float32 bottom)
+                marginBottom <- scale bottom
             | MinSize (width, height) ->
-                minWidth <- scale (float32 width)
-                minHeight <- scale (float32 height)
-            | Alignment(value) ->
-                alignment <- value
+                minWidth <- scale width
+                minHeight <- scale height
             // Text
             | Text(value) -> text <- value
             | TextFont(value) -> textFont <- if value <> "" then sprintf "%s%s" settings.FontPrefix value else ""
@@ -419,7 +422,7 @@ module Logic =
             | TextColor (c) -> textColor <- c
             | TextWrap -> textWrap <- true
             // Border
-            | BorderSize(v) -> borderSize <- scale (float32 v)
+            | BorderSize(v) -> borderSize <- scale v
             | BorderColor(c) -> borderColor <-c
             | OnClick(v) -> onClick <- v
             | Toggled(value) ->
@@ -446,6 +449,9 @@ module Logic =
                 | NoobishScroll.Both ->
                     scrollHorizontal <- true
                     scrollVertical <- true
+            | ScrollBarColor c -> scrollBarColor <- c
+            | ScrollPinColor c -> scrollPinColor <- c
+            | ScrollBarWidth w -> scrollBarWidth <- scale w
             | Layout (s) ->
                 layout <- s
             | ColSpan (cs) -> colspan <- cs
@@ -454,8 +460,6 @@ module Logic =
         let maxWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
         let maxHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
 
-        let mutable startPosX = startX
-        let mutable startPosY = startY
         let mutable textLines = ""
         if not (String.IsNullOrWhiteSpace text) then
             let paddedWidth = parentWidth - marginLeft - marginRight - paddingLeft - paddingRight
@@ -492,21 +496,8 @@ module Logic =
                     width, height
 
         printfn "contentSize 2: %s %f %f %f %f" themeId minWidth width minHeight height
-        match alignment with
-        | NoobishAlignment.Center ->
-            startPosX <- startPosX + parentWidth / 2.0f - width / 2.0f
-            startPosY <- startPosY + parentHeight / 2.0f - height / 2.0f
-        | NoobishAlignment.Top -> ()
-        | NoobishAlignment.Bottom ->
-            startPosY <- startPosY + parentHeight -  height - marginLeft - marginRight
-        | NoobishAlignment.Left -> ()
-        | NoobishAlignment.Right ->
-            let margins = marginRight - marginLeft
-            startPosX <- startPosX + parentWidth -  width - margins
 
-
-
-        let cid = sprintf "%s%s%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startPosX startPosY width height colspan rowspan
+        let cid = sprintf "%s%s%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
 
         printfn "%s %f %f" cid width height
         {
@@ -531,8 +522,8 @@ module Logic =
             BorderColor = borderColor
             BorderColorDisabled = borderColorDisabled
 
-            StartX = startPosX
-            StartY = startPosY
+            StartX = startX
+            StartY = startY
             OuterWidth = width
             OuterHeight = height
             IsBlock = isBlock
@@ -559,6 +550,9 @@ module Logic =
 
             ScrollHorizontal = scrollHorizontal
             ScrollVertical = scrollVertical
+            ScrollBarColor = scrollBarColor
+            ScrollPinColor = scrollPinColor
+            ScrollBarWidth = scrollBarWidth
             OverflowWidth = width - marginLeft - marginRight - paddingLeft - paddingRight
             OverflowHeight = height - marginTop - marginBottom - marginLeft - marginRight
 
@@ -583,6 +577,8 @@ module Logic =
 
         let newChildren = ResizeArray<LayoutComponent>()
 
+        let childHeight () = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
+
         let parentBounds = parentComponent.RectangleWithPadding
 
         match parentComponent.Layout with
@@ -602,13 +598,12 @@ module Logic =
                 else
                     offsetX <- childEndX
 
-            let childHeight () = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
 
             printfn "Container size %s %f childHeight %f" parentComponent.ThemeId parentComponent.OuterHeight offsetY
             {parentComponent with
                 OuterHeight = if parentComponent.OuterHeight <= Single.Epsilon then childHeight() else parentComponent.OuterHeight
                 OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
-                OverflowHeight = if parentComponent.ScrollVertical then offsetY else parentComponent.PaddedHeight
+                OverflowHeight = if parentComponent.ScrollVertical then childHeight() else parentComponent.PaddedHeight
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
             let colWidth = (float32 parentBounds.Width / float32 cols)
@@ -646,6 +641,7 @@ module Logic =
 
             {parentComponent with
                 Children = newChildren.ToArray()
+                OuterHeight = if parentComponent.OuterHeight <= Single.Epsilon then childHeight() else parentComponent.OuterHeight
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
 

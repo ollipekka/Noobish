@@ -25,6 +25,7 @@ type ComponentTheme = {
 
     ScrollBarColor: int
     ScrollPinColor: int
+    ScrollBarWidth: int
 }
 
 type Theme = {
@@ -58,6 +59,7 @@ module Theme =
 
             ScrollBarColor = 0x00000000
             ScrollPinColor = 0x00000000
+            ScrollBarWidth = 2
         }
 
     let createDefaultTheme defaultFont: Theme=
@@ -99,6 +101,7 @@ module Theme =
 
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
+                    ScrollBarWidth = 2
                 }
                 "Paragraph", {
                     TextFont = defaultFont
@@ -124,6 +127,7 @@ module Theme =
 
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
+                    ScrollBarWidth = 2
                 }
                 "Header", {
                     TextFont = defaultFont
@@ -149,6 +153,7 @@ module Theme =
 
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
+                    ScrollBarWidth = 2
                 }
                 "Button", {
                     TextFont = defaultFont
@@ -174,6 +179,7 @@ module Theme =
 
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
+                    ScrollBarWidth = 2
                 }
                 "Panel", {
                     TextFont = defaultFont
@@ -199,6 +205,7 @@ module Theme =
 
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
+                    ScrollBarWidth = 2
                 }
                 "Division", {
                     TextFont = defaultFont
@@ -224,6 +231,7 @@ module Theme =
 
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
+                    ScrollBarWidth = 2
                 }
                 "HorizontalRule", {
                     TextFont = defaultFont
@@ -249,6 +257,7 @@ module Theme =
 
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
+                    ScrollBarWidth = 2
                 }
                 "Image", {
                     TextFont = defaultFont
@@ -274,6 +283,7 @@ module Theme =
 
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
+                    ScrollBarWidth = 2
                 }
                 "Scroll", {
                     TextFont = defaultFont
@@ -297,8 +307,9 @@ module Theme =
                     Padding = (2, 2, 2, 2)
                     Margin =  (0, 0, 0, 0)
 
-                    ScrollBarColor = backgroundColor
-                    ScrollPinColor = backgroundColorLight
+                    ScrollBarColor = 0x4d4139aa
+                    ScrollPinColor = 0xdf7126aa
+                    ScrollBarWidth = 2
                 }
                 "Empty", empty defaultFont
             ]
