@@ -183,9 +183,6 @@ type DemoGame () as game =
     let mutable previousTouchState = Unchecked.defaultof<TouchCollection>
     let mutable touchState = Unchecked.defaultof<TouchCollection>
 
-    let mutable uiRenderTarget1 = Unchecked.defaultof<RenderTarget2D>
-    let mutable uiRenderTarget2 = Unchecked.defaultof<RenderTarget2D>
-
     override this.Initialize() =
 
         let measureText (font: string) (text: string) =
@@ -254,28 +251,6 @@ type DemoGame () as game =
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
 
-        uiRenderTarget1 <-
-            new RenderTarget2D(
-                this.GraphicsDevice,
-                this.GraphicsDevice.Viewport.Width,
-                this.GraphicsDevice.Viewport.Height,
-                false, SurfaceFormat.Color,
-                DepthFormat.None,
-                0,
-                RenderTargetUsage.PreserveContents)
-
-        uiRenderTarget2 <-
-            new RenderTarget2D(
-                this.GraphicsDevice,
-                this.GraphicsDevice.Viewport.Width,
-                this.GraphicsDevice.Viewport.Height,
-                false, SurfaceFormat.Color,
-                DepthFormat.None,
-                0,
-                RenderTargetUsage.DiscardContents)
-
-
-
 
         Program.mkProgram init update view
             |> Program.withNoobishRenderer nui
@@ -286,11 +261,7 @@ type DemoGame () as game =
 
         ()
 
-    override _this.UnloadContent() =
-        uiRenderTarget1.Dispose()
-        uiRenderTarget1 <- null
-        uiRenderTarget2.Dispose()
-        uiRenderTarget2 <- null
+    override _this.UnloadContent() = ()
 
     override this.Update gameTime =
         base.Update(gameTime)
@@ -314,7 +285,7 @@ type DemoGame () as game =
     override this.Draw (gameTime) =
         base.Draw(gameTime)
 
-        NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch uiRenderTarget1 uiRenderTarget2 nui gameTime.TotalGameTime
+        NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch nui gameTime.TotalGameTime
 
 
 

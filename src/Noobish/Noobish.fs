@@ -462,7 +462,7 @@ module Logic =
 
         let mutable textLines = ""
         if not (String.IsNullOrWhiteSpace text) then
-            let paddedWidth = parentWidth - marginLeft - marginRight - paddingLeft - paddingRight
+            let paddedWidth = maxWidth - marginLeft - marginRight - paddingLeft - paddingRight
             textLines <- if textWrap then splitLines (measureText textFont) paddedWidth text else text
 
             let (contentWidth, contentHeight) = measureText textFont textLines

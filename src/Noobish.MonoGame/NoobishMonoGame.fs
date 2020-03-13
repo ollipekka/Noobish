@@ -237,8 +237,6 @@ module NoobishMonoGame =
         (settings: NoobishSettings)
         (graphics: GraphicsDevice)
         (spriteBatch: SpriteBatch)
-        (mainRenderTarget: RenderTarget2D)
-        (secondaryRenderTarget: RenderTarget2D)
         (debug: bool)
         (time: TimeSpan)
         (c: LayoutComponent)
@@ -246,6 +244,8 @@ module NoobishMonoGame =
         (parentScrollY: float32)
         (parentRectangle: Rectangle)  =
 
+        let stopwatch = Diagnostics.Stopwatch()
+        stopwatch.Start()
         let cs = state.[c.Id]
 
         let totalScrollX = cs.ScrollX + parentScrollX
@@ -256,11 +256,14 @@ module NoobishMonoGame =
         let startX = bounds.X + totalScrollX
         let startY = bounds.Y + totalScrollY
 
+        let oldScissorRect = graphics.ScissorRectangle
 
-
-        graphics.SetRenderTarget(secondaryRenderTarget)
-        graphics.Clear (Color.TransparentBlack)
-        spriteBatch.Begin()
+        //graphics.SetRenderTarget(secondaryRenderTarget)
+        //graphics.Clear (Color.TransparentBlack)
+        let rasterizerState = new RasterizerState()
+        rasterizerState.ScissorTestEnable <- true
+        graphics.ScissorRectangle <- parentRectangle
+        spriteBatch.Begin(rasterizerState = rasterizerState)
 
         drawBackground state content settings spriteBatch c time totalScrollX totalScrollY
         drawBorders content settings spriteBatch c totalScrollX totalScrollY
@@ -295,10 +298,10 @@ module NoobishMonoGame =
 
         spriteBatch.End()
 
-        graphics.SetRenderTarget mainRenderTarget
-        spriteBatch.Begin()
-        spriteBatch.Draw(secondaryRenderTarget, parentRectangle, Nullable(parentRectangle), Color.White)
-        spriteBatch.End()
+        //graphics.SetRenderTarget mainRenderTarget
+        //spriteBatch.Begin()
+        //spriteBatch.Draw(secondaryRenderTarget, parentRectangle, Nullable(parentRectangle), Color.White)
+        //spriteBatch.End()
 
         let innerRectangle =
             createRectangle (
@@ -308,30 +311,25 @@ module NoobishMonoGame =
                 c.PaddedHeight )
 
         c.Children |> Array.iter(fun c ->
-            drawComponent state content settings graphics spriteBatch mainRenderTarget secondaryRenderTarget debug time c totalScrollX totalScrollY innerRectangle
+            drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY innerRectangle
         )
 
-    let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (mainRenderTarget: RenderTarget2D) (secondaryRenderTarget: RenderTarget2D) (ui: NoobishUI)  (time: TimeSpan) =
+        graphics.ScissorRectangle <- oldScissorRect
+        stopwatch.Stop()
+        printfn "Draw component of %s took %i" c.ThemeId stopwatch.ElapsedMilliseconds
 
-        graphics.SetRenderTarget(mainRenderTarget)
-        graphics.BlendState <- BlendState.AlphaBlend
-        graphics.Clear(Color.TransparentBlack)
-
-        graphics.SetRenderTarget(secondaryRenderTarget)
-        graphics.BlendState <- BlendState.AlphaBlend
-        graphics.Clear(Color.TransparentBlack)
+    let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (ui: NoobishUI)  (time: TimeSpan) =
+        let stopwatch = System.Diagnostics.Stopwatch()
+        stopwatch.Start()
 
         ui.Tree |> Array.iter(fun c ->
-            let source = Rectangle(0, 0, mainRenderTarget.Width, mainRenderTarget.Height)
-            drawComponent ui.State content ui.Settings graphics spriteBatch mainRenderTarget secondaryRenderTarget ui.Debug time c 0.0f 0.0f source
+            let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
+            drawComponent ui.State content ui.Settings graphics spriteBatch ui.Debug time c 0.0f 0.0f source
         )
 
-        graphics.SetRenderTarget(null)
-        graphics.BlendState <- BlendState.AlphaBlend
-        spriteBatch.Begin(blendState = BlendState.AlphaBlend)
-        let dest = Rectangle(0, 0, mainRenderTarget.Width, mainRenderTarget.Height)
-        spriteBatch.Draw(mainRenderTarget, dest, Nullable(), Color.White)
-        spriteBatch.End()
+        stopwatch.Stop()
+        printfn "Noobish render took %i" stopwatch.ElapsedMilliseconds
+
 
 
     let updateDesktop (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
