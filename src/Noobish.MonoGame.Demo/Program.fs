@@ -22,11 +22,13 @@ type DemoMessage =
     | ShowButtons
     | ShowText
     | ChangePadding of int
+    | ToggleDebug
 
 type ViewState = | Containers | Buttons | Text
 
 type DemoModel =
     {
+        UI: NoobishUI
         State: ViewState
         Padding: int
     }
@@ -206,7 +208,7 @@ type DemoGame () as game =
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
-            { State = Buttons; Padding = 5}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; Padding = 5}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -218,6 +220,9 @@ type DemoGame () as game =
                 {model with State = Text}, Cmd.none
             | ChangePadding padding ->
                 {model with Padding = padding}, Cmd.none
+            | ToggleDebug ->
+                model.UI.Debug <- (not model.UI.Debug)
+                model, Cmd.none
 
         let view (model: DemoModel) dispatch =
 
@@ -238,7 +243,23 @@ type DemoGame () as game =
                 grid 12 8
                     [
                         panel [label [text "Noobish"; textFont "AnonymousProBold22"]] [colspan 3; rowspan 1]
-                        panel [label [text title; textFont "AnonymousProBold22"]] [colspan 9; rowspan 1]
+                        panelWithGrid 12 1
+                            [
+                                label [text title; textFont "AnonymousProBold22"; fill; colspan 10];
+                                button
+                                    [
+                                        text "Debug";
+                                        toggled model.UI.Debug;
+                                        textFont "AnonymousProBold22";
+                                        fill;
+                                        onClick (fun () -> dispatch ToggleDebug)
+                                        colspan 2
+                                    ]
+                            ]
+                            [
+                                colspan 9;
+                                rowspan 1
+                            ]
                         panel [scroll scrollItems []] [colspan 3; rowspan 7]
                         panel content [colspan 9; rowspan 7]
                     ]
@@ -284,7 +305,7 @@ type DemoGame () as game =
 
     override this.Draw (gameTime) =
         base.Draw(gameTime)
-
+        this.GraphicsDevice.Clear(Color.Black)
         NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch nui gameTime.TotalGameTime
 
 

@@ -15,17 +15,22 @@ open Microsoft.Xna.Framework.Input.Touch
 
 open Microsoft.Xna.Framework.Content
 
+
+
 type NoobishUI = {
-    Debug: bool
     MeasureText: string -> string -> int*int
     Width: int
     Height: int
     Theme: Theme
     Settings: NoobishSettings
+    State: Dictionary<string, LayoutComponentState>
 
+    mutable Debug: bool
+    mutable FPS: int
+    mutable FPSCounter: int
+    mutable FPSTime: TimeSpan
     mutable Tree: LayoutComponent[]
 
-    State: Dictionary<string, LayoutComponentState>
 }
 
 [<RequireQualifiedAccess>]
@@ -43,10 +48,14 @@ module NoobishMonoGame =
             MeasureText = measureText
             Width = width
             Height = height
-            Tree = [||]
             Theme = Theme.createDefaultTheme settings.DefaultFont
-            State = Dictionary<string, LayoutComponentState>()
             Settings = settings
+            State = Dictionary<string, LayoutComponentState>()
+
+            Tree = [||]
+            FPS = 0
+            FPSCounter = 0
+            FPSTime = TimeSpan.Zero
         }
 
     let overrideMeasureText measureText ui = {
@@ -244,8 +253,6 @@ module NoobishMonoGame =
         (parentScrollY: float32)
         (parentRectangle: Rectangle)  =
 
-        let stopwatch = Diagnostics.Stopwatch()
-        stopwatch.Start()
         let cs = state.[c.Id]
 
         let totalScrollX = cs.ScrollX + parentScrollX
@@ -298,11 +305,6 @@ module NoobishMonoGame =
 
         spriteBatch.End()
 
-        //graphics.SetRenderTarget mainRenderTarget
-        //spriteBatch.Begin()
-        //spriteBatch.Draw(secondaryRenderTarget, parentRectangle, Nullable(parentRectangle), Color.White)
-        //spriteBatch.End()
-
         let innerRectangle =
             createRectangle (
                 float32 outerRectangle.X + c.PaddingLeft,
@@ -315,21 +317,27 @@ module NoobishMonoGame =
         )
 
         graphics.ScissorRectangle <- oldScissorRect
-        stopwatch.Stop()
-        printfn "Draw component of %s took %i" c.ThemeId stopwatch.ElapsedMilliseconds
 
+    let private fpsTimer = TimeSpan.FromSeconds(0.2)
     let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (ui: NoobishUI)  (time: TimeSpan) =
-        let stopwatch = System.Diagnostics.Stopwatch()
-        stopwatch.Start()
 
         ui.Tree |> Array.iter(fun c ->
             let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
             drawComponent ui.State content ui.Settings graphics spriteBatch ui.Debug time c 0.0f 0.0f source
         )
 
-        stopwatch.Stop()
-        printfn "Noobish render took %i" stopwatch.ElapsedMilliseconds
+        if ui.Debug then
+            ui.FPSCounter <- ui.FPSCounter + 1
 
+            let font = content.Load<SpriteFont> (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.DefaultFont)
+            spriteBatch.Begin()
+            spriteBatch.DrawString (font, (sprintf "%i" (ui.FPS * 5)), Vector2(5.0f, 5.0f), Color.White)
+            spriteBatch.End()
+
+            if time - ui.FPSTime >= fpsTimer then
+                ui.FPS <- ui.FPSCounter
+                ui.FPSCounter <- 0
+                ui.FPSTime <- time
 
 
     let updateDesktop (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =

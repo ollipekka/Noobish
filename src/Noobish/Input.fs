@@ -13,6 +13,7 @@ let rec press
     (positionY: float32)
     (scrollX: float32)
     (scrollY: float32) =
+
     for c in components do
         let cs = state.[c.Id]
         if c.Enabled && cs.State <> ComponentState.Toggled && c.Contains positionX positionY scrollX scrollY  then
