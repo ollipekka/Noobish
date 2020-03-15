@@ -149,7 +149,16 @@ module Components =
             [
 
             ]
+    let windowWithGrid cols rows children attributes =
+        grid 12 8
+            [
+                space [colspan 12; rowspan 1]
+                space [colspan 3; rowspan 7]
+                panelWithGrid cols rows children ([colspan 6; rowspan 6;] @ attributes)
+            ]
+            [
 
+            ]
 
 [<RequireQualifiedAccess>]
 type ComponentState =
