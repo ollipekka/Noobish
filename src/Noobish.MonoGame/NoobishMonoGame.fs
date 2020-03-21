@@ -263,21 +263,6 @@ module NoobishMonoGame =
         let startX = bounds.X + totalScrollX
         let startY = bounds.Y + totalScrollY
 
-        let oldScissorRect = graphics.ScissorRectangle
-
-        //graphics.SetRenderTarget(secondaryRenderTarget)
-        //graphics.Clear (Color.TransparentBlack)
-        let rasterizerState = new RasterizerState()
-        rasterizerState.ScissorTestEnable <- true
-        graphics.ScissorRectangle <- parentRectangle
-        spriteBatch.Begin(rasterizerState = rasterizerState)
-
-        drawBackground state content settings spriteBatch c time totalScrollX totalScrollY
-        drawBorders content settings spriteBatch c totalScrollX totalScrollY
-        drawImage content spriteBatch c totalScrollX totalScrollY
-        drawText content spriteBatch c totalScrollX totalScrollY
-        drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
-
         let sourceStartX = max startX (float32 parentRectangle.X)
         let sourceStartY = max startY (float32 parentRectangle.Y)
         let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
@@ -287,8 +272,24 @@ module NoobishMonoGame =
             createRectangle(
                 sourceStartX,
                 sourceStartY,
-                sourceEndX,
-                sourceEndY )
+                min (float32 parentRectangle.Width) sourceEndX,
+                min (float32 parentRectangle.Height) sourceEndY )
+
+        if c.Name <> "" then
+            printfn "%s %A" c.Name outerRectangle
+        let oldScissorRect = graphics.ScissorRectangle
+
+        let rasterizerState = new RasterizerState()
+        rasterizerState.ScissorTestEnable <- true
+        graphics.ScissorRectangle <- outerRectangle
+        spriteBatch.Begin(rasterizerState = rasterizerState)
+
+        drawBackground state content settings spriteBatch c time totalScrollX totalScrollY
+        drawBorders content settings spriteBatch c totalScrollX totalScrollY
+        drawImage content spriteBatch c totalScrollX totalScrollY
+        drawText content spriteBatch c totalScrollX totalScrollY
+        drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
+
 
         if debug then
 
@@ -309,8 +310,8 @@ module NoobishMonoGame =
             createRectangle (
                 float32 outerRectangle.X + c.PaddingLeft,
                 float32 outerRectangle.Y + c.PaddingTop,
-                c.PaddedWidth,
-                c.PaddedHeight )
+                c.PaddingLeft + c.PaddedWidth,
+                c.PaddingTop + c.PaddedHeight)
 
         c.Children |> Array.iter(fun c ->
             drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY innerRectangle
@@ -319,6 +320,25 @@ module NoobishMonoGame =
         graphics.ScissorRectangle <- oldScissorRect
 
     let private fpsTimer = TimeSpan.FromSeconds(0.2)
+
+    let private drawFps (content: ContentManager) (spriteBatch: SpriteBatch) (ui: NoobishUI) (time:TimeSpan) =
+
+        let pixel = content.Load<Texture2D> ui.Settings.Pixel
+        ui.FPSCounter <- ui.FPSCounter + 1
+
+        let font = content.Load<SpriteFont> (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.DefaultFont)
+        spriteBatch.Begin()
+
+        let background = createRectangle(5.0f, 5.0f, 30.0f, float32 font.LineSpacing + 4.0f)
+        spriteBatch.Draw(pixel, background, Nullable(), Color.Multiply(Color.DarkRed, 0.5f))
+        spriteBatch.DrawString (font, (sprintf "%i" (ui.FPS * 5)), Vector2(7.0f, 7.0f), Color.White)
+        spriteBatch.End()
+
+        if time - ui.FPSTime >= fpsTimer then
+            ui.FPS <- ui.FPSCounter
+            ui.FPSCounter <- 0
+            ui.FPSTime <- time
+
     let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (ui: NoobishUI)  (time: TimeSpan) =
 
         ui.Tree |> Array.iter(fun c ->
@@ -327,18 +347,7 @@ module NoobishMonoGame =
         )
 
         if ui.Debug then
-            ui.FPSCounter <- ui.FPSCounter + 1
-
-            let font = content.Load<SpriteFont> (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.DefaultFont)
-            spriteBatch.Begin()
-            spriteBatch.DrawString (font, (sprintf "%i" (ui.FPS * 5)), Vector2(5.0f, 5.0f), Color.White)
-            spriteBatch.End()
-
-            if time - ui.FPSTime >= fpsTimer then
-                ui.FPS <- ui.FPSCounter
-                ui.FPSCounter <- 0
-                ui.FPSTime <- time
-
+            drawFps content spriteBatch ui time
 
     let updateDesktop (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
         let mousePosition = curState.Position
@@ -375,7 +384,6 @@ module NoobishMonoGame =
 
 
 module Program =
-    open MonoGame
     let rec private getComponentIds (c: LayoutComponent) =
         let childIds = c.Children |> Array.collect getComponentIds
         Array.append [|c.Id|] childIds
@@ -400,13 +408,13 @@ module Program =
 
             let sameComponents = Set.intersect newComponents oldComponents
             let removedComponents = oldComponents - sameComponents
-            let newComponents = newComponents - sameComponents
-
-            for cid in newComponents do
-                ui.State.[cid] <- Logic.createLayoutComponentState()
 
             for cid in removedComponents do
                 ui.State.Remove cid |> ignore
+
+            let newComponents = newComponents - sameComponents
+            for cid in newComponents do
+                ui.State.[cid] <- Logic.createLayoutComponentState()
 
         program
             |> Program.withSetState setState

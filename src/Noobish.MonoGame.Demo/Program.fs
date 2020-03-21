@@ -69,13 +69,25 @@ module Text =
                     [
 
                     ]
-                panel
-                    [
-                        paragraph [text loremIpsum2; textAlign TopCenter]
-                    ]
+                panelWithGrid 1 2
                     [
 
+                        paragraph [text loremIpsum2; textAlign TopCenter; rowspan 1; name "Paragraph"]
+
+                        scroll
+                            [
+                                paragraph [text "Could scroll, but won't."]
+
+                            ]
+                            [
+                                name "DebugScroll"
+                                rowspan 1
+                            ]
                     ]
+                    [
+                        name "ParentPanel"
+                    ]
+                    (*
                 panelWithGrid 2 1
                     [
                         div
@@ -102,7 +114,7 @@ module Text =
                     ]
                     [
 
-                    ]
+                    ]*)
                 ]
                 [
 

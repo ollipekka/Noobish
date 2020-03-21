@@ -294,7 +294,6 @@ module Logic =
         let mutable newText = ""
 
         let addLine () =
-            printfn "Adding %s" line
             newText <- sprintf "%s%s\n" newText (line.Trim())
             line <- ""
 
@@ -476,10 +475,18 @@ module Logic =
 
             let (contentWidth, contentHeight) = measureText textFont textLines
 
-            printfn "contentSize: %f %f %f %f" minWidth (float32 contentWidth) minHeight (float32 contentHeight)
-            minWidth <- ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
-            minHeight <- ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
+            let paddedContentWidth = ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
+            let paddedContentHeight = ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
 
+            if colspan = 0 then
+                minWidth <- paddedContentWidth
+            else
+                minWidth <- min maxWidth paddedContentWidth
+
+            if rowspan = 0 then
+                minHeight <- paddedContentHeight
+            else
+                minHeight <- min maxHeight paddedContentHeight
 
         if not (String.IsNullOrEmpty texture) then
             minWidth <- maxWidth
@@ -504,11 +511,8 @@ module Logic =
                     let height = maxHeight
                     width, height
 
-        printfn "contentSize 2: %s %f %f %f %f" themeId minWidth width minHeight height
-
         let cid = sprintf "%s%s%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
 
-        printfn "%s %f %f" cid width height
         {
             Id = cid
             Name = name
@@ -607,10 +611,14 @@ module Logic =
                 else
                     offsetX <- childEndX
 
-
-            printfn "Container size %s %f childHeight %f" parentComponent.ThemeId parentComponent.OuterHeight offsetY
+            let height =
+                if parentComponent.RowSpan = 0 then
+                    if parentComponent.OuterHeight <= Single.Epsilon then childHeight() else parentComponent.OuterHeight
+                else parentComponent.OuterHeight
+            if parentComponent.Name <> "" then
+                printfn "%s %f" parentComponent.Name height
             {parentComponent with
-                OuterHeight = if parentComponent.OuterHeight <= Single.Epsilon then childHeight() else parentComponent.OuterHeight
+                OuterHeight = height
                 OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
                 OverflowHeight = if parentComponent.ScrollVertical then childHeight() else parentComponent.PaddedHeight
                 Children = newChildren.ToArray()}
@@ -646,11 +654,18 @@ module Logic =
 
                 while notFinished() && cellUsed.[col, row] do
                     bump childComponent.ColSpan childComponent.RowSpan
-                    printfn "%s %i %i" childComponent.ThemeId col row
+
+            let height =
+                if parentComponent.RowSpan = 0 then
+                    if parentComponent.OuterHeight <= Single.Epsilon then childHeight() else parentComponent.OuterHeight
+                else parentComponent.OuterHeight
+
+            if parentComponent.Name <> "" then
+                printfn "%s %f" parentComponent.Name height
 
             {parentComponent with
                 Children = newChildren.ToArray()
-                OuterHeight = if parentComponent.OuterHeight <= Single.Epsilon then childHeight() else parentComponent.OuterHeight
+                OuterHeight = height
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
 

@@ -67,11 +67,11 @@ let rec scroll
             let cs = state.[c.Id]
 
             if not handled then
-                if c.ScrollHorizontal then
+                if c.ScrollHorizontal && c.OverflowWidth > c.Width then
                     cs.ScrollX <- cs.ScrollX + scrollX
                     cs.ScrolledTime <- time
                     handled <- true
-                if c.ScrollVertical then
+                if c.ScrollVertical && c.OverflowHeight > c.Height then
                     let scaledScroll = scaleValue scrollY
                     let nextScroll = cs.ScrollY + scaledScroll
                     let minScroll = c.PaddedHeight - c.OverflowHeight
