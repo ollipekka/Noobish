@@ -362,8 +362,6 @@ module Logic =
 
         let mutable sizeHint = NoobishSizeHint.Content
 
-
-
         let mutable isBlock = false
         let mutable onClick = fun () -> ()
         let mutable borderSize = scale theme.BorderSize
@@ -465,6 +463,9 @@ module Logic =
             | ColSpan (cs) -> colspan <- cs
             | RowSpan (rs) -> rowspan <- rs
 
+        if name <> "" then
+            printfn "wät"
+
         let maxWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
         let maxHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
 
@@ -478,15 +479,17 @@ module Logic =
             let paddedContentWidth = ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
             let paddedContentHeight = ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
 
-            if colspan = 0 then
+            // Not inside grid or maxHeight is bellow zero, because size not known.
+            if colspan = 0 || maxWidth < 0.0f then
                 minWidth <- paddedContentWidth
             else
-                minWidth <- min maxWidth paddedContentWidth
+                minWidth <- max 0.0f (min maxWidth paddedContentWidth)
 
-            if rowspan = 0 then
+            // Not inside grid or maxHeight is bellow zero, because size not known.
+            if rowspan = 0 || maxHeight < 0.0f then
                 minHeight <- paddedContentHeight
             else
-                minHeight <- min maxHeight paddedContentHeight
+                minHeight <- max 0.0f (min maxHeight paddedContentHeight)
 
         if not (String.IsNullOrEmpty texture) then
             minWidth <- maxWidth
@@ -508,10 +511,14 @@ module Logic =
                     width, height
                 | NoobishFill.Both ->
                     let width = maxWidth
-                    let height = maxHeight
+                    let height = if maxHeight < 0.0f then minHeight else maxHeight
                     width, height
 
         let cid = sprintf "%s%s%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
+
+        if height < 0.0f then
+            raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
+
 
         {
             Id = cid
@@ -572,6 +579,16 @@ module Logic =
             Children = [||]
         }
 
+    let isGrid (attributes: Attribute list) =
+        attributes
+            |> List.exists(
+                function
+                | Layout (l) ->
+                    match l with
+                    | NoobishLayout.Grid(_) -> true
+                    | _ -> false
+                | _ -> false)
+
     let rec private layoutComponent
         (measureText: string -> string -> int*int)
         (theme: Theme)
@@ -585,12 +602,13 @@ module Logic =
         (c: Component): LayoutComponent  =
 
         let parentComponent = createLayoutComponent theme measureText settings parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
+        printfn "%s%s %f / %f" parentComponent.ThemeId parentComponent.Name parentComponent.Height parentHeight
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
 
         let newChildren = ResizeArray<LayoutComponent>()
 
-        let childHeight () = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
+        let calculateChildHeight () = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
 
         let parentBounds = parentComponent.RectangleWithPadding
 
@@ -612,20 +630,17 @@ module Logic =
                     offsetX <- childEndX
 
             let height =
-                if parentComponent.RowSpan = 0 then
-                    if parentComponent.OuterHeight <= Single.Epsilon then childHeight() else parentComponent.OuterHeight
-                else parentComponent.OuterHeight
-            if parentComponent.Name <> "" then
-                printfn "%s %f" parentComponent.Name height
+                if parentComponent.OuterHeight <= Single.Epsilon then calculateChildHeight() else parentComponent.OuterHeight
+
             {parentComponent with
                 OuterHeight = height
                 OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
-                OverflowHeight = if parentComponent.ScrollVertical then childHeight() else parentComponent.PaddedHeight
+                OverflowHeight = if parentComponent.ScrollVertical then calculateChildHeight() else parentComponent.PaddedHeight
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
+
             let colWidth = (float32 parentBounds.Width / float32 cols)
             let rowHeight = (float32 parentBounds.Height / float32 rows)
-
             let mutable col = 0
             let mutable row = 0
 
@@ -645,6 +660,7 @@ module Logic =
                 let childStartY = parentBounds.Y + (float32 row) * rowHeight
                 let childWidth = colWidth
                 let childHeight = rowHeight
+
                 let childComponent = layoutComponent measureText theme settings childStartX childStartY 1 1 childWidth childHeight child
                 newChildren.Add(childComponent)
 
@@ -656,12 +672,7 @@ module Logic =
                     bump childComponent.ColSpan childComponent.RowSpan
 
             let height =
-                if parentComponent.RowSpan = 0 then
-                    if parentComponent.OuterHeight <= Single.Epsilon then childHeight() else parentComponent.OuterHeight
-                else parentComponent.OuterHeight
-
-            if parentComponent.Name <> "" then
-                printfn "%s %f" parentComponent.Name height
+                if parentComponent.OuterHeight <= Single.Epsilon then calculateChildHeight() else parentComponent.OuterHeight
 
             {parentComponent with
                 Children = newChildren.ToArray()
