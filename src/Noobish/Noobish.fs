@@ -132,7 +132,14 @@ module Components =
     let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
-    let scroll children attributes = { ThemeId = "Scroll"; Children = children; Attributes = fill :: attributes}
+
+    let private scrollDiv attributes scroll =
+        { ThemeId = "ScrollDiv"; Children = [scroll]; Attributes = [block; fill] @ attributes}
+
+    let scroll children attributes =
+        { ThemeId = "Scroll"; Children = children; Attributes = [fill; scrollVertical]}
+            |> scrollDiv attributes
+
     let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
 
     let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = block :: fill :: attributes}
