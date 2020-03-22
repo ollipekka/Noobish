@@ -90,6 +90,7 @@ module Components =
     let ninePatch t = Texture (NoobishTexture.NinePatch t)
     let textureColor c = TextureColor c
     let textureSize s = TextureSize s
+    let textureBestFitMax = TextureSize NoobishTextureSize.BestFitMax
 
     let paddingLeft lp = PaddingLeft lp
     let paddingRight rp = PaddingRight rp

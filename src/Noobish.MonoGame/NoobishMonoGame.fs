@@ -359,7 +359,7 @@ module NoobishMonoGame =
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
         if scrollWheelValue <> 0 then
 
-            let scroll = float32 scrollWheelValue / 10.0f
+            let scroll = float32 scrollWheelValue / 2.0f
 
             let absScroll = abs scroll
 

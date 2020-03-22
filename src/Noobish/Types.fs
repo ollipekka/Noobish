@@ -9,4 +9,5 @@ type NoobishTextAlign =
     | Left  | Center | Right
     | BottomLeft | BottomCenter | BottomRight
 
+[<RequireQualifiedAccess>]
 type NoobishTextureSize = Stretch | BestFitMax | BestFitMin | Original | Custom of width: int * height: int
