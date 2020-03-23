@@ -275,8 +275,6 @@ module NoobishMonoGame =
                 min (float32 parentRectangle.Width) sourceEndX,
                 min (float32 parentRectangle.Height) sourceEndY )
 
-        if c.Name <> "" then
-            printfn "%s %A" c.Name outerRectangle
         let oldScissorRect = graphics.ScissorRectangle
 
         let rasterizerState = new RasterizerState()
@@ -390,10 +388,6 @@ module Program =
 
     let withNoobishRenderer (ui: NoobishUI) (program: Program<_,_,_,_>) =
         let setState model dispatch =
-            let oldComponents =
-                ui.Tree
-                |> Array.collect getComponentIds
-                |> Set.ofArray
 
             let tree = Program.view program model dispatch
             let width = (float32 ui.Width)
@@ -401,18 +395,12 @@ module Program =
 
             ui.Tree <- Logic.layout ui.MeasureText ui.Theme ui.Settings width height tree
 
+            ui.State.Clear()
             let newComponents =
                 ui.Tree
                 |> Array.collect getComponentIds
                 |> Set.ofArray
 
-            let sameComponents = Set.intersect newComponents oldComponents
-            let removedComponents = oldComponents - sameComponents
-
-            for cid in removedComponents do
-                ui.State.Remove cid |> ignore
-
-            let newComponents = newComponents - sameComponents
             for cid in newComponents do
                 ui.State.[cid] <- Logic.createLayoutComponentState()
 

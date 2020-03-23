@@ -471,9 +471,6 @@ module Logic =
             | ColSpan (cs) -> colspan <- cs
             | RowSpan (rs) -> rowspan <- rs
 
-        if name <> "" then
-            printfn "wät"
-
         let maxWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
         let maxHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
 
@@ -610,7 +607,6 @@ module Logic =
         (c: Component): LayoutComponent  =
 
         let parentComponent = createLayoutComponent theme measureText settings parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
-        printfn "%s%s %f / %f" parentComponent.ThemeId parentComponent.Name parentComponent.Height parentHeight
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
 
