@@ -29,7 +29,8 @@ type NoobishUI = {
     mutable FPS: int
     mutable FPSCounter: int
     mutable FPSTime: TimeSpan
-    mutable Tree: LayoutComponent[]
+    // Contains layers of layout components. Bottom is 0, one above bototm is 1.
+    mutable Layers: LayoutComponent[][]
 
 }
 
@@ -52,7 +53,7 @@ module NoobishMonoGame =
             Settings = settings
             State = Dictionary<string, LayoutComponentState>()
 
-            Tree = [||]
+            Layers = [||]
             FPS = 0
             FPSCounter = 0
             FPSTime = TimeSpan.Zero
@@ -339,10 +340,11 @@ module NoobishMonoGame =
 
     let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (ui: NoobishUI)  (time: TimeSpan) =
 
-        ui.Tree |> Array.iter(fun c ->
-            let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
-            drawComponent ui.State content ui.Settings graphics spriteBatch ui.Debug time c 0.0f 0.0f source
-        )
+        for layer in ui.Layers do
+            layer |> Array.iter(fun c ->
+                let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
+                drawComponent ui.State content ui.Settings graphics spriteBatch ui.Debug time c 0.0f 0.0f source
+            )
 
         if ui.Debug then
             drawFps content spriteBatch ui time
@@ -350,9 +352,17 @@ module NoobishMonoGame =
     let updateDesktop (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
         let mousePosition = curState.Position
         if curState.LeftButton = ButtonState.Pressed then
-            Input.press ui.State ui.Tree gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+            let mutable handled = false
+            let mutable i = ui.Layers.Length - 1
+            while not handled && i >= 0 do
+                handled <- Input.press ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                i <- i - 1
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
-            Input.click ui.State ui.Tree gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+            let mutable handled = false
+            let mutable i = ui.Layers.Length - 1
+            while not handled && i >= 0 do
+                handled <- Input.click ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                i <- i - 1
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
         if scrollWheelValue <> 0 then
@@ -364,8 +374,8 @@ module NoobishMonoGame =
             let sign = sign scroll |> float32
 
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
-
-            Input.scroll ui.State ui.Tree (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
+            for layer in ui.Layers do
+                Input.scroll ui.State layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
 
 
@@ -373,11 +383,20 @@ module NoobishMonoGame =
         for touch in curState  do
             match touch.State with
             | TouchLocationState.Pressed ->
+                let mutable handled = false
+                let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
-                Input.press ui.State ui.Tree gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                while not handled && i >= 0 do
+                    handled <- Input.press ui.State ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+
+                    i <- i - 1
             | TouchLocationState.Released ->
+                let mutable handled = false
+                let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
-                Input.click ui.State ui.Tree gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                while not handled && i >= 0 do
+                    handled <- Input.click ui.State ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    i <- i - 1
             | _ -> ()
 
 
@@ -389,16 +408,16 @@ module Program =
     let withNoobishRenderer (ui: NoobishUI) (program: Program<_,_,_,_>) =
         let setState model dispatch =
 
-            let tree = Program.view program model dispatch
+            let layers: list<list<Component>> = Program.view program model dispatch
             let width = (float32 ui.Width)
             let height = (float32 ui.Height)
 
-            ui.Tree <- Logic.layout ui.MeasureText ui.Theme ui.Settings width height tree
+            ui.Layers <- layers |> List.map (Logic.layout ui.MeasureText ui.Theme ui.Settings width height) |> List.toArray
 
             ui.State.Clear()
             let newComponents =
-                ui.Tree
-                |> Array.collect getComponentIds
+                ui.Layers
+                |> Array.collect (fun l -> l |> Array.collect getComponentIds)
                 |> Set.ofArray
 
             for cid in newComponents do

@@ -367,7 +367,6 @@ module Logic =
         let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = scaleTuple theme.Padding
         let mutable marginLeft, marginRight, marginTop, marginBottom = scaleTuple theme.Margin
 
-
         let mutable sizeHint = NoobishSizeHint.Content
 
         let mutable isBlock = false
@@ -394,7 +393,6 @@ module Logic =
 
         let mutable minWidth = 0.0f
         let mutable minHeight = 0.0f
-
 
         for a in attributes do
             match a with
@@ -523,7 +521,6 @@ module Logic =
 
         if height < 0.0f then
             raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
-
 
         {
             Id = cid

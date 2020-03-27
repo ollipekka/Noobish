@@ -258,32 +258,34 @@ type DemoGame () as game =
                 | Text -> "Labels", Text.view dispatch
 
             [
-                grid 12 8
-                    [
-                        panel [label [text "Noobish"; textFont "AnonymousProBold22"]] [colspan 3; rowspan 1]
-                        panelWithGrid 12 1
-                            [
-                                label [text title; textFont "AnonymousProBold22"; fill; colspan 10];
-                                button
-                                    [
-                                        text "Debug";
-                                        toggled model.UI.Debug;
-                                        textFont "AnonymousProBold22";
-                                        fill;
-                                        onClick (fun () -> dispatch ToggleDebug)
-                                        colspan 2
-                                    ]
-                            ]
-                            [
-                                colspan 9;
-                                rowspan 1
-                            ]
-                        panel [scroll scrollItems []] [colspan 3; rowspan 7]
-                        panel content [colspan 9; rowspan 7]
-                    ]
-                    [
-                        padding 10
-                    ]
+                [
+                    grid 12 8
+                        [
+                            panel [label [text "Noobish"; textFont "AnonymousProBold22"]] [colspan 3; rowspan 1]
+                            panelWithGrid 12 1
+                                [
+                                    label [text title; textFont "AnonymousProBold22"; fill; colspan 10];
+                                    button
+                                        [
+                                            text "Debug";
+                                            toggled model.UI.Debug;
+                                            textFont "AnonymousProBold22";
+                                            fill;
+                                            onClick (fun () -> dispatch ToggleDebug)
+                                            colspan 2
+                                        ]
+                                ]
+                                [
+                                    colspan 9;
+                                    rowspan 1
+                                ]
+                            panel [scroll scrollItems []] [colspan 3; rowspan 7]
+                            panel content [colspan 9; rowspan 7]
+                        ]
+                        [
+                            padding 10
+                        ]
+                ]
             ]
 
         base.Initialize()

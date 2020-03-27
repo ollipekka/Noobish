@@ -13,16 +13,22 @@ let rec press
     (positionY: float32)
     (scrollX: float32)
     (scrollY: float32) =
+    let mutable handled = false
+    let mutable i = 0
 
-    for c in components do
+    while not handled && i < components.Length do
+        let c = components.[i]
         let cs = state.[c.Id]
         if c.Enabled && cs.State <> ComponentState.Toggled && c.Contains positionX positionY scrollX scrollY  then
             if c.Children.Length > 0 then
-                press state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
+                handled <- press state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
             else
                 let cs = state.[c.Id]
                 cs.PressedTime <- time
+                handled <- true
 
+        i <- i + 1
+    handled
 let rec click
     (state: IReadOnlyDictionary<string, LayoutComponentState>)
     (components: LayoutComponent[])
@@ -32,16 +38,23 @@ let rec click
     (scrollX: float32)
     (scrollY: float32) =
 
-    for c in components do
+    let mutable handled = false
+    let mutable i = 0
+
+    while not handled && i < components.Length do
+        let c = components.[i]
         if c.Enabled && c.Contains positionX positionY scrollX scrollY then
             let cs = state.[c.Id]
             if c.Children.Length > 0 then
-                click state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
+                handled <- click state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
             else
                 let cs = state.[c.Id]
                 cs.PressedTime <- time
                 c.OnClick()
+                handled <- true
 
+        i <- i + 1
+    handled
 
 let rec scroll
     (state: IReadOnlyDictionary<string, LayoutComponentState>)
