@@ -311,6 +311,32 @@ module Theme =
                     ScrollPinColor = 0xdf7126aa
                     ScrollBarWidth = 2
                 }
+                "Slider", {
+                    TextFont = defaultFont
+                    TextColor = 0xffffffff
+                    TextAlignment = NoobishTextAlign.Center
+                    TextColorDisabled = 0x00000000
+
+                    TextureColor = 0x00000000
+                    TextureColorDisabled = 0x00000000
+
+                    BorderSize = 0
+                    BorderColor = 0x00000000
+                    BorderColorDisabled = 0x00000000
+
+                    Color = 0x00000000
+                    ColorDisabled = 0x00000000
+
+                    PressedColor = 0x00000000
+                    HoverColor = 0x00000000
+
+                    Padding = (2, 2, 2, 2)
+                    Margin =  (0, 0, 0, 0)
+
+                    ScrollBarColor = 0x4d4139aa
+                    ScrollPinColor = 0xdf7126aa
+                    ScrollBarWidth = 2
+                }
                 "Empty", empty defaultFont
             ]
         {

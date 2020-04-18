@@ -13,6 +13,21 @@ module Components =
         GraphicsPrefix: string
     }
 
+
+    type SliderRange = {
+        Min: float32
+        Max: float32
+    }
+    type SliderConfig = {
+        Range: SliderRange
+        Step: float32
+
+    }
+
+    type ComponentConfig =
+        | SliderConfig of SliderConfig
+        | NoConfig
+
     [<RequireQualifiedAccess>]
     type NoobishFill =
     | Horizontal | Vertical | Both
@@ -50,6 +65,9 @@ module Components =
     | TextColor of int
     | TextWrap
 
+    | SliderRange of min:float32 * max:float32
+    | SliderStep of float32
+
     | SizeHint of NoobishSizeHint
     | OnClick of (unit -> unit)
     | Toggled of bool
@@ -85,6 +103,9 @@ module Components =
     let textColor c = TextColor (c)
     let textAlign v = TextAlign (v)
     let textWrap = TextWrap
+
+    let sliderRange min max = SliderRange(min, max)
+    let sliderStep v = SliderStep(v)
 
     let texture t = Texture (NoobishTexture.Basic t)
     let ninePatch t = Texture (NoobishTexture.NinePatch t)
@@ -134,6 +155,8 @@ module Components =
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
 
+    let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: (sliderStep 1.0f) :: attributes}
+
     let private scrollDiv attributes scroll =
         { ThemeId = "ScrollDiv"; Children = [scroll]; Attributes = [block; fill] @ attributes}
 
@@ -167,6 +190,7 @@ module Components =
             [
 
             ]
+open Components
 
 [<RequireQualifiedAccess>]
 type ComponentState =
@@ -241,6 +265,8 @@ type LayoutComponent = {
     ScrollVertical: bool
     OverflowWidth: float32
     OverflowHeight: float32
+
+    Slider: option<SliderConfig>
 
     OnClick: unit -> unit
 
@@ -394,6 +420,8 @@ module Logic =
         let mutable minWidth = 0.0f
         let mutable minHeight = 0.0f
 
+        let mutable slider: option<SliderConfig> = None
+
         for a in attributes do
             match a with
             | Name v ->
@@ -433,6 +461,23 @@ module Logic =
             | TextAlign (value) -> textAlign <- value
             | TextColor (c) -> textColor <- c
             | TextWrap -> textWrap <- true
+            // Slider
+            | SliderRange (min, max) ->
+                if slider.IsNone then
+                    slider <- Some { Range = {Min = 0.0f; Max = 100.0f}; Step = 1.0f }
+
+                slider <- slider
+                    |> Option.map(fun s ->
+                        {s with Range = {Min = min; Max = max}}
+                    )
+            | SliderStep (v) ->
+                if slider.IsNone then
+                    slider <- Some { Range = {Min = 0.0f; Max = 100.0f}; Step = 1.0f }
+
+                slider <- slider
+                    |> Option.map(fun s ->
+                        {s with Step = v}
+                    )
             // Border
             | BorderSize(v) -> borderSize <- scale v
             | BorderColor(c) -> borderColor <-c
@@ -471,6 +516,10 @@ module Logic =
 
         let maxWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
         let maxHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
+
+        if slider.IsSome then
+            minWidth <- maxWidth - paddingLeft - paddingRight
+            minHeight <- 12.0f + paddingTop + paddingBottom
 
         let mutable textLines = ""
         if not (String.IsNullOrWhiteSpace text) then
@@ -534,6 +583,8 @@ module Logic =
             TextColor = textColor
             TextColorDisabled = textColorDisabled
             TextWrap = textWrap
+
+            Slider = slider
 
             Texture = if texture <> "" then sprintf "%s%s" settings.GraphicsPrefix texture else ""
             TextureColor = textureColor

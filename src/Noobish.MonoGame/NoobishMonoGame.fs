@@ -203,6 +203,38 @@ module NoobishMonoGame =
             let right = createRectangle(x, bounds.Y + pinPosition, scrollBarWidth, pinHeight)
             spriteBatch.Draw(pixel, right, Nullable(), color)
 
+    let private drawSlider
+        (state: IReadOnlyDictionary<string, LayoutComponentState>)
+        (content: ContentManager)
+        (settings: NoobishSettings)
+        (spriteBatch: SpriteBatch)
+        (c: LayoutComponent)
+        (slider: SliderConfig)
+        (_time: TimeSpan)
+        _scrollX
+        _scrollY =
+
+        let cs = state.[c.Id]
+
+        let pixel = content.Load<Texture2D> settings.Pixel
+        let barHeight = 6.0f
+
+        // Bar
+        let bounds = c.RectangleWithPadding
+        let bar = createRectangle(bounds.X, bounds.Y, bounds.Width, barHeight)
+        let color = c.ScrollBarColor |> toColor
+        spriteBatch.Draw(pixel, bar, Nullable(), color)
+
+        // Pin
+        let relativePosition = 0.5f
+
+        let pinWidth = 20.0f
+        let pinHeight = 12.0f
+        let screenPosition = bounds.X + (bounds.Width * relativePosition)
+
+        let pin = createRectangle(screenPosition, bounds.Y + barHeight / 2.0f - pinHeight / 2.0f, pinWidth, pinHeight)
+        let color = c.ScrollPinColor |> toColor
+        spriteBatch.Draw(pixel, pin, Nullable(), color)
 
     let private drawImage (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
         if not (c.Texture |> String.IsNullOrWhiteSpace) then
@@ -289,6 +321,8 @@ module NoobishMonoGame =
         drawText content spriteBatch c totalScrollX totalScrollY
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
 
+        c.Slider
+            |> Option.iter( fun s -> drawSlider state content settings spriteBatch c s time totalScrollX totalScrollX )
 
         if debug then
 

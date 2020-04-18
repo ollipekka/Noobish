@@ -21,10 +21,11 @@ type DemoMessage =
     | ShowContainers
     | ShowButtons
     | ShowText
+    | ShowSliders
     | ChangePadding of int
     | ToggleDebug
 
-type ViewState = | Containers | Buttons | Text
+type ViewState = | Containers | Buttons | Text | Slider
 
 type DemoModel =
     {
@@ -170,6 +171,26 @@ module Buttons =
 
         ]
 
+
+module Slider =
+    let view model dispatch =
+
+        [
+            grid 2 2
+                [
+                panel
+                    [
+                        slider [sliderRange 0.0f 100.0f; sliderStep 1.0f; padding model.Padding; fillHorizontal]
+                    ]
+                    []
+                ]
+                [
+
+                ]
+
+        ]
+
+
 let createGraphicsDevice (game: Game) =
     let graphics = new GraphicsDeviceManager(game)
     graphics.GraphicsProfile <- GraphicsProfile.HiDef
@@ -236,6 +257,8 @@ type DemoGame () as game =
                 {model with State = Containers}, Cmd.none
             | ShowText ->
                 {model with State = Text}, Cmd.none
+            | ShowSliders ->
+                {model with State = Slider}, Cmd.none
             | ChangePadding padding ->
                 {model with Padding = padding}, Cmd.none
             | ToggleDebug ->
@@ -249,6 +272,7 @@ type DemoGame () as game =
                     button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons)]
                     button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text)]
                     button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers)]
+                    button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider)]
                 ]
 
             let title, content  =
@@ -256,6 +280,7 @@ type DemoGame () as game =
                 | Buttons -> "Buttons", Buttons.view model dispatch
                 | Containers -> "Containers", []
                 | Text -> "Labels", Text.view dispatch
+                | Slider -> "Slider", Slider.view model dispatch
 
             [
                 [
