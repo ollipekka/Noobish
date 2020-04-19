@@ -189,7 +189,7 @@ module NoobishMonoGame =
 
             let pixel = content.Load<Texture2D> settings.Pixel
 
-            let scrollBarWidth = c.ScrollBarWidth
+            let scrollBarWidth = c.ScrollBarThickness
             let bounds = c.RectangleWithMargin
             let x = bounds.X + bounds.Width - c.BorderSize - scrollBarWidth
             let right = createRectangle(x,  bounds.Y, scrollBarWidth, bounds.Height)
@@ -204,35 +204,38 @@ module NoobishMonoGame =
             spriteBatch.Draw(pixel, right, Nullable(), color)
 
     let private drawSlider
-        (state: IReadOnlyDictionary<string, LayoutComponentState>)
+
         (content: ContentManager)
         (settings: NoobishSettings)
         (spriteBatch: SpriteBatch)
         (c: LayoutComponent)
         (slider: SliderConfig)
+        (cs: LayoutComponentState)
         (_time: TimeSpan)
         _scrollX
         _scrollY =
 
-        let cs = state.[c.Id]
+        let pinWidth = 25.0f
+        let pinHeight = c.ScrollPinThickness
+        let barHeight = c.ScrollBarThickness
 
         let pixel = content.Load<Texture2D> settings.Pixel
-        let barHeight = 6.0f
 
         // Bar
         let bounds = c.RectangleWithPadding
-        let bar = createRectangle(bounds.X, bounds.Y, bounds.Width, barHeight)
+        let barPositionX = bounds.X
+        let barPositionY = bounds.Y + (bounds.Height / 2.0f) - (barHeight / 2.0f)
+        let bar = createRectangle(barPositionX, barPositionY, bounds.Width, barHeight)
         let color = c.ScrollBarColor |> toColor
         spriteBatch.Draw(pixel, bar, Nullable(), color)
 
         // Pin
-        let relativePosition = 0.5f
+        let relativePosition = (slider.Value - slider.Min) / (slider.Max - slider.Min)
 
-        let pinWidth = 20.0f
-        let pinHeight = 12.0f
-        let screenPosition = bounds.X + (bounds.Width * relativePosition)
+        let pinPositionX = bounds.X + (bounds.Width * relativePosition) - (pinWidth / 2.0f)
+        let pinPositionY = bounds.Y + (bounds.Height / 2.0f) - (pinHeight / 2.0f)
 
-        let pin = createRectangle(screenPosition, bounds.Y + barHeight / 2.0f - pinHeight / 2.0f, pinWidth, pinHeight)
+        let pin = createRectangle(pinPositionX, pinPositionY, pinWidth, pinHeight)
         let color = c.ScrollPinColor |> toColor
         spriteBatch.Draw(pixel, pin, Nullable(), color)
 
@@ -322,7 +325,9 @@ module NoobishMonoGame =
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
 
         c.Slider
-            |> Option.iter( fun s -> drawSlider state content settings spriteBatch c s time totalScrollX totalScrollX )
+            |> Option.iter(
+                let state = state.[c.Id]
+                fun s -> drawSlider content settings spriteBatch c s state time totalScrollX totalScrollX )
 
         if debug then
 

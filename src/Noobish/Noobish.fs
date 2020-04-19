@@ -14,13 +14,11 @@ module Components =
     }
 
 
-    type SliderRange = {
+    type SliderConfig = {
         Min: float32
         Max: float32
-    }
-    type SliderConfig = {
-        Range: SliderRange
         Step: float32
+        mutable Value: float32
 
     }
 
@@ -67,6 +65,7 @@ module Components =
 
     | SliderRange of min:float32 * max:float32
     | SliderStep of float32
+    | SliderValue of float32
 
     | SizeHint of NoobishSizeHint
     | OnClick of (unit -> unit)
@@ -85,7 +84,8 @@ module Components =
     | Scroll of NoobishScroll
     | ScrollBarColor of int
     | ScrollPinColor of int
-    | ScrollBarWidth of int
+    | ScrollBarThickness of int
+    | ScrollPinThickness of int
     | Layout of NoobishLayout
     | RowSpan of int
     | ColSpan of int
@@ -106,6 +106,7 @@ module Components =
 
     let sliderRange min max = SliderRange(min, max)
     let sliderStep v = SliderStep(v)
+    let sliderValue v = SliderValue(v)
 
     let texture t = Texture (NoobishTexture.Basic t)
     let ninePatch t = Texture (NoobishTexture.NinePatch t)
@@ -215,6 +216,8 @@ type LayoutComponentState = {
 
     mutable ScrollX: float32
     mutable ScrollY: float32
+
+    mutable SliderValue: float32
 }
 
 type LayoutComponent = {
@@ -260,7 +263,8 @@ type LayoutComponent = {
 
     ScrollBarColor: int
     ScrollPinColor: int
-    ScrollBarWidth: float32
+    ScrollBarThickness: float32
+    ScrollPinThickness: float32
     ScrollHorizontal: bool
     ScrollVertical: bool
     OverflowWidth: float32
@@ -368,6 +372,8 @@ module Logic =
 
             ScrollX = 0.0f
             ScrollY = 0.0f
+
+            SliderValue = 0.0f
         }
 
     let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
@@ -410,7 +416,8 @@ module Logic =
         let mutable scrollVertical = false
         let mutable scrollBarColor = theme.ScrollBarColor
         let mutable scrollPinColor = theme.ScrollPinColor
-        let mutable scrollBarWidth = scale theme.ScrollBarWidth
+        let mutable scrollBarThickness = scale theme.ScrollBarThickness
+        let mutable scrollPinThickness = scale theme.ScrollPinThickness
 
         let mutable layout = NoobishLayout.Default
 
@@ -464,19 +471,27 @@ module Logic =
             // Slider
             | SliderRange (min, max) ->
                 if slider.IsNone then
-                    slider <- Some { Range = {Min = 0.0f; Max = 100.0f}; Step = 1.0f }
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f}
 
                 slider <- slider
                     |> Option.map(fun s ->
-                        {s with Range = {Min = min; Max = max}}
+                        {s with Min = min; Max = max}
                     )
             | SliderStep (v) ->
                 if slider.IsNone then
-                    slider <- Some { Range = {Min = 0.0f; Max = 100.0f}; Step = 1.0f }
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f}
 
                 slider <- slider
                     |> Option.map(fun s ->
                         {s with Step = v}
+                    )
+            | SliderValue (v) ->
+                if slider.IsNone then
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f}
+
+                slider <- slider
+                    |> Option.map(fun s ->
+                        {s with Value = v}
                     )
             // Border
             | BorderSize(v) -> borderSize <- scale v
@@ -508,7 +523,8 @@ module Logic =
                     scrollVertical <- true
             | ScrollBarColor c -> scrollBarColor <- c
             | ScrollPinColor c -> scrollPinColor <- c
-            | ScrollBarWidth w -> scrollBarWidth <- scale w
+            | ScrollBarThickness h -> scrollBarThickness <- scale h
+            | ScrollPinThickness h -> scrollPinThickness <- scale h
             | Layout (s) ->
                 layout <- s
             | ColSpan (cs) -> colspan <- cs
@@ -517,9 +533,12 @@ module Logic =
         let maxWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
         let maxHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
 
-        if slider.IsSome then
-            minWidth <- maxWidth - paddingLeft - paddingRight
-            minHeight <- 12.0f + paddingTop + paddingBottom
+        match slider with
+        | Some(slider') ->
+            minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
+            let thickness =  max scrollBarThickness scrollPinThickness
+            minHeight <- thickness + paddingTop + paddingBottom + marginTop + marginBottom
+        | None -> ()
 
         let mutable textLines = ""
         if not (String.IsNullOrWhiteSpace text) then
@@ -625,7 +644,8 @@ module Logic =
             ScrollVertical = scrollVertical
             ScrollBarColor = scrollBarColor
             ScrollPinColor = scrollPinColor
-            ScrollBarWidth = scrollBarWidth
+            ScrollBarThickness = scrollBarThickness
+            ScrollPinThickness = scrollPinThickness
             OverflowWidth = width - marginLeft - marginRight - paddingLeft - paddingRight
             OverflowHeight = height - marginTop - marginBottom - marginLeft - marginRight
 

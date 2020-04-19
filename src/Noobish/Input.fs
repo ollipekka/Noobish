@@ -27,6 +27,14 @@ let rec press
                 cs.PressedTime <- time
                 handled <- true
 
+                match c.Slider with
+                | Some (slider') ->
+                    let bounds = c.RectangleWithPadding
+                    let relative = (positionX - bounds.X) / (bounds.Width)
+                    let newValue = slider'.Min + (relative * slider'.Max - slider'.Min)
+                    slider'.Value <- clamp newValue slider'.Min slider'.Max
+                | None -> ()
+
         i <- i + 1
     handled
 let rec click

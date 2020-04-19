@@ -180,7 +180,9 @@ module Slider =
                 [
                 panel
                     [
-                        slider [sliderRange 0.0f 100.0f; sliderStep 1.0f; padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderStep 1.0f; sliderValue 25.0f; padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderStep 1.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderStep 1.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
                     ]
                     []
                 ]
