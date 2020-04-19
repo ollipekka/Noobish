@@ -8,6 +8,9 @@ type ComponentTheme = {
     TextColorDisabled: int
     TextAlignment: NoobishTextAlign
 
+    Width: int
+    Height: int
+
     TextureColor: int
     TextureColorDisabled: int
 
@@ -42,6 +45,9 @@ module Theme =
             TextColor = 0x00000000
             TextColorDisabled = 0x00000000
             TextAlignment = NoobishTextAlign.Left
+
+            Width = 0
+            Height = 0
 
             TextureColor = 0x00000000
             TextureColorDisabled = 0x00000000
@@ -86,6 +92,9 @@ module Theme =
                     TextColorDisabled = textColorDisabled
                     TextAlignment = NoobishTextAlign.Left
 
+                    Width = 0
+                    Height = 0
+
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
 
@@ -112,6 +121,10 @@ module Theme =
                     TextColor = textColor
                     TextColorDisabled = textColorDisabled
                     TextAlignment = NoobishTextAlign.TopLeft
+
+
+                    Width = 0
+                    Height = 0
 
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
@@ -140,6 +153,9 @@ module Theme =
                     TextColorDisabled = textColorDisabled
                     TextAlignment = NoobishTextAlign.Left
 
+                    Width = 0
+                    Height = 0
+
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
 
@@ -166,6 +182,9 @@ module Theme =
                     TextColor = textColor
                     TextColorDisabled = textColorDisabled
                     TextAlignment = NoobishTextAlign.Center
+
+                    Width = 0
+                    Height = 0
 
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
@@ -194,6 +213,9 @@ module Theme =
                     TextColorDisabled = 0x00000000
                     TextAlignment = NoobishTextAlign.Center
 
+                    Width = 0
+                    Height = 0
+
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
 
@@ -220,6 +242,9 @@ module Theme =
                     TextColor = 0xffffffff
                     TextAlignment = NoobishTextAlign.Center
                     TextColorDisabled = 0x00000000
+
+                    Width = 0
+                    Height = 0
 
                     TextureColor = 0x00000000
                     TextureColorDisabled = 0x00000000
@@ -248,6 +273,9 @@ module Theme =
                     TextAlignment = NoobishTextAlign.Center
                     TextColorDisabled = 0x00000000
 
+                    Width = 0
+                    Height = 3
+
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
 
@@ -262,18 +290,21 @@ module Theme =
                     HoverColor = 0xccaaaaff
 
                     Padding = (5, 5, 0, 0)
-                    Margin =  (5, 5, 0, 0)
+                    Margin =  (5, 5, 5, 5)
 
                     ScrollBarColor = 0x00000000
                     ScrollPinColor = 0x00000000
-                    ScrollBarThickness = 2
-                    ScrollPinThickness = 2
+                    ScrollBarThickness = 0
+                    ScrollPinThickness = 0
                 }
                 "Image", {
                     TextFont = defaultFont
                     TextColor = 0x00000000
                     TextAlignment = NoobishTextAlign.Center
                     TextColorDisabled = 0x00000000
+
+                    Width = 0
+                    Height = 0
 
                     TextureColor = textureColor
                     TextureColorDisabled = textureColorDisabled
@@ -302,6 +333,9 @@ module Theme =
                     TextAlignment = NoobishTextAlign.Center
                     TextColorDisabled = 0x00000000
 
+                    Width = 0
+                    Height = 0
+
                     TextureColor = 0x00000000
                     TextureColorDisabled = 0x00000000
 
@@ -328,6 +362,9 @@ module Theme =
                     TextColor = 0xffffffff
                     TextAlignment = NoobishTextAlign.Center
                     TextColorDisabled = 0x00000000
+
+                    Width = 0
+                    Height = 0
 
                     TextureColor = 0x00000000
                     TextureColorDisabled = 0x00000000

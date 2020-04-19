@@ -22,6 +22,7 @@ type DemoMessage =
     | ShowButtons
     | ShowText
     | ShowSliders
+    | SliderValueChanged of float32
     | ChangePadding of int
     | ToggleDebug
 
@@ -32,6 +33,7 @@ type DemoModel =
         UI: NoobishUI
         State: ViewState
         Padding: int
+        SliderAValue: float32
     }
 
 module Text =
@@ -180,9 +182,10 @@ module Slider =
                 [
                 panel
                     [
-                        slider [sliderRange 0.0f 100.0f; sliderStep 1.0f; sliderValue 25.0f; padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderStep 1.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderStep 1.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
+                        label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
                     ]
                     []
                 ]
@@ -249,7 +252,7 @@ type DemoGame () as game =
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
-            { UI = nui; State = Buttons; Padding = 5}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; Padding = 5; SliderAValue = 25.0f;}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -261,6 +264,8 @@ type DemoGame () as game =
                 {model with State = Text}, Cmd.none
             | ShowSliders ->
                 {model with State = Slider}, Cmd.none
+            | SliderValueChanged v ->
+                {model with SliderAValue = v}, Cmd.none
             | ChangePadding padding ->
                 {model with Padding = padding}, Cmd.none
             | ToggleDebug ->

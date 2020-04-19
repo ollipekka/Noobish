@@ -13,17 +13,17 @@ module Components =
         GraphicsPrefix: string
     }
 
-
-    type SliderConfig = {
+    type Slider = {
         Min: float32
         Max: float32
         Step: float32
-        mutable Value: float32
+        OnValueChanged: float32 -> unit
+        Value: float32
 
     }
 
     type ComponentConfig =
-        | SliderConfig of SliderConfig
+        | SliderConfig of Slider
         | NoConfig
 
     [<RequireQualifiedAccess>]
@@ -64,14 +64,16 @@ module Components =
     | TextWrap
 
     | SliderRange of min:float32 * max:float32
-    | SliderStep of float32
     | SliderValue of float32
+    | SliderOnValueChanged of (float32 -> unit)
 
     | SizeHint of NoobishSizeHint
     | OnClick of (unit -> unit)
     | Toggled of bool
     | Block
-    | MinSize of widht: int * height: int
+    | MinSize of width: int * height: int
+
+    | Height of height: int
     | FgColor of int
     | Enabled of bool
     | DisabledColor of int
@@ -105,8 +107,8 @@ module Components =
     let textWrap = TextWrap
 
     let sliderRange min max = SliderRange(min, max)
-    let sliderStep v = SliderStep(v)
-    let sliderValue v = SliderValue(v)
+    let sliderValue v = SliderValue v
+    let sliderOnValueChanged cb = SliderOnValueChanged cb
 
     let texture t = Texture (NoobishTexture.Basic t)
     let ninePatch t = Texture (NoobishTexture.NinePatch t)
@@ -134,6 +136,7 @@ module Components =
 
     let sizeContent = SizeHint NoobishSizeHint.Content
     let minSize w h = MinSize(w, h)
+    let height h = Height h
     let color c = FgColor (c)
     let enabled v = Enabled(v)
 
@@ -156,7 +159,7 @@ module Components =
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
 
-    let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: (sliderStep 1.0f) :: attributes}
+    let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: attributes}
 
     let private scrollDiv attributes scroll =
         { ThemeId = "ScrollDiv"; Children = [scroll]; Attributes = [block; fill] @ attributes}
@@ -270,7 +273,7 @@ type LayoutComponent = {
     OverflowWidth: float32
     OverflowHeight: float32
 
-    Slider: option<SliderConfig>
+    Slider: option<Slider>
 
     OnClick: unit -> unit
 
@@ -424,10 +427,10 @@ module Logic =
         let mutable rowspan = rowspan
         let mutable colspan = colspan
 
-        let mutable minWidth = 0.0f
-        let mutable minHeight = 0.0f
+        let mutable minWidth = scale theme.Width
+        let mutable minHeight = scale theme.Height
 
-        let mutable slider: option<SliderConfig> = None
+        let mutable slider: option<Slider> = None
 
         for a in attributes do
             match a with
@@ -471,28 +474,29 @@ module Logic =
             // Slider
             | SliderRange (min, max) ->
                 if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f}
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f; OnValueChanged = ignore}
 
                 slider <- slider
                     |> Option.map(fun s ->
                         {s with Min = min; Max = max}
                     )
-            | SliderStep (v) ->
-                if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f}
-
-                slider <- slider
-                    |> Option.map(fun s ->
-                        {s with Step = v}
-                    )
             | SliderValue (v) ->
                 if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f}
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f; OnValueChanged = ignore}
 
                 slider <- slider
                     |> Option.map(fun s ->
                         {s with Value = v}
                     )
+            | SliderOnValueChanged (cb) ->
+                if slider.IsNone then
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f; OnValueChanged = ignore}
+
+                slider <- slider
+                    |> Option.map(fun s ->
+                        {s with OnValueChanged = cb}
+                    )
+
             // Border
             | BorderSize(v) -> borderSize <- scale v
             | BorderColor(c) -> borderColor <-c
@@ -530,14 +534,18 @@ module Logic =
             | ColSpan (cs) -> colspan <- cs
             | RowSpan (rs) -> rowspan <- rs
 
+        minWidth <- minWidth + paddingLeft + paddingRight + marginLeft + marginRight
+        minHeight <- minHeight + paddingTop + paddingBottom + marginTop + marginBottom
+
         let maxWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
         let maxHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
 
+
         match slider with
-        | Some(slider') ->
+        | Some(_slider') ->
             minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
             let thickness =  max scrollBarThickness scrollPinThickness
-            minHeight <- thickness + paddingTop + paddingBottom + marginTop + marginBottom
+            minHeight <- minHeight + thickness
         | None -> ()
 
         let mutable textLines = ""
@@ -565,6 +573,9 @@ module Logic =
         if not (String.IsNullOrEmpty texture) then
             minWidth <- maxWidth
             minHeight <- maxHeight
+
+        if themeId = "HorizontalRule" then
+            printfn "%s" themeId
 
         let width, height =
             match sizeHint with

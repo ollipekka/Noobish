@@ -209,7 +209,7 @@ module NoobishMonoGame =
         (settings: NoobishSettings)
         (spriteBatch: SpriteBatch)
         (c: LayoutComponent)
-        (slider: SliderConfig)
+        (slider: Slider)
         (cs: LayoutComponentState)
         (_time: TimeSpan)
         _scrollX
@@ -223,16 +223,17 @@ module NoobishMonoGame =
 
         // Bar
         let bounds = c.RectangleWithPadding
-        let barPositionX = bounds.X
+        let barPositionX = bounds.X + pinWidth / 2.0f
         let barPositionY = bounds.Y + (bounds.Height / 2.0f) - (barHeight / 2.0f)
-        let bar = createRectangle(barPositionX, barPositionY, bounds.Width, barHeight)
+        let barWidth = bounds.Width - pinWidth
+        let bar = createRectangle(barPositionX, barPositionY, barWidth, barHeight)
         let color = c.ScrollBarColor |> toColor
         spriteBatch.Draw(pixel, bar, Nullable(), color)
 
         // Pin
         let relativePosition = (slider.Value - slider.Min) / (slider.Max - slider.Min)
 
-        let pinPositionX = bounds.X + (bounds.Width * relativePosition) - (pinWidth / 2.0f)
+        let pinPositionX = bounds.X + (barWidth * relativePosition) - (pinWidth / 2.0f) + (pinWidth / 2.0f)
         let pinPositionY = bounds.Y + (bounds.Height / 2.0f) - (pinHeight / 2.0f)
 
         let pin = createRectangle(pinPositionX, pinPositionY, pinWidth, pinHeight)
@@ -310,6 +311,8 @@ module NoobishMonoGame =
                 sourceStartY,
                 min (float32 parentRectangle.Width) sourceEndX,
                 min (float32 parentRectangle.Height) sourceEndY )
+        if c.ThemeId = "HorizontalRule" then
+            printfn "%A" outerRectangle
 
         let oldScissorRect = graphics.ScissorRectangle
 
