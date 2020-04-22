@@ -465,6 +465,8 @@ module Logic =
             | MinSize (width, height) ->
                 minWidth <- scale width
                 minHeight <- scale height
+            | Height height ->
+                minHeight <- scale height
             // Text
             | Text(value) -> text <- value
             | TextFont(value) -> textFont <- if value <> "" then sprintf "%s%s" settings.FontPrefix value else ""
@@ -573,9 +575,6 @@ module Logic =
         if not (String.IsNullOrEmpty texture) then
             minWidth <- maxWidth
             minHeight <- maxHeight
-
-        if themeId = "HorizontalRule" then
-            printfn "%s" themeId
 
         let width, height =
             match sizeHint with
@@ -691,7 +690,9 @@ module Logic =
 
         let newChildren = ResizeArray<LayoutComponent>()
 
-        let calculateChildHeight () = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
+        let calculateChildHeight () =
+            let childHeight = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
+            childHeight
 
         let parentBounds = parentComponent.RectangleWithPadding
 
@@ -713,12 +714,12 @@ module Logic =
                     offsetX <- childEndX
 
             let height =
-                if parentComponent.OuterHeight <= Single.Epsilon then calculateChildHeight() else parentComponent.OuterHeight
-
+                if parentBounds.Height <= 0.0f then parentComponent.OuterHeight + calculateChildHeight() else parentComponent.OuterHeight
+            if height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
             {parentComponent with
                 OuterHeight = height
                 OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
-                OverflowHeight = if parentComponent.ScrollVertical then calculateChildHeight() else parentComponent.PaddedHeight
+                OverflowHeight = if parentComponent.ScrollVertical then parentComponent.OuterHeight + calculateChildHeight() else parentComponent.PaddedHeight
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
 
@@ -755,7 +756,8 @@ module Logic =
                     bump childComponent.ColSpan childComponent.RowSpan
 
             let height =
-                if parentComponent.OuterHeight <= Single.Epsilon then calculateChildHeight() else parentComponent.OuterHeight
+                if parentBounds.Height <= 0.0f then calculateChildHeight() else parentComponent.OuterHeight
+            if height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
 
             {parentComponent with
                 Children = newChildren.ToArray()

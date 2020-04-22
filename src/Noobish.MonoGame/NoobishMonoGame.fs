@@ -204,13 +204,11 @@ module NoobishMonoGame =
             spriteBatch.Draw(pixel, right, Nullable(), color)
 
     let private drawSlider
-
         (content: ContentManager)
         (settings: NoobishSettings)
         (spriteBatch: SpriteBatch)
         (c: LayoutComponent)
         (slider: Slider)
-        (cs: LayoutComponentState)
         (_time: TimeSpan)
         _scrollX
         _scrollY =
@@ -329,8 +327,7 @@ module NoobishMonoGame =
 
         c.Slider
             |> Option.iter(
-                let state = state.[c.Id]
-                fun s -> drawSlider content settings spriteBatch c s state time totalScrollX totalScrollX )
+                fun s -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX )
 
         if debug then
 
