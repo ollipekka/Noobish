@@ -59,6 +59,9 @@ module NoobishMonoGame =
             FPSTime = TimeSpan.Zero
         }
 
+    let withTheme (theme: Theme) (ui: NoobishUI): NoobishUI =
+        {ui with Theme = theme}
+
     let overrideMeasureText measureText ui = {
         ui with MeasureText = measureText
     }
@@ -120,11 +123,11 @@ module NoobishMonoGame =
             let right = createRectangle(bounds.X + bounds.Width - c.BorderSize, scrolledStartY, c.BorderSize, bounds.Height)
             spriteBatch.Draw(pixel, right, Nullable(), borderColor)
 
-            let bottom = createRectangle(bounds.X + c.BorderSize, scrolledStartY, widthWithoutBorders, c.BorderSize)
-            spriteBatch.Draw(pixel, bottom, Nullable(), borderColor)
-
-            let top = createRectangle(bounds.X + c.BorderSize, scrolledStartY + bounds.Height - c.BorderSize, widthWithoutBorders, c.BorderSize)
+            let top = createRectangle(bounds.X + c.BorderSize, scrolledStartY, widthWithoutBorders, c.BorderSize)
             spriteBatch.Draw(pixel, top, Nullable(), borderColor)
+
+            let bottom = createRectangle(bounds.X + c.BorderSize, scrolledStartY + bounds.Height - c.BorderSize, widthWithoutBorders, c.BorderSize)
+            spriteBatch.Draw(pixel, bottom, Nullable(), borderColor)
 
 
     let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
@@ -246,10 +249,10 @@ module NoobishMonoGame =
             let rect =
                 match c.TextureSize with
                 | NoobishTextureSize.Stretch ->
-                    let bounds = c.RectangleWithPadding
+                    let bounds = c.RectangleWithMargin
                     createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
                 | NoobishTextureSize.BestFitMax ->
-                    let bounds = c.RectangleWithPadding
+                    let bounds = c.RectangleWithMargin
                     let ratio = max (float32 bounds.Width / float32 texture.Width) (float32 bounds.Height / float32 texture.Height)
                     let width = ratio * float32 texture.Width
                     let height = ratio * float32 texture.Height
@@ -257,7 +260,7 @@ module NoobishMonoGame =
                     let padTop = (bounds.Height - height) / 2.0f
                     createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
                 | NoobishTextureSize.BestFitMin ->
-                    let bounds = c.RectangleWithPadding
+                    let bounds = c.RectangleWithMargin
                     let ratio = min (float32 bounds.Width / float32 texture.Width) (float32 bounds.Height / float32 texture.Height)
                     let width = ratio * float32 texture.Width
                     let height = ratio * float32 texture.Height
@@ -265,10 +268,10 @@ module NoobishMonoGame =
                     let padTop = (bounds.Height - height) / 2.0f
                     createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
                 | NoobishTextureSize.Original ->
-                    let bounds = c.RectangleWithPadding
+                    let bounds = c.RectangleWithMargin
                     createRectangle(bounds.X + scrollX, bounds.Y + scrollY, float32 texture.Width, float32 texture.Height)
                 | NoobishTextureSize.Custom (w, h) ->
-                    let bounds = c.RectangleWithPadding
+                    let bounds = c.RectangleWithMargin
                     createRectangle(bounds.X + scrollX, bounds.Y + scrollY, float32 w, float32 h)
 
 
@@ -309,8 +312,6 @@ module NoobishMonoGame =
                 sourceStartY,
                 min (float32 parentRectangle.Width) sourceEndX,
                 min (float32 parentRectangle.Height) sourceEndY )
-        if c.ThemeId = "HorizontalRule" then
-            printfn "%A" outerRectangle
 
         let oldScissorRect = graphics.ScissorRectangle
 
@@ -320,8 +321,8 @@ module NoobishMonoGame =
         spriteBatch.Begin(rasterizerState = rasterizerState)
 
         drawBackground state content settings spriteBatch c time totalScrollX totalScrollY
-        drawBorders content settings spriteBatch c totalScrollX totalScrollY
         drawImage content spriteBatch c totalScrollX totalScrollY
+        drawBorders content settings spriteBatch c totalScrollX totalScrollY
         drawText content spriteBatch c totalScrollX totalScrollY
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
 

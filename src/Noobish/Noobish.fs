@@ -184,6 +184,18 @@ module Components =
             [
 
             ]
+
+    let largeWindowWithGrid cols rows children attributes =
+        grid 16 9
+            [
+                space [colspan 16; rowspan 1]
+                space [colspan 1; rowspan 7]
+                panelWithGrid cols rows children ([colspan 14; rowspan 7;] @ attributes)
+            ]
+            [
+
+            ]
+
     let windowWithGrid cols rows children attributes =
         grid 12 8
             [
