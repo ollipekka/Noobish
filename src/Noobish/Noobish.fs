@@ -735,8 +735,8 @@ module Logic =
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
 
-            let colWidth = (float32 parentBounds.Width / float32 cols)
-            let rowHeight = (float32 parentBounds.Height / float32 rows)
+            let colWidth = floor (float32 parentBounds.Width / float32 cols)
+            let rowHeight = floor (float32 parentBounds.Height / float32 rows)
             let mutable col = 0
             let mutable row = 0
 
