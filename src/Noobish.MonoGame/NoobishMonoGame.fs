@@ -454,6 +454,7 @@ module Program =
 
             ui.Layers <- layers |> List.map (Logic.layout ui.MeasureText ui.Theme ui.Settings width height) |> List.toArray
 
+            let oldState = Dictionary(ui.State)
             ui.State.Clear()
             let newComponents =
                 ui.Layers
@@ -461,7 +462,11 @@ module Program =
                 |> Set.ofArray
 
             for cid in newComponents do
-                ui.State.[cid] <- Logic.createLayoutComponentState()
+                let (success, value) = oldState.TryGetValue cid
+                if success then
+                    ui.State.[cid] <- value
+                else
+                    ui.State.[cid] <- Logic.createLayoutComponentState()
 
         program
             |> Program.withSetState setState
