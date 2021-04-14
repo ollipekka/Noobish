@@ -40,8 +40,10 @@ module Components =
 
     [<RequireQualifiedAccess>]
     type NoobishTexture =
+        | None
         | NinePatch of string
         | Basic of string
+        | Atlas of id: string * sx: int * sy: int * sw: int * sh: int
 
     type Attribute =
     | Name of string
@@ -112,6 +114,7 @@ module Components =
 
     let texture t = Texture (NoobishTexture.Basic t)
     let ninePatch t = Texture (NoobishTexture.NinePatch t)
+    let atlasTexture t sx sy sw sh= Texture(NoobishTexture.Atlas (t, sx, sy, sw, sh))
     let textureColor c = TextureColor c
     let textureSize s = TextureSize s
     let textureBestFitMax = TextureSize NoobishTextureSize.BestFitMax
@@ -149,8 +152,6 @@ module Components =
     let gridLayout cols rows = Layout (NoobishLayout.Grid (cols, rows))
     let colspan s = ColSpan s
     let rowspan s = RowSpan s
-
-
     // Components
     let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
     let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
@@ -184,6 +185,7 @@ module Components =
             [
 
             ]
+    let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
 
     let largeWindowWithGrid cols rows children attributes =
         grid 16 9
@@ -249,7 +251,7 @@ type LayoutComponent = {
     TextColorDisabled: int
     TextWrap: bool
 
-    Texture: string
+    Texture: NoobishTexture
     TextureColor: int
     TextureColorDisabled:int
     TextureSize: NoobishTextureSize
@@ -335,7 +337,6 @@ type LayoutComponent = {
 
 
 module Logic =
-    open Components
     let splitLines (measureString: string -> int * int) width (text: string) =
         let width = int width
 
@@ -422,7 +423,7 @@ module Logic =
         let mutable borderColor = theme.BorderColor
         let mutable borderColorDisabled = theme.BorderColorDisabled
 
-        let mutable texture = ""
+        let mutable texture = NoobishTexture.None
         let mutable textureColor = theme.TextureColor
         let mutable textureColorDisabled = theme.TextColorDisabled
         let mutable textureSize = NoobishTextureSize.BestFitMax
@@ -523,9 +524,7 @@ module Logic =
             | Enabled (v) -> enabled <- v
             | DisabledColor(c) -> disabledColor <- c
             | Texture (t) ->
-                match t with
-                | NoobishTexture.Basic(t') -> texture <- t'
-                | NoobishTexture.NinePatch (_t') -> raise (NotImplementedException("No support for NinePatch yet!"))
+                texture <- t
             | TextureColor (c) -> textureColor <- c
             | TextureColorDisabled (c) -> textureColorDisabled <- c
             | TextureSize (s) ->
@@ -584,9 +583,14 @@ module Logic =
             else
                 minHeight <- max 0.0f (min maxHeight paddedContentHeight)
 
-        if not (String.IsNullOrEmpty texture) then
+        match texture with
+        | NoobishTexture.Basic _ ->
             minWidth <- maxWidth
             minHeight <- maxHeight
+        | NoobishTexture.Atlas (_, _, _, sw, sh) ->
+            minWidth <-  scale sw+ paddingLeft + paddingRight + marginLeft + marginRight
+            minHeight <- scale sh + paddingTop + paddingBottom + marginTop + marginBottom
+        | _ -> ()
 
         let width, height =
             match sizeHint with
@@ -607,7 +611,7 @@ module Logic =
                     let height = if maxHeight < 0.0f then minHeight else maxHeight
                     width, height
 
-        let cid = sprintf "%s%s%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
+        let cid = sprintf "%s%A%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
 
         if height < 0.0f then
             raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
@@ -627,11 +631,10 @@ module Logic =
 
             Slider = slider
 
-            Texture = if texture <> "" then sprintf "%s%s" settings.GraphicsPrefix texture else ""
+            Texture = texture
             TextureColor = textureColor
             TextureColorDisabled = textureColorDisabled
             TextureSize = textureSize
-
             BorderSize = borderSize
             BorderColor = borderColor
             BorderColorDisabled = borderColorDisabled
@@ -727,6 +730,7 @@ module Logic =
 
             let height =
                 if parentBounds.Height <= 0.0f then parentComponent.OuterHeight + calculateChildHeight() else parentComponent.OuterHeight
+
             if height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
             {parentComponent with
                 OuterHeight = height

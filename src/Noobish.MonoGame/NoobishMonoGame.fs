@@ -241,42 +241,53 @@ module NoobishMonoGame =
         let color = c.ScrollPinColor |> toColor
         spriteBatch.Draw(pixel, pin, Nullable(), color)
 
-    let private drawImage (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
-        if not (c.Texture |> String.IsNullOrWhiteSpace) then
+    let private drawImage (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
 
-            let texture = content.Load<Texture2D> c.Texture
+        let texture, sourceRect, textureWidth, textureHeight =
+            match c.Texture with
+            | NoobishTexture.Basic(textureId) ->
+                //let textureId = sprintf "%s%A" settings.GraphicsPrefix textureId
+                let texture = content.Load<Texture2D> textureId
+                (texture, Rectangle(0, 0, texture.Width, texture.Height), texture.Width, texture.Height )
+            | NoobishTexture.Atlas(textureId, sx, sy, sw, sh) ->
 
-            let rect =
-                match c.TextureSize with
-                | NoobishTextureSize.Stretch ->
-                    let bounds = c.RectangleWithMargin
-                    createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
-                | NoobishTextureSize.BestFitMax ->
-                    let bounds = c.RectangleWithMargin
-                    let ratio = max (float32 bounds.Width / float32 texture.Width) (float32 bounds.Height / float32 texture.Height)
-                    let width = ratio * float32 texture.Width
-                    let height = ratio * float32 texture.Height
-                    let padLeft = (bounds.Width - width) / 2.0f
-                    let padTop = (bounds.Height - height) / 2.0f
-                    createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
-                | NoobishTextureSize.BestFitMin ->
-                    let bounds = c.RectangleWithMargin
-                    let ratio = min (float32 bounds.Width / float32 texture.Width) (float32 bounds.Height / float32 texture.Height)
-                    let width = ratio * float32 texture.Width
-                    let height = ratio * float32 texture.Height
-                    let padLeft = (bounds.Width - width) / 2.0f
-                    let padTop = (bounds.Height - height) / 2.0f
-                    createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
-                | NoobishTextureSize.Original ->
-                    let bounds = c.RectangleWithMargin
-                    createRectangle(bounds.X + scrollX, bounds.Y + scrollY, float32 texture.Width, float32 texture.Height)
-                | NoobishTextureSize.Custom (w, h) ->
-                    let bounds = c.RectangleWithMargin
-                    createRectangle(bounds.X + scrollX, bounds.Y + scrollY, float32 w, float32 h)
+                //let textureId = sprintf "%s%A" settings.GraphicsPrefix textureId
+                let texture = content.Load<Texture2D> textureId
+                (texture, Rectangle(sx, sy, sw, sh), sh, sw )
 
+            | NoobishTexture.NinePatch _ -> failwith "Not implemented"
+            | NoobishTexture.None -> failwith "Can't have empty texture at this point."
 
-            let textureColor = toColor (if c.Enabled then c.TextureColor else c.TextureColorDisabled)
-            spriteBatch.Draw(texture, rect, Nullable(), textureColor)
+        let rect =
+            match c.TextureSize with
+            | NoobishTextureSize.Stretch ->
+                let bounds = c.RectangleWithMargin
+                createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
+            | NoobishTextureSize.BestFitMax ->
+                let bounds = c.RectangleWithMargin
+                let ratio = max (float32 bounds.Width / float32 textureWidth) (float32 bounds.Height / float32 textureHeight)
+                let width = ratio * float32 texture.Width
+                let height = ratio * float32 texture.Height
+                let padLeft = (bounds.Width - width) / 2.0f
+                let padTop = (bounds.Height - height) / 2.0f
+                createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
+            | NoobishTextureSize.BestFitMin ->
+                let bounds = c.RectangleWithMargin
+                let ratio = min (float32 bounds.Width / float32 textureWidth) (float32 bounds.Height / float32 textureHeight)
+                let width = ratio * float32 textureWidth
+                let height = ratio * float32 textureHeight
+                let padLeft = (bounds.Width - width) / 2.0f
+                let padTop = (bounds.Height - height) / 2.0f
+                createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
+            | NoobishTextureSize.Original ->
+                let bounds = c.RectangleWithMargin
+                createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
+            | NoobishTextureSize.Custom (w, h) ->
+                let bounds = c.RectangleWithMargin
+                createRectangle(bounds.X + scrollX, bounds.Y + scrollY, float32 w, float32 h)
+
+        let textureColor = toColor (if c.Enabled then c.TextureColor else c.TextureColorDisabled)
+        spriteBatch.Draw(texture, rect, sourceRect, textureColor)
 
     let rec private drawComponent
         (state: IReadOnlyDictionary<string, LayoutComponentState>)
@@ -318,10 +329,11 @@ module NoobishMonoGame =
         let rasterizerState = new RasterizerState()
         rasterizerState.ScissorTestEnable <- true
         graphics.ScissorRectangle <- outerRectangle
-        spriteBatch.Begin(rasterizerState = rasterizerState)
+        spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
         drawBackground state content settings spriteBatch c time totalScrollX totalScrollY
-        drawImage content spriteBatch c totalScrollX totalScrollY
+        if c.Texture <> NoobishTexture.None then
+            drawImage content settings spriteBatch c totalScrollX totalScrollY
         drawBorders content settings spriteBatch c totalScrollX totalScrollY
         drawText content spriteBatch c totalScrollX totalScrollY
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
@@ -366,7 +378,7 @@ module NoobishMonoGame =
         ui.FPSCounter <- ui.FPSCounter + 1
 
         let font = content.Load<SpriteFont> (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.DefaultFont)
-        spriteBatch.Begin()
+        spriteBatch.Begin(samplerState = SamplerState.PointClamp)
 
         let background = createRectangle(5.0f, 5.0f, 30.0f, float32 font.LineSpacing + 4.0f)
         spriteBatch.Draw(pixel, background, Nullable(), Color.Multiply(Color.DarkRed, 0.5f))
