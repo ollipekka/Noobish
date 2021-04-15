@@ -45,6 +45,13 @@ module Components =
         | Basic of string
         | Atlas of id: string * sx: int * sy: int * sw: int * sh: int
 
+    [<RequireQualifiedAccess>]
+    type NoobishTextureEffect =
+        | None
+        | FlipHorizontally
+        | FlipVertically
+
+
     type Attribute =
     | Name of string
     | Padding of left: int * right: int* top: int * bottom: int
@@ -82,6 +89,7 @@ module Components =
     | BorderColor of int
     | BorderSize of int
     | Texture of NoobishTexture
+    | TextureEffect of NoobishTextureEffect
     | TextureColor of int
     | TextureColorDisabled of int
     | TextureSize of NoobishTextureSize
@@ -93,6 +101,7 @@ module Components =
     | Layout of NoobishLayout
     | RowSpan of int
     | ColSpan of int
+    | RelativePosition of x: int * y: int
 
     type Component = {
         ThemeId: string
@@ -117,6 +126,9 @@ module Components =
     let atlasTexture t sx sy sw sh= Texture(NoobishTexture.Atlas (t, sx, sy, sw, sh))
     let textureColor c = TextureColor c
     let textureSize s = TextureSize s
+    let textureEffect s = TextureEffect s
+    let textureFlipHorizontally = TextureEffect NoobishTextureEffect.FlipHorizontally
+    let textureFlipVertically = TextureEffect NoobishTextureEffect.FlipVertically
     let textureBestFitMax = TextureSize NoobishTextureSize.BestFitMax
 
     let paddingLeft lp = PaddingLeft lp
@@ -152,6 +164,9 @@ module Components =
     let gridLayout cols rows = Layout (NoobishLayout.Grid (cols, rows))
     let colspan s = ColSpan s
     let rowspan s = RowSpan s
+
+    let centerLayout = Layout (NoobishLayout.Center)
+    let relativePosition x y = RelativePosition(x, y)
     // Components
     let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
     let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
@@ -159,6 +174,7 @@ module Components =
     let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
+    let imageWithChildren children attributes = { ThemeId = "Image"; Children = children; Attributes = attributes}
 
     let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: attributes}
 
@@ -252,6 +268,7 @@ type LayoutComponent = {
     TextWrap: bool
 
     Texture: NoobishTexture
+    TextureEffect: NoobishTextureEffect
     TextureColor: int
     TextureColorDisabled:int
     TextureSize: NoobishTextureSize
@@ -424,6 +441,7 @@ module Logic =
         let mutable borderColorDisabled = theme.BorderColorDisabled
 
         let mutable texture = NoobishTexture.None
+        let mutable textureEffect = NoobishTextureEffect.None
         let mutable textureColor = theme.TextureColor
         let mutable textureColorDisabled = theme.TextColorDisabled
         let mutable textureSize = NoobishTextureSize.BestFitMax
@@ -442,6 +460,9 @@ module Logic =
 
         let mutable minWidth = scale theme.Width
         let mutable minHeight = scale theme.Height
+
+        let mutable relativeX = 0.0f
+        let mutable relativeY = 0.0f
 
         let mutable slider: option<Slider> = None
 
@@ -525,6 +546,8 @@ module Logic =
             | DisabledColor(c) -> disabledColor <- c
             | Texture (t) ->
                 texture <- t
+            | TextureEffect (t) ->
+                textureEffect <- t
             | TextureColor (c) -> textureColor <- c
             | TextureColorDisabled (c) -> textureColorDisabled <- c
             | TextureSize (s) ->
@@ -546,6 +569,9 @@ module Logic =
                 layout <- s
             | ColSpan (cs) -> colspan <- cs
             | RowSpan (rs) -> rowspan <- rs
+            | RelativePosition (x, y) ->
+                relativeX <- scale x
+                relativeY <- scale y
 
         minWidth <- minWidth + paddingLeft + paddingRight + marginLeft + marginRight
         minHeight <- minHeight + paddingTop + paddingBottom + marginTop + marginBottom
@@ -632,6 +658,7 @@ module Logic =
             Slider = slider
 
             Texture = texture
+            TextureEffect = textureEffect
             TextureColor = textureColor
             TextureColorDisabled = textureColorDisabled
             TextureSize = textureSize
@@ -639,8 +666,8 @@ module Logic =
             BorderColor = borderColor
             BorderColorDisabled = borderColorDisabled
 
-            StartX = startX
-            StartY = startY
+            StartX = startX + relativeX
+            StartY = startY + relativeY
             OuterWidth = width
             OuterHeight = height
             IsBlock = isBlock
@@ -778,6 +805,20 @@ module Logic =
             {parentComponent with
                 Children = newChildren.ToArray()
                 OuterHeight = height
+                OverflowWidth = parentComponent.PaddedWidth
+                OverflowHeight = parentComponent.PaddedHeight}
+        | NoobishLayout.Center ->
+            for child in c.Children do
+                let childStartX = parentBounds.X + parentBounds.Width / 2.0f
+                let childStartY = parentBounds.Y +  parentBounds.Height / 2.0f
+                let childWidth = 50.0f
+                let childHeight = 50.0f
+
+                let childComponent = layoutComponent measureText theme settings childStartX childStartY 1 1 childWidth childHeight child
+                newChildren.Add(childComponent)
+
+            {parentComponent with
+                Children = newChildren.ToArray()
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
 

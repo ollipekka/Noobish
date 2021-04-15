@@ -286,8 +286,17 @@ module NoobishMonoGame =
                 let bounds = c.RectangleWithMargin
                 createRectangle(bounds.X + scrollX, bounds.Y + scrollY, float32 w, float32 h)
 
+        let textureEffect =
+            if c.TextureEffect = NoobishTextureEffect.FlipHorizontally then
+                SpriteEffects.FlipHorizontally
+            else if c.TextureEffect = NoobishTextureEffect.FlipVertically then
+                SpriteEffects.FlipVertically
+            else
+                SpriteEffects.None
+
         let textureColor = toColor (if c.Enabled then c.TextureColor else c.TextureColorDisabled)
-        spriteBatch.Draw(texture, rect, sourceRect, textureColor)
+        spriteBatch.Draw(texture, rect, sourceRect, textureColor, 0.0f, Vector2.Zero, textureEffect, 0.0f)
+
 
     let rec private drawComponent
         (state: IReadOnlyDictionary<string, LayoutComponentState>)
