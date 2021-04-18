@@ -20,9 +20,12 @@ let rec press
         let c = components.[i]
         let cs = state.[c.Id]
         if c.Enabled && cs.State <> ComponentState.Toggled && c.Contains positionX positionY scrollX scrollY  then
-            if c.Children.Length > 0 then
-                handled <- press state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
-            else
+            let handledByChild =
+                if c.Children.Length > 0 then
+                    press state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
+                else
+                    false
+            if not handledByChild then
                 let cs = state.[c.Id]
                 cs.PressedTime <- time
                 handled <- true
@@ -34,6 +37,8 @@ let rec press
                     let newValue = slider'.Min + (relative * slider'.Max - slider'.Min)
                     slider'.OnValueChanged (clamp newValue slider'.Min slider'.Max)
                 | None -> ()
+            else
+                handled <- true
 
         i <- i + 1
     handled
@@ -53,12 +58,17 @@ let rec click
         let c = components.[i]
         if c.Enabled && c.Contains positionX positionY scrollX scrollY then
             let cs = state.[c.Id]
-            if c.Children.Length > 0 then
-                handled <- click state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
-            else
+            let handledByChild =
+                if c.Children.Length > 0 then
+                    click state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
+                else
+                    false
+            if not handledByChild then
                 let cs = state.[c.Id]
                 cs.PressedTime <- time
                 c.OnClick()
+                handled <- true
+            else
                 handled <- true
 
         i <- i + 1
@@ -79,15 +89,16 @@ let rec scroll
     let mutable handled = false;
     for c in components do
         if c.Enabled && c.Contains positionX positionY scrollX scrollY then
-            if c.Children.Length > 0 then
-                let handledByChild = scroll state c.Children positionX positionY scale time scrollX scrollY
 
-                if handledByChild then
-                    handled <- true
+            let handledByChild =
+                if c.Children.Length > 0 then
+                    scroll state c.Children positionX positionY scale time scrollX scrollY
+                else
+                    false
 
             let cs = state.[c.Id]
 
-            if not handled then
+            if not handledByChild then
                 if c.ScrollHorizontal && c.OverflowWidth > c.Width then
                     cs.ScrollX <- cs.ScrollX + scrollX
                     cs.ScrolledTime <- time
@@ -100,4 +111,6 @@ let rec scroll
                     cs.ScrollY <- clamp nextScroll minScroll 0.0f
                     cs.ScrolledTime <- time
                     handled <- true
+            else
+                handled <- true
     handled
