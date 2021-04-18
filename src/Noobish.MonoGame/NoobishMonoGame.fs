@@ -26,6 +26,7 @@ type NoobishUI = {
     State: Dictionary<string, LayoutComponentState>
 
     mutable Debug: bool
+    mutable FPSEnabled: bool
     mutable FPS: int
     mutable FPSCounter: int
     mutable FPSTime: TimeSpan
@@ -54,6 +55,7 @@ module NoobishMonoGame =
             State = Dictionary<string, LayoutComponentState>()
 
             Layers = [||]
+            FPSEnabled = false
             FPS = 0
             FPSCounter = 0
             FPSTime = TimeSpan.Zero
@@ -68,6 +70,11 @@ module NoobishMonoGame =
 
     let overrideDebug d ui = {
         ui with Debug = d
+    }
+
+
+    let enableFps ui = {
+        ui with FPSEnabled = true
     }
 
 
@@ -241,61 +248,57 @@ module NoobishMonoGame =
         let color = c.ScrollPinColor |> toColor
         spriteBatch.Draw(pixel, pin, Nullable(), color)
 
-    let private drawImage (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
+    let private drawImage (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) scrollX scrollY =
 
-        let texture, sourceRect, textureWidth, textureHeight =
-            match c.Texture with
+        let texture, sourceRect =
+            match t.Texture with
             | NoobishTexture.Basic(textureId) ->
-                //let textureId = sprintf "%s%A" settings.GraphicsPrefix textureId
                 let texture = content.Load<Texture2D> textureId
-                (texture, Rectangle(0, 0, texture.Width, texture.Height), texture.Width, texture.Height )
+                (texture, Rectangle(0, 0, texture.Width, texture.Height) )
             | NoobishTexture.Atlas(textureId, sx, sy, sw, sh) ->
-
-                //let textureId = sprintf "%s%A" settings.GraphicsPrefix textureId
                 let texture = content.Load<Texture2D> textureId
-                (texture, Rectangle(sx, sy, sw, sh), sh, sw )
-
+                (texture, Rectangle(sx, sy, sw, sh) )
             | NoobishTexture.NinePatch _ -> failwith "Not implemented"
             | NoobishTexture.None -> failwith "Can't have empty texture at this point."
 
         let rect =
-            match c.TextureSize with
+            match t.TextureSize with
             | NoobishTextureSize.Stretch ->
                 let bounds = c.RectangleWithMargin
                 createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
             | NoobishTextureSize.BestFitMax ->
                 let bounds = c.RectangleWithMargin
-                let ratio = max (float32 bounds.Width / float32 textureWidth) (float32 bounds.Height / float32 textureHeight)
-                let width = ratio * float32 texture.Width
-                let height = ratio * float32 texture.Height
+                let ratio = max (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
+                let width = ratio * float32 sourceRect.Width
+                let height = ratio * float32 sourceRect.Height
                 let padLeft = (bounds.Width - width) / 2.0f
                 let padTop = (bounds.Height - height) / 2.0f
                 createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
             | NoobishTextureSize.BestFitMin ->
                 let bounds = c.RectangleWithMargin
-                let ratio = min (float32 bounds.Width / float32 textureWidth) (float32 bounds.Height / float32 textureHeight)
-                let width = ratio * float32 textureWidth
-                let height = ratio * float32 textureHeight
+                let ratio = min (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
+                let width = ratio * float32 sourceRect.Width
+                let height = ratio * float32 sourceRect.Height
                 let padLeft = (bounds.Width - width) / 2.0f
                 let padTop = (bounds.Height - height) / 2.0f
                 createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
             | NoobishTextureSize.Original ->
                 let bounds = c.RectangleWithMargin
                 createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
-            | NoobishTextureSize.Custom (w, h) ->
-                let bounds = c.RectangleWithMargin
-                createRectangle(bounds.X + scrollX, bounds.Y + scrollY, float32 w, float32 h)
 
         let textureEffect =
-            if c.TextureEffect = NoobishTextureEffect.FlipHorizontally then
+            if t.TextureEffect = NoobishTextureEffect.FlipHorizontally then
                 SpriteEffects.FlipHorizontally
-            else if c.TextureEffect = NoobishTextureEffect.FlipVertically then
+            else if t.TextureEffect = NoobishTextureEffect.FlipVertically then
                 SpriteEffects.FlipVertically
             else
                 SpriteEffects.None
 
-        let textureColor = toColor (if c.Enabled then c.TextureColor else c.TextureColorDisabled)
-        spriteBatch.Draw(texture, rect, sourceRect, textureColor, 0.0f, Vector2.Zero, textureEffect, 0.0f)
+
+        let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
+        let rotation = Utils.toRadians t.Rotation
+        let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
+        spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
 
 
     let rec private drawComponent
@@ -341,8 +344,10 @@ module NoobishMonoGame =
         spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
         drawBackground state content settings spriteBatch c time totalScrollX totalScrollY
-        if c.Texture <> NoobishTexture.None then
-            drawImage content settings spriteBatch c totalScrollX totalScrollY
+        match c.Texture with
+        | Some (texture) ->
+            drawImage content settings spriteBatch c texture totalScrollX totalScrollY
+        | None -> ()
         drawBorders content settings spriteBatch c totalScrollX totalScrollY
         drawText content spriteBatch c totalScrollX totalScrollY
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
@@ -407,7 +412,7 @@ module NoobishMonoGame =
                 drawComponent ui.State content ui.Settings graphics spriteBatch ui.Debug time c 0.0f 0.0f source
             )
 
-        if ui.Debug then
+        if ui.Debug || ui.FPSEnabled then
             drawFps content spriteBatch ui time
 
     let updateDesktop (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =

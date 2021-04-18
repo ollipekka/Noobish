@@ -93,6 +93,7 @@ module Components =
     | TextureColor of int
     | TextureColorDisabled of int
     | TextureSize of NoobishTextureSize
+    | TextureRotation of int
     | Scroll of NoobishScroll
     | ScrollBarColor of int
     | ScrollPinColor of int
@@ -125,12 +126,13 @@ module Components =
     let ninePatch t = Texture (NoobishTexture.NinePatch t)
     let atlasTexture t sx sy sw sh= Texture(NoobishTexture.Atlas (t, sx, sy, sw, sh))
     let textureColor c = TextureColor c
+    let textureColorDisabled c = TextureColorDisabled c
     let textureSize s = TextureSize s
     let textureEffect s = TextureEffect s
     let textureFlipHorizontally = TextureEffect NoobishTextureEffect.FlipHorizontally
     let textureFlipVertically = TextureEffect NoobishTextureEffect.FlipVertically
     let textureBestFitMax = TextureSize NoobishTextureSize.BestFitMax
-
+    let textureRotation t = TextureRotation t
     let paddingLeft lp = PaddingLeft lp
     let paddingRight rp = PaddingRight rp
     let paddingTop tp = PaddingTop tp
@@ -174,7 +176,8 @@ module Components =
     let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
-    let imageWithChildren children attributes = { ThemeId = "Image"; Children = children; Attributes = attributes}
+
+    let canvas children attributes = { ThemeId = "Image"; Children = children; Attributes = [centerLayout;] @ attributes}
 
     let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: attributes}
 
@@ -253,6 +256,16 @@ type LayoutComponentState = {
     mutable SliderValue: float32
 }
 
+
+type Texture = {
+    Texture: NoobishTexture
+    TextureEffect: NoobishTextureEffect
+    TextureColor: int
+    TextureColorDisabled:int
+    TextureSize: NoobishTextureSize
+    Rotation: int
+}
+
 type LayoutComponent = {
     Id: string
     Name: string
@@ -266,13 +279,7 @@ type LayoutComponent = {
     TextColor: int
     TextColorDisabled: int
     TextWrap: bool
-
-    Texture: NoobishTexture
-    TextureEffect: NoobishTextureEffect
-    TextureColor: int
-    TextureColorDisabled:int
-    TextureSize: NoobishTextureSize
-
+    Texture: option<Texture>
     Color: int
     ColorDisabled: int
     PressedColor: int
@@ -445,6 +452,7 @@ module Logic =
         let mutable textureColor = theme.TextureColor
         let mutable textureColorDisabled = theme.TextColorDisabled
         let mutable textureSize = NoobishTextureSize.BestFitMax
+        let mutable textureRotation = 0
 
         let mutable scrollHorizontal = false
         let mutable scrollVertical = false
@@ -552,6 +560,8 @@ module Logic =
             | TextureColorDisabled (c) -> textureColorDisabled <- c
             | TextureSize (s) ->
                 textureSize <- s
+            | TextureRotation (t) ->
+                textureRotation <- t
             | Scroll (s) ->
                 match s with
                 | NoobishScroll.Horizontal ->
@@ -609,14 +619,6 @@ module Logic =
             else
                 minHeight <- max 0.0f (min maxHeight paddedContentHeight)
 
-        match texture with
-        | NoobishTexture.Basic _ ->
-            minWidth <- maxWidth
-            minHeight <- maxHeight
-        | NoobishTexture.Atlas (_, _, _, sw, sh) ->
-            minWidth <-  scale sw+ paddingLeft + paddingRight + marginLeft + marginRight
-            minHeight <- scale sh + paddingTop + paddingBottom + marginTop + marginBottom
-        | _ -> ()
 
         let width, height =
             match sizeHint with
@@ -634,7 +636,7 @@ module Logic =
                     width, height
                 | NoobishFill.Both ->
                     let width = maxWidth
-                    let height = if maxHeight < 0.0f then minHeight else maxHeight
+                    let height = if maxHeight <= 0.0f then minHeight else maxHeight
                     width, height
 
         let cid = sprintf "%s%A%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
@@ -657,11 +659,22 @@ module Logic =
 
             Slider = slider
 
-            Texture = texture
-            TextureEffect = textureEffect
-            TextureColor = textureColor
-            TextureColorDisabled = textureColorDisabled
-            TextureSize = textureSize
+
+            Texture =
+                if texture <> NoobishTexture.None then
+                    Some (
+                        {
+                            Texture = texture
+                            TextureEffect = textureEffect
+                            TextureColor = textureColor
+                            TextureColorDisabled = textureColorDisabled
+                            TextureSize = textureSize
+                            Rotation = textureRotation
+                        }
+                    )
+                else
+                    None
+
             BorderSize = borderSize
             BorderColor = borderColor
             BorderColorDisabled = borderColorDisabled
