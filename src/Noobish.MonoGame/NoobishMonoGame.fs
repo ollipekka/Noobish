@@ -77,9 +77,9 @@ module NoobishMonoGame =
     }
 
     let private drawRectangle (spriteBatch: SpriteBatch) (pixel: Texture2D) (color: Color) (x: float32) (y:float32) (width: float32) (height: float32) =
-        let origin = Vector2.Zero
+        let origin = Vector2(0.0f, 0.0f)
         let startPos = Vector2(x, y)
-        let scale = Vector2(width, height)
+        let scale = Vector2(width / float32 pixel.Width, height / float32 pixel.Height)
 
         spriteBatch.Draw(
             pixel,
@@ -134,16 +134,16 @@ module NoobishMonoGame =
             let widthWithoutBorders = bounds.Width - c.BorderSize * 2.0f
 
             let borderColor = toColor (if c.Enabled then c.BorderColor else c.BorderColorDisabled)
-            let borderSize = c.BorderSize / 2.0f
+            let borderSize = c.BorderSize
 
             //Left
             drawRectangle spriteBatch pixel borderColor (bounds.X + scrollX) scrolledStartY borderSize bounds.Height
             // Right
-            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize * 2f) scrolledStartY borderSize bounds.Height
+            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize) scrolledStartY borderSize bounds.Height
             // Top
             drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) scrolledStartY widthWithoutBorders borderSize
             // Bottom
-            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( scrolledStartY + bounds.Height - borderSize * 2f) widthWithoutBorders borderSize
+            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( scrolledStartY + bounds.Height - borderSize) widthWithoutBorders borderSize
 
 
     let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
@@ -404,11 +404,13 @@ module NoobishMonoGame =
         let pixel = content.Load<Texture2D> ui.Settings.Pixel
         ui.FPSCounter <- ui.FPSCounter + 1
 
-        let font = content.Load<SpriteFont> (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.DefaultFont)
+        let fontId = (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.DefaultFont)
+        let font = content.Load<SpriteFont> fontId
         spriteBatch.Begin(samplerState = SamplerState.PointClamp)
 
-        drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 5.0f 5.0f 30.0f (float32 font.LineSpacing + 4.0f)
-        spriteBatch.DrawString (font, (sprintf "%i" (ui.FPS * 5)), Vector2(7.0f, 7.0f), Color.White)
+        let (textX, textY) = ui.MeasureText fontId "255"
+        drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 5.0f 5.0f (float32 textX) (float32 textY)
+        spriteBatch.DrawString (font, (sprintf "%i" (ui.FPS * 5)), Vector2(7.0f, 5.0f), Color.White)
         spriteBatch.End()
 
         if time - ui.FPSTime >= fpsTimer then
