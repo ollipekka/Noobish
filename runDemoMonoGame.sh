@@ -1,1 +1,1 @@
-mono src/Noobish.MonoGame.Demo/bin/Debug/net48/osx.10.14-x64/Noobish.MonoGame.Demo.exe
+dotnet run --project src/Noobish.MonoGame.Demo
