@@ -72,17 +72,27 @@ module NoobishMonoGame =
         ui with Debug = d
     }
 
-
     let enableFps ui = {
         ui with FPSEnabled = true
     }
 
+    let private drawRectangle (spriteBatch: SpriteBatch) (pixel: Texture2D) (color: Color) (x: float32) (y:float32) (width: float32) (height: float32) =
+        let origin = Vector2.Zero
+        let startPos = Vector2(x, y)
+        let scale = Vector2(width, height)
 
-    let private createRectangle (x: float32, y:float32, width: float32, height: float32) =
-        Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
+        spriteBatch.Draw(
+            pixel,
+            startPos,
+            Nullable(Rectangle(0, 0, pixel.Width, pixel.Height)),
+            color,
+            0.0f,
+            origin,
+            scale,
+            SpriteEffects.None,
+            1.0f)
 
     let private toColor (v: int) =
-
         let r = (v >>> 24) &&& 255;
         let g = (v >>> 16) &&& 255; // 255
         let b = (v >>> 8) &&& 255; // 122
@@ -95,7 +105,6 @@ module NoobishMonoGame =
         let pixel = content.Load<Texture2D> settings.Pixel
 
         let bounds = c.RectangleWithMargin
-        let dest = Rectangle(int (bounds.X + scrollX), int (bounds.Y + scrollY), int bounds.Width, int bounds.Height)
 
         let color =
             if not c.Enabled then
@@ -112,7 +121,8 @@ module NoobishMonoGame =
                 | ComponentState.Toggled ->
                     toColor c.PressedColor
 
-        spriteBatch.Draw(pixel, dest, Nullable(), color)
+
+        drawRectangle spriteBatch pixel color (bounds.X + scrollX) (bounds.Y + scrollY) bounds.Width bounds.Height
 
     let private drawBorders  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
         if c.BorderSize > 0.0f then
@@ -124,17 +134,16 @@ module NoobishMonoGame =
             let widthWithoutBorders = bounds.Width - c.BorderSize * 2.0f
 
             let borderColor = toColor (if c.Enabled then c.BorderColor else c.BorderColorDisabled)
-            let left = createRectangle(bounds.X + scrollX, scrolledStartY, c.BorderSize, bounds.Height)
-            spriteBatch.Draw(pixel, left, Nullable(), borderColor)
+            let borderSize = c.BorderSize / 2.0f
 
-            let right = createRectangle(bounds.X + bounds.Width - c.BorderSize, scrolledStartY, c.BorderSize, bounds.Height)
-            spriteBatch.Draw(pixel, right, Nullable(), borderColor)
-
-            let top = createRectangle(bounds.X + c.BorderSize, scrolledStartY, widthWithoutBorders, c.BorderSize)
-            spriteBatch.Draw(pixel, top, Nullable(), borderColor)
-
-            let bottom = createRectangle(bounds.X + c.BorderSize, scrolledStartY + bounds.Height - c.BorderSize, widthWithoutBorders, c.BorderSize)
-            spriteBatch.Draw(pixel, bottom, Nullable(), borderColor)
+            //Left
+            drawRectangle spriteBatch pixel borderColor (bounds.X + scrollX) scrolledStartY borderSize bounds.Height
+            // Right
+            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize * 2f) scrolledStartY borderSize bounds.Height
+            // Top
+            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) scrolledStartY widthWithoutBorders borderSize
+            // Bottom
+            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( scrolledStartY + bounds.Height - borderSize * 2f) widthWithoutBorders borderSize
 
 
     let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
@@ -170,7 +179,7 @@ module NoobishMonoGame =
                 | TopCenter -> centerX(), topY()
                 | TopRight -> rightX(), topY()
                 | Left -> leftX(), centerY()
-                | Center ->  centerX(), centerY()
+                | Center -> centerX(), centerY()
                 | Right -> rightX(), centerY()
                 | BottomLeft -> leftX(), bottomY()
                 | BottomCenter -> centerX(), bottomY()
@@ -202,16 +211,14 @@ module NoobishMonoGame =
             let scrollBarWidth = c.ScrollBarThickness
             let bounds = c.RectangleWithMargin
             let x = bounds.X + bounds.Width - c.BorderSize - scrollBarWidth
-            let right = createRectangle(x,  bounds.Y, scrollBarWidth, bounds.Height)
             let color = Color.Multiply(c.ScrollBarColor |> toColor, progress)
-            spriteBatch.Draw(pixel, right, Nullable(), color)
+            drawRectangle spriteBatch pixel color x bounds.Y scrollBarWidth bounds.Height
 
             let pinPosition =  - ( cs.ScrollY / c.OverflowHeight) * bounds.Height
             let pinHeight = ( c.Height / c.OverflowHeight) * bounds.Height
             let color = Color.Multiply(c.ScrollPinColor |> toColor, progress)
 
-            let right = createRectangle(x, bounds.Y + pinPosition, scrollBarWidth, pinHeight)
-            spriteBatch.Draw(pixel, right, Nullable(), color)
+            drawRectangle spriteBatch pixel color x (bounds.Y + pinPosition) scrollBarWidth pinHeight
 
     let private drawSlider
         (content: ContentManager)
@@ -234,9 +241,9 @@ module NoobishMonoGame =
         let barPositionX = bounds.X + pinWidth / 2.0f
         let barPositionY = bounds.Y + (bounds.Height / 2.0f) - (barHeight / 2.0f)
         let barWidth = bounds.Width - pinWidth
-        let bar = createRectangle(barPositionX, barPositionY, barWidth, barHeight)
         let color = c.ScrollBarColor |> toColor
-        spriteBatch.Draw(pixel, bar, Nullable(), color)
+
+        drawRectangle spriteBatch pixel color barPositionX barPositionY barWidth barHeight
 
         // Pin
         let relativePosition = (slider.Value - slider.Min) / (slider.Max - slider.Min)
@@ -244,11 +251,15 @@ module NoobishMonoGame =
         let pinPositionX = bounds.X + (barWidth * relativePosition) - (pinWidth / 2.0f) + (pinWidth / 2.0f)
         let pinPositionY = bounds.Y + (bounds.Height / 2.0f) - (pinHeight / 2.0f)
 
-        let pin = createRectangle(pinPositionX, pinPositionY, pinWidth, pinHeight)
         let color = c.ScrollPinColor |> toColor
-        spriteBatch.Draw(pixel, pin, Nullable(), color)
+        drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
 
-    let private drawImage (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) scrollX scrollY =
+    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) scrollX scrollY =
+
+
+        let createRectangle (x: float32, y:float32, width: float32, height: float32) =
+            Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
+
 
         let texture, sourceRect =
             match t.Texture with
@@ -314,6 +325,10 @@ module NoobishMonoGame =
         (parentScrollY: float32)
         (parentRectangle: Rectangle)  =
 
+
+        let createRectangle (x: float32, y:float32, width: float32, height: float32) =
+            Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
+
         let cs = state.[c.Id]
 
         let totalScrollX = cs.ScrollX + parentScrollX
@@ -357,9 +372,7 @@ module NoobishMonoGame =
                 fun s -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX )
 
         if debug then
-
             let childRect = c.RectangleWithPadding
-            let debugRect = createRectangle (childRect.X + totalScrollX, childRect.Y + totalScrollY, childRect.Width, childRect.Height)
 
             let debugColor =
                 if c.ThemeId = "Scroll" then Color.Multiply(Color.Transparent, 0.1f)
@@ -367,7 +380,7 @@ module NoobishMonoGame =
                 else Color.Multiply(Color.Yellow, 0.1f)
 
             let pixel = content.Load<Texture2D> settings.Pixel
-            spriteBatch.Draw(pixel, debugRect, Nullable(debugRect), debugColor)
+            drawRectangle spriteBatch pixel debugColor (childRect.X + totalScrollX) (childRect.Y + totalScrollY) (childRect.Width) (childRect.Height)
 
         spriteBatch.End()
 
@@ -394,8 +407,7 @@ module NoobishMonoGame =
         let font = content.Load<SpriteFont> (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.DefaultFont)
         spriteBatch.Begin(samplerState = SamplerState.PointClamp)
 
-        let background = createRectangle(5.0f, 5.0f, 30.0f, float32 font.LineSpacing + 4.0f)
-        spriteBatch.Draw(pixel, background, Nullable(), Color.Multiply(Color.DarkRed, 0.5f))
+        drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 5.0f 5.0f 30.0f (float32 font.LineSpacing + 4.0f)
         spriteBatch.DrawString (font, (sprintf "%i" (ui.FPS * 5)), Vector2(7.0f, 7.0f), Color.White)
         spriteBatch.End()
 

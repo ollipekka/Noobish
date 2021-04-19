@@ -54,13 +54,13 @@ module Components =
 
     type Attribute =
     | Name of string
-    | Padding of left: int * right: int* top: int * bottom: int
+    | Padding of left: int * right: int * top: int * bottom: int
     | PaddingLeft of int
     | PaddingRight of int
     | PaddingTop of int
     | PaddingBottom of int
 
-    | Margin of left: int * right: int* top: int * bottom: int
+    | Margin of left: int * right: int * top: int * bottom: int
     | MarginLeft of int
     | MarginRight of int
     | MarginTop of int
@@ -586,8 +586,8 @@ module Logic =
         minWidth <- minWidth + paddingLeft + paddingRight + marginLeft + marginRight
         minHeight <- minHeight + paddingTop + paddingBottom + marginTop + marginBottom
 
-        let maxWidth = if colspan > 0 then parentWidth * float32 colspan else parentWidth
-        let maxHeight = if rowspan > 0 then parentHeight * float32 rowspan else parentHeight
+        let maxWidth = if colspan > 0 then ceil (parentWidth * float32 colspan) else parentWidth
+        let maxHeight = if rowspan > 0 then ceil (parentHeight * float32 rowspan) else parentHeight
 
 
         match slider with
@@ -779,8 +779,8 @@ module Logic =
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
 
-            let colWidth = floor (float32 parentBounds.Width / float32 cols)
-            let rowHeight = floor (float32 parentBounds.Height / float32 rows)
+            let colWidth = parentBounds.Width / float32 cols
+            let rowHeight = parentBounds.Height / float32 rows
             let mutable col = 0
             let mutable row = 0
 
@@ -796,8 +796,8 @@ module Logic =
             let cellUsed = Array2D.create cols rows false
 
             for child in c.Children do
-                let childStartX = parentBounds.X + (float32 col) * colWidth
-                let childStartY = parentBounds.Y + (float32 row) * rowHeight
+                let childStartX = floor (parentBounds.X + (float32 col) * (colWidth))
+                let childStartY = floor (parentBounds.Y + (float32 row) * (rowHeight))
                 let childWidth = colWidth
                 let childHeight = rowHeight
 
