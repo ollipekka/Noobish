@@ -397,7 +397,7 @@ module NoobishMonoGame =
 
         graphics.ScissorRectangle <- oldScissorRect
 
-    let private fpsTimer = TimeSpan.FromSeconds(0.2)
+    let private fpsTimer = TimeSpan.FromSeconds(0.1)
 
     let private drawFps (content: ContentManager) (spriteBatch: SpriteBatch) (ui: NoobishUI) (time:TimeSpan) =
 
@@ -408,9 +408,15 @@ module NoobishMonoGame =
         let font = content.Load<SpriteFont> fontId
         spriteBatch.Begin(samplerState = SamplerState.PointClamp)
 
-        let (textX, textY) = ui.MeasureText fontId "255"
-        drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 5.0f 5.0f (float32 textX) (float32 textY)
-        spriteBatch.DrawString (font, (sprintf "%i" (ui.FPS * 5)), Vector2(7.0f, 5.0f), Color.White)
+        let (areaWidth, areaHeight) = ui.MeasureText fontId "255"
+
+        let fpsText = (sprintf "%i" (ui.FPS * 10))
+        let (fpsWidth, fpsHeight) = ui.MeasureText fontId fpsText
+        let textX = areaWidth - fpsWidth
+        let textY = areaHeight - fpsHeight
+
+        drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 0.0f 0.0f (float32 areaWidth + 10.0f) (float32 areaHeight + 10.0f)
+        spriteBatch.DrawString (font, fpsText, Vector2(float32 textX + 5.0f, float32 textY + 5.0f), Color.White)
         spriteBatch.End()
 
         if time - ui.FPSTime >= fpsTimer then
