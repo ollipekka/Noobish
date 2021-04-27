@@ -116,6 +116,7 @@ module Components =
     let textFont f = TextFont(f)
     let textColor c = TextColor (c)
     let textAlign v = TextAlign (v)
+    let textCenter = TextAlign (NoobishTextAlign.Center)
     let textWrap = TextWrap
 
     let sliderRange min max = SliderRange(min, max)
