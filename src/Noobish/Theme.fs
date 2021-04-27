@@ -224,10 +224,10 @@ module Theme =
                     BorderColorDisabled = borderColorDisabled
 
                     Color = backgroundColorDark
-                    ColorDisabled = 0x00000000
+                    ColorDisabled = backgroundColorDark
 
-                    PressedColor = 0x00000000
-                    HoverColor = 0x00000000
+                    PressedColor = backgroundColorDark
+                    HoverColor = backgroundColorDark
 
                     Padding = (5, 5, 5, 5)
                     Margin =  (2, 2, 2, 2)
