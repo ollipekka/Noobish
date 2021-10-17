@@ -149,6 +149,10 @@ module Buttons =
                     ]
                 panel
                     [
+                        combobox [ text "Selected" ]
+                            [
+
+                            ]
                     ]
                     [
 

@@ -42,7 +42,6 @@ module NoobishMonoGame =
         let measureText (font: string) (text: string) =
             let font = content.Load<SpriteFont> font
             let size = font.MeasureString text
-
             int (ceil (size.X)), int (ceil (size.Y))
 
         {
@@ -50,7 +49,7 @@ module NoobishMonoGame =
             MeasureText = measureText
             Width = width
             Height = height
-            Theme = Theme.createDefaultTheme settings.DefaultFont
+            Theme = Theme.createDefaultTheme settings.FontSettings
             Settings = settings
             State = Dictionary<string, LayoutComponentState>()
 
@@ -404,7 +403,7 @@ module NoobishMonoGame =
         let pixel = content.Load<Texture2D> ui.Settings.Pixel
         ui.FPSCounter <- ui.FPSCounter + 1
 
-        let fontId = (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.DefaultFont)
+        let fontId = (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.FontSettings.Normal)
         let font = content.Load<SpriteFont> fontId
         spriteBatch.Begin(samplerState = SamplerState.PointClamp)
 

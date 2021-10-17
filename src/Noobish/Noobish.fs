@@ -8,7 +8,7 @@ module Components =
     type NoobishSettings = {
         Scale: float32
         Pixel: string
-        DefaultFont: string
+        FontSettings: FontSettings
         FontPrefix: string
         GraphicsPrefix: string
     }
@@ -68,6 +68,8 @@ module Components =
 
     | Text of string
     | TextFont of string
+    | TextSmall
+    | TextLarge
     | TextAlign of NoobishTextAlign
     | TextColor of int
     | TextWrap
@@ -118,6 +120,8 @@ module Components =
     let textAlign v = TextAlign (v)
     let textCenter = TextAlign (NoobishTextAlign.Center)
     let textWrap = TextWrap
+    let textSmall = TextSmall
+    let textLarge = TextLarge
 
     let sliderRange min max = SliderRange(min, max)
     let sliderValue v = SliderValue v
@@ -177,6 +181,7 @@ module Components =
     let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
+    let combobox attributes = {ThemeId = "Button"; Children = []; Attributes = attributes}
 
     let canvas children attributes = { ThemeId = "Image"; Children = children; Attributes = [centerLayout;] @ attributes}
 
@@ -430,7 +435,7 @@ module Logic =
         let mutable disabledColor = theme.ColorDisabled
         let mutable textAlign = theme.TextAlignment
         let mutable text = ""
-        let mutable textFont = if theme.TextFont <> "" then sprintf "%s%s" settings.FontPrefix theme.TextFont else ""
+        let mutable textFont = if theme.TextFont <> "" then theme.TextFont else settings.FontSettings.Normal
         let mutable textColor = theme.TextColor
         let mutable textColorDisabled = theme.TextColorDisabled
         let mutable textWrap = false
@@ -516,6 +521,8 @@ module Logic =
             | TextAlign (value) -> textAlign <- value
             | TextColor (c) -> textColor <- c
             | TextWrap -> textWrap <- true
+            | TextSmall -> textFont <- settings.FontSettings.Small
+            | TextLarge -> textFont <- settings.FontSettings.Large
             // Slider
             | SliderRange (min, max) ->
                 if slider.IsNone then
@@ -584,6 +591,8 @@ module Logic =
                 relativeX <- scale x
                 relativeY <- scale y
 
+        let prefixedTextFont = sprintf $"%s{settings.FontPrefix}%s{textFont}"
+
         minWidth <- minWidth + paddingLeft + paddingRight + marginLeft + marginRight
         minHeight <- minHeight + paddingTop + paddingBottom + marginTop + marginBottom
 
@@ -601,9 +610,9 @@ module Logic =
         let mutable textLines = ""
         if not (String.IsNullOrWhiteSpace text) then
             let paddedWidth = maxWidth - marginLeft - marginRight - paddingLeft - paddingRight
-            textLines <- if textWrap then splitLines (measureText textFont) paddedWidth text else text
+            textLines <- if textWrap then splitLines (measureText prefixedTextFont) paddedWidth text else text
 
-            let (contentWidth, contentHeight) = measureText textFont textLines
+            let (contentWidth, contentHeight) = measureText prefixedTextFont textLines
 
             let paddedContentWidth = ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
             let paddedContentHeight = ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
@@ -640,6 +649,7 @@ module Logic =
                     let height = if maxHeight <= 0.0f then minHeight else maxHeight
                     width, height
 
+
         let cid = sprintf "%s%A%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
 
         if height < 0.0f then
@@ -653,7 +663,7 @@ module Logic =
             Toggled = toggled
             TextAlignment = textAlign
             Text = textLines.Split '\n'
-            TextFont = textFont
+            TextFont = prefixedTextFont
             TextColor = textColor
             TextColorDisabled = textColorDisabled
             TextWrap = textWrap

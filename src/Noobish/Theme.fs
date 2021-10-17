@@ -1,6 +1,12 @@
 namespace Noobish
-open System.Collections
+
 open System.Collections.Generic
+
+type FontSettings = {
+    Small: string
+    Normal: string
+    Large: string
+}
 
 type ComponentTheme = {
     TextFont: string
@@ -34,7 +40,7 @@ type ComponentTheme = {
 }
 
 type Theme = {
-    DefaultFont: string
+    FontSettings: FontSettings
     ComponentThemes: IDictionary<string, ComponentTheme>
 }
 
@@ -71,8 +77,8 @@ module Theme =
             ScrollPinThickness = 2
         }
 
-    let createDefaultTheme defaultFont: Theme=
-
+    let createDefaultTheme (fontSettings: FontSettings): Theme=
+        let defaultFont = fontSettings.Normal
         let textColor = 0xbbbbbbFF
         let textColorDisabled = 0x806d5fff
         let backgroundDisabled = 0x4d4b39ff
@@ -390,6 +396,6 @@ module Theme =
                 "Empty", empty defaultFont
             ]
         {
-            DefaultFont = defaultFont
+            FontSettings = fontSettings
             ComponentThemes = componentThemes
         }
