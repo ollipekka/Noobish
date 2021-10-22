@@ -368,47 +368,37 @@ type LayoutComponent = {
 
 module Logic =
     let splitLines (measureString: string -> int * int) width (text: string) =
-        let width = int width
 
+        let sections = text.Split [|'\n'|]
 
-        let words = text.Split [|' '|]
+        let resultLines = ResizeArray<string>()
 
-        let mutable line = ""
+        for section in sections do
 
-        let mutable newText = ""
+            let width = int width
 
-        let addLine () =
-            newText <- sprintf "%s%s\n" newText (line.Trim())
-            line <- ""
+            let words = section.Split [|' ';|]
 
+            let mutable line = ""
 
-        for word in words do
-            let (lineWidth, _lineHeight) = measureString (line + word)
+            let addLine () =
+                resultLines.Add(line.Trim())
+                line <- ""
 
-            let lineBreak = word.IndexOf '\n'
+            for word in words do
 
-            if lineBreak > - 1 then
-                let parts = word.Split '\n'
-                for part in parts do
-                    if part <> "" then
-                        line <- sprintf "%s%s " line part
-                    else
-                        line <- sprintf "%s\n" line
-                        addLine ()
+                let (lineWidth, _lineHeight) = measureString (line + word)
 
-                if line.Length > 0 then
-                    addLine()
-            else
                 if (lineWidth > width) then
                     addLine ()
 
                 line <- sprintf "%s%s " line word
 
 
-        if line.Length > 0 then
-            addLine()
+            if line.Length > 0 then
+                addLine()
 
-        newText
+        String.Join("\n", resultLines)
 
     let createLayoutComponentState () =
         {
@@ -751,6 +741,10 @@ module Logic =
         (c: Component): LayoutComponent  =
 
         let parentComponent = createLayoutComponent theme measureText settings parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
+
+        if parentComponent.Name = "DebugScroll" then
+            printfn "what"
+
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
 
@@ -786,7 +780,7 @@ module Logic =
             {parentComponent with
                 OuterHeight = height
                 OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
-                OverflowHeight = if parentComponent.ScrollVertical then parentComponent.OuterHeight + calculateChildHeight() else parentComponent.PaddedHeight
+                OverflowHeight = if parentComponent.ScrollVertical then calculateChildHeight() else parentComponent.PaddedHeight
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
 

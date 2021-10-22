@@ -149,10 +149,7 @@ module Buttons =
                     ]
                 panel
                     [
-                        combobox [ text "Selected" ]
-                            [
 
-                            ]
                     ]
                     [
 
@@ -246,7 +243,7 @@ type DemoGame () as game =
 
         let settings = {
             Scale = 1.0f
-            DefaultFont = "AnonymousPro16"
+            FontSettings = {Small = "AnomyousPro16"; Normal = "AnonymousPro16"; Large = "AnonymousPro16"};
             Pixel = "Pixel"
             FontPrefix = ""
             GraphicsPrefix = ""
