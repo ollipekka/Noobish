@@ -23,8 +23,8 @@ type NoobishUI = {
     Height: int
     Theme: Theme
     Settings: NoobishSettings
+    Components: Dictionary<string, LayoutComponent>
     State: Dictionary<string, LayoutComponentState>
-
     mutable Debug: bool
     mutable FPSEnabled: bool
     mutable FPS: int
@@ -51,7 +51,8 @@ module NoobishMonoGame =
             Height = height
             Theme = Theme.createDefaultTheme settings.FontSettings
             Settings = settings
-            State = Dictionary<string, LayoutComponentState>()
+            State = Dictionary()
+            Components = Dictionary()
 
             Layers = [||]
             FPSEnabled = false
@@ -391,7 +392,8 @@ module NoobishMonoGame =
                 c.PaddingTop + c.PaddedHeight)
 
         c.Children |> Array.iter(fun c ->
-            drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY innerRectangle
+            if not c.Hidden then
+                drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY innerRectangle
         )
 
         graphics.ScissorRectangle <- oldScissorRect
@@ -425,16 +427,17 @@ module NoobishMonoGame =
 
     let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (ui: NoobishUI)  (time: TimeSpan) =
 
+        let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
         for layer in ui.Layers do
             layer |> Array.iter(fun c ->
-                let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
-                drawComponent ui.State content ui.Settings graphics spriteBatch ui.Debug time c 0.0f 0.0f source
+                if not c.Hidden then
+                    drawComponent ui.State content ui.Settings graphics spriteBatch ui.Debug time c 0.0f 0.0f source
             )
 
         if ui.Debug || ui.FPSEnabled then
             drawFps content spriteBatch ui time
 
-    let updateDesktop (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
+    let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
         let mousePosition = curState.Position
         if curState.LeftButton = ButtonState.Pressed then
             let mutable handled = false
@@ -462,7 +465,20 @@ module NoobishMonoGame =
             for layer in ui.Layers do
                 Input.scroll ui.State layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
+    let updateKeyboard (ui: NoobishUI)  (current: KeyboardState) (previous: KeyboardState) (_gameTime: GameTime) =
 
+        for kvp in ui.State |> Seq.toArray do
+            let noobishKey = kvp.Value.KeyboardShortcut
+            if noobishKey <> NoobishKeyId.None then
+                let key =
+                    match noobishKey with
+                    | NoobishKeyId.Enter -> Keys.Enter
+                    | NoobishKeyId.Escape -> Keys.Escape
+                    | NoobishKeyId.None -> failwith "None can't be here."
+
+
+                if current.IsKeyUp key && previous.IsKeyDown key then
+                    ui.Components.[kvp.Key].OnClick()
 
     let updateMobile (ui: NoobishUI) (_prevState: TouchCollection) (curState: TouchCollection) (gameTime: GameTime) =
         for touch in curState  do
@@ -486,9 +502,10 @@ module NoobishMonoGame =
 
 
 module Program =
-    let rec private getComponentIds (c: LayoutComponent) =
-        let childIds = c.Children |> Array.collect getComponentIds
-        Array.append [|c.Id|] childIds
+    let rec private getComponents (components: Dictionary<string, LayoutComponent>) (c: LayoutComponent) =
+        components.[c.Id] <- c
+        for c2 in c.Children do
+            getComponents components c2
 
     let withNoobishRenderer (ui: NoobishUI) (program: Program<_,_,_,_>) =
         let setState model dispatch =
@@ -501,17 +518,19 @@ module Program =
 
             let oldState = Dictionary(ui.State)
             ui.State.Clear()
-            let newComponents =
-                ui.Layers
-                |> Array.collect (fun l -> l |> Array.collect getComponentIds)
-                |> Set.ofArray
 
-            for cid in newComponents do
-                let (success, value) = oldState.TryGetValue cid
+            ui.Components.Clear()
+
+            for layer in ui.Layers do
+                for c in layer do
+                    getComponents ui.Components c
+
+            for kvp in ui.Components do
+                let (success, value) = oldState.TryGetValue kvp.Key
                 if success then
-                    ui.State.[cid] <- value
+                    ui.State.[kvp.Key] <- value
                 else
-                    ui.State.[cid] <- Logic.createLayoutComponentState()
+                    ui.State.[kvp.Key] <- Logic.createLayoutComponentState kvp.Value.KeyboardShortcut
 
         program
             |> Program.withSetState setState

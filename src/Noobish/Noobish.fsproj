@@ -9,7 +9,7 @@
     <Compile Include="Types.fs" />
     <Compile Include="Theme.fs" />
     <Compile Include="Noobish.fs" />
-    <Compile Include="Input.fs" />
+    <Compile Include="NoobishInput.fs" />
   </ItemGroup>
 
   <ItemGroup>

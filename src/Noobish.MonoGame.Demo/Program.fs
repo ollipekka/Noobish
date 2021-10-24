@@ -340,12 +340,6 @@ type DemoGame () as game =
     override this.Update gameTime =
         base.Update(gameTime)
 
-        #if __MOBILE__
-        NoobishMonoGame.updateMobile nui previousTouchState touchState gameTime
-        #else
-        NoobishMonoGame.updateDesktop nui previousMouseState mouseState gameTime
-        #endif
-
         previousKeyboardState <- keyboardState
         keyboardState <- Keyboard.GetState()
 
@@ -354,6 +348,15 @@ type DemoGame () as game =
 
         previousTouchState <- touchState
         touchState <- TouchPanel.GetState()
+
+        #if __MOBILE__
+        NoobishMonoGame.updateMobile nui previousTouchState touchState gameTime
+        #else
+        NoobishMonoGame.updateMouse nui previousMouseState mouseState gameTime
+        NoobishMonoGame.updateKeyboard nui previousKeyboardState keyboardState gameTime
+        #endif
+
+
 
 
     override this.Draw (gameTime) =

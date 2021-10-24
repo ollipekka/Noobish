@@ -4,6 +4,11 @@ open System
 
 
 module Components =
+    [<RequireQualifiedAccess>]
+    type NoobishKeyId =
+    | Escape
+    | Enter
+    | None
 
     type NoobishSettings = {
         Scale: float32
@@ -86,6 +91,7 @@ module Components =
 
     | Height of height: int
     | FgColor of int
+    | Hidden of bool
     | Enabled of bool
     | DisabledColor of int
     | BorderColor of int
@@ -105,6 +111,7 @@ module Components =
     | RowSpan of int
     | ColSpan of int
     | RelativePosition of x: int * y: int
+    | KeyboardShortcut of NoobishKeyId
 
     type Component = {
         ThemeId: string
@@ -161,6 +168,7 @@ module Components =
     let height h = Height h
     let color c = FgColor (c)
     let enabled v = Enabled(v)
+    let hidden = Hidden(true)
 
     let borderSize v = BorderSize(v)
     let borderColor c = BorderColor(c)
@@ -174,6 +182,9 @@ module Components =
 
     let centerLayout = Layout (NoobishLayout.Center)
     let relativePosition x y = RelativePosition(x, y)
+
+    let keyboardShortcut k = KeyboardShortcut k
+
     // Components
     let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
     let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
@@ -260,6 +271,8 @@ type LayoutComponentState = {
     mutable ScrollY: float32
 
     mutable SliderValue: float32
+
+    KeyboardShortcut: NoobishKeyId
 }
 
 
@@ -277,6 +290,7 @@ type LayoutComponent = {
     Name: string
     ThemeId: string
     Enabled: bool
+    Hidden: bool
     Toggled: bool
     TextAlignment: NoobishTextAlign
 
@@ -319,6 +333,8 @@ type LayoutComponent = {
 
     Slider: option<Slider>
 
+    KeyboardShortcut: NoobishKeyId
+
     OnClick: unit -> unit
 
     Layout: NoobishLayout
@@ -327,6 +343,7 @@ type LayoutComponent = {
 
     Children: LayoutComponent[]
 } with
+    member l.Visible with get() = not l.Hidden
     member l.PaddedWidth with get() = l.OuterWidth - l.PaddingLeft - l.PaddingRight - l.MarginLeft - l.MarginRight
     member l.PaddedHeight with get() = l.OuterHeight - l.PaddingBottom - l.PaddingTop - l.MarginTop - l.MarginBottom
 
@@ -400,7 +417,7 @@ module Logic =
 
         String.Join("\n", resultLines)
 
-    let createLayoutComponentState () =
+    let createLayoutComponentState (keyboardShortcut) =
         {
             State = ComponentState.Normal
             PressedTime = TimeSpan.Zero
@@ -410,6 +427,7 @@ module Logic =
             ScrollY = 0.0f
 
             SliderValue = 0.0f
+            KeyboardShortcut = keyboardShortcut
         }
 
     let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
@@ -421,6 +439,7 @@ module Logic =
         let theme = if theme.ComponentThemes.ContainsKey themeId then theme.ComponentThemes.[themeId] else theme.ComponentThemes.["Empty"]
         let mutable name = ""
         let mutable enabled = true
+        let mutable hidden = false
         let mutable toggled = false
         let mutable disabledColor = theme.ColorDisabled
         let mutable textAlign = theme.TextAlignment
@@ -469,6 +488,8 @@ module Logic =
         let mutable relativeY = 0.0f
 
         let mutable slider: option<Slider> = None
+
+        let mutable keyboardShortcut = NoobishKeyId.None
 
         for a in attributes do
             match a with
@@ -549,6 +570,7 @@ module Logic =
             | FgColor (c) -> color <- c
             | Block -> isBlock <- true
             | Enabled (v) -> enabled <- v
+            | Hidden (h) -> hidden <- h
             | DisabledColor(c) -> disabledColor <- c
             | Texture (t) ->
                 texture <- t
@@ -580,6 +602,8 @@ module Logic =
             | RelativePosition (x, y) ->
                 relativeX <- scale x
                 relativeY <- scale y
+            | KeyboardShortcut k ->
+                keyboardShortcut <- k
 
         let prefixedTextFont = sprintf $"%s{settings.FontPrefix}%s{textFont}"
 
@@ -645,11 +669,16 @@ module Logic =
         if height < 0.0f then
             raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
 
+        let width = if hidden then 0.0f else width
+        let height = if hidden then 0.0f else height
+        let startX = if hidden then 0.0f else startX
+        let startY = if hidden then 0.0f else startY
         {
             Id = cid
             Name = name
             ThemeId = themeId
             Enabled = enabled
+            Hidden = hidden
             Toggled = toggled
             TextAlignment = textAlign
             Text = textLines.Split '\n'
@@ -660,6 +689,7 @@ module Logic =
 
             Slider = slider
 
+            KeyboardShortcut = keyboardShortcut
 
             Texture =
                 if texture <> NoobishTexture.None then
@@ -742,9 +772,6 @@ module Logic =
 
         let parentComponent = createLayoutComponent theme measureText settings parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
 
-        if parentComponent.Name = "DebugScroll" then
-            printfn "what"
-
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
 
@@ -776,7 +803,7 @@ module Logic =
             let height =
                 if parentBounds.Height <= 0.0f then parentComponent.OuterHeight + calculateChildHeight() else parentComponent.OuterHeight
 
-            if height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
+            if parentComponent.Visible && height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
             {parentComponent with
                 OuterHeight = height
                 OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
