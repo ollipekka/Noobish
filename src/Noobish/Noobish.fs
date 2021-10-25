@@ -272,6 +272,7 @@ type LayoutComponentState = {
 
     mutable SliderValue: float32
 
+    Version: int
     KeyboardShortcut: NoobishKeyId
 }
 
@@ -417,7 +418,7 @@ module Logic =
 
         String.Join("\n", resultLines)
 
-    let createLayoutComponentState (keyboardShortcut) =
+    let createLayoutComponentState (keyboardShortcut) (version) =
         {
             State = ComponentState.Normal
             PressedTime = TimeSpan.Zero
@@ -428,6 +429,7 @@ module Logic =
 
             SliderValue = 0.0f
             KeyboardShortcut = keyboardShortcut
+            Version = version
         }
 
     let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
@@ -867,7 +869,7 @@ module Logic =
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
 
-    let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (width: float32) (height: float32)  (components: list<Component>) =
+    let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (width: float32) (height: float32) (components: list<Component>) =
         components
             |> List.map(fun c ->
                 layoutComponent measureText theme settings 0.0f 0.0f 0 0 width height c

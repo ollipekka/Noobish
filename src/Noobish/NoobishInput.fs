@@ -6,6 +6,7 @@ open System.Collections.Generic
 open Noobish.Utils
 
 let rec press
+    (version: int)
     (state: IReadOnlyDictionary<string, LayoutComponentState>)
     (components: LayoutComponent[])
     (time: TimeSpan)
@@ -19,10 +20,10 @@ let rec press
     while not handled && i < components.Length do
         let c = components.[i]
         let cs = state.[c.Id]
-        if c.Enabled && (not c.Hidden) && cs.State <> ComponentState.Toggled && c.Contains positionX positionY scrollX scrollY  then
+        if cs.Version = version && c.Enabled && (not c.Hidden) && cs.State <> ComponentState.Toggled && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
                 if c.Children.Length > 0 then
-                    press state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
+                    press version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
                 else
                     false
             if not handledByChild then
@@ -43,6 +44,7 @@ let rec press
         i <- i + 1
     handled
 let rec click
+    (version: int)
     (state: IReadOnlyDictionary<string, LayoutComponentState>)
     (components: LayoutComponent[])
     (time: TimeSpan)
@@ -56,11 +58,12 @@ let rec click
 
     while not handled && i < components.Length do
         let c = components.[i]
-        if c.Enabled && (not c.Hidden) && c.Contains positionX positionY scrollX scrollY then
+        let cs = state.[c.Id]
+        if cs.Version = version && c.Enabled && (not c.Hidden) && c.Contains positionX positionY scrollX scrollY then
             let cs = state.[c.Id]
             let handledByChild =
                 if c.Children.Length > 0 then
-                    click state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
+                    click version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
                 else
                     false
             if not handledByChild then
@@ -75,6 +78,7 @@ let rec click
     handled
 
 let rec scroll
+    (version: int)
     (state: IReadOnlyDictionary<string, LayoutComponentState>)
     (components: LayoutComponent[])
     (positionX: float32)
@@ -88,15 +92,15 @@ let rec scroll
 
     let mutable handled = false;
     for c in components do
-        if c.Enabled && (not c.Hidden) && c.Contains positionX positionY scrollX scrollY then
+        let cs = state.[c.Id]
+        if cs.Version = version && c.Enabled && (not c.Hidden) && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then
-                    scroll state c.Children positionX positionY scale time scrollX scrollY
+                    scroll version state c.Children positionX positionY scale time scrollX scrollY
                 else
                     false
 
-            let cs = state.[c.Id]
 
             if not handledByChild then
                 if c.ScrollHorizontal && c.OverflowWidth > c.Width then
