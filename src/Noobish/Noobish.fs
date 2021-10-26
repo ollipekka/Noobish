@@ -272,7 +272,7 @@ type LayoutComponentState = {
 
     mutable SliderValue: float32
 
-    Version: int
+    Version: Guid
     KeyboardShortcut: NoobishKeyId
 }
 

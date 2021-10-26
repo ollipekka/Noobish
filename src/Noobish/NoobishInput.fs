@@ -6,7 +6,7 @@ open System.Collections.Generic
 open Noobish.Utils
 
 let rec press
-    (version: int)
+    (version: Guid)
     (state: IReadOnlyDictionary<string, LayoutComponentState>)
     (components: LayoutComponent[])
     (time: TimeSpan)
@@ -44,7 +44,7 @@ let rec press
         i <- i + 1
     handled
 let rec click
-    (version: int)
+    (version: Guid)
     (state: IReadOnlyDictionary<string, LayoutComponentState>)
     (components: LayoutComponent[])
     (time: TimeSpan)
@@ -78,7 +78,7 @@ let rec click
     handled
 
 let rec scroll
-    (version: int)
+    (version: Guid)
     (state: IReadOnlyDictionary<string, LayoutComponentState>)
     (components: LayoutComponent[])
     (positionX: float32)

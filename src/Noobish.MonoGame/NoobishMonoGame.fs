@@ -27,7 +27,7 @@ type NoobishUI = {
     State: Dictionary<string, LayoutComponentState>
     TempState: Dictionary<string, LayoutComponentState>
     mutable Debug: bool
-    mutable Version: int
+    mutable Version: Guid
     mutable FPSEnabled: bool
     mutable FPS: int
     mutable FPSCounter: int
@@ -57,7 +57,7 @@ module NoobishMonoGame =
             Components = Dictionary()
 
             Debug = false
-            Version = 0
+            Version = Guid.NewGuid()
             Layers = [||]
             FPSEnabled = false
             FPS = 0
@@ -530,7 +530,7 @@ module Program =
             let width = (float32 ui.Width)
             let height = (float32 ui.Height)
 
-            ui.Version <- ui.Version + 1
+            ui.Version <- Guid.NewGuid()
 
             ui.Layers <- layers |> List.map (Logic.layout ui.MeasureText ui.Theme ui.Settings width height) |> List.toArray
 
