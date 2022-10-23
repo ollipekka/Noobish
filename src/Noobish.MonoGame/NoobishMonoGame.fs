@@ -409,14 +409,13 @@ module NoobishMonoGame =
         let pixel = content.Load<Texture2D> ui.Settings.Pixel
         ui.FPSCounter <- ui.FPSCounter + 1
 
-        let fontId = (sprintf "%s%s" ui.Settings.FontPrefix ui.Settings.FontSettings.Normal)
-        let font = content.Load<SpriteFont> fontId
+        let font = content.Load<SpriteFont> ui.Settings.FontSettings.Normal
         spriteBatch.Begin(samplerState = SamplerState.PointClamp)
 
-        let (areaWidth, areaHeight) = ui.MeasureText fontId "255"
+        let (areaWidth, areaHeight) = ui.MeasureText ui.Settings.FontSettings.Normal "255"
 
         let fpsText = (sprintf "%i" (ui.FPS * 10))
-        let (fpsWidth, fpsHeight) = ui.MeasureText fontId fpsText
+        let (fpsWidth, fpsHeight) = ui.MeasureText ui.Settings.FontSettings.Normal fpsText
         let textX = areaWidth - fpsWidth
         let textY = areaHeight - fpsHeight
 

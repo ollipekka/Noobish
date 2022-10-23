@@ -245,8 +245,6 @@ type DemoGame () as game =
             Scale = 1.0f
             FontSettings = {Small = "AnomyousPro16"; Normal = "AnonymousPro16"; Large = "AnonymousPro16"};
             Pixel = "Pixel"
-            FontPrefix = ""
-            GraphicsPrefix = ""
         }
 
         nui <- NoobishMonoGame.create game.Content width height settings

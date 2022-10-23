@@ -14,8 +14,6 @@ module Components =
         Scale: float32
         Pixel: string
         FontSettings: FontSettings
-        FontPrefix: string
-        GraphicsPrefix: string
     }
 
     type Slider = {
@@ -530,7 +528,7 @@ module Logic =
                 minHeight <- scale height
             // Text
             | Text(value) -> text <- value
-            | TextFont(value) -> textFont <- if value <> "" then sprintf "%s%s" settings.FontPrefix value else ""
+            | TextFont(value) -> textFont <- value
             | TextAlign (value) -> textAlign <- value
             | TextColor (c) -> textColor <- c
             | TextWrap -> textWrap <- true
@@ -607,7 +605,6 @@ module Logic =
             | KeyboardShortcut k ->
                 keyboardShortcut <- k
 
-        let prefixedTextFont = sprintf $"%s{settings.FontPrefix}%s{textFont}"
 
         minWidth <- minWidth + paddingLeft + paddingRight + marginLeft + marginRight
         minHeight <- minHeight + paddingTop + paddingBottom + marginTop + marginBottom
@@ -626,9 +623,9 @@ module Logic =
         let mutable textLines = ""
         if not (String.IsNullOrWhiteSpace text) then
             let paddedWidth = maxWidth - marginLeft - marginRight - paddingLeft - paddingRight
-            textLines <- if textWrap then splitLines (measureText prefixedTextFont) paddedWidth text else text
+            textLines <- if textWrap then splitLines (measureText textFont) paddedWidth text else text
 
-            let (contentWidth, contentHeight) = measureText prefixedTextFont textLines
+            let (contentWidth, contentHeight) = measureText textFont textLines
 
             let paddedContentWidth = ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
             let paddedContentHeight = ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
@@ -684,7 +681,7 @@ module Logic =
             Toggled = toggled
             TextAlignment = textAlign
             Text = textLines.Split '\n'
-            TextFont = prefixedTextFont
+            TextFont = textFont
             TextColor = textColor
             TextColorDisabled = textColorDisabled
             TextWrap = textWrap
