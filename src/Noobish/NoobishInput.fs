@@ -36,7 +36,8 @@ let rec press
                     let bounds = c.RectangleWithPadding
                     let relative = (positionX - bounds.X) / (bounds.Width)
                     let newValue = slider'.Min + (relative * slider'.Max - slider'.Min)
-                    slider'.OnValueChanged (clamp newValue slider'.Min slider'.Max)
+                    let steppedNewValue = truncate(newValue / slider'.Step) * slider'.Step
+                    slider'.OnValueChanged (clamp steppedNewValue slider'.Min slider'.Max)
                 | None -> ()
             else
                 handled <- true

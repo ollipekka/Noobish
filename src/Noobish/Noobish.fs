@@ -79,6 +79,7 @@ module Components =
 
     | SliderRange of min:float32 * max:float32
     | SliderValue of float32
+    | SliderStep of float32
     | SliderOnValueChanged of (float32 -> unit)
 
     | SizeHint of NoobishSizeHint
@@ -130,6 +131,7 @@ module Components =
 
     let sliderRange min max = SliderRange(min, max)
     let sliderValue v = SliderValue v
+    let sliderStep v = SliderStep v
     let sliderOnValueChanged cb = SliderOnValueChanged cb
 
     let texture t = Texture (NoobishTexture.Basic t)
@@ -142,6 +144,7 @@ module Components =
     let textureFlipHorizontally = TextureEffect NoobishTextureEffect.FlipHorizontally
     let textureFlipVertically = TextureEffect NoobishTextureEffect.FlipVertically
     let textureBestFitMax = TextureSize NoobishTextureSize.BestFitMax
+    let textureBestFitMin = TextureSize NoobishTextureSize.BestFitMin
     let textureRotation t = TextureRotation t
     let paddingLeft lp = PaddingLeft lp
     let paddingRight rp = PaddingRight rp
@@ -537,7 +540,7 @@ module Logic =
             // Slider
             | SliderRange (min, max) ->
                 if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f; OnValueChanged = ignore}
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore}
 
                 slider <- slider
                     |> Option.map(fun s ->
@@ -545,15 +548,23 @@ module Logic =
                     )
             | SliderValue (v) ->
                 if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f; OnValueChanged = ignore}
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore}
 
                 slider <- slider
                     |> Option.map(fun s ->
                         {s with Value = v}
                     )
+            | SliderStep (v) ->
+                if slider.IsNone then
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore}
+
+                slider <- slider
+                    |> Option.map(fun s ->
+                        {s with Step = v}
+                    )
             | SliderOnValueChanged (cb) ->
                 if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 1.0f; Value = 0.0f; OnValueChanged = ignore}
+                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore}
 
                 slider <- slider
                     |> Option.map(fun s ->
