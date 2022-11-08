@@ -39,6 +39,7 @@ let rec press
                     let steppedNewValue = truncate(newValue / slider'.Step) * slider'.Step
                     slider'.OnValueChanged (clamp steppedNewValue slider'.Min slider'.Max)
                 | None -> ()
+
             else
                 handled <- true
 
@@ -61,19 +62,28 @@ let rec click
         let c = components.[i]
         let cs = state.[c.Id]
         if cs.Version = version && c.Enabled && (not c.Hidden) && c.Contains positionX positionY scrollX scrollY then
-            let cs = state.[c.Id]
+
             let handledByChild =
                 if c.Children.Length > 0 then
                     click version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
                 else
                     false
             if not handledByChild then
-                let cs = state.[c.Id]
+
                 cs.PressedTime <- time
-                c.OnClick()
+                if c.Combobox.IsSome then
+                    cs.State <- if cs.State = ComponentState.Toggled then ComponentState.Normal else ComponentState.Toggled
+                else
+                    c.OnClick()
+
                 handled <- true
+
+
+
             else
                 handled <- true
+
+
 
         i <- i + 1
     handled

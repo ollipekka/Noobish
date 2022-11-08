@@ -24,6 +24,7 @@ type DemoMessage =
     | ShowSliders
     | SliderValueChanged of float32
     | ChangePadding of int
+    | ComboboxValueChanged of string
     | ToggleDebug
 
 type ViewState = | Containers | Buttons | Text | Slider
@@ -33,6 +34,7 @@ type DemoModel =
         UI: NoobishUI
         State: ViewState
         Padding: int
+        ComboboxValue: string
         SliderAValue: float32
     }
 
@@ -149,7 +151,15 @@ module Buttons =
                     ]
                 panel
                     [
-
+                        combobox
+                            [
+                                option "Value 1"
+                                option "Value 2"
+                                option "Value 3"
+                            ]
+                            [
+                                text model.ComboboxValue; onChange (fun v -> dispatch (ComboboxValueChanged v))
+                            ]
                     ]
                     [
 
@@ -251,7 +261,7 @@ type DemoGame () as game =
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
-            { UI = nui; State = Buttons; Padding = 5; SliderAValue = 25.0f;}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; SliderAValue = 25.0f;}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -265,6 +275,8 @@ type DemoGame () as game =
                 {model with State = Slider}, Cmd.none
             | SliderValueChanged v ->
                 {model with SliderAValue = v}, Cmd.none
+            | ComboboxValueChanged v ->
+                {model with ComboboxValue = v}, Cmd.none
             | ChangePadding padding ->
                 {model with Padding = padding}, Cmd.none
             | ToggleDebug ->

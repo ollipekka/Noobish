@@ -258,6 +258,37 @@ module NoobishMonoGame =
         let color = c.ScrollPinColor |> toColor
         drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
 
+
+    let private drawCombobox
+        (state: IReadOnlyDictionary<string, LayoutComponentState>)
+        (content: ContentManager)
+        (settings: NoobishSettings)
+        (spriteBatch: SpriteBatch)
+        (c: LayoutComponent)
+        (combobox: Combobox)
+        (_time: TimeSpan)
+        _scrollX
+        _scrollY =
+        let font = content.Load<SpriteFont> c.TextFont
+
+        let cs = state.[c.Id]
+
+
+        let pixel = content.Load<Texture2D> settings.Pixel
+
+        if cs.State = ComponentState.Toggled then
+            let startX = c.StartX
+            let startY = c.StartY
+            let mutable width = c.OuterWidth
+            let mutable height = 0.0f
+            for child in c.Children do
+                let size = font.MeasureString (child.Text.[0])
+
+                width <- max width (float32 size.X)
+                height <- height + (float32 size.Y)
+
+            drawRectangle spriteBatch pixel Color.DarkBlue startX startY width height
+
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) scrollX scrollY =
 
 
@@ -374,6 +405,9 @@ module NoobishMonoGame =
         c.Slider
             |> Option.iter(
                 fun s -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX )
+        c.Combobox
+            |> Option.iter(
+                fun s -> drawCombobox state content settings spriteBatch c s time totalScrollX totalScrollX )
 
         if debug then
             let childRect = c.RectangleWithPadding
@@ -531,7 +565,7 @@ module Program =
 
             ui.Version <- Guid.NewGuid()
 
-            ui.Layers <- layers |> List.map (Logic.layout ui.MeasureText ui.Theme ui.Settings width height) |> List.toArray
+            ui.Layers <- layers |> List.map (Logic.layout ui.MeasureText ui.Theme ui.Settings 1 width height) |> List.toArray
 
             let oldState = Dictionary(ui.State)
             ui.State.Clear()
