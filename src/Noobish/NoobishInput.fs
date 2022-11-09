@@ -71,17 +71,8 @@ let rec click
             if not handledByChild then
 
                 cs.PressedTime <- time
-                if c.Combobox.IsSome then
-                    c.Children |> Array.iter(
-                        fun c' ->
-                            let cs' = state.[c'.Id]
-                            if cs'.State <> ComponentState.Hidden then
-                                cs'.State <- ComponentState.Hidden
-                            else
-                                cs'.State <- ComponentState.Normal
-                    )
-                else
-                    c.OnClick()
+
+                c.OnClickInternal()
 
                 handled <- true
             else

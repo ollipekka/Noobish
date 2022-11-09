@@ -24,6 +24,7 @@ type NoobishUI = {
     Theme: Theme
     Settings: NoobishSettings
     Components: Dictionary<string, LayoutComponent>
+    ComponentsByLayer: Dictionary<int, ResizeArray<LayoutComponent>>
     State: Dictionary<string, LayoutComponentState>
     TempState: Dictionary<string, LayoutComponentState>
     mutable Debug: bool
@@ -55,6 +56,7 @@ module NoobishMonoGame =
             State = Dictionary()
             TempState = Dictionary()
             Components = Dictionary()
+            ComponentsByLayer = Dictionary()
 
             Debug = false
             Version = Guid.NewGuid()
@@ -382,17 +384,20 @@ module NoobishMonoGame =
         let startX = bounds.X + totalScrollX
         let startY = bounds.Y + totalScrollY
 
-        let sourceStartX = max startX (float32 parentRectangle.X)
-        let sourceStartY = max startY (float32 parentRectangle.Y)
-        let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
-        let sourceEndY = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
-
         let outerRectangle =
-            createRectangle(
-                sourceStartX,
-                sourceStartY,
-                (min (float32 parentRectangle.Width) sourceEndX),
-                (min (float32 parentRectangle.Height) sourceEndY) )
+            if c.Overlay then
+                createRectangle(startX, startY, bounds.Width, bounds.Height)
+            else
+                let sourceStartX = max startX (float32 parentRectangle.X)
+                let sourceStartY = max startY (float32 parentRectangle.Y)
+                let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
+                let sourceEndY = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
+
+                createRectangle(
+                    sourceStartX,
+                    sourceStartY,
+                    (min (float32 parentRectangle.Width) sourceEndX),
+                    (min (float32 parentRectangle.Height) sourceEndY) )
 
         let oldScissorRect = graphics.ScissorRectangle
 
@@ -535,7 +540,7 @@ module NoobishMonoGame =
 
                 let c = ui.Components.[kvp.Key]
                 if kvp.Value.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
-                    c.OnClick()
+                    c.OnClickInternal()
 
         ui.TempState.Clear()
     let updateMobile (ui: NoobishUI) (_prevState: TouchCollection) (curState: TouchCollection) (gameTime: GameTime) =
@@ -564,10 +569,27 @@ module NoobishMonoGame =
         ui.TempState.Clear()
 
 module Program =
-    let rec private getComponents (components: Dictionary<string, LayoutComponent>) (c: LayoutComponent) =
+    let rec private getComponents (components: Dictionary<string, LayoutComponent>) (overlays: ResizeArray<LayoutComponent>) (c: LayoutComponent) =
         components.[c.Id] <- c
+
+        if c.Overlay then
+            overlays.Add c
+
         for c2 in c.Children do
-            getComponents components c2
+            getComponents components overlays c2
+(*
+    let rec private getComponentsByLayers (componentsByLayer: Dictionary<int, ResizeArray<LayoutComponent>>) (c: LayoutComponent) =
+        let components =
+            let (success, components) = componentsByLayer.TryGetValue(c.ZIndex)
+            if success then
+                components
+            else
+                let array = new ResizeArray<LayoutComponent>()
+                componentsByLayer.[c.ZIndex] <- array
+                array
+
+        components.Add c
+*)
 
     let withNoobishRenderer (ui: NoobishUI) (program: Program<_,_,_,_>) =
         let setState model dispatch =
@@ -577,23 +599,58 @@ module Program =
 
             ui.Version <- Guid.NewGuid()
 
-            ui.Layers <- layers |> List.map (Logic.layout ui.MeasureText ui.Theme ui.Settings 1 width height) |> List.toArray
+            let mutateState (name: string) (message:ComponentMessage) =
+                let kvp = ui.State |> Seq.tryFind(fun kvp -> kvp.Value.Name = name)
+                kvp |> Option.iter (fun kvp' ->
+                    let cs = kvp'.Value
+                    match message with
+                    | ToggleVisibility ->
+
+                        if cs.Visible then
+                            cs.State <- ComponentState.Hidden
+                        else
+                            cs.State <- ComponentState.Normal
+
+                    | SetScrollX (v) ->
+                        cs.ScrollX <- v
+                    | SetScrollY(v) ->
+                        cs.ScrollY <- v
+                    | SetSliderValue(v) ->
+                        cs.SliderValue <- v
+                )
+
+
+
+
+            ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.MeasureText ui.Theme ui.Settings mutateState (i + 1) width height components) |> List.toArray
 
             let oldState = Dictionary(ui.State)
             ui.State.Clear()
 
             ui.Components.Clear()
 
+            let overlays = ResizeArray<LayoutComponent>()
+
             for layer in ui.Layers do
                 for c in layer do
-                    getComponents ui.Components c
+                    getComponents ui.Components overlays c
 
+            ui.Layers <- Array.concat [ui.Layers; [| overlays.ToArray() |]]
+
+            (*
+            for layer in ui.ComponentsByLayer.Values do
+                layer.Clear()
+
+            for layer in ui.ComponentsByLayer.Values do
+                for c in layer do
+                    getComponentsByLayers ui.ComponentsByLayer c
+            *)
             for kvp in ui.Components do
                 let (success, value) = oldState.TryGetValue kvp.Key
                 if success then
                     ui.State.[kvp.Key] <- {value with Version = ui.Version}
                 else
-                    ui.State.[kvp.Key] <- Logic.createLayoutComponentState kvp.Value.KeyboardShortcut ui.Version kvp.Value.Visible
+                    ui.State.[kvp.Key] <- Logic.createLayoutComponentState kvp.Value.Name kvp.Value.KeyboardShortcut ui.Version kvp.Value.Visible
 
         program
             |> Program.withSetState setState

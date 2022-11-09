@@ -10,6 +10,16 @@ module Components =
     | Enter
     | None
 
+
+    type ComponentMessage =
+    | ToggleVisibility
+    | SetScrollX of float32
+    | SetScrollY of float32
+    | SetSliderValue of float32
+
+    type ComponentChangeDispatch = (ComponentMessage -> unit)
+
+
     type NoobishSettings = {
         Scale: float32
         Pixel: string
@@ -76,6 +86,7 @@ module Components =
     | MarginTop of int
     | MarginBottom of int
     | ZIndex of int
+    | Overlay
 
     | Text of string
     | TextFont of string
@@ -93,6 +104,7 @@ module Components =
     | Combobox
     | SizeHint of NoobishSizeHint
     | OnClick of (unit -> unit)
+    | OnClickInternal of ((string -> ComponentMessage -> unit) -> unit)
     | OnChange of (string -> unit)
     | Toggled of bool
     | Block
@@ -237,9 +249,35 @@ module Components =
     let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
 
 
-    let combobox children attributes =
-        let dropdown = panel children [hidden; ZIndex(10 * 255)]
-        {ThemeId = "Button"; Children = [dropdown]; Attributes = Combobox :: attributes}
+    let combobox name children attributes =
+
+        let mutable onChange: string -> unit = ignore
+
+        for a in attributes do
+            match a with
+            | OnChange (onChange') ->
+                onChange <- onChange'
+            | _ -> ()
+
+        let children' = children |> List.map(fun c' ->
+            let mutable text = ""
+            for a in c'.Attributes do
+                match a with
+                | Text (text') ->
+                    text <- text'
+                | _ -> ()
+
+            let onClick = OnClickInternal (
+                fun (dispatch) ->
+                    dispatch name ToggleVisibility
+                    onChange (text)
+                )
+            {c' with Attributes = onClick :: c'.Attributes}
+        )
+
+        let dropdown = panel children' [ Name(name); hidden; ZIndex(10 * 255); Overlay]
+
+        {ThemeId = "Button"; Children = [dropdown]; Attributes = Combobox :: OnClickInternal(fun dispatch -> dispatch name ToggleVisibility ) :: attributes}
 
     let largeWindowWithGrid cols rows children attributes =
         grid 16 9
@@ -280,7 +318,9 @@ type NoobishRectangle = {
     member r.Top with get() = r.Y
     member r.Bottom with get() = r.Y + r.Height
 
+
 type LayoutComponentState = {
+    Name: string
     mutable State: ComponentState
     mutable PressedTime: TimeSpan
     mutable ScrolledTime: TimeSpan
@@ -313,6 +353,7 @@ type LayoutComponent = {
     Visible: bool
     Toggled: bool
     ZIndex: int
+    Overlay: bool
 
     TextAlignment: NoobishTextAlign
     Text: string[]
@@ -357,7 +398,7 @@ type LayoutComponent = {
 
     KeyboardShortcut: NoobishKeyId
 
-    OnClick: unit -> unit
+    OnClickInternal: unit -> unit
     OnChange: string -> unit
 
     Layout: NoobishLayout
@@ -440,8 +481,9 @@ module Logic =
 
         String.Join("\n", resultLines)
 
-    let createLayoutComponentState (keyboardShortcut) (version) visible =
+    let createLayoutComponentState (name) (keyboardShortcut) (version) visible =
         {
+            Name = name
             State = if visible then ComponentState.Normal else ComponentState.Hidden
             PressedTime = TimeSpan.Zero
             ScrolledTime = TimeSpan.Zero
@@ -455,7 +497,7 @@ module Logic =
             Version = version
         }
 
-    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (zIndex: int) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
+    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
 
         let scale (v: int) = float32 v * settings.Scale
         let scaleTuple (left, right, top, bottom) =
@@ -467,6 +509,7 @@ module Logic =
         let mutable visible = true
         let mutable toggled = false
         let mutable zIndex = zIndex
+        let mutable overlay = false
         let mutable disabledColor = theme.ColorDisabled
         let mutable textAlign = theme.TextAlignment
         let mutable text = ""
@@ -484,6 +527,7 @@ module Logic =
 
         let mutable isBlock = false
         let mutable onClick: unit -> unit = ignore
+        let mutable onClickInternal: (string -> ComponentMessage -> unit) -> unit = ignore
         let mutable onChange: string -> unit = ignore
         let mutable borderSize = scale theme.BorderSize
         let mutable borderColor = theme.BorderColor
@@ -605,11 +649,14 @@ module Logic =
             | BorderSize(v) -> borderSize <- scale v
             | BorderColor(c) -> borderColor <-c
             | OnClick(v) -> onClick <- v
+            | OnClickInternal(v) -> onClickInternal <- v
             | OnChange(v) -> onChange <- v
             | Toggled(value) ->
                 toggled <- value
             | ZIndex(value) ->
                 zIndex <- value
+            | Overlay ->
+                overlay <- true
             | SizeHint(value) -> sizeHint <- value
             | FgColor (c) -> color <- c
             | Block -> isBlock <- true
@@ -712,10 +759,6 @@ module Logic =
         if height < 0.0f then
             raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
 
-        //let width = if not visible then 0.0f else width
-        //let height = if not visible then 0.0f else height
-        //let startX = if not visible then 0.0f else startX
-        //let startY = if not visible then 0.0f else startY
         {
             Id = cid
             Name = name
@@ -724,6 +767,7 @@ module Logic =
             Visible = visible
             Toggled = toggled
             ZIndex = zIndex
+            Overlay = overlay
 
             TextAlignment = textAlign
             Text = textLines.Split '\n'
@@ -770,7 +814,9 @@ module Logic =
             MarginTop = marginTop
             MarginBottom = marginBottom
 
-            OnClick = onClick
+            OnClickInternal = (fun _ ->
+                onClickInternal(mutateState)
+                onClick())
             OnChange = onChange
 
             Layout = layout
@@ -809,6 +855,7 @@ module Logic =
         (measureText: string -> string -> int*int)
         (theme: Theme)
         (settings: NoobishSettings)
+        (mutateState: string -> ComponentMessage -> unit)
         (zIndex: int)
         (startX: float32)
         (startY: float32)
@@ -818,7 +865,7 @@ module Logic =
         (parentHeight: float32)
         (c: Component): LayoutComponent  =
 
-        let parentComponent = createLayoutComponent theme measureText settings zIndex parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
+        let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -838,7 +885,7 @@ module Logic =
                 let childStartY = parentBounds.Y + offsetY
                 let childWidth = if parentComponent.ScrollHorizontal then parentBounds.Width else parentBounds.Width - offsetX
                 let childHeight = if parentComponent.ScrollVertical then parentBounds.Height else parentBounds.Height - offsetY
-                let childComponent = layoutComponent measureText theme settings zIndex childStartX childStartY 0 0 childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState zIndex childStartX childStartY 0 0 childWidth childHeight child
                 newChildren.Add(childComponent)
 
                 let childEndX = offsetX + childComponent.OuterWidth
@@ -881,7 +928,7 @@ module Logic =
                 let childWidth = colWidth
                 let childHeight = rowHeight
 
-                let childComponent = layoutComponent measureText theme settings (zIndex + 1) childStartX childStartY 1 1 childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) childStartX childStartY 1 1 childWidth childHeight child
                 newChildren.Add(childComponent)
 
                 for c = col to col + childComponent.ColSpan - 1 do
@@ -907,7 +954,7 @@ module Logic =
                 let childWidth = 50.0f
                 let childHeight = 50.0f
 
-                let childComponent = layoutComponent measureText theme settings (zIndex + 1) childStartX childStartY 1 1 childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) childStartX childStartY 1 1 childWidth childHeight child
                 newChildren.Add(childComponent)
 
             {parentComponent with
@@ -915,10 +962,10 @@ module Logic =
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
 
-    let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (layer: int) (width: float32) (height: float32) (components: list<Component>) =
+    let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (layer: int) (width: float32) (height: float32) (components: list<Component>) =
         components
             |> List.map(fun c ->
-                layoutComponent measureText theme settings (layer * 128) 0.0f 0.0f 0 0 width height c
+                layoutComponent measureText theme settings mutateState (layer * 128) 0.0f 0.0f 0 0 width height c
             ) |> List.toArray
 
 
