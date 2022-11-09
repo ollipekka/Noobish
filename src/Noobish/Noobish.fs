@@ -205,7 +205,7 @@ module Components =
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
 
-    let option t = {ThemeId = "Button"; Children = []; Attributes = [text t] }
+    let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; block] }
 
     let canvas children attributes = { ThemeId = "Image"; Children = children; Attributes = [centerLayout;] @ attributes}
 
