@@ -100,7 +100,7 @@ module Components =
 
     | Height of height: int
     | FgColor of int
-    | Hidden of bool
+    | Visible of bool
     | Enabled of bool
     | DisabledColor of int
     | BorderColor of int
@@ -180,7 +180,7 @@ module Components =
     let height h = Height h
     let color c = FgColor (c)
     let enabled v = Enabled(v)
-    let hidden = Hidden(true)
+    let hidden = Visible(false)
 
     let borderSize v = BorderSize(v)
     let borderColor c = BorderColor(c)
@@ -205,7 +205,6 @@ module Components =
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
 
-    let combobox children attributes = {ThemeId = "Button"; Children = children; Attributes = Combobox :: attributes}
     let option t = {ThemeId = "Button"; Children = []; Attributes = [text t] }
 
     let canvas children attributes = { ThemeId = "Image"; Children = children; Attributes = [centerLayout;] @ attributes}
@@ -237,6 +236,11 @@ module Components =
             ]
     let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
 
+
+    let combobox children attributes =
+        let dropdown = panel children [hidden; ZIndex(10 * 255)]
+        {ThemeId = "Button"; Children = [dropdown]; Attributes = Combobox :: attributes}
+
     let largeWindowWithGrid cols rows children attributes =
         grid 16 9
             [
@@ -262,7 +266,7 @@ open Components
 
 [<RequireQualifiedAccess>]
 type ComponentState =
-    Normal | Toggled
+    Normal | Toggled | Hidden
 
 [<Struct>]
 type NoobishRectangle = {
@@ -288,7 +292,8 @@ type LayoutComponentState = {
 
     Version: Guid
     KeyboardShortcut: NoobishKeyId
-}
+} with
+    member c.Visible with get() = not (c.State = ComponentState.Hidden)
 
 
 type Texture = {
@@ -305,7 +310,7 @@ type LayoutComponent = {
     Name: string
     ThemeId: string
     Enabled: bool
-    Hidden: bool
+    Visible: bool
     Toggled: bool
     ZIndex: int
 
@@ -361,7 +366,7 @@ type LayoutComponent = {
 
     Children: LayoutComponent[]
 } with
-    member l.Visible with get() = not l.Hidden
+    member l.Hidden with get() = not l.Visible
     member l.PaddedWidth with get() = l.OuterWidth - l.PaddingLeft - l.PaddingRight - l.MarginLeft - l.MarginRight
     member l.PaddedHeight with get() = l.OuterHeight - l.PaddingBottom - l.PaddingTop - l.MarginTop - l.MarginBottom
 
@@ -435,9 +440,9 @@ module Logic =
 
         String.Join("\n", resultLines)
 
-    let createLayoutComponentState (keyboardShortcut) (version) =
+    let createLayoutComponentState (keyboardShortcut) (version) visible =
         {
-            State = ComponentState.Normal
+            State = if visible then ComponentState.Normal else ComponentState.Hidden
             PressedTime = TimeSpan.Zero
             ScrolledTime = TimeSpan.Zero
 
@@ -459,7 +464,7 @@ module Logic =
         let theme = if theme.ComponentThemes.ContainsKey themeId then theme.ComponentThemes.[themeId] else theme.ComponentThemes.["Empty"]
         let mutable name = ""
         let mutable enabled = true
-        let mutable hidden = false
+        let mutable visible = true
         let mutable toggled = false
         let mutable zIndex = zIndex
         let mutable disabledColor = theme.ColorDisabled
@@ -609,7 +614,7 @@ module Logic =
             | FgColor (c) -> color <- c
             | Block -> isBlock <- true
             | Enabled (v) -> enabled <- v
-            | Hidden (h) -> hidden <- h
+            | Visible (v) -> visible <- v
             | DisabledColor(c) -> disabledColor <- c
             | Texture (t) ->
                 texture <- t
@@ -707,16 +712,16 @@ module Logic =
         if height < 0.0f then
             raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
 
-        let width = if hidden then 0.0f else width
-        let height = if hidden then 0.0f else height
-        let startX = if hidden then 0.0f else startX
-        let startY = if hidden then 0.0f else startY
+        //let width = if not visible then 0.0f else width
+        //let height = if not visible then 0.0f else height
+        //let startX = if not visible then 0.0f else startX
+        //let startY = if not visible then 0.0f else startY
         {
             Id = cid
             Name = name
             ThemeId = themeId
             Enabled = enabled
-            Hidden = hidden
+            Visible = visible
             Toggled = toggled
             ZIndex = zIndex
 

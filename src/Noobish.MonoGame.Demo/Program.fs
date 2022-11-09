@@ -158,6 +158,7 @@ module Buttons =
                                 option "Value 3"
                             ]
                             [
+                                name "Combobox"
                                 text model.ComboboxValue; onChange (fun v -> dispatch (ComboboxValueChanged v))
                             ]
                     ]

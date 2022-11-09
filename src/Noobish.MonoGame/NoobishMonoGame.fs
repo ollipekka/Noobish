@@ -124,6 +124,8 @@ module NoobishMonoGame =
                     Color.Lerp(color, pressedColor, float32 progress)
                 | ComponentState.Toggled ->
                     toColor c.PressedColor
+                | ComponentState.Hidden ->
+                    Color.Transparent
 
 
         drawRectangle spriteBatch pixel color (bounds.X + scrollX) (bounds.Y + scrollY) bounds.Width bounds.Height
@@ -276,6 +278,7 @@ module NoobishMonoGame =
 
         let pixel = content.Load<Texture2D> settings.Pixel
 
+        (*
         if cs.State = ComponentState.Toggled then
             let startX = c.StartX
             let startY = c.StartY
@@ -288,6 +291,8 @@ module NoobishMonoGame =
                 height <- height + (float32 size.Y)
 
             drawRectangle spriteBatch pixel Color.DarkBlue startX startY width height
+        *)
+        ()
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) scrollX scrollY =
 
@@ -361,6 +366,9 @@ module NoobishMonoGame =
         (parentRectangle: Rectangle)  =
 
 
+        if c.Name = "Combobox" then
+            printfn "what"
+
         let createRectangle (x: float32, y:float32, width: float32, height: float32) =
             Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
 
@@ -383,8 +391,8 @@ module NoobishMonoGame =
             createRectangle(
                 sourceStartX,
                 sourceStartY,
-                min (float32 parentRectangle.Width) sourceEndX,
-                min (float32 parentRectangle.Height) sourceEndY )
+                (min (float32 parentRectangle.Width) sourceEndX),
+                (min (float32 parentRectangle.Height) sourceEndY) )
 
         let oldScissorRect = graphics.ScissorRectangle
 
@@ -429,9 +437,12 @@ module NoobishMonoGame =
                 c.PaddingLeft + c.PaddedWidth,
                 c.PaddingTop + c.PaddedHeight)
 
+
         c.Children |> Array.iter(fun c ->
-            if not c.Hidden then
+            let cs = state.[c.Id]
+            if cs.Visible then
                 drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY innerRectangle
+
         )
 
         graphics.ScissorRectangle <- oldScissorRect
@@ -467,7 +478,8 @@ module NoobishMonoGame =
         let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
         for layer in ui.Layers do
             layer |> Array.iter(fun c ->
-                if not c.Hidden then
+                let cs = ui.State.[c.Id]
+                if cs.Visible then
                     drawComponent ui.State content ui.Settings graphics spriteBatch ui.Debug time c 0.0f 0.0f source
             )
 
@@ -581,7 +593,7 @@ module Program =
                 if success then
                     ui.State.[kvp.Key] <- {value with Version = ui.Version}
                 else
-                    ui.State.[kvp.Key] <- Logic.createLayoutComponentState kvp.Value.KeyboardShortcut ui.Version
+                    ui.State.[kvp.Key] <- Logic.createLayoutComponentState kvp.Value.KeyboardShortcut ui.Version kvp.Value.Visible
 
         program
             |> Program.withSetState setState

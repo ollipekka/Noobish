@@ -20,7 +20,7 @@ let rec press
     while not handled && i < components.Length do
         let c = components.[i]
         let cs = state.[c.Id]
-        if cs.Version = version && c.Enabled && (not c.Hidden) && cs.State <> ComponentState.Toggled && c.Contains positionX positionY scrollX scrollY  then
+        if cs.Version = version && c.Enabled && cs.Visible && cs.State <> ComponentState.Toggled && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
                 if c.Children.Length > 0 then
                     press version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
@@ -61,7 +61,7 @@ let rec click
     while not handled && i < components.Length do
         let c = components.[i]
         let cs = state.[c.Id]
-        if cs.Version = version && c.Enabled && (not c.Hidden) && c.Contains positionX positionY scrollX scrollY then
+        if cs.Version = version && c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then
@@ -72,14 +72,18 @@ let rec click
 
                 cs.PressedTime <- time
                 if c.Combobox.IsSome then
-                    cs.State <- if cs.State = ComponentState.Toggled then ComponentState.Normal else ComponentState.Toggled
+                    c.Children |> Array.iter(
+                        fun c' ->
+                            let cs' = state.[c'.Id]
+                            if cs'.State <> ComponentState.Hidden then
+                                cs'.State <- ComponentState.Hidden
+                            else
+                                cs'.State <- ComponentState.Normal
+                    )
                 else
                     c.OnClick()
 
                 handled <- true
-
-
-
             else
                 handled <- true
 
@@ -104,7 +108,7 @@ let rec scroll
     let mutable handled = false;
     for c in components do
         let cs = state.[c.Id]
-        if cs.Version = version && c.Enabled && (not c.Hidden) && c.Contains positionX positionY scrollX scrollY then
+        if cs.Version = version && c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then
