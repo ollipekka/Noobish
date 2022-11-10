@@ -24,7 +24,6 @@ type NoobishUI = {
     Theme: Theme
     Settings: NoobishSettings
     Components: Dictionary<string, LayoutComponent>
-    ComponentsByLayer: Dictionary<int, ResizeArray<LayoutComponent>>
     State: Dictionary<string, LayoutComponentState>
     TempState: Dictionary<string, LayoutComponentState>
     mutable Debug: bool
@@ -56,7 +55,6 @@ module NoobishMonoGame =
             State = Dictionary()
             TempState = Dictionary()
             Components = Dictionary()
-            ComponentsByLayer = Dictionary()
 
             Debug = false
             Version = Guid.NewGuid()
@@ -540,19 +538,6 @@ module Program =
 
         for c2 in c.Children do
             getComponents components overlays c2
-(*
-    let rec private getComponentsByLayers (componentsByLayer: Dictionary<int, ResizeArray<LayoutComponent>>) (c: LayoutComponent) =
-        let components =
-            let (success, components) = componentsByLayer.TryGetValue(c.ZIndex)
-            if success then
-                components
-            else
-                let array = new ResizeArray<LayoutComponent>()
-                componentsByLayer.[c.ZIndex] <- array
-                array
-
-        components.Add c
-*)
 
     let withNoobishRenderer (ui: NoobishUI) (program: Program<_,_,_,_>) =
         let setState model dispatch =
@@ -571,6 +556,8 @@ module Program =
                         cs.Visible <- true
                     | Hide ->
                         cs.Visible <- false
+                    | ToggleVisibility ->
+                        cs.Visible <- not cs.Visible
                     | SetScrollX (v) ->
                         cs.ScrollX <- v
                     | SetScrollY(v) ->
@@ -597,14 +584,6 @@ module Program =
 
             ui.Layers <- Array.concat [ui.Layers; [| overlays.ToArray() |]]
 
-            (*
-            for layer in ui.ComponentsByLayer.Values do
-                layer.Clear()
-
-            for layer in ui.ComponentsByLayer.Values do
-                for c in layer do
-                    getComponentsByLayers ui.ComponentsByLayer c
-            *)
             for kvp in ui.Components do
                 let (success, value) = oldState.TryGetValue kvp.Key
                 if success then

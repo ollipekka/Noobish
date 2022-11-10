@@ -14,6 +14,7 @@ module Components =
     type ComponentMessage =
     | Show
     | Hide
+    | ToggleVisibility
     | SetScrollX of float32
     | SetScrollY of float32
     | SetSliderValue of float32
@@ -34,10 +35,6 @@ module Components =
         OnValueChanged: float32 -> unit
         Value: float32
     }
-
-    type ComponentConfig =
-        | SliderConfig of Slider
-        | NoConfig
 
     [<RequireQualifiedAccess>]
     type NoobishFill =
@@ -97,8 +94,8 @@ module Components =
     | SizeHint of NoobishSizeHint
     | OnClick of (unit -> unit)
     | OnClickInternal of ((string -> ComponentMessage -> unit) -> unit)
-    | OnPress of (unit -> unit)
-    | OnPressInternal of ((string -> ComponentMessage -> unit) -> unit)
+    | OnPress of (struct(int*int) -> unit)
+    | OnPressInternal of ((string -> ComponentMessage -> unit) -> struct(int*int) -> unit)
     | OnChange of (string -> unit)
     | Toggled of bool
     | Block
@@ -278,9 +275,9 @@ module Components =
             {c' with Attributes = onClick :: c'.Attributes}
         )
 
-        let dropdown = panel children' [ Name(name); hidden; ZIndex(10 * 255); Overlay]
+        let dropdown = panel children' [ Name(name); hidden; ZIndex(10 * 255); Overlay; Margin(0,0,0,0);]
 
-        {ThemeId = "Button"; Children = [dropdown]; Attributes = OnClickInternal(fun dispatch -> dispatch name Show ) :: attributes}
+        {ThemeId = "Button"; Children = [dropdown]; Attributes = OnClickInternal(fun dispatch -> dispatch name ToggleVisibility ) :: attributes}
 
     let largeWindowWithGrid cols rows children attributes =
         grid 16 9
@@ -401,6 +398,7 @@ type LayoutComponent = {
     KeyboardShortcut: NoobishKeyId
 
     OnClickInternal: unit -> unit
+    OnPressInternal: struct(int*int) -> unit
     OnChange: string -> unit
 
     Layout: NoobishLayout
@@ -532,8 +530,8 @@ module Logic =
         let mutable onClick: unit -> unit = ignore
         let mutable onClickInternal: (string -> ComponentMessage -> unit) -> unit = ignore
 
-        let mutable onPress: unit -> unit = ignore
-        let mutable OnPressInternal: (string -> ComponentMessage -> unit) -> unit = ignore
+        let mutable onPress: struct(int*int) -> unit = ignore
+        let mutable onPressInternal: (string -> ComponentMessage -> unit) -> (struct(int*int)) -> unit = (fun _ _ -> ())
 
         let mutable onChange: string -> unit = ignore
         let mutable borderSize = scale theme.BorderSize
@@ -651,7 +649,7 @@ module Logic =
             | OnClick(v) -> onClick <- v
             | OnClickInternal(v) -> onClickInternal <- v
             | OnPress(v) -> onPress <- v
-            | OnPressInternal(v) -> OnPressInternal <- v
+            | OnPressInternal(v) -> onPressInternal <- v
             | OnChange(v) -> onChange <- v
             | Toggled(value) ->
                 toggled <- value
@@ -702,8 +700,22 @@ module Logic =
         minWidth <- minWidth + paddingLeft + paddingRight + marginLeft + marginRight
         minHeight <- minHeight + paddingTop + paddingBottom + marginTop + marginBottom
 
-        let maxWidth = if colspan > 0 then ceil (parentWidth * float32 colspan) else parentWidth
-        let maxHeight = if rowspan > 0 then ceil (parentHeight * float32 rowspan) else parentHeight
+        let maxWidth =
+            if overlay then
+                parentWidth
+            else
+                if colspan > 0 then
+                    ceil (parentWidth * float32 colspan)
+                else
+                    parentWidth
+        let maxHeight =
+            if overlay then
+                minHeight
+            else
+                if rowspan > 0 then
+                    ceil (parentHeight * float32 rowspan)
+                else
+                    parentHeight
 
 
         match slider with
@@ -818,6 +830,11 @@ module Logic =
             OnClickInternal = (fun _ ->
                 onClickInternal(mutateState)
                 onClick())
+
+            OnPressInternal = (fun mousePos ->
+                onPressInternal (mutateState) mousePos
+                onPress mousePos )
+
             OnChange = onChange
 
             Layout = layout
@@ -877,10 +894,13 @@ module Logic =
             let childHeight = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
             childHeight
 
-        let parentBounds = parentComponent.RectangleWithPadding
+        let calculateChildWidth () =
+            newChildren |> Seq.map (fun c -> c.OuterWidth) |> Seq.max
 
         match parentComponent.Layout with
         | NoobishLayout.Default ->
+
+            let parentBounds = parentComponent.RectangleWithPadding
             for child in c.Children do
                 let childStartX = parentBounds.X + offsetX
                 let childStartY = parentBounds.Y + offsetY
@@ -896,17 +916,20 @@ module Logic =
                 else
                     offsetX <- childEndX
 
+            let width = if parentComponent.Overlay then calculateChildWidth() + parentComponent.PaddingLeft + parentComponent.PaddingRight + parentComponent.MarginLeft + parentComponent.MarginRight else parentComponent.OuterWidth
             let height =
                 if parentBounds.Height <= 0.0f then parentComponent.OuterHeight + calculateChildHeight() else parentComponent.OuterHeight
 
             if parentComponent.Visible && height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
             {parentComponent with
+                OuterWidth = width
                 OuterHeight = height
                 OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
                 OverflowHeight = if parentComponent.ScrollVertical then calculateChildHeight() else parentComponent.PaddedHeight
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
 
+            let parentBounds = parentComponent.RectangleWithPadding
             let colWidth = parentBounds.Width / float32 cols
             let rowHeight = parentBounds.Height / float32 rows
             let mutable col = 0
@@ -949,6 +972,8 @@ module Logic =
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
         | NoobishLayout.Center ->
+
+            let parentBounds = parentComponent.RectangleWithPadding
             for child in c.Children do
                 let childStartX = parentBounds.X + parentBounds.Width / 2.0f
                 let childStartY = parentBounds.Y +  parentBounds.Height / 2.0f
