@@ -152,7 +152,6 @@ module Buttons =
                 panel
                     [
                         combobox
-                            "Combobox"
                             [
                                 option "Value 1"
                                 option "Value 2"

@@ -20,7 +20,7 @@ let rec press
     while not handled && i < components.Length do
         let c = components.[i]
         let cs = state.[c.Id]
-        if cs.Version = version && c.Enabled && cs.Visible && cs.State <> ComponentState.Toggled && c.Contains positionX positionY scrollX scrollY  then
+        if cs.Version = version && c.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
                 if c.Children.Length > 0 then
                     press version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)

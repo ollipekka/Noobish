@@ -34,14 +34,6 @@ module Components =
         Value: float32
     }
 
-    [<RequireQualifiedAccess>]
-    type ComboboxState = Open | Closed
-
-    type Combobox = {
-        Value: string
-        State: ComboboxState
-    }
-
     type ComponentConfig =
         | SliderConfig of Slider
         | NoConfig
@@ -101,10 +93,11 @@ module Components =
     | SliderStep of float32
     | SliderValueChanged of (float32 -> unit)
 
-    | Combobox
     | SizeHint of NoobishSizeHint
     | OnClick of (unit -> unit)
     | OnClickInternal of ((string -> ComponentMessage -> unit) -> unit)
+    | OnPress of (unit -> unit)
+    | OnPressInternal of ((string -> ComponentMessage -> unit) -> unit)
     | OnChange of (string -> unit)
     | Toggled of bool
     | Block
@@ -249,7 +242,7 @@ module Components =
     let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
 
 
-    let combobox name children attributes =
+    let combobox children attributes =
 
         let mutable onChange: string -> unit = ignore
 
@@ -258,6 +251,15 @@ module Components =
             | OnChange (onChange') ->
                 onChange <- onChange'
             | _ -> ()
+
+        let name = children |> List.fold (fun acc c' ->
+            let mutable text = ""
+            for a in c'.Attributes do
+                match a with
+                | Text (text') ->
+                    text <- text'
+                | _ -> ()
+            (sprintf "%s-%s" text acc)) "combobox-"
 
         let children' = children |> List.map(fun c' ->
             let mutable text = ""
@@ -277,7 +279,7 @@ module Components =
 
         let dropdown = panel children' [ Name(name); hidden; ZIndex(10 * 255); Overlay]
 
-        {ThemeId = "Button"; Children = [dropdown]; Attributes = Combobox :: OnClickInternal(fun dispatch -> dispatch name ToggleVisibility ) :: attributes}
+        {ThemeId = "Button"; Children = [dropdown]; Attributes = OnClickInternal(fun dispatch -> dispatch name ToggleVisibility ) :: attributes}
 
     let largeWindowWithGrid cols rows children attributes =
         grid 16 9
@@ -304,7 +306,7 @@ open Components
 
 [<RequireQualifiedAccess>]
 type ComponentState =
-    Normal | Toggled | Hidden
+    Normal | Toggled
 
 [<Struct>]
 type NoobishRectangle = {
@@ -321,7 +323,8 @@ type NoobishRectangle = {
 
 type LayoutComponentState = {
     Name: string
-    mutable State: ComponentState
+    mutable Toggled: bool
+    mutable Visible: bool
     mutable PressedTime: TimeSpan
     mutable ScrolledTime: TimeSpan
 
@@ -332,8 +335,7 @@ type LayoutComponentState = {
 
     Version: Guid
     KeyboardShortcut: NoobishKeyId
-} with
-    member c.Visible with get() = not (c.State = ComponentState.Hidden)
+}
 
 
 type Texture = {
@@ -394,7 +396,6 @@ type LayoutComponent = {
     OverflowHeight: float32
 
     Slider: option<Slider>
-    Combobox: option<Combobox>
 
     KeyboardShortcut: NoobishKeyId
 
@@ -484,7 +485,8 @@ module Logic =
     let createLayoutComponentState (name) (keyboardShortcut) (version) visible =
         {
             Name = name
-            State = if visible then ComponentState.Normal else ComponentState.Hidden
+            Visible = visible
+            Toggled = false
             PressedTime = TimeSpan.Zero
             ScrolledTime = TimeSpan.Zero
 
@@ -528,6 +530,10 @@ module Logic =
         let mutable isBlock = false
         let mutable onClick: unit -> unit = ignore
         let mutable onClickInternal: (string -> ComponentMessage -> unit) -> unit = ignore
+
+        let mutable onPress: unit -> unit = ignore
+        let mutable OnPressInternal: (string -> ComponentMessage -> unit) -> unit = ignore
+
         let mutable onChange: string -> unit = ignore
         let mutable borderSize = scale theme.BorderSize
         let mutable borderColor = theme.BorderColor
@@ -559,8 +565,6 @@ module Logic =
         let mutable relativeY = 0.0f
 
         let mutable slider: option<Slider> = None
-
-        let mutable combobox: option<Combobox> = None
 
         let mutable keyboardShortcut = NoobishKeyId.None
 
@@ -640,16 +644,13 @@ module Logic =
                     |> Option.map(fun s ->
                         {s with OnValueChanged = cb}
                     )
-
-            | Combobox ->
-                if combobox.IsNone then
-                    combobox <- Some { State = ComboboxState.Closed; Value = "";}
-
             // Border
             | BorderSize(v) -> borderSize <- scale v
             | BorderColor(c) -> borderColor <-c
             | OnClick(v) -> onClick <- v
             | OnClickInternal(v) -> onClickInternal <- v
+            | OnPress(v) -> onPress <- v
+            | OnPressInternal(v) -> OnPressInternal <- v
             | OnChange(v) -> onChange <- v
             | Toggled(value) ->
                 toggled <- value
@@ -777,7 +778,6 @@ module Logic =
             TextWrap = textWrap
 
             Slider = slider
-            Combobox = combobox
 
             KeyboardShortcut = keyboardShortcut
 
