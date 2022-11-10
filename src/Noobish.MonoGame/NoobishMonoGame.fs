@@ -567,13 +567,10 @@ module Program =
                 kvp |> Option.iter (fun kvp' ->
                     let cs = kvp'.Value
                     match message with
-                    | ToggleVisibility ->
-
-                        if cs.Visible then
-                            cs.Visible <- false
-                        else
-                            cs.Visible <- true
-
+                    | Show ->
+                        cs.Visible <- true
+                    | Hide ->
+                        cs.Visible <- false
                     | SetScrollX (v) ->
                         cs.ScrollX <- v
                     | SetScrollY(v) ->

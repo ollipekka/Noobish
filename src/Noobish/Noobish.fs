@@ -12,7 +12,8 @@ module Components =
 
 
     type ComponentMessage =
-    | ToggleVisibility
+    | Show
+    | Hide
     | SetScrollX of float32
     | SetScrollY of float32
     | SetSliderValue of float32
@@ -271,7 +272,7 @@ module Components =
 
             let onClick = OnClickInternal (
                 fun (dispatch) ->
-                    dispatch name ToggleVisibility
+                    dispatch name Hide
                     onChange (text)
                 )
             {c' with Attributes = onClick :: c'.Attributes}
@@ -279,7 +280,7 @@ module Components =
 
         let dropdown = panel children' [ Name(name); hidden; ZIndex(10 * 255); Overlay]
 
-        {ThemeId = "Button"; Children = [dropdown]; Attributes = OnClickInternal(fun dispatch -> dispatch name ToggleVisibility ) :: attributes}
+        {ThemeId = "Button"; Children = [dropdown]; Attributes = OnClickInternal(fun dispatch -> dispatch name Show ) :: attributes}
 
     let largeWindowWithGrid cols rows children attributes =
         grid 16 9
