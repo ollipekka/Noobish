@@ -37,15 +37,6 @@ module Components =
     }
 
     [<RequireQualifiedAccess>]
-    type NoobishFill =
-    | Horizontal | Vertical | Both
-
-    [<RequireQualifiedAccess>]
-    type NoobishSizeHint =
-    | Content
-    | Fill of NoobishFill
-
-    [<RequireQualifiedAccess>]
     type NoobishScroll = Vertical | Horizontal | Both
 
     [<RequireQualifiedAccess>]
@@ -91,7 +82,10 @@ module Components =
     | SliderStep of float32
     | SliderValueChanged of (float32 -> unit)
 
-    | SizeHint of NoobishSizeHint
+    | Fill
+    | FillHorizontal
+    | FillVertical
+
     | OnClick of (unit -> unit)
     | OnClickInternal of ((string -> ComponentMessage -> unit) -> unit)
     | OnPress of (struct(int*int) -> unit)
@@ -174,11 +168,10 @@ module Components =
     let onChange action = OnChange(action)
     let toggled value = Toggled (value)
 
-    let fill = SizeHint (NoobishSizeHint.Fill (NoobishFill.Both))
-    let fillHorizontal = SizeHint (NoobishSizeHint.Fill (NoobishFill.Horizontal))
-    let fillVertical = SizeHint (NoobishSizeHint.Fill (NoobishFill.Vertical))
+    let fill = Fill
+    let fillHorizontal = FillHorizontal
+    let fillVertical = FillVertical
 
-    let sizeContent = SizeHint NoobishSizeHint.Content
     let minSize w h = MinSize(w, h)
     let height h = Height h
     let color c = FgColor (c)
@@ -203,7 +196,7 @@ module Components =
     // Components
     let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
     let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
-    let paragraph attributes ={ ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign TopLeft :: sizeContent :: attributes }
+    let paragraph attributes ={ ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign TopLeft :: attributes }
     let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
@@ -347,6 +340,7 @@ type Texture = {
 
 type LayoutComponent = {
     Id: string
+    Path: string
     Name: string
     ThemeId: string
     Enabled: bool
@@ -354,6 +348,9 @@ type LayoutComponent = {
     Toggled: bool
     ZIndex: int
     Overlay: bool
+
+    FillVertical: bool
+    FillHorizontal: bool
 
     TextAlignment: NoobishTextAlign
     Text: string[]
@@ -498,7 +495,7 @@ module Logic =
             Version = version
         }
 
-    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) rowspan colspan (themeId: string) (attributes: list<Attribute>) =
+    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (rowspan: int) (colspan: int) (themeId: string) (attributes: list<Attribute>) =
 
         let scale (v: int) = float32 v * settings.Scale
         let scaleTuple (left, right, top, bottom) =
@@ -524,7 +521,8 @@ module Logic =
         let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = scaleTuple theme.Padding
         let mutable marginLeft, marginRight, marginTop, marginBottom = scaleTuple theme.Margin
 
-        let mutable sizeHint = NoobishSizeHint.Content
+        let mutable fillHorizontal = false
+        let mutable fillVertical = false
 
         let mutable isBlock = false
         let mutable onClick: unit -> unit = ignore
@@ -657,7 +655,13 @@ module Logic =
                 zIndex <- value
             | Overlay ->
                 overlay <- true
-            | SizeHint(value) -> sizeHint <- value
+            | Fill ->
+                fillHorizontal <- true
+                fillVertical <- true
+            | FillHorizontal ->
+                fillHorizontal <- true
+            | FillVertical ->
+                fillVertical <- true
             | FgColor (c) -> color <- c
             | Block -> isBlock <- true
             | Enabled (v) -> enabled <- v
@@ -748,33 +752,28 @@ module Logic =
                 minHeight <- max 0.0f (min maxHeight paddedContentHeight)
 
 
-        let width, height =
-            match sizeHint with
-            | NoobishSizeHint.Content ->
-                minWidth, minHeight
-            | NoobishSizeHint.Fill (f) ->
-                match f with
-                | NoobishFill.Horizontal ->
-                    let width = maxWidth
-                    let height = minHeight
-                    width, height
-                | NoobishFill.Vertical ->
-                    let width = minWidth
-                    let height = maxHeight
-                    width, height
-                | NoobishFill.Both ->
-                    let width = maxWidth
-                    let height = if maxHeight <= 0.0f then minHeight else maxHeight
-                    width, height
+        let width =
+            if fillHorizontal then
+                maxWidth
+            else
+                minWidth
 
+        let height =
+            if fillVertical then
+                (if maxHeight <= 0.0f then minHeight else maxHeight)
+            else
+                minHeight
 
         let cid = sprintf "%s%A%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
 
         if height < 0.0f then
             raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
 
+        let path = sprintf "%s/%s" parentPath themeId
+
         {
             Id = cid
+            Path = path
             Name = name
             ThemeId = themeId
             Enabled = enabled
@@ -782,6 +781,9 @@ module Logic =
             Toggled = toggled
             ZIndex = zIndex
             Overlay = overlay
+
+            FillHorizontal = fillHorizontal
+            FillVertical = fillVertical
 
             TextAlignment = textAlign
             Text = textLines.Split '\n'
@@ -875,6 +877,7 @@ module Logic =
         (settings: NoobishSettings)
         (mutateState: string -> ComponentMessage -> unit)
         (zIndex: int)
+        (parentPath: string)
         (startX: float32)
         (startY: float32)
         (colspan: int)
@@ -883,7 +886,7 @@ module Logic =
         (parentHeight: float32)
         (c: Component): LayoutComponent  =
 
-        let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
+        let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -906,7 +909,7 @@ module Logic =
                 let childStartY = parentBounds.Y + offsetY
                 let childWidth = if parentComponent.ScrollHorizontal then parentBounds.Width else parentBounds.Width - offsetX
                 let childHeight = if parentComponent.ScrollVertical then parentBounds.Height else parentBounds.Height - offsetY
-                let childComponent = layoutComponent measureText theme settings mutateState zIndex childStartX childStartY 0 0 childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState zIndex parentComponent.Path childStartX childStartY 0 0 childWidth childHeight child
                 newChildren.Add(childComponent)
 
                 let childEndX = offsetX + childComponent.OuterWidth
@@ -952,7 +955,7 @@ module Logic =
                 let childWidth = colWidth
                 let childHeight = rowHeight
 
-                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) childStartX childStartY 1 1 childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) parentComponent.Path childStartX childStartY 1 1 childWidth childHeight child
                 newChildren.Add(childComponent)
 
                 for c = col to col + childComponent.ColSpan - 1 do
@@ -980,7 +983,7 @@ module Logic =
                 let childWidth = 50.0f
                 let childHeight = 50.0f
 
-                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) childStartX childStartY 1 1 childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) parentComponent.Path childStartX childStartY 1 1  childWidth childHeight child
                 newChildren.Add(childComponent)
 
             {parentComponent with
@@ -989,9 +992,11 @@ module Logic =
                 OverflowHeight = parentComponent.PaddedHeight}
 
     let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (layer: int) (width: float32) (height: float32) (components: list<Component>) =
+
+        let path = sprintf "layer-%i" layer
         components
             |> List.map(fun c ->
-                layoutComponent measureText theme settings mutateState (layer * 128) 0.0f 0.0f 0 0 width height c
+                layoutComponent measureText theme settings mutateState (layer * 128) path 0.0f 0.0f 0 0 width height c
             ) |> List.toArray
 
 
