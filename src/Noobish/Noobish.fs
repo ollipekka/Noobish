@@ -196,7 +196,7 @@ module Components =
     // Components
     let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
     let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
-    let paragraph attributes ={ ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign TopLeft :: attributes }
+    let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign TopLeft :: attributes }
     let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
     let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
     let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
@@ -495,7 +495,7 @@ module Logic =
             Version = version
         }
 
-    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (rowspan: int) (colspan: int) (themeId: string) (attributes: list<Attribute>) =
+    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<Attribute>) =
 
         let scale (v: int) = float32 v * settings.Scale
         let scaleTuple (left, right, top, bottom) =
@@ -552,8 +552,8 @@ module Logic =
 
         let mutable layout = NoobishLayout.Default
 
-        let mutable rowspan = rowspan
-        let mutable colspan = colspan
+        let mutable rowspan = 1
+        let mutable colspan = 1
 
         let mutable minWidth = scale theme.Width
         let mutable minHeight = scale theme.Height
@@ -700,26 +700,14 @@ module Logic =
             | KeyboardShortcut k ->
                 keyboardShortcut <- k
 
+        if name = "FailedScroll" then
+            printfn "wät2"
 
         minWidth <- minWidth + paddingLeft + paddingRight + marginLeft + marginRight
         minHeight <- minHeight + paddingTop + paddingBottom + marginTop + marginBottom
 
-        let maxWidth =
-            if overlay then
-                parentWidth
-            else
-                if colspan > 0 then
-                    ceil (parentWidth * float32 colspan)
-                else
-                    parentWidth
-        let maxHeight =
-            if overlay then
-                minHeight
-            else
-                if rowspan > 0 then
-                    ceil (parentHeight * float32 rowspan)
-                else
-                    parentHeight
+        let maxWidth = ceil (parentWidth * float32 colspan)
+        let maxHeight = ceil (parentHeight * float32 rowspan)
 
 
         match slider with
@@ -739,17 +727,8 @@ module Logic =
             let paddedContentWidth = ((float32 contentWidth + paddingLeft + paddingRight + marginLeft + marginRight))
             let paddedContentHeight = ((float32 contentHeight + paddingTop + paddingBottom + marginTop + marginBottom))
 
-            // Not inside grid or maxHeight is bellow zero, because size not known.
-            if colspan = 0 || maxWidth < 0.0f then
-                minWidth <- paddedContentWidth
-            else
-                minWidth <- max 0.0f (min maxWidth paddedContentWidth)
-
-            // Not inside grid or maxHeight is bellow zero, because size not known.
-            if rowspan = 0 || maxHeight < 0.0f then
-                minHeight <- paddedContentHeight
-            else
-                minHeight <- max 0.0f (min maxHeight paddedContentHeight)
+            minWidth <- paddedContentWidth
+            minHeight <- paddedContentHeight
 
 
         let width =
@@ -768,6 +747,10 @@ module Logic =
 
         if height < 0.0f then
             raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
+
+
+        if name = "FailedParagraph" then
+            printfn "what"
 
         let path = sprintf "%s/%s" parentPath themeId
 
@@ -880,13 +863,11 @@ module Logic =
         (parentPath: string)
         (startX: float32)
         (startY: float32)
-        (colspan: int)
-        (rowspan: int)
         (parentWidth: float32)
         (parentHeight: float32)
         (c: Component): LayoutComponent  =
 
-        let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY colspan rowspan c.ThemeId c.Attributes
+        let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -895,6 +876,10 @@ module Logic =
 
         let calculateChildHeight () =
             let childHeight = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
+            childHeight
+
+        let calculateOverflowHeight () =
+            let childHeight = newChildren |> Seq.fold (fun acc c -> acc + c.OverflowHeight) 0.0f
             childHeight
 
         let calculateChildWidth () =
@@ -909,7 +894,11 @@ module Logic =
                 let childStartY = parentBounds.Y + offsetY
                 let childWidth = if parentComponent.ScrollHorizontal then parentBounds.Width else parentBounds.Width - offsetX
                 let childHeight = if parentComponent.ScrollVertical then parentBounds.Height else parentBounds.Height - offsetY
-                let childComponent = layoutComponent measureText theme settings mutateState zIndex parentComponent.Path childStartX childStartY 0 0 childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState zIndex parentComponent.Path childStartX childStartY childWidth childHeight child
+
+                if childComponent.Name = "FailedParagraph" then
+                    printfn "wät"
+
                 newChildren.Add(childComponent)
 
                 let childEndX = offsetX + childComponent.OuterWidth
@@ -928,7 +917,7 @@ module Logic =
                 OuterWidth = width
                 OuterHeight = height
                 OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
-                OverflowHeight = if parentComponent.ScrollVertical then calculateChildHeight() else parentComponent.PaddedHeight
+                OverflowHeight = if parentComponent.ScrollVertical then calculateOverflowHeight() else parentComponent.PaddedHeight
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
 
@@ -955,8 +944,27 @@ module Logic =
                 let childWidth = colWidth
                 let childHeight = rowHeight
 
-                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) parentComponent.Path childStartX childStartY 1 1 childWidth childHeight child
-                newChildren.Add(childComponent)
+                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) parentComponent.Path childStartX childStartY childWidth childHeight child
+
+                if childComponent.Name = "FailedParagraph" then
+                    printfn "hello"
+                if childComponent.Name = "ContentPanel" then
+                    printfn "hello"
+                newChildren.Add({
+                    childComponent with
+                        OuterHeight =
+                            let height = (childHeight * float32 childComponent.RowSpan)
+                            if childComponent.FillVertical then
+                                height
+                            else
+                                min height childComponent.Height
+                        OuterWidth =
+                            let width = (childWidth * float32 childComponent.ColSpan)
+                            if childComponent.FillHorizontal then
+                                width
+                            else
+                                min width childComponent.Width
+                    })
 
                 for c = col to col + childComponent.ColSpan - 1 do
                     for r = row to row + childComponent.RowSpan - 1 do
@@ -965,13 +973,13 @@ module Logic =
                 while notFinished() && cellUsed.[col, row] do
                     bump childComponent.ColSpan childComponent.RowSpan
 
-            let height =
-                if parentBounds.Height <= 0.0f then calculateChildHeight() else parentComponent.OuterHeight
-            if height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
+            //let height =
+            //    if parentBounds.Height <= 0.0f then calculateChildHeight() else parentComponent.OuterHeight
+            //if height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
 
             {parentComponent with
                 Children = newChildren.ToArray()
-                OuterHeight = height
+                //OuterHeight = height
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
         | NoobishLayout.Center ->
@@ -983,7 +991,7 @@ module Logic =
                 let childWidth = 50.0f
                 let childHeight = 50.0f
 
-                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) parentComponent.Path childStartX childStartY 1 1  childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) parentComponent.Path childStartX childStartY childWidth childHeight child
                 newChildren.Add(childComponent)
 
             {parentComponent with
@@ -996,7 +1004,7 @@ module Logic =
         let path = sprintf "layer-%i" layer
         components
             |> List.map(fun c ->
-                layoutComponent measureText theme settings mutateState (layer * 128) path 0.0f 0.0f 0 0 width height c
+                layoutComponent measureText theme settings mutateState (layer * 128) path 0.0f 0.0f width height c
             ) |> List.toArray
 
 

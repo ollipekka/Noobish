@@ -77,12 +77,13 @@ module Text =
                 panelWithGrid 1 3
                     [
 
-                        paragraph [text loremIpsum2; textAlign TopCenter; rowspan 1; name "Paragraph"]
+                        paragraph [text loremIpsum2; textAlign TopCenter; rowspan 1; name "FailedParagraph"; ]
                         scroll
                             [
-                                paragraph [text loremIpsum2; textAlign TopCenter; name "Paragraph"]
+                                paragraph [text loremIpsum2; textAlign TopCenter; name "FailedScroll";]
                             ]
                             [
+                                rowspan 1
                             ]
                         scroll
                             [
@@ -323,7 +324,7 @@ type DemoGame () as game =
                                     rowspan 1
                                 ]
                             panel [scroll scrollItems []] [colspan 3; rowspan 7]
-                            panel content [colspan 9; rowspan 7]
+                            panel content [colspan 9; rowspan 7;]
                         ]
                         [
                             padding 10
