@@ -188,7 +188,6 @@ module Components =
     let colspan s = ColSpan s
     let rowspan s = RowSpan s
 
-    let centerLayout = Layout (NoobishLayout.Center)
     let relativePosition x y = RelativePosition(x, y)
 
     let keyboardShortcut k = KeyboardShortcut k
@@ -203,7 +202,7 @@ module Components =
 
     let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; block] }
 
-    let canvas children attributes = { ThemeId = "Image"; Children = children; Attributes = [centerLayout;] @ attributes}
+    let canvas children attributes = { ThemeId = "Image"; Children = children; Attributes = [] @ attributes}
 
     let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: attributes}
 
@@ -982,22 +981,7 @@ module Logic =
                 //OuterHeight = height
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
-        | NoobishLayout.Center ->
 
-            let parentBounds = parentComponent.RectangleWithPadding
-            for child in c.Children do
-                let childStartX = parentBounds.X + parentBounds.Width / 2.0f
-                let childStartY = parentBounds.Y +  parentBounds.Height / 2.0f
-                let childWidth = 50.0f
-                let childHeight = 50.0f
-
-                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) parentComponent.Path childStartX childStartY childWidth childHeight child
-                newChildren.Add(childComponent)
-
-            {parentComponent with
-                Children = newChildren.ToArray()
-                OverflowWidth = parentComponent.PaddedWidth
-                OverflowHeight = parentComponent.PaddedHeight}
 
     let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (layer: int) (width: float32) (height: float32) (components: list<Component>) =
 

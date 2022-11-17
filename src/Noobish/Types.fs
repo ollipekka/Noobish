@@ -4,7 +4,6 @@ namespace Noobish
 type NoobishLayout =
 | Default
 | Grid of cols: int * rows: int
-| Center
 
 type NoobishTextAlign =
 | TopLeft | TopCenter | TopRight
