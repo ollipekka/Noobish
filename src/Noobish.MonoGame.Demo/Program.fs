@@ -76,14 +76,14 @@ module Text =
                     ]
                 panelWithGrid 1 3
                     [
-
                         paragraph [text loremIpsum2; textAlign TopCenter; rowspan 1; name "FailedParagraph"; ]
                         scroll
                             [
-                                paragraph [text loremIpsum2; textAlign TopCenter; name "FailedScroll";]
+                                paragraph [text loremIpsum2; textAlign TopCenter; ]
                             ]
                             [
                                 rowspan 1
+                                name "FailedScroll";
                             ]
                         scroll
                             [
@@ -133,6 +133,22 @@ module Text =
                 ]
 
         ]
+
+module Containers =
+
+    let view model dispatch =
+        [
+            div [
+                    header [text "Hello"; ];
+                    hr []
+                ]
+                [fillHorizontal];
+            button [ text "Continue"; onClick ignore; fillHorizontal; enabled false];
+            button [ text "Start"; onClick ignore; fillHorizontal; ];
+            button [ text "Options"; onClick ignore; fillHorizontal; ];
+        ]
+
+
 
 module Buttons =
     let view model dispatch =
@@ -243,11 +259,6 @@ type DemoGame () as game =
 
     override this.Initialize() =
 
-        let measureText (font: string) (text: string) =
-            let font = game.Content.Load<SpriteFont>(font)
-            let size = font.MeasureString text
-
-            int (ceil (size.X)), int (ceil (size.Y))
 
         let width = this.GraphicsDevice.Viewport.Width
         let height = this.GraphicsDevice.Viewport.Height
@@ -297,7 +308,7 @@ type DemoGame () as game =
             let title, content  =
                 match model.State with
                 | Buttons -> "Buttons", Buttons.view model dispatch
-                | Containers -> "Containers", []
+                | Containers -> "Containers", Containers.view model dispatch
                 | Text -> "Labels", Text.view dispatch
                 | Slider -> "Slider", Slider.view model dispatch
 
@@ -323,7 +334,7 @@ type DemoGame () as game =
                                     colspan 9;
                                     rowspan 1
                                 ]
-                            panel [scroll scrollItems []] [colspan 3; rowspan 7]
+                            panel [scroll scrollItems [name "LeftMenu"]] [colspan 3; rowspan 7; fill; ]
                             panel content [colspan 9; rowspan 7;]
                         ]
                         [

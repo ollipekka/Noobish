@@ -331,7 +331,6 @@ module NoobishMonoGame =
         (parentScrollY: float32)
         (parentRectangle: Rectangle)  =
 
-
         if c.Name = "Combobox" then
             printfn "what"
 
@@ -346,6 +345,9 @@ module NoobishMonoGame =
         let totalScrollX = cs.ScrollX + parentScrollX
         let totalScrollY = cs.ScrollY + parentScrollY
 
+        if abs totalScrollY > 0f then
+            printfn "wtf again"
+
         let bounds = c.RectangleWithMargin
 
         let startX = bounds.X + totalScrollX
@@ -359,12 +361,15 @@ module NoobishMonoGame =
                 let sourceStartY = max startY (float32 parentRectangle.Y)
                 let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
                 let sourceEndY = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
-
+                let sourceStartX = max bounds.X (float32 parentRectangle.X)
+                let sourceStartY = max bounds.Y (float32 parentRectangle.Y)
+                let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
+                let sourceEndY = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
                 createRectangle(
                     sourceStartX,
                     sourceStartY,
-                    (min (float32 parentRectangle.Width) sourceEndX),
-                    (min (float32 parentRectangle.Height) sourceEndY) )
+                    (min sourceEndX (float32 parentRectangle.Width)),
+                    (min sourceEndY (float32 parentRectangle.Height)))
 
         let oldScissorRect = graphics.ScissorRectangle
 

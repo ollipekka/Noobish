@@ -35,10 +35,6 @@ module Components =
         OnValueChanged: float32 -> unit
         Value: float32
     }
-
-    [<RequireQualifiedAccess>]
-    type NoobishScroll = Vertical | Horizontal | Both
-
     [<RequireQualifiedAccess>]
     type NoobishTexture =
         | None
@@ -108,7 +104,9 @@ module Components =
     | TextureColorDisabled of int
     | TextureSize of NoobishTextureSize
     | TextureRotation of int
-    | Scroll of NoobishScroll
+    | ScrollHorizontal
+    | ScrollVertical
+    | Scroll
     | ScrollBarColor of int
     | ScrollPinColor of int
     | ScrollBarThickness of int
@@ -176,15 +174,19 @@ module Components =
     let height h = Height h
     let color c = FgColor (c)
     let enabled v = Enabled(v)
+
+    let visible v = Visible(v)
+
     let hidden = Visible(false)
 
     let borderSize v = BorderSize(v)
     let borderColor c = BorderColor(c)
-    let scrollVertical = Scroll (NoobishScroll.Vertical)
-    let scrollHorizontal = Scroll (NoobishScroll.Horizontal)
-    let scrollBoth = Scroll (NoobishScroll.Both)
+    let scrollVertical = ScrollVertical
+    let scrollHorizontal = ScrollHorizontal
+    let scrollBoth = Scroll
 
     let gridLayout cols rows = Layout (NoobishLayout.Grid (cols, rows))
+    let stackLayout = Layout (NoobishLayout.Default)
     let colspan s = ColSpan s
     let rowspan s = RowSpan s
 
@@ -207,18 +209,17 @@ module Components =
     let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: attributes}
 
     let private scrollDiv attributes scroll =
-        { ThemeId = "ScrollDiv"; Children = [scroll]; Attributes = [block; fill] @ attributes}
+        { ThemeId = "ScrollDiv"; Children = [scroll]; Attributes = [stackLayout; block; fill] @ attributes}
 
     let scroll children attributes =
-        { ThemeId = "Scroll"; Children = children; Attributes = [fill; scrollVertical]}
-            |> scrollDiv attributes
+        { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical] @ attributes}
 
     let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
 
-    let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = block :: fill :: attributes}
+    let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = stackLayout :: block :: fill :: attributes}
     let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill:: attributes}
     let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
-    let div children attributes = { ThemeId = "Division"; Children = children; Attributes = fill :: attributes}
+    let div children attributes = { ThemeId = "Division"; Children = children; Attributes = stackLayout :: attributes}
     let window children attributes =
         grid 12 8
             [
@@ -549,7 +550,7 @@ module Logic =
         let mutable scrollBarThickness = scale theme.ScrollBarThickness
         let mutable scrollPinThickness = scale theme.ScrollPinThickness
 
-        let mutable layout = NoobishLayout.Default
+        let mutable layout = NoobishLayout.None
 
         let mutable rowspan = 1
         let mutable colspan = 1
@@ -676,15 +677,13 @@ module Logic =
                 textureSize <- s
             | TextureRotation (t) ->
                 textureRotation <- t
-            | Scroll (s) ->
-                match s with
-                | NoobishScroll.Horizontal ->
-                    scrollHorizontal <- true
-                | NoobishScroll.Vertical ->
-                    scrollVertical <- true
-                | NoobishScroll.Both ->
-                    scrollHorizontal <- true
-                    scrollVertical <- true
+            | Scroll ->
+                scrollHorizontal <- true
+                scrollVertical <- true
+            |ScrollHorizontal ->
+                scrollHorizontal <- true
+            | ScrollVertical ->
+                scrollVertical <- true
             | ScrollBarColor c -> scrollBarColor <- c
             | ScrollPinColor c -> scrollPinColor <- c
             | ScrollBarThickness h -> scrollBarThickness <- scale h
@@ -702,12 +701,9 @@ module Logic =
         if name = "FailedScroll" then
             printfn "wät2"
 
-        minWidth <- minWidth + paddingLeft + paddingRight + marginLeft + marginRight
-        minHeight <- minHeight + paddingTop + paddingBottom + marginTop + marginBottom
+
 
         let maxWidth = ceil (parentWidth * float32 colspan)
-        let maxHeight = ceil (parentHeight * float32 rowspan)
-
 
         match slider with
         | Some(_slider') ->
@@ -729,24 +725,16 @@ module Logic =
             minWidth <- paddedContentWidth
             minHeight <- paddedContentHeight
 
-
-        let width =
-            if fillHorizontal then
-                maxWidth
-            else
-                minWidth
-
-        let height =
-            if fillVertical then
-                (if maxHeight <= 0.0f then minHeight else maxHeight)
-            else
-                minHeight
+        let width = (if fillHorizontal then ceil (parentWidth * float32 colspan) else minWidth + paddingLeft + paddingRight + marginLeft + marginRight)
+        let height = (if fillVertical then ceil (parentHeight * float32 rowspan) else minHeight + paddingTop + paddingBottom + marginTop + marginBottom)
 
         let cid = sprintf "%s%A%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
 
         if height < 0.0f then
             raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
 
+        if name = "FailedScroll" then
+            printfn "what"
 
         if name = "FailedParagraph" then
             printfn "what"
@@ -867,7 +855,12 @@ module Logic =
         (c: Component): LayoutComponent  =
 
         let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
-
+        if parentComponent.Name = "LeftMenu" then
+            printfn "wät"
+        if parentComponent.Name = "FailedParagraph" then
+            printfn "what"
+        if parentComponent.Name = "FailedScroll" then
+            printfn "what"
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
 
@@ -894,10 +887,14 @@ module Logic =
                 let childWidth = if parentComponent.ScrollHorizontal then parentBounds.Width else parentBounds.Width - offsetX
                 let childHeight = if parentComponent.ScrollVertical then parentBounds.Height else parentBounds.Height - offsetY
                 let childComponent = layoutComponent measureText theme settings mutateState zIndex parentComponent.Path childStartX childStartY childWidth childHeight child
-
+                //let childComponent = {childComponent with OuterHeight = Utils.clamp childComponent.Height 0f childHeight}
                 if childComponent.Name = "FailedParagraph" then
                     printfn "wät"
 
+                if parentComponent.Name = "FailedScroll" then
+                    printfn "what"
+                if childComponent.Name = "LeftMenu" then
+                    printfn "wät"
                 newChildren.Add(childComponent)
 
                 let childEndX = offsetX + childComponent.OuterWidth
@@ -908,15 +905,17 @@ module Logic =
                     offsetX <- childEndX
 
             let width = if parentComponent.Overlay then calculateChildWidth() + parentComponent.PaddingLeft + parentComponent.PaddingRight + parentComponent.MarginLeft + parentComponent.MarginRight else parentComponent.OuterWidth
-            let height =
-                if parentBounds.Height <= 0.0f then parentComponent.OuterHeight + calculateChildHeight() else parentComponent.OuterHeight
+            let height = parentComponent.OuterHeight + calculateChildHeight()
+
+            let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
+            let overflowHeight = if parentComponent.ScrollVertical then calculateOverflowHeight() else parentComponent.PaddedHeight
 
             if parentComponent.Visible && height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
             {parentComponent with
                 OuterWidth = width
                 OuterHeight = height
-                OverflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
-                OverflowHeight = if parentComponent.ScrollVertical then calculateOverflowHeight() else parentComponent.PaddedHeight
+                OverflowWidth = overflowWidth
+                OverflowHeight = overflowHeight
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
 
@@ -940,29 +939,27 @@ module Logic =
             for child in c.Children do
                 let childStartX = floor (parentBounds.X + (float32 col) * (colWidth))
                 let childStartY = floor (parentBounds.Y + (float32 row) * (rowHeight))
-                let childWidth = colWidth
-                let childHeight = rowHeight
 
-                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) parentComponent.Path childStartX childStartY childWidth childHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) parentComponent.Path childStartX childStartY colWidth rowHeight child
 
                 if childComponent.Name = "FailedParagraph" then
                     printfn "hello"
-                if childComponent.Name = "ContentPanel" then
+                if childComponent.Name = "FailedScroll" then
                     printfn "hello"
                 newChildren.Add({
                     childComponent with
                         OuterHeight =
-                            let height = (childHeight * float32 childComponent.RowSpan)
+                            let height = (rowHeight * float32 childComponent.RowSpan)
                             if childComponent.FillVertical then
                                 height
                             else
-                                min height childComponent.Height
+                                Utils.clamp childComponent.Height 0f height
                         OuterWidth =
-                            let width = (childWidth * float32 childComponent.ColSpan)
+                            let width = (colWidth * float32 childComponent.ColSpan)
                             if childComponent.FillHorizontal then
                                 width
                             else
-                                min width childComponent.Width
+                                Utils.clamp childComponent.Width 0f width
                     })
 
                 for c = col to col + childComponent.ColSpan - 1 do
@@ -981,6 +978,8 @@ module Logic =
                 //OuterHeight = height
                 OverflowWidth = parentComponent.PaddedWidth
                 OverflowHeight = parentComponent.PaddedHeight}
+        | NoobishLayout.None ->
+            parentComponent
 
 
     let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (layer: int) (width: float32) (height: float32) (components: list<Component>) =
