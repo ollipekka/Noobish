@@ -347,25 +347,6 @@ module NoobishMonoGame =
         (parentScrollY: float32)
         (parentRectangle: Rectangle)  =
 
-        if c.Name = "Combobox" then
-            printfn "what"
-
-        if c.Name = "FailedScroll" then
-            printfn "what"
-
-
-        if c.Name = "FailedScroll2" then
-            printfn "what"
-
-
-        if c.Name = "FailedParagraph2" then
-            printfn "what"
-
-
-        if c.Name = "FailedLorem2" then
-            printfn "what"
-
-
         let createRectangle (x: float32, y:float32, width: float32, height: float32) =
             Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
 

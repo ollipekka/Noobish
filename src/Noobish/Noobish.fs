@@ -695,11 +695,6 @@ module Logic =
             | KeyboardShortcut k ->
                 keyboardShortcut <- k
 
-        if name = "FailedScroll" then
-            printfn "wät2"
-
-
-
         let maxWidth = ceil (parentWidth * float32 colspan)
 
         match slider with
@@ -729,12 +724,6 @@ module Logic =
 
         if height < 0.0f then
             raise (InvalidOperationException (sprintf "Buggy behavior detected: height for a component %s is negative." themeId))
-
-        if name = "FailedScroll" then
-            printfn "what"
-
-        if name = "FailedParagraph" then
-            printfn "what"
 
         let path = sprintf "%s/%s" parentPath themeId
 
@@ -852,12 +841,6 @@ module Logic =
         (c: Component): LayoutComponent  =
 
         let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
-        if parentComponent.Name = "LeftMenu" then
-            printfn "wät"
-        if parentComponent.Name = "FailedParagraph" then
-            printfn "what"
-        if parentComponent.Name = "FailedScroll" then
-            printfn "what"
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -886,13 +869,6 @@ module Logic =
                 let childHeight = if parentComponent.ScrollVertical then parentBounds.Height else parentBounds.Height - offsetY
                 let childComponent = layoutComponent measureText theme settings mutateState zIndex parentComponent.Path childStartX childStartY childWidth childHeight child
 
-                if childComponent.Name = "FailedParagraph" then
-                    printfn "wät"
-
-                if parentComponent.Name = "FailedScroll" then
-                    printfn "what"
-                if childComponent.Name = "LeftMenu" then
-                    printfn "wät"
                 newChildren.Add(childComponent)
 
                 let childEndX = offsetX + childComponent.OuterWidth
@@ -939,10 +915,6 @@ module Logic =
 
                 let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) parentComponent.Path childStartX childStartY colWidth rowHeight child
 
-                if childComponent.Name = "FailedParagraph" then
-                    printfn "hello"
-                if childComponent.Name = "FailedScroll" then
-                    printfn "hello"
                 newChildren.Add({
                     childComponent with
                         OuterHeight =
