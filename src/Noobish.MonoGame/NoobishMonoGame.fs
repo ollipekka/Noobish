@@ -370,6 +370,7 @@ module NoobishMonoGame =
                 sourceStartY,
                 (min sourceEndX (float32 parentRectangle.Width)),
                 (min sourceEndY (float32 parentRectangle.Height)))
+
         let oldScissorRect = graphics.ScissorRectangle
 
         let rasterizerState = new RasterizerState()

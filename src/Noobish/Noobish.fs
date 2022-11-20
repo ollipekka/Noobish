@@ -862,12 +862,15 @@ module Logic =
         | NoobishLayout.Default ->
 
             let parentBounds = parentComponent.RectangleWithPadding
-            for child in c.Children do
+            for i = 0 to c.Children.Length - 1 do
+                let child = c.Children.[i]
                 let childStartX = parentBounds.X + offsetX
                 let childStartY = parentBounds.Y + offsetY
                 let childWidth = if parentComponent.ScrollHorizontal then parentBounds.Width else parentBounds.Width - offsetX
                 let childHeight = if parentComponent.ScrollVertical then parentBounds.Height else parentBounds.Height - offsetY
-                let childComponent = layoutComponent measureText theme settings mutateState zIndex parentComponent.Path childStartX childStartY childWidth childHeight child
+
+                let path = sprintf "%s:%i" parentComponent.Path i
+                let childComponent = layoutComponent measureText theme settings mutateState zIndex path childStartX childStartY childWidth childHeight child
 
                 newChildren.Add(childComponent)
 
@@ -883,7 +886,6 @@ module Logic =
             let overflowHeight = calculateOverflowHeight()
             let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
 
-            //if newChildren.Count > 0 && parentComponent.Visible && height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
             {parentComponent with
                 OuterWidth = width
                 OuterHeight = height
@@ -912,8 +914,8 @@ module Logic =
             for child in c.Children do
                 let childStartX = floor (parentBounds.X + (float32 col) * (colWidth))
                 let childStartY = floor (parentBounds.Y + (float32 row) * (rowHeight))
-
-                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) parentComponent.Path childStartX childStartY colWidth rowHeight child
+                let path = sprintf "%s:(%i,%i)" parentComponent.Path col row
+                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) path childStartX childStartY colWidth rowHeight child
 
                 newChildren.Add({
                     childComponent with
@@ -937,10 +939,6 @@ module Logic =
 
                 while notFinished() && cellUsed.[col, row] do
                     bump childComponent.ColSpan childComponent.RowSpan
-
-            //let height =
-            //    if parentBounds.Height <= 0.0f then calculateChildHeight() else parentComponent.OuterHeight
-            //if height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
 
             {parentComponent with
                 Children = newChildren.ToArray()
