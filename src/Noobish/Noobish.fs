@@ -208,9 +208,6 @@ module Components =
 
     let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: attributes}
 
-    let private scrollDiv attributes scroll =
-        { ThemeId = "ScrollDiv"; Children = [scroll]; Attributes = [stackLayout; block; fill] @ attributes}
-
     let scroll children attributes =
         { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical] @ attributes}
 
@@ -861,6 +858,7 @@ module Logic =
             printfn "what"
         if parentComponent.Name = "FailedScroll" then
             printfn "what"
+
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
 
@@ -887,7 +885,7 @@ module Logic =
                 let childWidth = if parentComponent.ScrollHorizontal then parentBounds.Width else parentBounds.Width - offsetX
                 let childHeight = if parentComponent.ScrollVertical then parentBounds.Height else parentBounds.Height - offsetY
                 let childComponent = layoutComponent measureText theme settings mutateState zIndex parentComponent.Path childStartX childStartY childWidth childHeight child
-                //let childComponent = {childComponent with OuterHeight = Utils.clamp childComponent.Height 0f childHeight}
+
                 if childComponent.Name = "FailedParagraph" then
                     printfn "wät"
 
@@ -905,12 +903,11 @@ module Logic =
                     offsetX <- childEndX
 
             let width = if parentComponent.Overlay then calculateChildWidth() + parentComponent.PaddingLeft + parentComponent.PaddingRight + parentComponent.MarginLeft + parentComponent.MarginRight else parentComponent.OuterWidth
-            let height = parentComponent.OuterHeight + calculateChildHeight()
-
+            let height = Utils.clamp (parentComponent.OuterHeight + calculateChildHeight()) 0f parentBounds.Height
+            let overflowHeight = calculateOverflowHeight()
             let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
-            let overflowHeight = if parentComponent.ScrollVertical then calculateOverflowHeight() else parentComponent.PaddedHeight
 
-            if parentComponent.Visible && height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
+            //if newChildren.Count > 0 && parentComponent.Visible && height <= 0.0f then raise(InvalidOperationException "Height can't be zero")
             {parentComponent with
                 OuterWidth = width
                 OuterHeight = height

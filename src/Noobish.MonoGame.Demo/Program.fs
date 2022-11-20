@@ -64,10 +64,11 @@ module Text =
                     [
                         scroll
                             [
-                                paragraph [text loremIpsum1; block]
-                                paragraph [text loremIpsum2; block]
+                                paragraph [text loremIpsum1; block; name "FailedLorem1"]
+                                paragraph [text loremIpsum2; block; name "FailedLorem2"]
                             ]
                             [
+                                name "FailedScroll"
                                 scrollVertical
                             ]
                     ]
@@ -76,14 +77,15 @@ module Text =
                     ]
                 panelWithGrid 1 3
                     [
-                        paragraph [text loremIpsum2; textAlign TopCenter; rowspan 1; name "FailedParagraph"; ]
+                        paragraph [text loremIpsum2; textAlign TopCenter; rowspan 1; ]
                         scroll
                             [
-                                paragraph [text loremIpsum2; textAlign TopCenter; ]
+                                paragraph [text loremIpsum2; textAlign TopCenter;
+                                name "FailedParagraph2";]
                             ]
                             [
                                 rowspan 1
-                                name "FailedScroll";
+                                name "FailedScroll2";
                             ]
                         scroll
                             [

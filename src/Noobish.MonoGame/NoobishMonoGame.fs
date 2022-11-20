@@ -150,6 +150,22 @@ module NoobishMonoGame =
             // Bottom
             drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( scrolledStartY + bounds.Height - borderSize) widthWithoutBorders borderSize
 
+    let private debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
+
+
+            let borderSize = 2f
+            let widthWithoutBorders = float32 bounds.Width - borderSize
+
+
+            //Left
+            drawRectangle spriteBatch pixel borderColor (bounds.X) bounds.Y borderSize bounds.Height
+            // Right
+            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize) bounds.Y  borderSize bounds.Height
+            // Top
+            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) bounds.Y widthWithoutBorders borderSize
+            // Bottom
+            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( bounds.Y + bounds.Height - borderSize) widthWithoutBorders borderSize
+
 
     let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
         let mutable startY = 0.0f
@@ -161,7 +177,7 @@ module NoobishMonoGame =
 
             let size = font.MeasureString (line)
 
-            let textSizeX, textSizeY = ceil (size.X), ceil (size.Y)
+            let textSizeX, textSizeY = size.X, size.Y
 
             let leftX () = bounds.X + scrollX
             let rightX () = bounds.X + bounds.Width - textSizeX
@@ -337,6 +353,19 @@ module NoobishMonoGame =
         if c.Name = "FailedScroll" then
             printfn "what"
 
+
+        if c.Name = "FailedScroll2" then
+            printfn "what"
+
+
+        if c.Name = "FailedParagraph2" then
+            printfn "what"
+
+
+        if c.Name = "FailedLorem2" then
+            printfn "what"
+
+
         let createRectangle (x: float32, y:float32, width: float32, height: float32) =
             Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
 
@@ -345,32 +374,21 @@ module NoobishMonoGame =
         let totalScrollX = cs.ScrollX + parentScrollX
         let totalScrollY = cs.ScrollY + parentScrollY
 
-        if abs totalScrollY > 0f then
-            printfn "wtf again"
-
         let bounds = c.RectangleWithMargin
 
         let startX = bounds.X + totalScrollX
         let startY = bounds.Y + totalScrollY
 
         let outerRectangle =
-            if c.Overlay then
-                createRectangle(startX, startY, bounds.Width, bounds.Height)
-            else
-                let sourceStartX = max startX (float32 parentRectangle.X)
-                let sourceStartY = max startY (float32 parentRectangle.Y)
-                let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
-                let sourceEndY = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
-                let sourceStartX = max bounds.X (float32 parentRectangle.X)
-                let sourceStartY = max bounds.Y (float32 parentRectangle.Y)
-                let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
-                let sourceEndY = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
-                createRectangle(
-                    sourceStartX,
-                    sourceStartY,
-                    (min sourceEndX (float32 parentRectangle.Width)),
-                    (min sourceEndY (float32 parentRectangle.Height)))
-
+            let sourceStartX = max startX (float32 parentRectangle.X)
+            let sourceStartY = max startY (float32 parentRectangle.Y)
+            let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
+            let sourceEndY = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
+            createRectangle(
+                sourceStartX,
+                sourceStartY,
+                (min sourceEndX (float32 parentRectangle.Width)),
+                (min sourceEndY (float32 parentRectangle.Height)))
         let oldScissorRect = graphics.ScissorRectangle
 
         let rasterizerState = new RasterizerState()
@@ -395,29 +413,54 @@ module NoobishMonoGame =
             let childRect = c.RectangleWithPadding
 
             let debugColor =
-                if c.ThemeId = "Scroll" then Color.Multiply(Color.Transparent, 0.1f)
+                if c.ThemeId = "Scroll" then Color.Multiply(Color.Red, 0.1f)
                 elif c.ThemeId = "Button" then Color.Multiply(Color.Green, 0.1f)
+                elif c.ThemeId = "Paragraph" then Color.Multiply(Color.Purple, 0.1f)
                 else Color.Multiply(Color.Yellow, 0.1f)
 
             let pixel = content.Load<Texture2D> settings.Pixel
             drawRectangle spriteBatch pixel debugColor (childRect.X + totalScrollX) (childRect.Y + totalScrollY) (childRect.Width) (childRect.Height)
+            if c.ThemeId = "Scroll"  then
+                let r = {
+                    X = float32 outerRectangle.X
+                    Y = float32 outerRectangle.Y
+                    Width =  float32 outerRectangle.Width
+                    Height = float32 outerRectangle.Height}
+                debugDrawBorders spriteBatch pixel (Color.Multiply(Color.Red, 0.5f)) r
 
         spriteBatch.End()
 
-        let innerRectangle =
-            createRectangle (
-                float32 outerRectangle.X + c.PaddingLeft,
-                float32 outerRectangle.Y + c.PaddingTop,
-                c.PaddingLeft + c.PaddedWidth,
-                c.PaddingTop + c.PaddedHeight)
 
 
-        c.Children |> Array.iter(fun c ->
-            let cs = state.[c.Id]
-            if cs.Visible then
-                drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY innerRectangle
+        match c.Layout with
+        | NoobishLayout.Default ->
+            let viewport =
+                createRectangle (
+                    float32 outerRectangle.X + c.PaddingLeft,
+                    float32 outerRectangle.Y + c.PaddingTop,
+                    c.PaddingLeft + c.PaddedWidth,
+                    c.PaddingTop + c.PaddedHeight)
 
-        )
+            c.Children |> Array.iter(fun c ->
+                let cs = state.[c.Id]
+                if cs.Visible then
+                    drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY viewport
+            )
+        | NoobishLayout.Grid(_cols, _rows) ->
+            for c in c.Children do
+                let cs = state.[c.Id]
+                if cs.Visible then
+                    let bounds = c.RectangleWithMargin
+                    let viewport =
+                        createRectangle (
+                            bounds.X,
+                            bounds.Y,
+                            bounds.Width,
+                            bounds.Height)
+                    drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY viewport
+        | NoobishLayout.None -> ()
+
+
 
         graphics.ScissorRectangle <- oldScissorRect
 
