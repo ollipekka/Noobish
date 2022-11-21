@@ -160,12 +160,13 @@ module Buttons =
                 [
                 panel
                     [
+                        button [text "Padding 0"; onClick (fun () -> dispatch (ChangePadding 0)); padding model.Padding; fillHorizontal]
                         button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; fillHorizontal]
                         button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding; fillHorizontal]
                         button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding; fillHorizontal]
                     ]
                     [
-                        padding model.Padding;
+                        name "ButtonsPanel"
 
                     ]
                 panel
@@ -336,7 +337,7 @@ type DemoGame () as game =
                                     colspan 9;
                                     rowspan 1
                                 ]
-                            panel [scroll scrollItems [name "LeftMenu"]] [colspan 3; rowspan 7; fill; ]
+                            panel [scroll scrollItems [name "LeftMenu"]] [colspan 3; rowspan 7; ]
                             panel content [colspan 9; rowspan 7;]
                         ]
                         [

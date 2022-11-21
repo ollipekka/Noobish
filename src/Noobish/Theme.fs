@@ -213,6 +213,36 @@ module Theme =
                     ScrollBarThickness = 2
                     ScrollPinThickness = 2
                 }
+                "Combobox", {
+                    TextFont = defaultFont
+                    TextColor = textColor
+                    TextColorDisabled = textColorDisabled
+                    TextAlignment = NoobishTextAlign.Center
+
+                    Width = 0
+                    Height = 0
+
+                    TextureColor = textureColor
+                    TextureColorDisabled = textureColorDisabled
+
+                    BorderSize = 2
+                    BorderColor = borderColor
+                    BorderColorDisabled = borderColorDisabled
+
+                    Color = backgroundColor
+                    ColorDisabled = backgroundDisabled
+
+                    PressedColor = backgroundColorLight
+                    HoverColor = backgroundColorLight
+
+                    Padding = (5, 5, 5, 5)
+                    Margin =  (2, 2, 2, 2)
+
+                    ScrollBarColor = 0x00000000
+                    ScrollPinColor = 0x00000000
+                    ScrollBarThickness = 2
+                    ScrollPinThickness = 2
+                }
                 "Panel", {
                     TextFont = defaultFont
                     TextColor = 0xffffffff

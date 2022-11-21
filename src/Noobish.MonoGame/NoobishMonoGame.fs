@@ -40,6 +40,9 @@ type NoobishUI = {
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
 
+    let private createRectangle (x: float32, y:float32, width: float32, height: float32) =
+        Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
+
     let create (content: ContentManager) width height (settings: NoobishSettings) =
         let measureText (font: string) (text: string) =
             let font = content.Load<SpriteFont> font
@@ -144,7 +147,7 @@ module NoobishMonoGame =
             //Left
             drawRectangle spriteBatch pixel borderColor (bounds.X + scrollX) scrolledStartY borderSize bounds.Height
             // Right
-            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize) scrolledStartY borderSize bounds.Height
+            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width- borderSize) scrolledStartY borderSize bounds.Height
             // Top
             drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) scrolledStartY widthWithoutBorders borderSize
             // Bottom
@@ -278,11 +281,6 @@ module NoobishMonoGame =
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) scrollX scrollY =
 
-
-        let createRectangle (x: float32, y:float32, width: float32, height: float32) =
-            Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
-
-
         let texture, sourceRect =
             match t.Texture with
             | NoobishTexture.Basic(textureId) ->
@@ -347,8 +345,6 @@ module NoobishMonoGame =
         (parentScrollY: float32)
         (parentRectangle: Rectangle)  =
 
-        let createRectangle (x: float32, y:float32, width: float32, height: float32) =
-            Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
 
         let cs = state.[c.Id]
 
@@ -368,8 +364,8 @@ module NoobishMonoGame =
             createRectangle(
                 sourceStartX,
                 sourceStartY,
-                (min sourceEndX (float32 parentRectangle.Width)),
-                (min sourceEndY (float32 parentRectangle.Height)))
+                (min sourceEndX (float32 parentRectangle.Width)) + 2f,
+                (min sourceEndY (float32 parentRectangle.Height)) + 2f)
 
         let oldScissorRect = graphics.ScissorRectangle
 
@@ -414,14 +410,17 @@ module NoobishMonoGame =
 
 
 
+        (*
+            Viewport is the visible area. Nothing is rendered outside.
+        *)
         match c.Layout with
         | NoobishLayout.Default ->
             let viewport =
                 createRectangle (
                     float32 outerRectangle.X + c.PaddingLeft,
                     float32 outerRectangle.Y + c.PaddingTop,
-                    c.PaddingLeft + c.PaddedWidth,
-                    c.PaddingTop + c.PaddedHeight)
+                    c.PaddedWidth,
+                    c.PaddedHeight)
 
             c.Children |> Array.iter(fun c ->
                 let cs = state.[c.Id]
@@ -440,6 +439,12 @@ module NoobishMonoGame =
                             bounds.Width,
                             bounds.Height)
                     drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY viewport
+        | NoobishLayout.OverlaySource ->
+            let viewport = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
+            for child in c.Children do
+                let cs = state.[child.Id]
+                if cs.Visible then
+                    drawComponent state content settings graphics spriteBatch debug time child totalScrollX totalScrollY viewport
         | NoobishLayout.None -> ()
 
 
