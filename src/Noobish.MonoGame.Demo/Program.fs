@@ -138,16 +138,60 @@ module Text =
 
 module Containers =
 
+
+
     let view model dispatch =
         [
-            div [
-                    header [text "Hello"; ];
-                    hr []
+            grid 2 2
+                [
+                panel
+                    [
+                        div [
+                                header [text "Hello"; ];
+                                hr []
+                            ] [fillHorizontal];
+                        button [ text "Continue"; onClick ignore; fillHorizontal; enabled false];
+                        button [ text "Start"; onClick ignore; fillHorizontal; ];
+                        button [ text "Options"; onClick ignore; fillHorizontal; ];
+                    ]
+                    [
+                        name "ButtonsPanel"
+
+                    ]
+                panel
+                    [
+                        canvas
+                            [
+
+                                button [ text "Y"; relativePosition -15 -30 ]
+                                button [ text "x"; relativePosition 0 0 ]
+                                button [ text "o"; relativePosition 30 50 ]
+                            ]
+                            [
+                                text model.ComboboxValue; onChange (fun v -> dispatch (ComboboxValueChanged v))
+                            ]
+                    ]
+                    [
+
+                    ]
+                panel
+                    [
+                    ]
+                    [
+
+                    ]
+                panelWithGrid 2 1
+                    [
+
+                    ]
+                    [
+
+                    ]
                 ]
-                [fillHorizontal];
-            button [ text "Continue"; onClick ignore; fillHorizontal; enabled false];
-            button [ text "Start"; onClick ignore; fillHorizontal; ];
-            button [ text "Options"; onClick ignore; fillHorizontal; ];
+                [
+
+                ]
+
         ]
 
 

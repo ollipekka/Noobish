@@ -439,7 +439,7 @@ module NoobishMonoGame =
                             bounds.Width,
                             bounds.Height)
                     drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY viewport
-        | NoobishLayout.OverlaySource ->
+        | NoobishLayout.Absolute | NoobishLayout.OverlaySource ->
             let viewport = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
             for child in c.Children do
                 let cs = state.[child.Id]

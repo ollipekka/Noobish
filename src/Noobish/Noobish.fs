@@ -205,7 +205,7 @@ module Components =
 
     let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; block] }
 
-    let canvas children attributes = { ThemeId = "Image"; Children = children; Attributes = [] @ attributes}
+    let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: fill :: attributes}
 
     let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: attributes}
 
@@ -989,6 +989,22 @@ module Logic =
             let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) path parentComponent.StartX parentComponent.StartY 800f 600f c.Children.[0]
 
             {parentComponent with Children = [|childComponent|]}
+        | NoobishLayout.Absolute ->
+            let parentBounds = parentComponent.RectangleWithPadding
+            for child in c.Children do
+                let childStartX = parentBounds.X + parentBounds.Width / 2.0f
+                let childStartY = parentBounds.Y +  parentBounds.Height / 2.0f
+                let childWidth = 50.0f
+                let childHeight = 50.0f
+
+                let path = sprintf "%s:(%g,%g)" parentComponent.Path childStartX childStartY
+                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) path childStartX childStartY childWidth childHeight child
+                newChildren.Add(childComponent)
+
+            {parentComponent with
+                Children = newChildren.ToArray()
+                OverflowWidth = parentComponent.PaddedWidth
+                OverflowHeight = parentComponent.PaddedHeight}
         | NoobishLayout.None ->
             parentComponent
 

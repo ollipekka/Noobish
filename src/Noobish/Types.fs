@@ -5,6 +5,7 @@ type NoobishLayout =
 | Default
 | Grid of cols: int * rows: int
 | OverlaySource
+| Absolute
 | None
 
 type NoobishTextAlign =
