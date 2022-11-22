@@ -91,8 +91,6 @@ module Components =
     | Toggled of bool
     | Block
     | MinSize of width: int * height: int
-
-    | Height of height: int
     | FgColor of int
     | Visible of bool
     | Enabled of bool
@@ -172,7 +170,6 @@ module Components =
     let fillVertical = FillVertical
 
     let minSize w h = MinSize(w, h)
-    let height h = Height h
     let color c = FgColor (c)
     let enabled v = Enabled(v)
 
@@ -186,6 +183,7 @@ module Components =
     let scrollHorizontal = ScrollHorizontal
     let scrollBoth = Scroll
 
+    let absoluteLayout = Layout (NoobishLayout.Absolute)
     let gridLayout cols rows = Layout (NoobishLayout.Grid (cols, rows))
     let stackLayout = Layout (NoobishLayout.Default)
     let colspan s = ColSpan s
@@ -604,8 +602,6 @@ module Logic =
             | MinSize (width, height) ->
                 minWidth <- scale width
                 minHeight <- scale height
-            | Height height ->
-                minHeight <- scale height
             // Text
             | Text(value) -> text <- value
             | TextFont(value) -> textFont <- value
@@ -714,7 +710,6 @@ module Logic =
                 relativeY <- scale y
             | KeyboardShortcut k ->
                 keyboardShortcut <- k
-
         let maxWidth = parentWidth * float32 colspan
 
         match slider with
@@ -991,9 +986,12 @@ module Logic =
             {parentComponent with Children = [|childComponent|]}
         | NoobishLayout.Absolute ->
             let parentBounds = parentComponent.RectangleWithPadding
+            let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.PaddingHorizontal - parentComponent.MarginHorizontal- parentComponent.BorderSize * 2f
+            let availableHeight = (parentHeight * float32 parentComponent.RowSpan) - parentComponent.PaddingVertical - parentComponent.MarginVertical - parentComponent.BorderSize * 2f
+
             for child in c.Children do
-                let childStartX = parentBounds.X + parentBounds.Width / 2.0f
-                let childStartY = parentBounds.Y +  parentBounds.Height / 2.0f
+                let childStartX = parentBounds.X + availableWidth / 2.0f
+                let childStartY = parentBounds.Y + availableHeight / 2.0f
                 let childWidth = 50.0f
                 let childHeight = 50.0f
 
@@ -1003,8 +1001,7 @@ module Logic =
 
             {parentComponent with
                 Children = newChildren.ToArray()
-                OverflowWidth = parentComponent.PaddedWidth
-                OverflowHeight = parentComponent.PaddedHeight}
+                }
         | NoobishLayout.None ->
             parentComponent
 
