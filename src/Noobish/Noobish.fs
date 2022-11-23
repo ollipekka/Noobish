@@ -149,6 +149,7 @@ module Components =
     let textureFlipVertically = TextureEffect NoobishTextureEffect.FlipVertically
     let textureBestFitMax = TextureSize NoobishTextureSize.BestFitMax
     let textureBestFitMin = TextureSize NoobishTextureSize.BestFitMin
+    let textureStretch = TextureSize NoobishTextureSize.Stretch
     let textureRotation t = TextureRotation t
     let paddingLeft lp = PaddingLeft lp
     let paddingRight rp = PaddingRight rp
@@ -203,7 +204,7 @@ module Components =
 
     let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; block] }
 
-    let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: fill :: attributes}
+    let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: attributes}
 
     let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: attributes}
 
@@ -365,6 +366,8 @@ type LayoutComponent = {
     HoverColor: int
     StartX: float32
     StartY: float32
+    RelativeX: float32
+    RelativeY: float32
     OuterWidth: float32
     OuterHeight: float32
     IsBlock: bool
@@ -412,37 +415,39 @@ type LayoutComponent = {
     member l.Hidden with get() = not l.Visible
     member l.PaddedWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal
     member l.PaddedHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical
+    member l.X with get() = l.StartX + l.RelativeX
+    member l.Y with get() = l.StartY + l.RelativeY
     member l.Width with get() = l.OuterWidth - l.MarginLeft - l.MarginRight
     member l.Height with get() = l.OuterHeight - l.MarginTop - l.MarginBottom
 
     member l.RectangleWithPadding =
         {
-            X = l.StartX + l.PaddingLeft + l.MarginLeft + l.BorderSize
-            Y = l.StartY + l.PaddingTop + l.MarginTop + l.BorderSize
+            X = l.X + l.PaddingLeft + l.MarginLeft + l.BorderSize
+            Y = l.Y + l.PaddingTop + l.MarginTop + l.BorderSize
             Width = l.PaddedWidth - l.BorderSize * 2.0f
             Height = l.PaddedHeight - l.BorderSize * 2.0f
         }
 
     member l.OuterRectangle with get() =
         {
-            X = l.StartX
-            Y = l.StartY
+            X = l.X
+            Y = l.Y
             Width = l.OuterWidth
             Height = l.OuterHeight
         }
 
     member l.RectangleWithMargin with get() =
         {
-            X = l.StartX + l.MarginLeft
-            Y = l.StartY + l.MarginTop
+            X = l.X + l.MarginLeft
+            Y = l.Y + l.MarginTop
             Width = l.Width
             Height = l.Height
         }
 
     member l.Contains x y scrollX scrollY =
-        let startX = l.StartX + l.MarginLeft + scrollX
+        let startX = l.X + l.MarginLeft + scrollX
         let endX = startX + l.Width
-        let startY = l.StartY + l.MarginTop + scrollY
+        let startY = l.Y + l.MarginTop + scrollY
         let endY = startY + l.Height
         not (x < startX || x > endX || y < startY || y > endY)
 
@@ -585,18 +590,18 @@ module Logic =
             | PaddingTop top ->
                 paddingTop <- scale top
             | PaddingBottom bottom ->
-                paddingBottom <- float32 bottom
+                paddingBottom <- scale bottom
             | Margin (left, right, top, bottom) ->
-                marginLeft <- float32 left
-                marginRight <- float32 right
-                marginTop <- float32 top
-                marginBottom <- float32 bottom
+                marginLeft <- scale left
+                marginRight <- scale right
+                marginTop <- scale top
+                marginBottom <- scale bottom
             | MarginLeft left ->
-                marginLeft <- float32 left
+                marginLeft <- scale left
             | MarginRight right ->
-                marginLeft <- float32 right
+                marginLeft <- scale right
             | MarginTop top ->
-                marginTop <- float32 top
+                marginTop <- scale top
             | MarginBottom bottom ->
                 marginBottom <- scale bottom
             | MinSize (width, height) ->
@@ -712,6 +717,9 @@ module Logic =
                 keyboardShortcut <- k
         let maxWidth = parentWidth * float32 colspan
 
+        if name = "HexenBridge" then
+            printfn "fail"
+
         match slider with
         | Some(_slider') ->
             minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
@@ -787,8 +795,10 @@ module Logic =
             BorderColor = borderColor
             BorderColorDisabled = borderColorDisabled
 
-            StartX = startX + relativeX
-            StartY = startY + relativeY
+            StartX = startX
+            StartY = startY
+            RelativeX = relativeX
+            RelativeY = relativeY
             OuterWidth = width
             OuterHeight = height
             IsBlock = isBlock
@@ -861,7 +871,7 @@ module Logic =
 
         let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
 
-        if parentComponent.Name = "FailedParagraph" then
+        if parentComponent.Name = "HexenBridge" then
             printfn "fail"
 
         let mutable offsetX = 0.0f
@@ -955,7 +965,7 @@ module Logic =
             for child in c.Children do
                 let childStartX = floor (parentBounds.X + (float32 col) * (colWidth))
                 let childStartY = floor (parentBounds.Y + (float32 row) * (rowHeight))
-                let path = sprintf "%s:(%i,%i)" parentComponent.Path col row
+                let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
                 let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) path childStartX childStartY colWidth rowHeight child
 
                 newChildren.Add({
@@ -981,27 +991,29 @@ module Logic =
             if c.Children.Length <> 1 then failwith "Can only pop open one at a time."
 
             let path = sprintf "%s:overlay" parentComponent.Path
-            let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) path parentComponent.StartX parentComponent.StartY 800f 600f c.Children.[0]
+            let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
 
             {parentComponent with Children = [|childComponent|]}
         | NoobishLayout.Absolute ->
             let parentBounds = parentComponent.RectangleWithPadding
-            let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.PaddingHorizontal - parentComponent.MarginHorizontal- parentComponent.BorderSize * 2f
-            let availableHeight = (parentHeight * float32 parentComponent.RowSpan) - parentComponent.PaddingVertical - parentComponent.MarginVertical - parentComponent.BorderSize * 2f
 
             for child in c.Children do
-                let childStartX = parentBounds.X + availableWidth / 2.0f
-                let childStartY = parentBounds.Y + availableHeight / 2.0f
-                let childWidth = 50.0f
-                let childHeight = 50.0f
+                let childStartX = parentBounds.X + parentBounds.Width / 2.0f
+                let childStartY = parentBounds.Y + parentBounds.Height / 2.0f
 
-                let path = sprintf "%s:(%g,%g)" parentComponent.Path childStartX childStartY
+                let childWidth = parentBounds.Width
+                let childHeight = parentBounds.Height
+
+                let path = sprintf "%s:absolute(%g,%g)" parentComponent.Path childStartX childStartY
                 let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) path childStartX childStartY childWidth childHeight child
-                newChildren.Add(childComponent)
+                newChildren.Add({
+                    childComponent with
+                        StartX = childComponent.StartX
+                        StartY = childComponent.StartY
 
-            {parentComponent with
-                Children = newChildren.ToArray()
-                }
+                    })
+
+            {parentComponent with Children = newChildren.ToArray()}
         | NoobishLayout.None ->
             parentComponent
 

@@ -162,12 +162,46 @@ module Containers =
                     [
                         canvas
                             [
+                                image
+                                    [
+                                        name "Pixel Origin"
+                                        texture "Pixel"
+                                        textureBestFitMin
+                                        minSize 10 10
+                                        textureColor 0xff0000ff
+                                        padding 0
+                                        margin 0
+                                        relativePosition -5 -5
 
-                                button [ text "Y"; relativePosition -15 -30 ]
-                                button [ text "x"; relativePosition 0 0 ]
-                                button [ text "o"; relativePosition 30 50 ]
+                                    ]
+                                image
+                                    [
+                                        name "Pixel 1"
+                                        texture "Pixel"
+                                        textureBestFitMin
+                                        minSize 10 10
+                                        textureColor 0xff0000ff
+                                        padding 0
+                                        margin 0
+                                        relativePosition -25 15
+
+                                    ]
+                                button [ text "y"; relativePosition -30 -30 ]
+                                button [ text "o"; relativePosition 30 30 ]
+                                image [
+                                        name "Pixel 2"
+                                        texture "Pixel"
+                                        textureBestFitMin
+                                        minSize 10 10
+                                        textureColor 0xff00FFff
+                                        padding 0
+                                        margin 0
+                                        relativePosition 15 -25
+
+                                    ]
                             ]
                             [
+                                fill
                                 text model.ComboboxValue; onChange (fun v -> dispatch (ComboboxValueChanged v))
                             ]
                     ]
@@ -311,7 +345,7 @@ type DemoGame () as game =
         let height = this.GraphicsDevice.Viewport.Height
 
         let settings = {
-            Scale = 1.0f
+            Scale = 1.5f
             FontSettings = {Small = "AnomyousPro16"; Normal = "AnonymousPro16"; Large = "AnonymousPro16"};
             Pixel = "Pixel"
         }
