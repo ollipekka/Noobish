@@ -113,7 +113,7 @@ module NoobishMonoGame =
         let cs = state.[c.Id]
         let pixel = content.Load<Texture2D> settings.Pixel
 
-        let bounds = c.RectangleWithMargin
+        let bounds = c.ContentWithBorder
 
         let color =
             if not c.Enabled then
@@ -137,7 +137,7 @@ module NoobishMonoGame =
     let private drawBorders  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
         if c.BorderSize > 0.0f then
             let pixel = content.Load<Texture2D> settings.Pixel
-            let bounds = c.RectangleWithMargin
+            let bounds = c.ContentWithBorder
 
             let scrolledStartY = bounds.Y + scrollY
 
@@ -176,7 +176,7 @@ module NoobishMonoGame =
         let mutable startY = 0.0f
 
         for line in c.Text do
-            let bounds = c.RectangleWithPadding
+            let bounds = c.Content
 
             let font = content.Load<SpriteFont> c.TextFont
 
@@ -235,7 +235,7 @@ module NoobishMonoGame =
             let pixel = content.Load<Texture2D> settings.Pixel
 
             let scrollBarWidth = c.ScrollBarThickness
-            let bounds = c.RectangleWithMargin
+            let bounds = c.ContentWithBorder
             let x = bounds.X + bounds.Width - c.BorderSize - scrollBarWidth
             let color = Color.Multiply(c.ScrollBarColor |> toColor, progress)
             drawRectangle spriteBatch pixel color x bounds.Y scrollBarWidth bounds.Height
@@ -263,7 +263,7 @@ module NoobishMonoGame =
         let pixel = content.Load<Texture2D> settings.Pixel
 
         // Bar
-        let bounds = c.RectangleWithPadding
+        let bounds = c.Content
         let barPositionX = bounds.X + pinWidth / 2.0f
         let barPositionY = bounds.Y + (bounds.Height / 2.0f) - (barHeight / 2.0f)
         let barWidth = bounds.Width - pinWidth
@@ -297,7 +297,7 @@ module NoobishMonoGame =
         let rect =
             match t.TextureSize with
             | NoobishTextureSize.Stretch ->
-                let bounds = c.RectangleWithMargin
+                let bounds = c.ContentWithBorder
                 createRectangle
                     (bounds.X + scrollX)
                     (bounds.Y + scrollY)
@@ -305,7 +305,7 @@ module NoobishMonoGame =
                     bounds.Height
 
             | NoobishTextureSize.BestFitMax ->
-                let bounds = c.RectangleWithMargin
+                let bounds = c.ContentWithBorder
                 let ratio = max (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
                 let width = ratio * float32 sourceRect.Width
                 let height = ratio * float32 sourceRect.Height
@@ -318,7 +318,7 @@ module NoobishMonoGame =
                     height
 
             | NoobishTextureSize.BestFitMin ->
-                let bounds = c.RectangleWithMargin
+                let bounds = c.ContentWithBorder
                 let ratio = min (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
                 let width = ratio * float32 sourceRect.Width
                 let height = ratio * float32 sourceRect.Height
@@ -331,7 +331,7 @@ module NoobishMonoGame =
                     height
 
             | NoobishTextureSize.Original ->
-                let bounds = c.RectangleWithMargin
+                let bounds = c.ContentWithBorder
                 createRectangle
                     (bounds.X + scrollX)
                     (bounds.Y + scrollY)
@@ -372,7 +372,7 @@ module NoobishMonoGame =
         let totalScrollX = cs.ScrollX + parentScrollX
         let totalScrollY = cs.ScrollY + parentScrollY
 
-        let bounds = c.RectangleWithMargin
+        let bounds = c.ContentWithBorder
 
         let startX = bounds.X + totalScrollX
         let startY = bounds.Y + totalScrollY
@@ -409,7 +409,7 @@ module NoobishMonoGame =
                 fun s -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX )
 
         if debug then
-            let childRect = c.RectangleWithPadding
+            let childRect = c.Content
 
             let debugColor =
                 if c.ThemeId = "Scroll" then Color.Multiply(Color.Red, 0.1f)
@@ -452,7 +452,7 @@ module NoobishMonoGame =
             for c in c.Children do
                 let cs = state.[c.Id]
                 if cs.Visible then
-                    let bounds = c.RectangleWithMargin
+                    let bounds = c.ContentWithBorder
                     let viewport =
                         createRectangle
                             bounds.X
@@ -622,10 +622,6 @@ module Program =
                         cs.ScrollY <- v
                     | SetSliderValue(v) ->
                         cs.SliderValue <- v
-
-
-
-
 
             ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.MeasureText ui.Theme ui.Settings mutateState (i + 1) width height components) |> List.toArray
 

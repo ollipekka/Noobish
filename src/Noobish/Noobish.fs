@@ -420,7 +420,7 @@ type LayoutComponent = {
     member l.Width with get() = l.OuterWidth - l.MarginLeft - l.MarginRight
     member l.Height with get() = l.OuterHeight - l.MarginTop - l.MarginBottom
 
-    member l.RectangleWithPadding =
+    member l.Content =
         {
             X = l.X + l.PaddingLeft + l.MarginLeft + l.BorderSize
             Y = l.Y + l.PaddingTop + l.MarginTop + l.BorderSize
@@ -428,20 +428,20 @@ type LayoutComponent = {
             Height = l.PaddedHeight - l.BorderSize * 2.0f
         }
 
-    member l.OuterRectangle with get() =
-        {
-            X = l.X
-            Y = l.Y
-            Width = l.OuterWidth
-            Height = l.OuterHeight
-        }
-
-    member l.RectangleWithMargin with get() =
+    member l.ContentWithBorder with get() =
         {
             X = l.X + l.MarginLeft
             Y = l.Y + l.MarginTop
             Width = l.Width
             Height = l.Height
+        }
+
+    member l.ContentWithBorderAndMargin with get() =
+        {
+            X = l.X
+            Y = l.Y
+            Width = l.OuterWidth
+            Height = l.OuterHeight
         }
 
     member l.Contains x y scrollX scrollY =
@@ -900,7 +900,7 @@ module Logic =
             let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.PaddingHorizontal - parentComponent.MarginHorizontal- parentComponent.BorderSize * 2f
             let availableHeight = (parentHeight * float32 parentComponent.RowSpan) - parentComponent.PaddingVertical - parentComponent.MarginVertical - parentComponent.BorderSize * 2f
 
-            let parentBounds = parentComponent.RectangleWithPadding
+            let parentBounds = parentComponent.Content
             for i = 0 to c.Children.Length - 1 do
                 let child = c.Children.[i]
                 let childStartX = parentBounds.X + offsetX
@@ -945,7 +945,7 @@ module Logic =
                 Children = newChildren.ToArray()}
         | NoobishLayout.Grid (cols, rows) ->
 
-            let parentBounds = parentComponent.RectangleWithPadding
+            let parentBounds = parentComponent.Content
             let colWidth = parentBounds.Width / float32 cols
             let rowHeight = parentBounds.Height / float32 rows
             let mutable col = 0
@@ -995,7 +995,7 @@ module Logic =
 
             {parentComponent with Children = [|childComponent|]}
         | NoobishLayout.Absolute ->
-            let parentBounds = parentComponent.RectangleWithPadding
+            let parentBounds = parentComponent.Content
 
             for child in c.Children do
                 let childStartX = parentBounds.X + parentBounds.Width / 2.0f

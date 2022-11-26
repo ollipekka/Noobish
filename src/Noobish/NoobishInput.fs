@@ -33,7 +33,7 @@ let rec press
 
                 match c.Slider with
                 | Some (slider') ->
-                    let bounds = c.RectangleWithPadding
+                    let bounds = c.Content
                     let relative = (positionX - bounds.X) / (bounds.Width)
                     let newValue = slider'.Min + (relative * slider'.Max - slider'.Min)
                     let steppedNewValue = truncate(newValue / slider'.Step) * slider'.Step
