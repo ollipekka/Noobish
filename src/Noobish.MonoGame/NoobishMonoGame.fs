@@ -440,8 +440,8 @@ module NoobishMonoGame =
                 createRectangle
                     (float32 outerRectangle.X + c.PaddingLeft)
                     (float32 outerRectangle.Y + c.PaddingTop)
-                    c.PaddedWidth
-                    c.PaddedHeight
+                    (float32 outerRectangle.Width)
+                    (float32 outerRectangle.Height)
 
             c.Children |> Array.iter(fun c ->
                 let cs = state.[c.Id]

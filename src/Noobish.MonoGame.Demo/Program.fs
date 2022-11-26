@@ -24,6 +24,8 @@ type DemoMessage =
     | ShowSliders
     | SliderValueChanged of float32
     | ChangePadding of int
+    | ChangeMargin of int
+    | ChangeBorderSize of int
     | ComboboxValueChanged of string
     | ToggleDebug
 
@@ -34,6 +36,8 @@ type DemoModel =
         UI: NoobishUI
         State: ViewState
         Padding: int
+        Margin: int
+        BorderSize: int
         ComboboxValue: string
         SliderAValue: float32
     }
@@ -238,10 +242,10 @@ module Buttons =
                 [
                 panel
                     [
-                        button [text "Padding 0"; onClick (fun () -> dispatch (ChangePadding 0)); padding model.Padding; fillHorizontal]
-                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; fillHorizontal]
-                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding; fillHorizontal]
-                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding; fillHorizontal]
+                        button [text "Padding 0"; onClick (fun () -> dispatch (ChangePadding 0)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
                     ]
                     [
                         name "ButtonsPanel"
@@ -264,15 +268,25 @@ module Buttons =
                     ]
                 panel
                     [
+                        button [text "Margin 0"; onClick (fun () -> dispatch (ChangeMargin 0)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Margin 2"; onClick (fun () -> dispatch (ChangeMargin 2)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Margin 4"; onClick (fun () -> dispatch (ChangeMargin 4)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Margin 6"; onClick (fun () -> dispatch (ChangeMargin 6)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
                     ]
                     [
+                        name "MarginPanel"
 
                     ]
-                panelWithGrid 2 1
+                panel
                     [
-
+                        button [text "BorderSize 0"; onClick (fun () -> dispatch (ChangeBorderSize 0)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "BorderSize 1"; onClick (fun () -> dispatch (ChangeBorderSize 1)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "BorderSize 2"; onClick (fun () -> dispatch (ChangeBorderSize 2)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "BorderSize 3"; onClick (fun () -> dispatch (ChangeBorderSize 3)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "BorderSize 4"; onClick (fun () -> dispatch (ChangeBorderSize 4)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
                     ]
                     [
+                        name "BorderPanel"
 
                     ]
                 ]
@@ -354,7 +368,7 @@ type DemoGame () as game =
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
-            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; SliderAValue = 25.0f;}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; BorderSize = 2; SliderAValue = 25.0f;}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -372,6 +386,10 @@ type DemoGame () as game =
                 {model with ComboboxValue = v}, Cmd.none
             | ChangePadding padding ->
                 {model with Padding = padding}, Cmd.none
+            | ChangeMargin margin ->
+                {model with Margin = margin}, Cmd.none
+            | ChangeBorderSize borderSize ->
+                {model with BorderSize = borderSize}, Cmd.none
             | ToggleDebug ->
                 model.UI.Debug <- (not model.UI.Debug)
                 model, Cmd.none

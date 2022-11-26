@@ -413,8 +413,10 @@ type LayoutComponent = {
     member l.PaddingHorizontal with get() = l.PaddingRight+ l.PaddingLeft
 
     member l.Hidden with get() = not l.Visible
-    member l.PaddedWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal
-    member l.PaddedHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical
+    member l.ContentStartX with get() = l.X + l.PaddingLeft + l.MarginLeft + l.BorderSize
+    member l.ContentStartY with get() = l.Y + l.PaddingTop + l.MarginTop + l.BorderSize
+    member l.ContentWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal - 2f * l.BorderSize
+    member l.ContentHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical - 2f * l.BorderSize
     member l.X with get() = l.StartX + l.RelativeX
     member l.Y with get() = l.StartY + l.RelativeY
     member l.Width with get() = l.OuterWidth - l.MarginLeft - l.MarginRight
@@ -422,10 +424,10 @@ type LayoutComponent = {
 
     member l.Content =
         {
-            X = l.X + l.PaddingLeft + l.MarginLeft + l.BorderSize
-            Y = l.Y + l.PaddingTop + l.MarginTop + l.BorderSize
-            Width = l.PaddedWidth - l.BorderSize * 2.0f
-            Height = l.PaddedHeight - l.BorderSize * 2.0f
+            X = l.ContentStartX
+            Y = l.ContentStartY
+            Width = l.ContentWidth
+            Height = l.ContentHeight
         }
 
     member l.ContentWithBorder with get() =
@@ -450,8 +452,6 @@ type LayoutComponent = {
         let startY = l.Y + l.MarginTop + scrollY
         let endY = startY + l.Height
         not (x < startX || x > endX || y < startY || y > endY)
-
-
 
 module Logic =
     let splitLines (measureString: string -> int * int) width (text: string) =
@@ -897,7 +897,7 @@ module Logic =
         | NoobishLayout.Default ->
 
             // In this layout, actual parent component height might be zero at this point. We don't know. Use available height.
-            let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.PaddingHorizontal - parentComponent.MarginHorizontal- parentComponent.BorderSize * 2f
+            let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.PaddingHorizontal - parentComponent.MarginHorizontal - parentComponent.BorderSize * 2f
             let availableHeight = (parentHeight * float32 parentComponent.RowSpan) - parentComponent.PaddingVertical - parentComponent.MarginVertical - parentComponent.BorderSize * 2f
 
             let parentBounds = parentComponent.Content
@@ -935,7 +935,7 @@ module Logic =
                     Utils.clamp childHeight 0f availableHeight
 
             let overflowHeight = calculateOverflowHeight()
-            let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.PaddedWidth
+            let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.ContentWidth
 
             {parentComponent with
                 OuterWidth = width
@@ -984,8 +984,8 @@ module Logic =
             {parentComponent with
                 Children = newChildren.ToArray()
                 //OuterHeight = height
-                OverflowWidth = parentComponent.PaddedWidth
-                OverflowHeight = parentComponent.PaddedHeight}
+                OverflowWidth = parentComponent.ContentWidth
+                OverflowHeight = parentComponent.ContentHeight}
         | NoobishLayout.OverlaySource ->
 
             if c.Children.Length <> 1 then failwith "Can only pop open one at a time."

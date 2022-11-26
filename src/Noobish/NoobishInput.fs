@@ -116,7 +116,7 @@ let rec scroll
                 if c.ScrollVertical && c.OverflowHeight > c.Height then
                     let scaledScroll = scaleValue scrollY
                     let nextScroll = cs.ScrollY + scaledScroll
-                    let minScroll = c.PaddedHeight - c.OverflowHeight
+                    let minScroll = c.ContentHeight - c.OverflowHeight
 
                     cs.ScrollY <- clamp nextScroll minScroll 0.0f
                     cs.ScrolledTime <- time
