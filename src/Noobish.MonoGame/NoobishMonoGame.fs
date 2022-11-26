@@ -25,6 +25,7 @@ type NoobishUI = {
     Settings: NoobishSettings
     Components: Dictionary<string, LayoutComponent>
     State: Dictionary<string, LayoutComponentState>
+    StateByName: Dictionary<string, LayoutComponentState>
     TempState: Dictionary<string, LayoutComponentState>
     mutable Debug: bool
     mutable Version: Guid
@@ -40,7 +41,7 @@ type NoobishUI = {
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
 
-    let private createRectangle (x: float32, y:float32, width: float32, height: float32) =
+    let private createRectangle (x: float32) (y:float32) (width: float32) (height: float32) =
         Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
 
     let create (content: ContentManager) width height (settings: NoobishSettings) =
@@ -56,6 +57,7 @@ module NoobishMonoGame =
             Theme = Theme.createDefaultTheme settings.FontSettings
             Settings = settings
             State = Dictionary()
+            StateByName = Dictionary()
             TempState = Dictionary()
             Components = Dictionary()
 
@@ -279,7 +281,7 @@ module NoobishMonoGame =
         drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
 
 
-    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) scrollX scrollY =
+    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) (scrollX: float32) (scrollY: float32) =
 
         let texture, sourceRect =
             match t.Texture with
@@ -296,7 +298,12 @@ module NoobishMonoGame =
             match t.TextureSize with
             | NoobishTextureSize.Stretch ->
                 let bounds = c.RectangleWithMargin
-                createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
+                createRectangle
+                    (bounds.X + scrollX)
+                    (bounds.Y + scrollY)
+                    bounds.Width
+                    bounds.Height
+
             | NoobishTextureSize.BestFitMax ->
                 let bounds = c.RectangleWithMargin
                 let ratio = max (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
@@ -304,7 +311,12 @@ module NoobishMonoGame =
                 let height = ratio * float32 sourceRect.Height
                 let padLeft = (bounds.Width - width) / 2.0f
                 let padTop = (bounds.Height - height) / 2.0f
-                createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
+                createRectangle
+                    (bounds.X + scrollX + padLeft)
+                    (bounds.Y + scrollY + padTop)
+                    width
+                    height
+
             | NoobishTextureSize.BestFitMin ->
                 let bounds = c.RectangleWithMargin
                 let ratio = min (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
@@ -312,10 +324,19 @@ module NoobishMonoGame =
                 let height = ratio * float32 sourceRect.Height
                 let padLeft = (bounds.Width - width) / 2.0f
                 let padTop = (bounds.Height - height) / 2.0f
-                createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
+                createRectangle
+                    (bounds.X + scrollX + padLeft)
+                    (bounds.Y + scrollY + padTop)
+                    width
+                    height
+
             | NoobishTextureSize.Original ->
                 let bounds = c.RectangleWithMargin
-                createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
+                createRectangle
+                    (bounds.X + scrollX)
+                    (bounds.Y + scrollY)
+                    bounds.Width
+                    bounds.Height
 
         let textureEffect =
             if t.TextureEffect = NoobishTextureEffect.FlipHorizontally then
@@ -361,11 +382,11 @@ module NoobishMonoGame =
             let sourceStartY = max startY (float32 parentRectangle.Y)
             let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
             let sourceEndY = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
-            createRectangle(
-                sourceStartX,
-                sourceStartY,
-                (min sourceEndX (float32 parentRectangle.Width)) + 2f,
-                (min sourceEndY (float32 parentRectangle.Height)) + 2f)
+            createRectangle
+                sourceStartX
+                sourceStartY
+                (min sourceEndX (float32 parentRectangle.Width))
+                (min sourceEndY (float32 parentRectangle.Height))
 
         let oldScissorRect = graphics.ScissorRectangle
 
@@ -416,11 +437,11 @@ module NoobishMonoGame =
         match c.Layout with
         | NoobishLayout.Default ->
             let viewport =
-                createRectangle (
-                    float32 outerRectangle.X + c.PaddingLeft,
-                    float32 outerRectangle.Y + c.PaddingTop,
-                    c.PaddedWidth,
-                    c.PaddedHeight)
+                createRectangle
+                    (float32 outerRectangle.X + c.PaddingLeft)
+                    (float32 outerRectangle.Y + c.PaddingTop)
+                    c.PaddedWidth
+                    c.PaddedHeight
 
             c.Children |> Array.iter(fun c ->
                 let cs = state.[c.Id]
@@ -433,11 +454,11 @@ module NoobishMonoGame =
                 if cs.Visible then
                     let bounds = c.RectangleWithMargin
                     let viewport =
-                        createRectangle (
-                            bounds.X,
-                            bounds.Y,
-                            bounds.Width,
-                            bounds.Height)
+                        createRectangle
+                            bounds.X
+                            bounds.Y
+                            bounds.Width
+                            bounds.Height
                     drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY viewport
         | NoobishLayout.Absolute | NoobishLayout.OverlaySource ->
             let viewport = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
@@ -586,9 +607,8 @@ module Program =
             ui.Version <- Guid.NewGuid()
 
             let mutateState (name: string) (message:ComponentMessage) =
-                let kvp = ui.State |> Seq.tryFind(fun kvp -> kvp.Value.Name = name)
-                kvp |> Option.iter (fun kvp' ->
-                    let cs = kvp'.Value
+                let (success, cs) = ui.StateByName.TryGetValue(name)
+                if success then
                     match message with
                     | Show ->
                         cs.Visible <- true
@@ -602,7 +622,7 @@ module Program =
                         cs.ScrollY <- v
                     | SetSliderValue(v) ->
                         cs.SliderValue <- v
-                )
+
 
 
 
@@ -628,6 +648,11 @@ module Program =
                     ui.State.[kvp.Key] <- {value with Version = ui.Version}
                 else
                     ui.State.[kvp.Key] <- Logic.createLayoutComponentState kvp.Value.Name kvp.Value.KeyboardShortcut ui.Version kvp.Value.Visible
+
+            ui.StateByName.Clear()
+            for c in ui.State.Values do
+                if c.Name <> "" then
+                    ui.StateByName.[c.Name] <- c
 
         program
             |> Program.withSetState setState

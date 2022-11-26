@@ -345,7 +345,7 @@ type DemoGame () as game =
         let height = this.GraphicsDevice.Viewport.Height
 
         let settings = {
-            Scale = 1.5f
+            Scale = 1f
             FontSettings = {Small = "AnomyousPro16"; Normal = "AnonymousPro16"; Large = "AnonymousPro16"};
             Pixel = "Pixel"
         }
