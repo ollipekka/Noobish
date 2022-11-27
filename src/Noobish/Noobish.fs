@@ -419,8 +419,8 @@ type LayoutComponent = {
     member l.ContentHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical - 2f * l.BorderSize
     member l.X with get() = l.StartX + l.RelativeX
     member l.Y with get() = l.StartY + l.RelativeY
-    member l.Width with get() = l.OuterWidth - l.MarginLeft - l.MarginRight
-    member l.Height with get() = l.OuterHeight - l.MarginTop - l.MarginBottom
+    member l.Width with get() = l.OuterWidth - l.MarginHorizontal
+    member l.Height with get() = l.OuterHeight - l.MarginVertical
 
     member l.Content =
         {
@@ -925,11 +925,12 @@ module Logic =
                 if parentComponent.FillHorizontal then
                     availableWidth
                 else
-                    calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal + parentComponent.BorderSize * 2f
+                    let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal + parentComponent.BorderSize * 2f
+                    Utils.clamp childWidth 0f availableWidth
 
             let height =
                 if parentComponent.FillVertical then
-                    availableHeight + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal + parentComponent.BorderSize * 2f
+                    availableHeight
                 else
                     let childHeight = calculateChildHeight() + parentComponent.PaddingVertical + parentComponent.MarginVertical + parentComponent.BorderSize * 2f
                     Utils.clamp childHeight 0f availableHeight
@@ -983,7 +984,6 @@ module Logic =
 
             {parentComponent with
                 Children = newChildren.ToArray()
-                //OuterHeight = height
                 OverflowWidth = parentComponent.ContentWidth
                 OverflowHeight = parentComponent.ContentHeight}
         | NoobishLayout.OverlaySource ->
