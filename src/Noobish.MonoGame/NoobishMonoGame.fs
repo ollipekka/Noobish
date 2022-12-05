@@ -36,7 +36,32 @@ type NoobishUI = {
     // Contains layers of layout components. Bottom is 0, one above bototm is 1.
     mutable Layers: LayoutComponent[][]
 
-}
+} with
+    member private s.UpdateState (name: string) (state: LayoutComponentState) =
+        s.State.[state.Id] <- state
+        s.StateByName.[name] <- state
+
+    member s.Update (name: string) (message:ComponentMessage) =
+        let (success, cs) = s.StateByName.TryGetValue(name)
+        if success then
+            match message with
+            | Show ->
+                cs.Visible <- true
+            | Hide ->
+                cs.Visible <- false
+            | ToggleVisibility ->
+                cs.Visible <- not cs.Visible
+            | SetScrollX (v) ->
+                cs.ScrollX <- v
+            | SetScrollY(v) ->
+                cs.ScrollY <- v
+            | ChangeModel(cb) ->
+                cs.Model |> Option.iter (fun model ->
+
+                    let model' = cb model
+                    let cs = s.State.[cs.Id]
+                    s.UpdateState name {cs with Model = Some(model') }
+                )
 
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
@@ -281,7 +306,7 @@ module NoobishMonoGame =
         drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
 
 
-    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) (scrollX: float32) (scrollY: float32) =
+    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Components.Texture) (scrollX: float32) (scrollY: float32) =
 
         let texture, sourceRect =
             match t.Texture with
@@ -384,8 +409,8 @@ module NoobishMonoGame =
             createRectangle
                 sourceStartX
                 sourceStartY
-                (min sourceWidth (float32 parentRectangle.Width))
-                (min sourceHeight (float32 parentRectangle.Height))
+                sourceWidth//(min sourceWidth (float32 parentRectangle.Width))
+                sourceHeight//(min sourceHeight (float32 parentRectangle.Height))
 
         let oldScissorRect = graphics.ScissorRectangle
 
@@ -403,9 +428,11 @@ module NoobishMonoGame =
         drawText content spriteBatch c totalScrollX totalScrollY
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
 
-        c.Slider
+        cs.Model
             |> Option.iter(
-                fun s -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX )
+                function
+                | Slider (s) -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX
+                | Combobox (_c) -> ())
 
         if debug then
             let childRect = c.Content
@@ -435,14 +462,31 @@ module NoobishMonoGame =
         *)
         match c.Layout with
         | NoobishLayout.Default ->
-            let viewport =
-                let bounds = c.ContentWithBorder
+
+            let outerRectangle =
+                let bounds = c.Content
+                let startX = bounds.X + totalScrollX
+                let startY = bounds.Y + totalScrollY
+                let sourceStartX = max startX (float32 parentRectangle.X)
+                let sourceStartY = max startY (float32 parentRectangle.Y)
+                let sourceWidth = min (bounds.Width) (float32 parentRectangle.Right - startX)
+                let sourceHeight = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
                 createRectangle
-                    (float32 bounds.X)
-                    (float32 bounds.Y + totalScrollY)
-                    (float32 bounds.Width - c.MarginHorizontal - c.PaddingHorizontal)
-                    (float32 bounds.Height - c.MarginVertical - c.MarginHorizontal)
+                    sourceStartX
+                    sourceStartY
+                    (min sourceWidth (float32 parentRectangle.Width))
+                    (min sourceHeight (float32 parentRectangle.Height))
             for c in c.Children do
+
+                let viewport =
+                    let bounds = c.ContentWithBorder
+                    let startX = max (bounds.X) (float32 outerRectangle.X)
+                    let startY = max (bounds.Y + totalScrollY) (float32 outerRectangle.Y)
+                    let width = min (float32 bounds.Width) (float32 outerRectangle.Right - startX)
+                    let height = min (float32  bounds.Height) (float32 outerRectangle.Bottom - startY)
+
+                    createRectangle startX startY width height
+
                 let cs = state.[c.Id]
                 if cs.Visible then
 
@@ -606,24 +650,7 @@ module Program =
 
             ui.Version <- Guid.NewGuid()
 
-            let mutateState (name: string) (message:ComponentMessage) =
-                let (success, cs) = ui.StateByName.TryGetValue(name)
-                if success then
-                    match message with
-                    | Show ->
-                        cs.Visible <- true
-                    | Hide ->
-                        cs.Visible <- false
-                    | ToggleVisibility ->
-                        cs.Visible <- not cs.Visible
-                    | SetScrollX (v) ->
-                        cs.ScrollX <- v
-                    | SetScrollY(v) ->
-                        cs.ScrollY <- v
-                    | SetSliderValue(v) ->
-                        cs.SliderValue <- v
-
-            ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.MeasureText ui.Theme ui.Settings mutateState (i + 1) width height components) |> List.toArray
+            ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.MeasureText ui.Theme ui.Settings ui.Update (i + 1) width height components) |> List.toArray
 
             let oldState = Dictionary(ui.State)
             ui.State.Clear()
@@ -641,14 +668,15 @@ module Program =
             for kvp in ui.Components do
                 let (success, value) = oldState.TryGetValue kvp.Key
                 if success then
-                    ui.State.[kvp.Key] <- {value with Version = ui.Version}
+                    ui.State.[kvp.Key] <- {value with Version = ui.Version; Model = kvp.Value.Model }
                 else
-                    ui.State.[kvp.Key] <- Logic.createLayoutComponentState kvp.Value.Name kvp.Value.KeyboardShortcut ui.Version kvp.Value.Visible
+                    ui.State.[kvp.Key] <- Logic.createLayoutComponentState ui.Version kvp.Value
 
             ui.StateByName.Clear()
             for c in ui.State.Values do
                 if c.Name <> "" then
                     ui.StateByName.[c.Name] <- c
+
 
         program
             |> Program.withSetState setState

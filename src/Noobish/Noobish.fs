@@ -7,21 +7,9 @@ module Components =
 
     [<RequireQualifiedAccess>]
     type NoobishKeyId =
-    | Escape
-    | Enter
-    | None
-
-
-    type ComponentMessage =
-    | Show
-    | Hide
-    | ToggleVisibility
-    | SetScrollX of float32
-    | SetScrollY of float32
-    | SetSliderValue of float32
-
-    type ComponentChangeDispatch = (ComponentMessage -> unit)
-
+        | Escape
+        | Enter
+        | None
 
     type NoobishSettings = {
         Scale: float32
@@ -36,6 +24,26 @@ module Components =
         OnValueChanged: float32 -> unit
         Value: float32
     }
+
+    type Combobox = {
+        Values: string[]
+        Value: string
+    }
+
+    type ComponentModel =
+        | Slider of Slider
+        | Combobox of Combobox
+
+    type ComponentMessage =
+        | Show
+        | Hide
+        | ToggleVisibility
+        | SetScrollX of float32
+        | SetScrollY of float32
+        | ChangeModel of (ComponentModel -> ComponentModel)
+
+    type ComponentChangeDispatch = (ComponentMessage -> unit)
+
     [<RequireQualifiedAccess>]
     type NoobishTexture =
         | None
@@ -49,6 +57,163 @@ module Components =
         | FlipHorizontally
         | FlipVertically
 
+
+
+
+    [<Struct>]
+    type NoobishRectangle = {
+        X: float32
+        Y: float32
+        Width: float32
+        Height: float32
+    } with
+        member r.Left with get() = r.X
+        member r.Right with get() = r.X + r.Width
+        member r.Top with get() = r.Y
+        member r.Bottom with get() = r.Y + r.Height
+
+
+    type LayoutComponentState = {
+        Id: string
+        Name: string
+        mutable Toggled: bool
+        mutable Visible: bool
+        mutable PressedTime: TimeSpan
+        mutable ScrolledTime: TimeSpan
+
+        mutable ScrollX: float32
+        mutable ScrollY: float32
+
+        Version: Guid
+        KeyboardShortcut: NoobishKeyId
+
+        Model: option<ComponentModel>
+    }
+
+
+    type Texture = {
+        Texture: NoobishTexture
+        TextureEffect: NoobishTextureEffect
+        TextureColor: int
+        TextureColorDisabled:int
+        TextureSize: NoobishTextureSize
+        Rotation: int
+    }
+
+
+    type LayoutComponent= {
+        Id: string
+        Path: string
+        Name: string
+        ThemeId: string
+        Enabled: bool
+        Visible: bool
+        Toggled: bool
+        ZIndex: int
+        Overlay: bool
+
+        FillVertical: bool
+        FillHorizontal: bool
+
+        TextAlignment: NoobishTextAlign
+        Text: string[]
+        TextFont: string
+        TextColor: int
+        TextColorDisabled: int
+        TextWrap: bool
+        Texture: option<Texture>
+        Color: int
+        ColorDisabled: int
+        PressedColor: int
+        HoverColor: int
+        StartX: float32
+        StartY: float32
+        RelativeX: float32
+        RelativeY: float32
+        OuterWidth: float32
+        OuterHeight: float32
+        IsBlock: bool
+        PaddingLeft: float32
+        PaddingRight: float32
+        PaddingTop: float32
+        PaddingBottom: float32
+        MarginLeft: float32
+        MarginRight: float32
+        MarginTop: float32
+        MarginBottom: float32
+
+        BorderSize: float32
+        BorderColor: int
+        BorderColorDisabled: int
+
+        ScrollBarColor: int
+        ScrollPinColor: int
+        ScrollBarThickness: float32
+        ScrollPinThickness: float32
+        ScrollHorizontal: bool
+        ScrollVertical: bool
+        OverflowWidth: float32
+        OverflowHeight: float32
+
+        Model: option<ComponentModel>
+
+        KeyboardShortcut: NoobishKeyId
+
+        OnClickInternal: unit -> unit
+        OnPressInternal: struct(int*int) -> LayoutComponent -> unit
+        OnChange: string -> unit
+
+        Layout: NoobishLayout
+        ColSpan: int
+        RowSpan: int
+
+        Children: LayoutComponent[]
+    } with
+        member l.MarginVertical with get() = l.MarginTop + l.MarginBottom
+        member l.MarginHorizontal with get() = l.MarginLeft + l.MarginRight
+        member l.PaddingVertical with get() = l.PaddingTop + l.PaddingBottom
+        member l.PaddingHorizontal with get() = l.PaddingRight+ l.PaddingLeft
+
+        member l.Hidden with get() = not l.Visible
+        member l.ContentStartX with get() = l.X + l.PaddingLeft + l.MarginLeft + l.BorderSize
+        member l.ContentStartY with get() = l.Y + l.PaddingTop + l.MarginTop + l.BorderSize
+        member l.ContentWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal - 2f * l.BorderSize
+        member l.ContentHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical - 2f * l.BorderSize
+        member l.X with get() = l.StartX + l.RelativeX
+        member l.Y with get() = l.StartY + l.RelativeY
+        member l.Width with get() = l.OuterWidth - l.MarginHorizontal
+        member l.Height with get() = l.OuterHeight - l.MarginVertical
+
+        member l.Content =
+            {
+                X = l.ContentStartX
+                Y = l.ContentStartY
+                Width = l.ContentWidth
+                Height = l.ContentHeight
+            }
+
+        member l.ContentWithBorder with get() =
+            {
+                X = l.X + l.MarginLeft
+                Y = l.Y + l.MarginTop
+                Width = l.Width
+                Height = l.Height
+            }
+
+        member l.ContentWithBorderAndMargin with get() =
+            {
+                X = l.X
+                Y = l.Y
+                Width = l.OuterWidth
+                Height = l.OuterHeight
+            }
+
+        member l.Contains x y scrollX scrollY =
+            let startX = l.X + l.MarginLeft + scrollX
+            let endX = startX + l.Width
+            let startY = l.Y + l.MarginTop + scrollY
+            let endY = startY + l.Height
+            not (x < startX || x > endX || y < startY || y > endY)
 
     type Attribute =
     | Name of string
@@ -86,7 +251,7 @@ module Components =
     | OnClick of (unit -> unit)
     | OnClickInternal of ((string -> ComponentMessage -> unit) -> unit)
     | OnPress of (struct(int*int) -> unit)
-    | OnPressInternal of ((string -> ComponentMessage -> unit) -> struct(int*int) -> unit)
+    | OnPressInternal of ((string -> ComponentMessage -> unit) -> struct(int*int) -> LayoutComponent -> unit)
     | OnChange of (string -> unit)
     | Toggled of bool
     | Block
@@ -164,6 +329,7 @@ module Components =
     let block = Block
     let onClick action = OnClick(action)
     let onChange action = OnChange(action)
+    let onPress action = OnPress(action)
     let toggled value = Toggled (value)
 
     let fill = Fill
@@ -206,7 +372,6 @@ module Components =
 
     let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: attributes}
 
-    let slider attributes = {ThemeId = "Slider"; Children = []; Attributes = (sliderRange 0.0f 100.0f) :: attributes}
 
     let scroll children attributes =
         { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical] @ attributes}
@@ -229,11 +394,38 @@ module Components =
             ]
     let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
 
+    let slider attributes =
+
+        let mutable sliderName = ""
+        for a in attributes do
+            match a with
+            | Name (n') ->
+                sliderName <- n'
+            | _ -> ()
+
+
+        let handlePress (dispatch) (struct(x: int, y: int)) (c: LayoutComponent) =
+            let positionX = float32 x
+            let positionY = float32 y
+
+            let changeModel m =
+                match m with
+                | Slider s' ->
+                    let bounds = c.Content
+                    let relative = (positionX - bounds.X) / (bounds.Width)
+                    let newValue = s'.Min + (relative * s'.Max - s'.Min)
+                    let steppedNewValue = truncate(newValue / s'.Step) * s'.Step
+                    s'.OnValueChanged (Utils.clamp steppedNewValue s'.Min s'.Max)
+                    Slider{s' with Value = steppedNewValue}
+                | Combobox _ -> m
+
+            dispatch sliderName (ChangeModel changeModel)
+
+        {ThemeId = "Slider"; Children = []; Attributes = attributes @ [sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
+
 
     let combobox children attributes =
-
         let mutable onChange: string -> unit = ignore
-
         for a in attributes do
             match a with
             | OnChange (onChange') ->
@@ -296,162 +488,6 @@ module Components =
             ]
 open Components
 
-[<RequireQualifiedAccess>]
-type ComponentState =
-    Normal | Toggled
-
-[<Struct>]
-type NoobishRectangle = {
-    X: float32
-    Y: float32
-    Width: float32
-    Height: float32
-} with
-    member r.Left with get() = r.X
-    member r.Right with get() = r.X + r.Width
-    member r.Top with get() = r.Y
-    member r.Bottom with get() = r.Y + r.Height
-
-
-type LayoutComponentState = {
-    Name: string
-    mutable Toggled: bool
-    mutable Visible: bool
-    mutable PressedTime: TimeSpan
-    mutable ScrolledTime: TimeSpan
-
-    mutable ScrollX: float32
-    mutable ScrollY: float32
-
-    mutable SliderValue: float32
-
-    Version: Guid
-    KeyboardShortcut: NoobishKeyId
-}
-
-
-type Texture = {
-    Texture: NoobishTexture
-    TextureEffect: NoobishTextureEffect
-    TextureColor: int
-    TextureColorDisabled:int
-    TextureSize: NoobishTextureSize
-    Rotation: int
-}
-
-type LayoutComponent = {
-    Id: string
-    Path: string
-    Name: string
-    ThemeId: string
-    Enabled: bool
-    Visible: bool
-    Toggled: bool
-    ZIndex: int
-    Overlay: bool
-
-    FillVertical: bool
-    FillHorizontal: bool
-
-    TextAlignment: NoobishTextAlign
-    Text: string[]
-    TextFont: string
-    TextColor: int
-    TextColorDisabled: int
-    TextWrap: bool
-    Texture: option<Texture>
-    Color: int
-    ColorDisabled: int
-    PressedColor: int
-    HoverColor: int
-    StartX: float32
-    StartY: float32
-    RelativeX: float32
-    RelativeY: float32
-    OuterWidth: float32
-    OuterHeight: float32
-    IsBlock: bool
-    PaddingLeft: float32
-    PaddingRight: float32
-    PaddingTop: float32
-    PaddingBottom: float32
-    MarginLeft: float32
-    MarginRight: float32
-    MarginTop: float32
-    MarginBottom: float32
-
-    BorderSize: float32
-    BorderColor: int
-    BorderColorDisabled: int
-
-    ScrollBarColor: int
-    ScrollPinColor: int
-    ScrollBarThickness: float32
-    ScrollPinThickness: float32
-    ScrollHorizontal: bool
-    ScrollVertical: bool
-    OverflowWidth: float32
-    OverflowHeight: float32
-
-    Slider: option<Slider>
-
-    KeyboardShortcut: NoobishKeyId
-
-    OnClickInternal: unit -> unit
-    OnPressInternal: struct(int*int) -> unit
-    OnChange: string -> unit
-
-    Layout: NoobishLayout
-    ColSpan: int
-    RowSpan: int
-
-    Children: LayoutComponent[]
-} with
-    member l.MarginVertical with get() = l.MarginTop + l.MarginBottom
-    member l.MarginHorizontal with get() = l.MarginLeft + l.MarginRight
-    member l.PaddingVertical with get() = l.PaddingTop + l.PaddingBottom
-    member l.PaddingHorizontal with get() = l.PaddingRight+ l.PaddingLeft
-
-    member l.Hidden with get() = not l.Visible
-    member l.ContentStartX with get() = l.X + l.PaddingLeft + l.MarginLeft + l.BorderSize
-    member l.ContentStartY with get() = l.Y + l.PaddingTop + l.MarginTop + l.BorderSize
-    member l.ContentWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal - 2f * l.BorderSize
-    member l.ContentHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical - 2f * l.BorderSize
-    member l.X with get() = l.StartX + l.RelativeX
-    member l.Y with get() = l.StartY + l.RelativeY
-    member l.Width with get() = l.OuterWidth - l.MarginHorizontal
-    member l.Height with get() = l.OuterHeight - l.MarginVertical
-
-    member l.Content =
-        {
-            X = l.ContentStartX
-            Y = l.ContentStartY
-            Width = l.ContentWidth
-            Height = l.ContentHeight
-        }
-
-    member l.ContentWithBorder with get() =
-        {
-            X = l.X + l.MarginLeft
-            Y = l.Y + l.MarginTop
-            Width = l.Width
-            Height = l.Height
-        }
-
-    member l.ContentWithBorderAndMargin with get() =
-        {
-            X = l.X
-            Y = l.Y
-            Width = l.OuterWidth
-            Height = l.OuterHeight
-        }
-
-    member l.Contains x y scrollX scrollY =
-        let startX = l.X + l.MarginLeft + scrollX
-        let endX = startX + l.Width
-        let startY = l.Y + l.MarginTop + scrollY
-        let endY = startY + l.Height
-        not (x < startX || x > endX || y < startY || y > endY)
 
 module Logic =
     let splitLines (measureString: string -> int * int) width (text: string) =
@@ -487,10 +523,11 @@ module Logic =
 
         String.Join("\n", resultLines)
 
-    let createLayoutComponentState (name) (keyboardShortcut) (version) visible =
+    let createLayoutComponentState (version: Guid) (c: LayoutComponent) =
         {
-            Name = name
-            Visible = visible
+            Id = c.Id
+            Name = c.Name
+            Visible = c.Visible
             Toggled = false
             PressedTime = TimeSpan.Zero
             ScrolledTime = TimeSpan.Zero
@@ -498,10 +535,9 @@ module Logic =
             ScrollX = 0.0f
             ScrollY = 0.0f
 
-            SliderValue = 0.0f
-
-            KeyboardShortcut = keyboardShortcut
+            KeyboardShortcut = c.KeyboardShortcut
             Version = version
+            Model = c.Model
         }
 
     let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<Attribute>) =
@@ -538,7 +574,7 @@ module Logic =
         let mutable onClickInternal: (string -> ComponentMessage -> unit) -> unit = ignore
 
         let mutable onPress: struct(int*int) -> unit = ignore
-        let mutable onPressInternal: (string -> ComponentMessage -> unit) -> (struct(int*int)) -> unit = (fun _ _ -> ())
+        let mutable onPressInternal: (string -> ComponentMessage -> unit) -> (struct(int*int)) -> LayoutComponent -> unit = (fun _ _ _ -> ())
 
         let mutable onChange: string -> unit = ignore
         let mutable borderSize = scale theme.BorderSize
@@ -570,7 +606,7 @@ module Logic =
         let mutable relativeX = 0.0f
         let mutable relativeY = 0.0f
 
-        let mutable slider: option<Slider> = None
+        let mutable model: option<ComponentModel> = None
 
         let mutable keyboardShortcut = NoobishKeyId.None
 
@@ -617,36 +653,49 @@ module Logic =
             | TextLarge -> textFont <- settings.FontSettings.Large
             // Slider
             | SliderRange (min, max) ->
-                if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore}
 
-                slider <- slider
-                    |> Option.map(fun s ->
-                        {s with Min = min; Max = max}
+                if model.IsNone then
+                    model <- Some(Slider{ Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore})
+
+                model <- model
+                    |> Option.map(
+                        function
+                        | Slider(s) ->
+                            Slider ({s with Min = min; Max = max})
+                        | _ -> failwith "Model is not a slider."
                     )
             | SliderValue (v) ->
-                if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore}
+                if model.IsNone then
+                    model <- Some (Slider{ Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore})
 
-                slider <- slider
-                    |> Option.map(fun s ->
-                        {s with Value = v}
+                model <- model
+                    |> Option.map(
+                        function
+                        | Slider(s) ->
+                            Slider ({s with Value = v})
+                        | _ -> failwith "Model is not a slider."
                     )
             | SliderStep (v) ->
-                if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore}
+                if model.IsNone then
+                    model <- Some (Slider{ Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore})
 
-                slider <- slider
-                    |> Option.map(fun s ->
-                        {s with Step = v}
+                model <- model
+                    |> Option.map(
+                        function
+                        | Slider(s) ->
+                            Slider ({s with Step = v})
+                        | _ -> failwith "Model is not a slider."
                     )
             | SliderValueChanged (cb) ->
-                if slider.IsNone then
-                    slider <- Some { Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore}
+                if model.IsNone then
+                    model <- Some (Slider{ Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore})
 
-                slider <- slider
-                    |> Option.map(fun s ->
-                        {s with OnValueChanged = cb}
+                model <- model
+                    |> Option.map(
+                        function
+                        | Slider(s) ->
+                            Slider ({s with OnValueChanged = cb})
+                        | _ -> failwith "Model is not a slider."
                     )
             // Border
             | BorderSize(v) -> borderSize <- scale v
@@ -717,15 +766,15 @@ module Logic =
                 keyboardShortcut <- k
         let maxWidth = parentWidth * float32 colspan
 
-        if name = "HexenBridge" then
-            printfn "fail"
+        model |> Option.iter (fun model' ->
+             match model' with
+             | Slider (_s) ->
+                minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
+                let thickness =  max scrollBarThickness scrollPinThickness
+                minHeight <- minHeight + thickness
+             | Combobox (_c) -> ()
+        )
 
-        match slider with
-        | Some(_slider') ->
-            minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
-            let thickness =  max scrollBarThickness scrollPinThickness
-            minHeight <- minHeight + thickness
-        | None -> ()
 
         let mutable textLines = ""
         if not (String.IsNullOrWhiteSpace text) then
@@ -772,7 +821,7 @@ module Logic =
             TextColorDisabled = textColorDisabled
             TextWrap = textWrap
 
-            Slider = slider
+            Model = model
 
             KeyboardShortcut = keyboardShortcut
 
@@ -815,8 +864,8 @@ module Logic =
                 onClickInternal(mutateState)
                 onClick())
 
-            OnPressInternal = (fun mousePos ->
-                onPressInternal (mutateState) mousePos
+            OnPressInternal = (fun mousePos c ->
+                onPressInternal (mutateState) mousePos c
                 onPress mousePos )
 
             OnChange = onChange
@@ -866,13 +915,7 @@ module Logic =
         (parentHeight: float32)
         (c: Component): LayoutComponent  =
 
-
-
-
         let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
-
-        if parentComponent.Name = "HexenBridge" then
-            printfn "fail"
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -910,12 +953,11 @@ module Logic =
 
                 let path = sprintf "%s:%i" parentComponent.Path i
                 let childComponent = layoutComponent measureText theme settings mutateState zIndex path childStartX childStartY childWidth childHeight child
-                if childComponent.Name = "FailedParagraph" then
-                    printfn "fail"
+
                 newChildren.Add(childComponent)
 
                 let childEndX = (offsetX + childComponent.OuterWidth) // ceil fixes
-                if childComponent.IsBlock || (childEndX + parentComponent.PaddingLeft + parentComponent.PaddingRight) >= parentBounds.Width then
+                if childComponent.IsBlock || (childEndX + parentComponent.PaddingHorizontal) >= parentBounds.Width then
                     offsetX <- 0.0f
                     offsetY <- offsetY + childComponent.OuterHeight
                 else
@@ -967,7 +1009,7 @@ module Logic =
                 let childStartX = floor (parentBounds.X + (float32 col) * (colWidth))
                 let childStartY = floor (parentBounds.Y + (float32 row) * (rowHeight))
                 let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
-                let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) path childStartX childStartY colWidth rowHeight child
+                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) path childStartX childStartY colWidth rowHeight child
 
                 newChildren.Add({
                     childComponent with

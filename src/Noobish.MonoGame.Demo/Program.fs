@@ -154,12 +154,13 @@ module Containers =
                                 header [text "Hello"; ];
                                 hr []
                             ] [fillHorizontal];
-                        button [ text "Continue"; onClick ignore; fillHorizontal; enabled false];
-                        button [ text "Start"; onClick ignore; fillHorizontal; ];
-                        button [ text "Options"; onClick ignore; fillHorizontal; ];
+                        button [ text "Continue"; onClick ignore; padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal; enabled false];
+                        button [ text "Start"; onClick ignore; padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal; ];
+                        button [ text "Options"; onClick ignore; padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal; ];
                     ]
                     [
                         name "ButtonsPanel"
+                        padding model.Padding; margin model.Margin; borderSize model.BorderSize;
 
                     ]
                 panel
@@ -249,7 +250,7 @@ module Buttons =
                     ]
                     [
                         name "ButtonsPanel"
-
+                        padding model.Padding; margin model.Margin; borderSize model.BorderSize;
                     ]
                 panel
                     [
@@ -306,9 +307,9 @@ module Slider =
                 panel
                     [
                         label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
+                        slider [name "Slider1"; sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
+                        slider [name "Slider2"; sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
+                        slider [name "Slider3"; sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
                     ]
                     []
                 ]
@@ -398,10 +399,10 @@ type DemoGame () as game =
 
             let scrollItems =
                 [
-                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons)]
-                    button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text)]
-                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers)]
-                    button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider)]
+                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
+                    button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
+                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
+                    button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
                 ]
 
             let title, content  =
@@ -433,7 +434,7 @@ type DemoGame () as game =
                                     colspan 9;
                                     rowspan 1
                                 ]
-                            panel [scroll scrollItems [name "LeftMenu"]] [colspan 3; rowspan 7; ]
+                            panel [scroll scrollItems [name "LeftMenu"; fill]] [colspan 3; rowspan 7; fill]
                             panel content [colspan 9; rowspan 7;]
                         ]
                         [

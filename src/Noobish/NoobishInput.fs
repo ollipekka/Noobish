@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 
 open Noobish.Utils
+open Components
 
 let rec press
     (version: Guid)
@@ -30,15 +31,7 @@ let rec press
                 let cs = state.[c.Id]
                 cs.PressedTime <- time
                 handled <- true
-
-                match c.Slider with
-                | Some (slider') ->
-                    let bounds = c.Content
-                    let relative = (positionX - bounds.X) / (bounds.Width)
-                    let newValue = slider'.Min + (relative * slider'.Max - slider'.Min)
-                    let steppedNewValue = truncate(newValue / slider'.Step) * slider'.Step
-                    slider'.OnValueChanged (clamp steppedNewValue slider'.Min slider'.Max)
-                | None -> ()
+                c.OnPressInternal (struct(int positionX, int positionY)) c
 
             else
                 handled <- true
