@@ -610,6 +610,9 @@ module Logic =
 
         let mutable keyboardShortcut = NoobishKeyId.None
 
+        if themeId = "Scroll" then
+            printfn "what"
+
         for a in attributes do
             match a with
             | Name v ->
@@ -916,6 +919,8 @@ module Logic =
         (c: Component): LayoutComponent  =
 
         let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
+        if parentComponent.Name = "ButtonsPanel" then
+            printfn "ButtonsPanel"
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -940,8 +945,8 @@ module Logic =
         | NoobishLayout.Default ->
 
             // In this layout, actual parent component height might be zero at this point. We don't know. Use available height.
-            let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.PaddingHorizontal - parentComponent.MarginHorizontal - parentComponent.BorderSize * 2f
-            let availableHeight = (parentHeight * float32 parentComponent.RowSpan) - parentComponent.PaddingVertical - parentComponent.MarginVertical - parentComponent.BorderSize * 2f
+            let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.MarginHorizontal - parentComponent.PaddingHorizontal - parentComponent.BorderSize * 2f
+            let availableHeight = (parentHeight * float32 parentComponent.RowSpan)- parentComponent.MarginVertical - parentComponent.PaddingVertical - parentComponent.BorderSize * 2f
 
             let parentBounds = parentComponent.Content
             for i = 0 to c.Children.Length - 1 do
@@ -950,6 +955,8 @@ module Logic =
                 let childStartY = parentBounds.Y + offsetY
                 let childWidth = if parentComponent.ScrollHorizontal then availableWidth else availableWidth - offsetX
                 let childHeight = if parentComponent.ScrollVertical then availableHeight else availableHeight - offsetY
+
+
 
                 let path = sprintf "%s:%i" parentComponent.Path i
                 let childComponent = layoutComponent measureText theme settings mutateState zIndex path childStartX childStartY childWidth childHeight child
@@ -965,14 +972,14 @@ module Logic =
 
             let width =
                 if parentComponent.FillHorizontal then
-                    availableWidth
+                    availableWidth + parentComponent.PaddingHorizontal
                 else
                     let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal + parentComponent.BorderSize * 2f
                     Utils.clamp childWidth 0f availableWidth
 
             let height =
                 if parentComponent.FillVertical then
-                    availableHeight
+                    availableHeight + parentComponent.PaddingVertical
                 else
                     let childHeight = calculateChildHeight() + parentComponent.PaddingVertical + parentComponent.MarginVertical + parentComponent.BorderSize * 2f
                     Utils.clamp childHeight 0f availableHeight
@@ -1048,12 +1055,7 @@ module Logic =
 
                 let path = sprintf "%s:absolute(%g,%g)" parentComponent.Path childStartX childStartY
                 let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) path childStartX childStartY childWidth childHeight child
-                newChildren.Add({
-                    childComponent with
-                        StartX = childComponent.StartX
-                        StartY = childComponent.StartY
-
-                    })
+                newChildren.Add({ childComponent with StartX = childComponent.StartX; StartY = childComponent.StartY })
 
             {parentComponent with Children = newChildren.ToArray()}
         | NoobishLayout.None ->

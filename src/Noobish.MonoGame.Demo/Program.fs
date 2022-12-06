@@ -434,7 +434,7 @@ type DemoGame () as game =
                                     colspan 9;
                                     rowspan 1
                                 ]
-                            panel [scroll scrollItems [name "LeftMenu"; fill]] [colspan 3; rowspan 7; fill]
+                            panel [scroll scrollItems [name "LeftMenu";]] [colspan 3; rowspan 7;]
                             panel content [colspan 9; rowspan 7;]
                         ]
                         [

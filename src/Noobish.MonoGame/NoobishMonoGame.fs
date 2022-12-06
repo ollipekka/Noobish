@@ -67,7 +67,7 @@ type NoobishUI = {
 module NoobishMonoGame =
 
     let private createRectangle (x: float32) (y:float32) (width: float32) (height: float32) =
-        Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
+        Rectangle (int (x), int (y), int (width), int (height))
 
     let create (content: ContentManager) width height (settings: NoobishSettings) =
         let measureText (font: string) (text: string) =
@@ -399,6 +399,8 @@ module NoobishMonoGame =
 
 
         let outerRectangle =
+            if c.Name = "ButtonsPanel" then
+                printfn "what"
             let bounds = c.ContentWithBorder
             let startX = bounds.X + totalScrollX
             let startY = bounds.Y + totalScrollY
@@ -409,8 +411,8 @@ module NoobishMonoGame =
             createRectangle
                 sourceStartX
                 sourceStartY
-                sourceWidth//(min sourceWidth (float32 parentRectangle.Width))
-                sourceHeight//(min sourceHeight (float32 parentRectangle.Height))
+                (min sourceWidth (float32 parentRectangle.Width))
+                (min sourceHeight (float32 parentRectangle.Height))
 
         let oldScissorRect = graphics.ScissorRectangle
 
@@ -455,15 +457,13 @@ module NoobishMonoGame =
 
         spriteBatch.End()
 
-
-
         (*
             Viewport is the visible area. Nothing is rendered outside.
         *)
         match c.Layout with
         | NoobishLayout.Default ->
 
-            let outerRectangle =
+            let viewport =
                 let bounds = c.Content
                 let startX = bounds.X + totalScrollX
                 let startY = bounds.Y + totalScrollY
@@ -476,21 +476,13 @@ module NoobishMonoGame =
                     sourceStartY
                     (min sourceWidth (float32 parentRectangle.Width))
                     (min sourceHeight (float32 parentRectangle.Height))
-            for c in c.Children do
+            for child in c.Children do
+                if child.ThemeId = "Scroll" then
+                    printfn "ScrollId"
 
-                let viewport =
-                    let bounds = c.ContentWithBorder
-                    let startX = max (bounds.X) (float32 outerRectangle.X)
-                    let startY = max (bounds.Y + totalScrollY) (float32 outerRectangle.Y)
-                    let width = min (float32 bounds.Width) (float32 outerRectangle.Right - startX)
-                    let height = min (float32  bounds.Height) (float32 outerRectangle.Bottom - startY)
-
-                    createRectangle startX startY width height
-
-                let cs = state.[c.Id]
+                let cs = state.[child.Id]
                 if cs.Visible then
-
-                    drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY viewport
+                    drawComponent state content settings graphics spriteBatch debug time child totalScrollX totalScrollY viewport
 
         | NoobishLayout.Grid(_cols, _rows) ->
             for c in c.Children do
