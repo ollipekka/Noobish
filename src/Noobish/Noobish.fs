@@ -610,9 +610,6 @@ module Logic =
 
         let mutable keyboardShortcut = NoobishKeyId.None
 
-        if themeId = "Scroll" then
-            printfn "what"
-
         for a in attributes do
             match a with
             | Name v ->
@@ -919,8 +916,6 @@ module Logic =
         (c: Component): LayoutComponent  =
 
         let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
-        if parentComponent.Name = "ButtonsPanel" then
-            printfn "ButtonsPanel"
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f

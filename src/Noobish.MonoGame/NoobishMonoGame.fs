@@ -399,8 +399,6 @@ module NoobishMonoGame =
 
 
         let outerRectangle =
-            if c.Name = "ButtonsPanel" then
-                printfn "what"
             let bounds = c.ContentWithBorder
             let startX = bounds.X + totalScrollX
             let startY = bounds.Y + totalScrollY
@@ -477,9 +475,6 @@ module NoobishMonoGame =
                     (min sourceWidth (float32 parentRectangle.Width))
                     (min sourceHeight (float32 parentRectangle.Height))
             for child in c.Children do
-                if child.ThemeId = "Scroll" then
-                    printfn "ScrollId"
-
                 let cs = state.[child.Id]
                 if cs.Visible then
                     drawComponent state content settings graphics spriteBatch debug time child totalScrollX totalScrollY viewport
