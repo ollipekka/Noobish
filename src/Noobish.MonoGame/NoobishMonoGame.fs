@@ -4,9 +4,9 @@ open System
 open System.Collections.Generic
 
 open Elmish
-open Noobish
-open Noobish.Components
-open Noobish.Internal
+open NoobishTypes
+open NoobishTypes.Internal
+open NoobishTheme
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
@@ -40,6 +40,9 @@ type NoobishUI = {
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
 
+    open NoobishTypes
+    open NoobishTypes.Internal
+    open NoobishTheme
     let private createRectangle (x: float32) (y:float32) (width: float32) (height: float32) =
         Rectangle (int (x), int (y), int (width), int (height))
 
@@ -201,15 +204,15 @@ module NoobishMonoGame =
 
             let textX, textY =
                 match c.TextAlignment with
-                | TopLeft -> leftX(), topY()
-                | TopCenter -> centerX(), topY()
-                | TopRight -> rightX(), topY()
-                | Left -> leftX(), centerY()
-                | Center -> centerX(), centerY()
-                | Right -> rightX(), centerY()
-                | BottomLeft -> leftX(), bottomY()
-                | BottomCenter -> centerX(), bottomY()
-                | BottomRight -> rightX(), bottomY()
+                | NoobishTextAlign.TopLeft -> leftX(), topY()
+                | NoobishTextAlign.TopCenter -> centerX(), topY()
+                | NoobishTextAlign.TopRight -> rightX(), topY()
+                | NoobishTextAlign.Left -> leftX(), centerY()
+                | NoobishTextAlign.Center -> centerX(), centerY()
+                | NoobishTextAlign.Right -> rightX(), centerY()
+                | NoobishTextAlign.BottomLeft -> leftX(), bottomY()
+                | NoobishTextAlign.BottomCenter -> centerX(), bottomY()
+                | NoobishTextAlign.BottomRight -> rightX(), bottomY()
 
             let textColor = toColor (if c.Enabled then c.TextColor else c.TextColorDisabled)
             spriteBatch.DrawString(font, line, Vector2(floor textX, floor (startY + textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
@@ -281,18 +284,18 @@ module NoobishMonoGame =
         drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
 
 
-    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Components.Texture) (scrollX: float32) (scrollY: float32) =
+    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
 
         let texture, sourceRect =
             match t.Texture with
-            | NoobishTexture.Basic(textureId) ->
+            | NoobishTextureId.Basic(textureId) ->
                 let texture = content.Load<Texture2D> textureId
                 (texture, Rectangle(0, 0, texture.Width, texture.Height) )
-            | NoobishTexture.Atlas(textureId, sx, sy, sw, sh) ->
+            | NoobishTextureId.Atlas(textureId, sx, sy, sw, sh) ->
                 let texture = content.Load<Texture2D> textureId
                 (texture, Rectangle(sx, sy, sw, sh) )
-            | NoobishTexture.NinePatch _ -> failwith "Not implemented"
-            | NoobishTexture.None -> failwith "Can't have empty texture at this point."
+            | NoobishTextureId.NinePatch _ -> failwith "Not implemented"
+            | NoobishTextureId.None -> failwith "Can't have empty texture at this point."
 
         let rect =
             match t.TextureSize with
@@ -348,7 +351,7 @@ module NoobishMonoGame =
 
 
         let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
-        let rotation = Utils.toRadians t.Rotation
+        let rotation = toRadians t.Rotation
         let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
         spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
 
@@ -522,20 +525,19 @@ module NoobishMonoGame =
         for kvp in ui.State.State do
             ui.State.TempState.Add(kvp.Key, kvp.Value)
 
-
         let mousePosition = curState.Position
 
         if curState.LeftButton = ButtonState.Pressed then
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                handled <- Input.press ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                handled <- NoobishInput.press ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                handled <- Input.click ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                handled <- NoobishInput.click ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
@@ -549,7 +551,7 @@ module NoobishMonoGame =
 
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
             for layer in ui.Layers do
-                Input.scroll ui.Version ui.State.TempState layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
+                NoobishInput.scroll ui.Version ui.State.TempState layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
     let updateKeyboard (ui: NoobishUI)  (previous: KeyboardState) (current: KeyboardState) (_gameTime: GameTime) =
         ui.State.TempState.Clear()
@@ -583,7 +585,7 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Input.press ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- NoobishInput.press ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
 
                     i <- i - 1
             | TouchLocationState.Released ->
@@ -591,7 +593,7 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Input.click ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- NoobishInput.click ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
                     i <- i - 1
             | _ -> ()
 

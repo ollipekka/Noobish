@@ -1,12 +1,10 @@
-module Noobish.Input
+module NoobishInput
 
 open System
 open System.Collections.Generic
 
-open Noobish.Utils
-open Noobish.Internal
-
-open Components
+open NoobishTypes
+open NoobishTypes.Internal
 
 let rec press
     (version: Guid)

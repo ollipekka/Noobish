@@ -1,8 +1,9 @@
-namespace Noobish
+module NoobishTheme
 
 open System.Collections.Generic
 
 
+open NoobishTypes
 
 type ComponentTheme = {
     TextFont: string

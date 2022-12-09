@@ -1,411 +1,224 @@
-namespace Noobish
+module Noobish
+
+open NoobishTypes
+open NoobishTypes.Internal
 
 open System
 
 
-module Components =
 
-    open Noobish.Internal
+// Attributes
+let name v = Name v
+let text value = Text(value)
+let textFont f = TextFont(f)
+let textColor c = TextColor (c)
+let textAlign v = TextAlign (v)
+let textTopLeft = TextAlign NoobishTextAlign.TopLeft
+let textTopCenter = TextAlign NoobishTextAlign.TopCenter
+let textTopRight = TextAlign NoobishTextAlign.TopRight
+let textLeft = TextAlign NoobishTextAlign.Left
+let textCenter = TextAlign NoobishTextAlign.Center
+let textRight = TextAlign NoobishTextAlign.Right
+let textBottomLeft = TextAlign NoobishTextAlign.BottomRight
+let textBottomCenter = TextAlign NoobishTextAlign.BottomCenter
+let textBottomRight = TextAlign NoobishTextAlign.BottomRight
+let textWrap = TextWrap
+let textSmall = TextSmall
+let textLarge = TextLarge
 
-    type Texture = {
-        Texture: NoobishTexture
-        TextureEffect: NoobishTextureEffect
-        TextureColor: int
-        TextureColorDisabled:int
-        TextureSize: NoobishTextureSize
-        Rotation: int
-    }
+let sliderRange min max = SliderRange(min, max)
+let sliderValue v = SliderValue v
+let sliderStep v = SliderStep v
+let sliderOnValueChanged cb = SliderValueChanged cb
 
+let texture t = Texture (NoobishTextureId.Basic t)
+let ninePatch t = Texture (NoobishTextureId.NinePatch t)
+let atlasTexture t sx sy sw sh = Texture(NoobishTextureId.Atlas (t, sx, sy, sw, sh))
+let textureColor c = TextureColor c
+let textureColorDisabled c = TextureColorDisabled c
+let textureSize s = TextureSize s
+let textureEffect s = TextureEffect s
+let textureFlipHorizontally = TextureEffect NoobishTextureEffect.FlipHorizontally
+let textureFlipVertically = TextureEffect NoobishTextureEffect.FlipVertically
+let textureBestFitMax = TextureSize NoobishTextureSize.BestFitMax
+let textureBestFitMin = TextureSize NoobishTextureSize.BestFitMin
+let textureStretch = TextureSize NoobishTextureSize.Stretch
+let textureRotation t = TextureRotation t
+let paddingLeft lp = PaddingLeft lp
+let paddingRight rp = PaddingRight rp
+let paddingTop tp = PaddingTop tp
+let paddingBottom bp = PaddingBottom bp
+let padding value = Padding(value, value, value, value)
+let marginLeft lm = MarginLeft lm
+let marginRight rm = MarginRight rm
+let marginTop tm = MarginTop tm
+let marginBottom bm = MarginBottom bm
+let margin value = Margin(value, value, value, value)
+let block = Block
+let onClick action = OnClick(action)
+let onChange action = OnChange(action)
+let onPress action = OnPress(action)
+let toggled value = Toggled (value)
 
-    type LayoutComponent= {
-        Id: string
-        Path: string
-        Name: string
-        ThemeId: string
-        Enabled: bool
-        Visible: bool
-        Toggled: bool
-        ZIndex: int
-        Overlay: bool
+let fill = Fill
+let fillHorizontal = FillHorizontal
+let fillVertical = FillVertical
 
-        FillVertical: bool
-        FillHorizontal: bool
+let minSize w h = MinSize(w, h)
+let color c = FgColor (c)
+let enabled v = Enabled(v)
 
-        TextAlignment: NoobishTextAlign
-        Text: string[]
-        TextFont: string
-        TextColor: int
-        TextColorDisabled: int
-        TextWrap: bool
-        Texture: option<Texture>
-        Color: int
-        ColorDisabled: int
-        PressedColor: int
-        HoverColor: int
-        StartX: float32
-        StartY: float32
-        RelativeX: float32
-        RelativeY: float32
-        OuterWidth: float32
-        OuterHeight: float32
-        IsBlock: bool
-        PaddingLeft: float32
-        PaddingRight: float32
-        PaddingTop: float32
-        PaddingBottom: float32
-        MarginLeft: float32
-        MarginRight: float32
-        MarginTop: float32
-        MarginBottom: float32
+let visible v = Visible(v)
 
-        BorderSize: float32
-        BorderColor: int
-        BorderColorDisabled: int
+let hidden = Visible(false)
 
-        ScrollBarColor: int
-        ScrollPinColor: int
-        ScrollBarThickness: float32
-        ScrollPinThickness: float32
-        ScrollHorizontal: bool
-        ScrollVertical: bool
-        OverflowWidth: float32
-        OverflowHeight: float32
+let borderSize v = BorderSize(v)
+let borderColor c = BorderColor(c)
+let scrollVertical = ScrollVertical
+let scrollHorizontal = ScrollHorizontal
+let scrollBoth = Scroll
 
-        Model: option<NoobishComponentModel>
+let absoluteLayout = Layout (NoobishLayout.Absolute)
+let gridLayout cols rows = Layout (NoobishLayout.Grid (cols, rows))
+let stackLayout = Layout (NoobishLayout.Default)
+let colspan s = ColSpan s
+let rowspan s = RowSpan s
 
-        KeyboardShortcut: NoobishKeyId
+let relativePosition x y = RelativePosition(x, y)
 
-        OnClickInternal: unit -> unit
-        OnPressInternal: struct(int*int) -> LayoutComponent -> unit
-        OnChange: string -> unit
+let keyboardShortcut k = KeyboardShortcut k
 
-        Layout: NoobishLayout
-        ColSpan: int
-        RowSpan: int
+// Components
+let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
+let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
+let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlign.TopLeft :: attributes }
+let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
+let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
+let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
 
-        Children: LayoutComponent[]
-    } with
-        member l.MarginVertical with get() = l.MarginTop + l.MarginBottom
-        member l.MarginHorizontal with get() = l.MarginLeft + l.MarginRight
-        member l.PaddingVertical with get() = l.PaddingTop + l.PaddingBottom
-        member l.PaddingHorizontal with get() = l.PaddingRight+ l.PaddingLeft
+let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; block] }
 
-        member l.Hidden with get() = not l.Visible
-        member l.ContentStartX with get() = l.X + l.PaddingLeft + l.MarginLeft + l.BorderSize
-        member l.ContentStartY with get() = l.Y + l.PaddingTop + l.MarginTop + l.BorderSize
-        member l.ContentWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal - 2f * l.BorderSize
-        member l.ContentHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical - 2f * l.BorderSize
-        member l.X with get() = l.StartX + l.RelativeX
-        member l.Y with get() = l.StartY + l.RelativeY
-        member l.Width with get() = l.OuterWidth - l.MarginHorizontal
-        member l.Height with get() = l.OuterHeight - l.MarginVertical
-
-        member l.Content =
-            {
-                X = l.ContentStartX
-                Y = l.ContentStartY
-                Width = l.ContentWidth
-                Height = l.ContentHeight
-            }
-
-        member l.ContentWithBorder with get() =
-            {
-                X = l.X + l.MarginLeft
-                Y = l.Y + l.MarginTop
-                Width = l.Width
-                Height = l.Height
-            }
-
-        member l.ContentWithBorderAndMargin with get() =
-            {
-                X = l.X
-                Y = l.Y
-                Width = l.OuterWidth
-                Height = l.OuterHeight
-            }
-
-        member l.Contains x y scrollX scrollY =
-            let startX = l.X + l.MarginLeft + scrollX
-            let endX = startX + l.Width
-            let startY = l.Y + l.MarginTop + scrollY
-            let endY = startY + l.Height
-            not (x < startX || x > endX || y < startY || y > endY)
-
-    type Attribute =
-    | Name of string
-    | Padding of left: int * right: int * top: int * bottom: int
-    | PaddingLeft of int
-    | PaddingRight of int
-    | PaddingTop of int
-    | PaddingBottom of int
-
-    | Margin of left: int * right: int * top: int * bottom: int
-    | MarginLeft of int
-    | MarginRight of int
-    | MarginTop of int
-    | MarginBottom of int
-    | ZIndex of int
-    | Overlay
-
-    | Text of string
-    | TextFont of string
-    | TextSmall
-    | TextLarge
-    | TextAlign of NoobishTextAlign
-    | TextColor of int
-    | TextWrap
-
-    | SliderRange of min:float32 * max:float32
-    | SliderValue of float32
-    | SliderStep of float32
-    | SliderValueChanged of (float32 -> unit)
-
-    | Fill
-    | FillHorizontal
-    | FillVertical
-
-    | OnClick of (unit -> unit)
-    | OnClickInternal of ((string -> ComponentMessage -> unit) -> unit)
-    | OnPress of (struct(int*int) -> unit)
-    | OnPressInternal of ((string -> ComponentMessage -> unit) -> struct(int*int) -> LayoutComponent -> unit)
-    | OnChange of (string -> unit)
-    | Toggled of bool
-    | Block
-    | MinSize of width: int * height: int
-    | FgColor of int
-    | Visible of bool
-    | Enabled of bool
-    | DisabledColor of int
-    | BorderColor of int
-    | BorderSize of int
-    | Texture of NoobishTexture
-    | TextureEffect of NoobishTextureEffect
-    | TextureColor of int
-    | TextureColorDisabled of int
-    | TextureSize of NoobishTextureSize
-    | TextureRotation of int
-    | ScrollHorizontal
-    | ScrollVertical
-    | Scroll
-    | ScrollBarColor of int
-    | ScrollPinColor of int
-    | ScrollBarThickness of int
-    | ScrollPinThickness of int
-    | Layout of NoobishLayout
-    | RowSpan of int
-    | ColSpan of int
-    | RelativePosition of x: int * y: int
-    | KeyboardShortcut of NoobishKeyId
-
-    type Component = {
-        ThemeId: string
-        Children: list<Component>
-        Attributes: list<Attribute>
-    }
-
-    // Attributes
-    let name v = Name v
-    let text value = Text(value)
-    let textFont f = TextFont(f)
-    let textColor c = TextColor (c)
-    let textAlign v = TextAlign (v)
-    let textCenter = TextAlign (NoobishTextAlign.Center)
-    let textWrap = TextWrap
-    let textSmall = TextSmall
-    let textLarge = TextLarge
-
-    let sliderRange min max = SliderRange(min, max)
-    let sliderValue v = SliderValue v
-    let sliderStep v = SliderStep v
-    let sliderOnValueChanged cb = SliderValueChanged cb
-
-    let texture t = Texture (NoobishTexture.Basic t)
-    let ninePatch t = Texture (NoobishTexture.NinePatch t)
-    let atlasTexture t sx sy sw sh= Texture(NoobishTexture.Atlas (t, sx, sy, sw, sh))
-    let textureColor c = TextureColor c
-    let textureColorDisabled c = TextureColorDisabled c
-    let textureSize s = TextureSize s
-    let textureEffect s = TextureEffect s
-    let textureFlipHorizontally = TextureEffect NoobishTextureEffect.FlipHorizontally
-    let textureFlipVertically = TextureEffect NoobishTextureEffect.FlipVertically
-    let textureBestFitMax = TextureSize NoobishTextureSize.BestFitMax
-    let textureBestFitMin = TextureSize NoobishTextureSize.BestFitMin
-    let textureStretch = TextureSize NoobishTextureSize.Stretch
-    let textureRotation t = TextureRotation t
-    let paddingLeft lp = PaddingLeft lp
-    let paddingRight rp = PaddingRight rp
-    let paddingTop tp = PaddingTop tp
-    let paddingBottom bp = PaddingBottom bp
-    let padding value = Padding(value, value, value, value)
-    let marginLeft lm = MarginLeft lm
-    let marginRight rm = MarginRight rm
-    let marginTop tm = MarginTop tm
-    let marginBottom bm = MarginBottom bm
-    let margin value = Margin(value, value, value, value)
-    let block = Block
-    let onClick action = OnClick(action)
-    let onChange action = OnChange(action)
-    let onPress action = OnPress(action)
-    let toggled value = Toggled (value)
-
-    let fill = Fill
-    let fillHorizontal = FillHorizontal
-    let fillVertical = FillVertical
-
-    let minSize w h = MinSize(w, h)
-    let color c = FgColor (c)
-    let enabled v = Enabled(v)
-
-    let visible v = Visible(v)
-
-    let hidden = Visible(false)
-
-    let borderSize v = BorderSize(v)
-    let borderColor c = BorderColor(c)
-    let scrollVertical = ScrollVertical
-    let scrollHorizontal = ScrollHorizontal
-    let scrollBoth = Scroll
-
-    let absoluteLayout = Layout (NoobishLayout.Absolute)
-    let gridLayout cols rows = Layout (NoobishLayout.Grid (cols, rows))
-    let stackLayout = Layout (NoobishLayout.Default)
-    let colspan s = ColSpan s
-    let rowspan s = RowSpan s
-
-    let relativePosition x y = RelativePosition(x, y)
-
-    let keyboardShortcut k = KeyboardShortcut k
-
-    // Components
-    let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
-    let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
-    let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign TopLeft :: attributes }
-    let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
-    let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
-    let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
-
-    let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; block] }
-
-    let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: attributes}
+let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: attributes}
 
 
-    let scroll children attributes =
-        { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical] @ attributes}
+let scroll children attributes =
+    { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical] @ attributes}
 
-    let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
+let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
 
-    let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = stackLayout :: block :: attributes}
-    let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill:: attributes}
-    let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
-    let div children attributes = { ThemeId = "Division"; Children = children; Attributes = stackLayout :: attributes}
-    let window children attributes =
-        grid 12 8
-            [
-                space [colspan 12; rowspan 1]
-                space [colspan 3; rowspan 7]
-                panel children ([colspan 6; rowspan 6;] @ attributes)
-            ]
-            [
+let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = stackLayout :: block :: attributes}
+let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill:: attributes}
+let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
+let div children attributes = { ThemeId = "Division"; Children = children; Attributes = stackLayout :: attributes}
+let window children attributes =
+    grid 12 8
+        [
+            space [colspan 12; rowspan 1]
+            space [colspan 3; rowspan 7]
+            panel children ([colspan 6; rowspan 6;] @ attributes)
+        ]
+        [
 
-            ]
-    let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
+        ]
+let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
 
-    let slider attributes =
+let slider attributes =
 
-        let mutable sliderName = ""
-        for a in attributes do
+    let mutable sliderName = ""
+    for a in attributes do
+        match a with
+        | Name (n') ->
+            sliderName <- n'
+        | _ -> ()
+
+
+    let handlePress (dispatch) (struct(x: int, y: int)) (c: LayoutComponent) =
+        let positionX = float32 x
+        //let positionY = float32 y
+
+        let changeModel m =
+            match m with
+            | Slider s' ->
+                let bounds = c.Content
+                let relative = (positionX - bounds.X) / (bounds.Width)
+                let newValue = s'.Min + (relative * s'.Max - s'.Min)
+                let steppedNewValue = truncate(newValue / s'.Step) * s'.Step
+                s'.OnValueChanged (clamp steppedNewValue s'.Min s'.Max)
+                Slider{s' with Value = steppedNewValue}
+            | Combobox _ -> m
+
+        dispatch sliderName (ChangeModel changeModel)
+
+    {ThemeId = "Slider"; Children = []; Attributes = attributes @ [sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
+
+
+let combobox children attributes =
+    let mutable onChange: string -> unit = ignore
+    for a in attributes do
+        match a with
+        | OnChange (onChange') ->
+            onChange <- onChange'
+        | _ -> ()
+
+    let name = children |> List.fold (fun acc c' ->
+        let mutable text = ""
+        for a in c'.Attributes do
             match a with
-            | Name (n') ->
-                sliderName <- n'
+            | Text (text') ->
+                text <- text'
+            | _ -> ()
+        (sprintf "%s-%s" acc text)) "combobox-panel"
+
+    let children' = children |> List.map(fun c' ->
+        let mutable text = ""
+        for a in c'.Attributes do
+            match a with
+            | Text (text') ->
+                text <- text'
             | _ -> ()
 
+        let onClick = OnClickInternal (
+            fun (dispatch) ->
+                dispatch name Hide
+                onChange (text)
+            )
+        {c' with Attributes = onClick :: c'.Attributes}
+    )
 
-        let handlePress (dispatch) (struct(x: int, y: int)) (c: LayoutComponent) =
-            let positionX = float32 x
-            //let positionY = float32 y
+    let dropdown = panel children' [ Name(name); hidden; ZIndex(10 * 255); Overlay; Margin(0,0,0,0);]
 
-            let changeModel m =
-                match m with
-                | Slider s' ->
-                    let bounds = c.Content
-                    let relative = (positionX - bounds.X) / (bounds.Width)
-                    let newValue = s'.Min + (relative * s'.Max - s'.Min)
-                    let steppedNewValue = truncate(newValue / s'.Step) * s'.Step
-                    s'.OnValueChanged (Utils.clamp steppedNewValue s'.Min s'.Max)
-                    Slider{s' with Value = steppedNewValue}
-                | Combobox _ -> m
+    let onClickInternal = OnClickInternal(fun dispatch ->
+        dispatch name ToggleVisibility
+    )
 
-            dispatch sliderName (ChangeModel changeModel)
+    {ThemeId = "Combobox"; Children = [dropdown]; Attributes = Layout(NoobishLayout.OverlaySource) :: onClickInternal :: attributes}
 
-        {ThemeId = "Slider"; Children = []; Attributes = attributes @ [sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
+let largeWindowWithGrid cols rows children attributes =
+    grid 16 9
+        [
+            space [colspan 16; rowspan 1]
+            space [colspan 1; rowspan 7]
+            panelWithGrid cols rows children ([colspan 14; rowspan 7;] @ attributes)
+        ]
+        [
 
+        ]
 
-    let combobox children attributes =
-        let mutable onChange: string -> unit = ignore
-        for a in attributes do
-            match a with
-            | OnChange (onChange') ->
-                onChange <- onChange'
-            | _ -> ()
+let windowWithGrid cols rows children attributes =
+    grid 12 8
+        [
+            space [colspan 12; rowspan 1]
+            space [colspan 3; rowspan 7]
+            panelWithGrid cols rows children ([colspan 6; rowspan 6;] @ attributes)
+        ]
+        [
 
-        let name = children |> List.fold (fun acc c' ->
-            let mutable text = ""
-            for a in c'.Attributes do
-                match a with
-                | Text (text') ->
-                    text <- text'
-                | _ -> ()
-            (sprintf "%s-%s" acc text)) "combobox-panel"
-
-        let children' = children |> List.map(fun c' ->
-            let mutable text = ""
-            for a in c'.Attributes do
-                match a with
-                | Text (text') ->
-                    text <- text'
-                | _ -> ()
-
-            let onClick = OnClickInternal (
-                fun (dispatch) ->
-                    dispatch name Hide
-                    onChange (text)
-                )
-            {c' with Attributes = onClick :: c'.Attributes}
-        )
-
-        let dropdown = panel children' [ Name(name); hidden; ZIndex(10 * 255); Overlay; Margin(0,0,0,0);]
-
-        let onClickInternal = OnClickInternal(fun dispatch ->
-            dispatch name ToggleVisibility
-        )
-
-        {ThemeId = "Combobox"; Children = [dropdown]; Attributes = Layout(NoobishLayout.OverlaySource) :: onClickInternal :: attributes}
-
-    let largeWindowWithGrid cols rows children attributes =
-        grid 16 9
-            [
-                space [colspan 16; rowspan 1]
-                space [colspan 1; rowspan 7]
-                panelWithGrid cols rows children ([colspan 14; rowspan 7;] @ attributes)
-            ]
-            [
-
-            ]
-
-    let windowWithGrid cols rows children attributes =
-        grid 12 8
-            [
-                space [colspan 12; rowspan 1]
-                space [colspan 3; rowspan 7]
-                panelWithGrid cols rows children ([colspan 6; rowspan 6;] @ attributes)
-            ]
-            [
-
-            ]
+        ]
 
 module Logic =
-    open Components
-    open Noobish.Internal
+    open NoobishTypes
+    open NoobishTypes.Internal
+    open NoobishTheme
     let splitLines (measureString: string -> int * int) width (text: string) =
 
         let sections = text.Split [|'\n'|]
@@ -497,7 +310,7 @@ module Logic =
         let mutable borderColor = theme.BorderColor
         let mutable borderColorDisabled = theme.BorderColorDisabled
 
-        let mutable texture = NoobishTexture.None
+        let mutable texture = NoobishTextureId.None
         let mutable textureEffect = NoobishTextureEffect.None
         let mutable textureColor = theme.TextureColor
         let mutable textureColorDisabled = theme.TextColorDisabled
@@ -683,12 +496,12 @@ module Logic =
         let maxWidth = parentWidth * float32 colspan
 
         model |> Option.iter (fun model' ->
-             match model' with
-             | Slider (_s) ->
+                match model' with
+                | Slider (_s) ->
                 minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
                 let thickness =  max scrollBarThickness scrollPinThickness
                 minHeight <- minHeight + thickness
-             | Combobox (_c) -> ()
+                | Combobox (_c) -> ()
         )
 
 
@@ -742,7 +555,7 @@ module Logic =
             KeyboardShortcut = keyboardShortcut
 
             Texture =
-                if texture <> NoobishTexture.None then
+                if texture <> NoobishTextureId.None then
                     Some (
                         {
                             Texture = texture
@@ -886,14 +699,14 @@ module Logic =
                     availableWidth + parentComponent.PaddingHorizontal
                 else
                     let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal + parentComponent.BorderSize * 2f
-                    Utils.clamp childWidth 0f availableWidth
+                    clamp childWidth 0f availableWidth
 
             let height =
                 if parentComponent.FillVertical then
                     availableHeight + parentComponent.PaddingVertical
                 else
                     let childHeight = calculateChildHeight() + parentComponent.PaddingVertical + parentComponent.MarginVertical + parentComponent.BorderSize * 2f
-                    Utils.clamp childHeight 0f availableHeight
+                    clamp childHeight 0f availableHeight
 
             let overflowHeight = calculateOverflowHeight()
             let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.ContentWidth
@@ -933,7 +746,7 @@ module Logic =
                     childComponent with
                         OuterWidth = (colWidth * float32 childComponent.ColSpan)
                         OuterHeight = (rowHeight * float32 childComponent.RowSpan)
-                     })
+                        })
 
                 for c = col to col + childComponent.ColSpan - 1 do
                     for r = row to row + childComponent.RowSpan - 1 do

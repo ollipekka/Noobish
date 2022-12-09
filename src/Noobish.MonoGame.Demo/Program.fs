@@ -9,7 +9,7 @@ open Microsoft.Xna.Framework.Input.Touch
 
 open Elmish
 open Noobish
-open Noobish.Components
+open NoobishTypes
 
 let loremIpsum1 =
     "Scroll me!\n\n Lorem\nipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -51,15 +51,15 @@ module Text =
                 [
                 panelWithGrid 3 3
                     [
-                        label [text "Top Left"; textAlign TopLeft; fill]
-                        label [text "Top"; textAlign TopCenter; fill]
-                        label [text "Top Right"; textAlign TopRight; fill]
-                        label [text "Left"; textAlign Left; fill]
-                        label [text "Center"; textAlign Center; fill]
-                        label [text "Right"; textAlign Right; fill]
-                        label [text "Bottom Left"; textAlign BottomLeft; fill]
-                        label [text "Bottom Center"; textAlign BottomCenter; fill]
-                        label [text "Bottom Right"; textAlign BottomRight; fill]
+                        label [text "Top Left"; textTopLeft; fill]
+                        label [text "Top"; textTopCenter; fill]
+                        label [text "Top Right"; textTopRight; fill]
+                        label [text "Left"; textLeft; fill]
+                        label [text "Center"; textCenter; fill]
+                        label [text "Right"; textRight; fill]
+                        label [text "Bottom Left"; textBottomLeft; fill]
+                        label [text "Bottom Center"; textBottomCenter; fill]
+                        label [text "Bottom Right"; textBottomRight; fill]
                     ]
                     [
 
@@ -81,10 +81,10 @@ module Text =
                     ]
                 panelWithGrid 1 3
                     [
-                        paragraph [text loremIpsum2; textAlign TopCenter; rowspan 1; ]
+                        paragraph [text loremIpsum2; textTopCenter; rowspan 1; ]
                         scroll
                             [
-                                paragraph [text loremIpsum2; textAlign TopCenter;
+                                paragraph [text loremIpsum2; textTopCenter;
                                 name "FailedParagraph2";]
                             ]
                             [
@@ -359,7 +359,7 @@ type DemoGame () as game =
         let width = this.GraphicsDevice.Viewport.Width
         let height = this.GraphicsDevice.Viewport.Height
 
-        let settings = {
+        let settings: NoobishSettings = {
             Scale = 1f
             FontSettings = {Small = "AnomyousPro16"; Normal = "AnonymousPro16"; Large = "AnonymousPro16"};
             Pixel = "Pixel"
