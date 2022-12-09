@@ -5,91 +5,7 @@ open System
 
 module Components =
 
-    [<RequireQualifiedAccess>]
-    type NoobishKeyId =
-        | Escape
-        | Enter
-        | None
-
-    type NoobishSettings = {
-        Scale: float32
-        Pixel: string
-        FontSettings: FontSettings
-    }
-
-    type Slider = {
-        Min: float32
-        Max: float32
-        Step: float32
-        OnValueChanged: float32 -> unit
-        Value: float32
-    }
-
-    type Combobox = {
-        Values: string[]
-        Value: string
-    }
-
-    type ComponentModel =
-        | Slider of Slider
-        | Combobox of Combobox
-
-    type ComponentMessage =
-        | Show
-        | Hide
-        | ToggleVisibility
-        | SetScrollX of float32
-        | SetScrollY of float32
-        | ChangeModel of (ComponentModel -> ComponentModel)
-
-    type ComponentChangeDispatch = (ComponentMessage -> unit)
-
-    [<RequireQualifiedAccess>]
-    type NoobishTexture =
-        | None
-        | NinePatch of string
-        | Basic of string
-        | Atlas of id: string * sx: int * sy: int * sw: int * sh: int
-
-    [<RequireQualifiedAccess>]
-    type NoobishTextureEffect =
-        | None
-        | FlipHorizontally
-        | FlipVertically
-
-
-
-
-    [<Struct>]
-    type NoobishRectangle = {
-        X: float32
-        Y: float32
-        Width: float32
-        Height: float32
-    } with
-        member r.Left with get() = r.X
-        member r.Right with get() = r.X + r.Width
-        member r.Top with get() = r.Y
-        member r.Bottom with get() = r.Y + r.Height
-
-
-    type LayoutComponentState = {
-        Id: string
-        Name: string
-        mutable Toggled: bool
-        mutable Visible: bool
-        mutable PressedTime: TimeSpan
-        mutable ScrolledTime: TimeSpan
-
-        mutable ScrollX: float32
-        mutable ScrollY: float32
-
-        Version: Guid
-        KeyboardShortcut: NoobishKeyId
-
-        Model: option<ComponentModel>
-    }
-
+    open Noobish.Internal
 
     type Texture = {
         Texture: NoobishTexture
@@ -155,7 +71,7 @@ module Components =
         OverflowWidth: float32
         OverflowHeight: float32
 
-        Model: option<ComponentModel>
+        Model: option<NoobishComponentModel>
 
         KeyboardShortcut: NoobishKeyId
 
@@ -406,7 +322,7 @@ module Components =
 
         let handlePress (dispatch) (struct(x: int, y: int)) (c: LayoutComponent) =
             let positionX = float32 x
-            let positionY = float32 y
+            //let positionY = float32 y
 
             let changeModel m =
                 match m with
@@ -486,10 +402,10 @@ module Components =
             [
 
             ]
-open Components
-
 
 module Logic =
+    open Components
+    open Noobish.Internal
     let splitLines (measureString: string -> int * int) width (text: string) =
 
         let sections = text.Split [|'\n'|]
@@ -606,7 +522,7 @@ module Logic =
         let mutable relativeX = 0.0f
         let mutable relativeY = 0.0f
 
-        let mutable model: option<ComponentModel> = None
+        let mutable model: option<NoobishComponentModel> = None
 
         let mutable keyboardShortcut = NoobishKeyId.None
 

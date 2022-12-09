@@ -2,11 +2,7 @@ namespace Noobish
 
 open System.Collections.Generic
 
-type FontSettings = {
-    Small: string
-    Normal: string
-    Large: string
-}
+
 
 type ComponentTheme = {
     TextFont: string
