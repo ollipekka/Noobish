@@ -1,10 +1,224 @@
-module Noobish
+[<AutoOpen>]
+module Noobish.Components
 
-open NoobishTypes
-open NoobishTypes.Internal
+(*
+    This file contains the user-facing interface. User should be able to take
+    the library into use with a single import aside from where its set up.
+*)
+
+open Noobish
+open Noobish.Internal
 
 open System
 
+[<RequireQualifiedAccess>]
+type NoobishTextureId =
+    | None
+    | NinePatch of string
+    | Basic of string
+    | Atlas of id: string * sx: int * sy: int * sw: int * sh: int
+
+[<RequireQualifiedAccess>]
+type NoobishTextureEffect =
+    | None
+    | FlipHorizontally
+    | FlipVertically
+
+    type NoobishTexture = {
+        Texture: NoobishTextureId
+        TextureEffect: NoobishTextureEffect
+        TextureColor: int
+        TextureColorDisabled:int
+        TextureSize: NoobishTextureSize
+        Rotation: int
+    }
+
+
+type NoobishLayoutElement = {
+    Id: string
+    Path: string
+    Name: string
+    ThemeId: string
+    Enabled: bool
+    Visible: bool
+    Toggled: bool
+    ZIndex: int
+    Overlay: bool
+
+    FillVertical: bool
+    FillHorizontal: bool
+
+    TextAlignment: NoobishTextAlign
+    Text: string[]
+    TextFont: string
+    TextColor: int
+    TextColorDisabled: int
+    TextWrap: bool
+    Texture: option<NoobishTexture>
+    Color: int
+    ColorDisabled: int
+    PressedColor: int
+    HoverColor: int
+    StartX: float32
+    StartY: float32
+    RelativeX: float32
+    RelativeY: float32
+    OuterWidth: float32
+    OuterHeight: float32
+    IsBlock: bool
+    PaddingLeft: float32
+    PaddingRight: float32
+    PaddingTop: float32
+    PaddingBottom: float32
+    MarginLeft: float32
+    MarginRight: float32
+    MarginTop: float32
+    MarginBottom: float32
+
+    BorderSize: float32
+    BorderColor: int
+    BorderColorDisabled: int
+
+    ScrollBarColor: int
+    ScrollPinColor: int
+    ScrollBarThickness: float32
+    ScrollPinThickness: float32
+    ScrollHorizontal: bool
+    ScrollVertical: bool
+    OverflowWidth: float32
+    OverflowHeight: float32
+
+    Model: option<NoobishComponentModel>
+
+    KeyboardShortcut: NoobishKeyId
+
+    OnClickInternal: unit -> unit
+    OnPressInternal: struct(int*int) -> NoobishLayoutElement -> unit
+    OnChange: string -> unit
+
+    Layout: NoobishLayout
+    ColSpan: int
+    RowSpan: int
+
+    Children: NoobishLayoutElement[]
+} with
+    member l.MarginVertical with get() = l.MarginTop + l.MarginBottom
+    member l.MarginHorizontal with get() = l.MarginLeft + l.MarginRight
+    member l.PaddingVertical with get() = l.PaddingTop + l.PaddingBottom
+    member l.PaddingHorizontal with get() = l.PaddingRight+ l.PaddingLeft
+
+    member l.Hidden with get() = not l.Visible
+    member l.ContentStartX with get() = l.X + l.PaddingLeft + l.MarginLeft + l.BorderSize
+    member l.ContentStartY with get() = l.Y + l.PaddingTop + l.MarginTop + l.BorderSize
+    member l.ContentWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal - 2f * l.BorderSize
+    member l.ContentHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical - 2f * l.BorderSize
+    member l.X with get() = l.StartX + l.RelativeX
+    member l.Y with get() = l.StartY + l.RelativeY
+    member l.Width with get() = l.OuterWidth - l.MarginHorizontal
+    member l.Height with get() = l.OuterHeight - l.MarginVertical
+
+    member l.Content =
+        {
+            X = l.ContentStartX
+            Y = l.ContentStartY
+            Width = l.ContentWidth
+            Height = l.ContentHeight
+        }
+
+    member l.ContentWithBorder with get() =
+        {
+            X = l.X + l.MarginLeft
+            Y = l.Y + l.MarginTop
+            Width = l.Width
+            Height = l.Height
+        }
+
+    member l.ContentWithBorderAndMargin with get() =
+        {
+            X = l.X
+            Y = l.Y
+            Width = l.OuterWidth
+            Height = l.OuterHeight
+        }
+
+    member l.Contains x y scrollX scrollY =
+        let startX = l.X + l.MarginLeft + scrollX
+        let endX = startX + l.Width
+        let startY = l.Y + l.MarginTop + scrollY
+        let endY = startY + l.Height
+        not (x < startX || x > endX || y < startY || y > endY)
+
+type NoobishAttribute =
+    | Name of string
+    | Padding of left: int * right: int * top: int * bottom: int
+    | PaddingLeft of int
+    | PaddingRight of int
+    | PaddingTop of int
+    | PaddingBottom of int
+
+    | Margin of left: int * right: int * top: int * bottom: int
+    | MarginLeft of int
+    | MarginRight of int
+    | MarginTop of int
+    | MarginBottom of int
+    | ZIndex of int
+    | Overlay
+
+    | Text of string
+    | TextFont of string
+    | TextSmall
+    | TextLarge
+    | TextAlign of NoobishTextAlign
+    | TextColor of int
+    | TextWrap
+
+    | SliderRange of min:float32 * max:float32
+    | SliderValue of float32
+    | SliderStep of float32
+    | SliderValueChanged of (float32 -> unit)
+
+    | Fill
+    | FillHorizontal
+    | FillVertical
+
+    | OnClick of (unit -> unit)
+    | OnClickInternal of ((string -> ComponentMessage -> unit) -> unit)
+    | OnPress of (struct(int*int) -> unit)
+    | OnPressInternal of ((string -> ComponentMessage -> unit) -> struct(int*int) -> NoobishLayoutElement -> unit)
+    | OnChange of (string -> unit)
+    | Toggled of bool
+    | Block
+    | MinSize of width: int * height: int
+    | FgColor of int
+    | Visible of bool
+    | Enabled of bool
+    | DisabledColor of int
+    | BorderColor of int
+    | BorderSize of int
+    | Texture of NoobishTextureId
+    | TextureEffect of NoobishTextureEffect
+    | TextureColor of int
+    | TextureColorDisabled of int
+    | TextureSize of NoobishTextureSize
+    | TextureRotation of int
+    | ScrollHorizontal
+    | ScrollVertical
+    | Scroll
+    | ScrollBarColor of int
+    | ScrollPinColor of int
+    | ScrollBarThickness of int
+    | ScrollPinThickness of int
+    | Layout of NoobishLayout
+    | RowSpan of int
+    | ColSpan of int
+    | RelativePosition of x: int * y: int
+    | KeyboardShortcut of NoobishKeyId
+
+type NoobishElement = {
+    ThemeId: string
+    Children: list<NoobishElement>
+    Attributes: list<NoobishAttribute>
+}
 
 
 // Attributes
@@ -132,7 +346,7 @@ let slider attributes =
         | _ -> ()
 
 
-    let handlePress (dispatch) (struct(x: int, y: int)) (c: LayoutComponent) =
+    let handlePress (dispatch) (struct(x: int, y: int)) (c: NoobishLayoutElement) =
         let positionX = float32 x
         //let positionY = float32 y
 
@@ -216,9 +430,10 @@ let windowWithGrid cols rows children attributes =
         ]
 
 module Logic =
-    open NoobishTypes
-    open NoobishTypes.Internal
-    open NoobishTheme
+    open Noobish
+    open Noobish.Internal
+    open Noobish.Theme
+
     let splitLines (measureString: string -> int * int) width (text: string) =
 
         let sections = text.Split [|'\n'|]
@@ -252,7 +467,7 @@ module Logic =
 
         String.Join("\n", resultLines)
 
-    let createLayoutComponentState (version: Guid) (c: LayoutComponent) =
+    let createNoobishLayoutElementState (version: Guid) (c: NoobishLayoutElement) =
         {
             Id = c.Id
             Name = c.Name
@@ -269,7 +484,7 @@ module Logic =
             Model = c.Model
         }
 
-    let private createLayoutComponent (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<Attribute>) =
+    let private createNoobishLayoutElement (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
 
         let scale (v: int) = float32 v * settings.Scale
         let scaleTuple (left, right, top, bottom) =
@@ -303,7 +518,7 @@ module Logic =
         let mutable onClickInternal: (string -> ComponentMessage -> unit) -> unit = ignore
 
         let mutable onPress: struct(int*int) -> unit = ignore
-        let mutable onPressInternal: (string -> ComponentMessage -> unit) -> (struct(int*int)) -> LayoutComponent -> unit = (fun _ _ _ -> ())
+        let mutable onPressInternal: (string -> ComponentMessage -> unit) -> (struct(int*int)) -> NoobishLayoutElement -> unit = (fun _ _ _ -> ())
 
         let mutable onChange: string -> unit = ignore
         let mutable borderSize = scale theme.BorderSize
@@ -621,7 +836,7 @@ module Logic =
             Children = [||]
         }
 
-    let isGrid (attributes: Attribute list) =
+    let isGrid (attributes: list<NoobishAttribute>) =
         attributes
             |> List.exists(
                 function
@@ -631,7 +846,7 @@ module Logic =
                     | _ -> false
                 | _ -> false)
 
-    let rec private layoutComponent
+    let rec private layoutElement
         (measureText: string -> string -> int*int)
         (theme: Theme)
         (settings: NoobishSettings)
@@ -642,14 +857,14 @@ module Logic =
         (startY: float32)
         (parentWidth: float32)
         (parentHeight: float32)
-        (c: Component): LayoutComponent  =
+        (c: NoobishElement): NoobishLayoutElement  =
 
-        let parentComponent = createLayoutComponent theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
+        let parentComponent = createNoobishLayoutElement theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
 
-        let newChildren = ResizeArray<LayoutComponent>()
+        let newChildren = ResizeArray<NoobishLayoutElement>()
 
         let calculateChildHeight () =
             let childHeight = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
@@ -683,7 +898,7 @@ module Logic =
 
 
                 let path = sprintf "%s:%i" parentComponent.Path i
-                let childComponent = layoutComponent measureText theme settings mutateState zIndex path childStartX childStartY childWidth childHeight child
+                let childComponent = layoutElement measureText theme settings mutateState zIndex path childStartX childStartY childWidth childHeight child
 
                 newChildren.Add(childComponent)
 
@@ -740,7 +955,7 @@ module Logic =
                 let childStartX = floor (parentBounds.X + (float32 col) * (colWidth))
                 let childStartY = floor (parentBounds.Y + (float32 row) * (rowHeight))
                 let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
-                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) path childStartX childStartY colWidth rowHeight child
+                let childComponent = layoutElement measureText theme settings mutateState (zIndex + 1) path childStartX childStartY colWidth rowHeight child
 
                 newChildren.Add({
                     childComponent with
@@ -764,7 +979,7 @@ module Logic =
             if c.Children.Length <> 1 then failwith "Can only pop open one at a time."
 
             let path = sprintf "%s:overlay" parentComponent.Path
-            let childComponent = layoutComponent measureText theme settings mutateState  (zIndex + 1) path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
+            let childComponent = layoutElement measureText theme settings mutateState  (zIndex + 1) path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
 
             {parentComponent with Children = [|childComponent|]}
         | NoobishLayout.Absolute ->
@@ -778,7 +993,7 @@ module Logic =
                 let childHeight = parentBounds.Height
 
                 let path = sprintf "%s:absolute(%g,%g)" parentComponent.Path childStartX childStartY
-                let childComponent = layoutComponent measureText theme settings mutateState (zIndex + 1) path childStartX childStartY childWidth childHeight child
+                let childComponent = layoutElement measureText theme settings mutateState (zIndex + 1) path childStartX childStartY childWidth childHeight child
                 newChildren.Add({ childComponent with StartX = childComponent.StartX; StartY = childComponent.StartY })
 
             {parentComponent with Children = newChildren.ToArray()}
@@ -786,12 +1001,12 @@ module Logic =
             parentComponent
 
 
-    let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (layer: int) (width: float32) (height: float32) (components: list<Component>) =
+    let layout (measureText: string -> string -> int*int) (theme: Theme) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (layer: int) (width: float32) (height: float32) (elements: list<NoobishElement>) =
 
         let path = sprintf "layer-%i" layer
-        components
+        elements
             |> List.map(fun c ->
-                layoutComponent measureText theme settings mutateState (layer * 128) path 0.0f 0.0f width height c
+                layoutElement measureText theme settings mutateState (layer * 128) path 0.0f 0.0f width height c
             ) |> List.toArray
 
 

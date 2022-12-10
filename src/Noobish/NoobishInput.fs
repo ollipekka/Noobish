@@ -1,15 +1,14 @@
-module NoobishInput
+module Noobish.Input
 
 open System
 open System.Collections.Generic
 
-open NoobishTypes
-open NoobishTypes.Internal
+open Noobish.Internal
 
 let rec press
     (version: Guid)
-    (state: IReadOnlyDictionary<string, LayoutComponentState>)
-    (components: LayoutComponent[])
+    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (elements: NoobishLayoutElement[])
     (time: TimeSpan)
     (positionX: float32)
     (positionY: float32)
@@ -18,8 +17,8 @@ let rec press
     let mutable handled = false
     let mutable i = 0
 
-    while not handled && i < components.Length do
-        let c = components.[i]
+    while not handled && i < elements.Length do
+        let c = elements.[i]
         let cs = state.[c.Id]
         if cs.Version = version && c.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
@@ -40,8 +39,8 @@ let rec press
     handled
 let rec click
     (version: Guid)
-    (state: IReadOnlyDictionary<string, LayoutComponentState>)
-    (components: LayoutComponent[])
+    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (elements: NoobishLayoutElement[])
     (time: TimeSpan)
     (positionX: float32)
     (positionY: float32)
@@ -51,8 +50,8 @@ let rec click
     let mutable handled = false
     let mutable i = 0
 
-    while not handled && i < components.Length do
-        let c = components.[i]
+    while not handled && i < elements.Length do
+        let c = elements.[i]
         let cs = state.[c.Id]
         if cs.Version = version && c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
@@ -78,8 +77,8 @@ let rec click
 
 let rec scroll
     (version: Guid)
-    (state: IReadOnlyDictionary<string, LayoutComponentState>)
-    (components: LayoutComponent[])
+    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (elements: NoobishLayoutElement[])
     (positionX: float32)
     (positionY: float32)
     (scale: float32)
@@ -90,7 +89,7 @@ let rec scroll
     let scaleValue v = v * scale
 
     let mutable handled = false;
-    for c in components do
+    for c in elements do
         let cs = state.[c.Id]
         if cs.Version = version && c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 

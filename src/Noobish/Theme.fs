@@ -1,9 +1,6 @@
-module NoobishTheme
+module Noobish.Theme
 
 open System.Collections.Generic
-
-
-open NoobishTypes
 
 type ComponentTheme = {
     TextFont: string
