@@ -5,7 +5,8 @@ open System.Collections.Generic
 
 open Elmish
 open Noobish
-open Noobish.Components
+open Noobish.Internal
+open Noobish.Theme
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
@@ -15,6 +16,7 @@ open Microsoft.Xna.Framework.Input.Touch
 
 open Microsoft.Xna.Framework.Content
 
+open Noobish
 
 
 type NoobishUI = {
@@ -23,9 +25,8 @@ type NoobishUI = {
     Height: int
     Theme: Theme
     Settings: NoobishSettings
-    Components: Dictionary<string, LayoutComponent>
-    State: Dictionary<string, LayoutComponentState>
-    TempState: Dictionary<string, LayoutComponentState>
+    Components: Dictionary<string, NoobishLayoutElement>
+    State: NoobishState
     mutable Debug: bool
     mutable Version: Guid
     mutable FPSEnabled: bool
@@ -33,12 +34,18 @@ type NoobishUI = {
     mutable FPSCounter: int
     mutable FPSTime: TimeSpan
     // Contains layers of layout components. Bottom is 0, one above bototm is 1.
-    mutable Layers: LayoutComponent[][]
+    mutable Layers: NoobishLayoutElement[][]
 
 }
 
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
+
+    open Noobish
+    open Noobish.Internal
+    open Noobish.Theme
+    let private createRectangle (x: float32) (y:float32) (width: float32) (height: float32) =
+        Rectangle (int (x), int (y), int (width), int (height))
 
     let create (content: ContentManager) width height (settings: NoobishSettings) =
         let measureText (font: string) (text: string) =
@@ -52,10 +59,12 @@ module NoobishMonoGame =
             Height = height
             Theme = Theme.createDefaultTheme settings.FontSettings
             Settings = settings
-            State = Dictionary()
-            TempState = Dictionary()
             Components = Dictionary()
-
+            State = {
+                State = Dictionary()
+                StateByName = Dictionary()
+                TempState = Dictionary()
+            }
             Debug = false
             Version = Guid.NewGuid()
             Layers = [||]
@@ -104,11 +113,11 @@ module NoobishMonoGame =
 
         Color(r, g, b, a)
 
-    let private drawBackground (state: IReadOnlyDictionary<string, LayoutComponentState>) (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (time: TimeSpan) scrollX scrollY =
+    let private drawBackground (state: IReadOnlyDictionary<string, NoobishLayoutElementState>) (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (time: TimeSpan) scrollX scrollY =
         let cs = state.[c.Id]
         let pixel = content.Load<Texture2D> settings.Pixel
 
-        let bounds = c.RectangleWithMargin
+        let bounds = c.ContentWithBorder
 
         let color =
             if not c.Enabled then
@@ -116,22 +125,23 @@ module NoobishMonoGame =
             elif c.Toggled then
                 toColor c.PressedColor
             else
-                match cs.State with
-                | ComponentState.Normal ->
+                if cs.Visible then
                     let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 0.2) 1.0
                     let color = toColor c.Color
                     let pressedColor = toColor c.PressedColor
                     Color.Lerp(color, pressedColor, float32 progress)
-                | ComponentState.Toggled ->
+                else if cs.Toggled then
                     toColor c.PressedColor
+                else
+                    Color.Transparent
 
 
         drawRectangle spriteBatch pixel color (bounds.X + scrollX) (bounds.Y + scrollY) bounds.Width bounds.Height
 
-    let private drawBorders  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
+    let private drawBorders  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) scrollX scrollY =
         if c.BorderSize > 0.0f then
             let pixel = content.Load<Texture2D> settings.Pixel
-            let bounds = c.RectangleWithMargin
+            let bounds = c.ContentWithBorder
 
             let scrolledStartY = bounds.Y + scrollY
 
@@ -143,24 +153,40 @@ module NoobishMonoGame =
             //Left
             drawRectangle spriteBatch pixel borderColor (bounds.X + scrollX) scrolledStartY borderSize bounds.Height
             // Right
-            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize) scrolledStartY borderSize bounds.Height
+            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width- borderSize) scrolledStartY borderSize bounds.Height
             // Top
             drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) scrolledStartY widthWithoutBorders borderSize
             // Bottom
             drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( scrolledStartY + bounds.Height - borderSize) widthWithoutBorders borderSize
 
+    let private debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
 
-    let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: LayoutComponent) scrollX scrollY =
+
+            let borderSize = 2f
+            let widthWithoutBorders = float32 bounds.Width - borderSize
+
+
+            //Left
+            drawRectangle spriteBatch pixel borderColor (bounds.X) bounds.Y borderSize bounds.Height
+            // Right
+            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize) bounds.Y  borderSize bounds.Height
+            // Top
+            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) bounds.Y widthWithoutBorders borderSize
+            // Bottom
+            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( bounds.Y + bounds.Height - borderSize) widthWithoutBorders borderSize
+
+
+    let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) scrollX scrollY =
         let mutable startY = 0.0f
 
         for line in c.Text do
-            let bounds = c.RectangleWithPadding
+            let bounds = c.Content
 
             let font = content.Load<SpriteFont> c.TextFont
 
             let size = font.MeasureString (line)
 
-            let textSizeX, textSizeY = ceil (size.X), ceil (size.Y)
+            let textSizeX, textSizeY = size.X, size.Y
 
             let leftX () = bounds.X + scrollX
             let rightX () = bounds.X + bounds.Width - textSizeX
@@ -179,26 +205,26 @@ module NoobishMonoGame =
 
             let textX, textY =
                 match c.TextAlignment with
-                | TopLeft -> leftX(), topY()
-                | TopCenter -> centerX(), topY()
-                | TopRight -> rightX(), topY()
-                | Left -> leftX(), centerY()
-                | Center -> centerX(), centerY()
-                | Right -> rightX(), centerY()
-                | BottomLeft -> leftX(), bottomY()
-                | BottomCenter -> centerX(), bottomY()
-                | BottomRight -> rightX(), bottomY()
+                | NoobishTextAlign.TopLeft -> leftX(), topY()
+                | NoobishTextAlign.TopCenter -> centerX(), topY()
+                | NoobishTextAlign.TopRight -> rightX(), topY()
+                | NoobishTextAlign.Left -> leftX(), centerY()
+                | NoobishTextAlign.Center -> centerX(), centerY()
+                | NoobishTextAlign.Right -> rightX(), centerY()
+                | NoobishTextAlign.BottomLeft -> leftX(), bottomY()
+                | NoobishTextAlign.BottomCenter -> centerX(), bottomY()
+                | NoobishTextAlign.BottomRight -> rightX(), bottomY()
 
             let textColor = toColor (if c.Enabled then c.TextColor else c.TextColorDisabled)
             spriteBatch.DrawString(font, line, Vector2(floor textX, floor (startY + textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
             startY <- startY + float32 font.LineSpacing
 
     let private drawScrollBars
-        (state: IReadOnlyDictionary<string, LayoutComponentState>)
+        (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
         (content: ContentManager)
         (settings: NoobishSettings)
         (spriteBatch: SpriteBatch)
-        (c: LayoutComponent)
+        (c: NoobishLayoutElement)
         time
         _scrollX
         _scrollY =
@@ -213,7 +239,7 @@ module NoobishMonoGame =
             let pixel = content.Load<Texture2D> settings.Pixel
 
             let scrollBarWidth = c.ScrollBarThickness
-            let bounds = c.RectangleWithMargin
+            let bounds = c.ContentWithBorder
             let x = bounds.X + bounds.Width - c.BorderSize - scrollBarWidth
             let color = Color.Multiply(c.ScrollBarColor |> toColor, progress)
             drawRectangle spriteBatch pixel color x bounds.Y scrollBarWidth bounds.Height
@@ -228,8 +254,8 @@ module NoobishMonoGame =
         (content: ContentManager)
         (settings: NoobishSettings)
         (spriteBatch: SpriteBatch)
-        (c: LayoutComponent)
-        (slider: Slider)
+        (c: NoobishLayoutElement)
+        (slider: SliderModel)
         (_time: TimeSpan)
         _scrollX
         _scrollY =
@@ -241,7 +267,7 @@ module NoobishMonoGame =
         let pixel = content.Load<Texture2D> settings.Pixel
 
         // Bar
-        let bounds = c.RectangleWithPadding
+        let bounds = c.Content
         let barPositionX = bounds.X + pinWidth / 2.0f
         let barPositionY = bounds.Y + (bounds.Height / 2.0f) - (barHeight / 2.0f)
         let barWidth = bounds.Width - pinWidth
@@ -258,48 +284,63 @@ module NoobishMonoGame =
         let color = c.ScrollPinColor |> toColor
         drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
 
-    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: LayoutComponent) (t:Noobish.Texture) scrollX scrollY =
 
-
-        let createRectangle (x: float32, y:float32, width: float32, height: float32) =
-            Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
-
+    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
 
         let texture, sourceRect =
             match t.Texture with
-            | NoobishTexture.Basic(textureId) ->
+            | NoobishTextureId.Basic(textureId) ->
                 let texture = content.Load<Texture2D> textureId
                 (texture, Rectangle(0, 0, texture.Width, texture.Height) )
-            | NoobishTexture.Atlas(textureId, sx, sy, sw, sh) ->
+            | NoobishTextureId.Atlas(textureId, sx, sy, sw, sh) ->
                 let texture = content.Load<Texture2D> textureId
                 (texture, Rectangle(sx, sy, sw, sh) )
-            | NoobishTexture.NinePatch _ -> failwith "Not implemented"
-            | NoobishTexture.None -> failwith "Can't have empty texture at this point."
+            | NoobishTextureId.NinePatch _ -> failwith "Not implemented"
+            | NoobishTextureId.None -> failwith "Can't have empty texture at this point."
 
         let rect =
             match t.TextureSize with
             | NoobishTextureSize.Stretch ->
-                let bounds = c.RectangleWithMargin
-                createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
+                let bounds = c.ContentWithBorder
+                createRectangle
+                    (bounds.X + scrollX)
+                    (bounds.Y + scrollY)
+                    bounds.Width
+                    bounds.Height
+
             | NoobishTextureSize.BestFitMax ->
-                let bounds = c.RectangleWithMargin
+                let bounds = c.ContentWithBorder
                 let ratio = max (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
                 let width = ratio * float32 sourceRect.Width
                 let height = ratio * float32 sourceRect.Height
                 let padLeft = (bounds.Width - width) / 2.0f
                 let padTop = (bounds.Height - height) / 2.0f
-                createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
+                createRectangle
+                    (bounds.X + scrollX + padLeft)
+                    (bounds.Y + scrollY + padTop)
+                    width
+                    height
+
             | NoobishTextureSize.BestFitMin ->
-                let bounds = c.RectangleWithMargin
+                let bounds = c.ContentWithBorder
                 let ratio = min (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
                 let width = ratio * float32 sourceRect.Width
                 let height = ratio * float32 sourceRect.Height
                 let padLeft = (bounds.Width - width) / 2.0f
                 let padTop = (bounds.Height - height) / 2.0f
-                createRectangle(bounds.X + scrollX + padLeft, bounds.Y + scrollY + padTop, width, height)
+                createRectangle
+                    (bounds.X + scrollX + padLeft)
+                    (bounds.Y + scrollY + padTop)
+                    width
+                    height
+
             | NoobishTextureSize.Original ->
-                let bounds = c.RectangleWithMargin
-                createRectangle(bounds.X + scrollX, bounds.Y + scrollY, bounds.Width, bounds.Height)
+                let bounds = c.ContentWithBorder
+                createRectangle
+                    (bounds.X + scrollX)
+                    (bounds.Y + scrollY)
+                    bounds.Width
+                    bounds.Height
 
         let textureEffect =
             if t.TextureEffect = NoobishTextureEffect.FlipHorizontally then
@@ -311,49 +352,44 @@ module NoobishMonoGame =
 
 
         let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
-        let rotation = Utils.toRadians t.Rotation
+        let rotation = toRadians t.Rotation
         let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
         spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
 
 
     let rec private drawComponent
-        (state: IReadOnlyDictionary<string, LayoutComponentState>)
+        (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
         (content: ContentManager)
         (settings: NoobishSettings)
         (graphics: GraphicsDevice)
         (spriteBatch: SpriteBatch)
         (debug: bool)
         (time: TimeSpan)
-        (c: LayoutComponent)
+        (c: NoobishLayoutElement)
         (parentScrollX: float32)
         (parentScrollY: float32)
         (parentRectangle: Rectangle)  =
 
-
-        let createRectangle (x: float32, y:float32, width: float32, height: float32) =
-            Rectangle (int (floor x), int (floor y), int (ceil width), int (ceil height))
 
         let cs = state.[c.Id]
 
         let totalScrollX = cs.ScrollX + parentScrollX
         let totalScrollY = cs.ScrollY + parentScrollY
 
-        let bounds = c.RectangleWithMargin
-
-        let startX = bounds.X + totalScrollX
-        let startY = bounds.Y + totalScrollY
-
-        let sourceStartX = max startX (float32 parentRectangle.X)
-        let sourceStartY = max startY (float32 parentRectangle.Y)
-        let sourceEndX = min (bounds.Width) (float32 parentRectangle.Right - startX)
-        let sourceEndY = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
 
         let outerRectangle =
-            createRectangle(
-                sourceStartX,
-                sourceStartY,
-                min (float32 parentRectangle.Width) sourceEndX,
-                min (float32 parentRectangle.Height) sourceEndY )
+            let bounds = c.ContentWithBorder
+            let startX = bounds.X + totalScrollX
+            let startY = bounds.Y + totalScrollY
+            let sourceStartX = max startX (float32 parentRectangle.X)
+            let sourceStartY = max startY (float32 parentRectangle.Y)
+            let sourceWidth = min (bounds.Width) (float32 parentRectangle.Right - startX)
+            let sourceHeight = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
+            createRectangle
+                sourceStartX
+                sourceStartY
+                (min sourceWidth (float32 parentRectangle.Width))
+                (min sourceHeight (float32 parentRectangle.Height))
 
         let oldScissorRect = graphics.ScissorRectangle
 
@@ -371,34 +407,78 @@ module NoobishMonoGame =
         drawText content spriteBatch c totalScrollX totalScrollY
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
 
-        c.Slider
+        cs.Model
             |> Option.iter(
-                fun s -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX )
+                function
+                | Slider (s) -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX
+                | Combobox (_c) -> ())
 
         if debug then
-            let childRect = c.RectangleWithPadding
+            let childRect = c.Content
 
             let debugColor =
-                if c.ThemeId = "Scroll" then Color.Multiply(Color.Transparent, 0.1f)
+                if c.ThemeId = "Scroll" then Color.Multiply(Color.Red, 0.1f)
                 elif c.ThemeId = "Button" then Color.Multiply(Color.Green, 0.1f)
+                elif c.ThemeId = "Paragraph" then Color.Multiply(Color.Purple, 0.1f)
                 else Color.Multiply(Color.Yellow, 0.1f)
 
             let pixel = content.Load<Texture2D> settings.Pixel
             drawRectangle spriteBatch pixel debugColor (childRect.X + totalScrollX) (childRect.Y + totalScrollY) (childRect.Width) (childRect.Height)
+            if c.ThemeId = "Scroll"  then
+                let r = {
+                    X = float32 outerRectangle.X
+                    Y = float32 outerRectangle.Y
+                    Width =  float32 outerRectangle.Width
+                    Height = float32 outerRectangle.Height}
+                debugDrawBorders spriteBatch pixel (Color.Multiply(Color.Red, 0.5f)) r
 
         spriteBatch.End()
 
-        let innerRectangle =
-            createRectangle (
-                float32 outerRectangle.X + c.PaddingLeft,
-                float32 outerRectangle.Y + c.PaddingTop,
-                c.PaddingLeft + c.PaddedWidth,
-                c.PaddingTop + c.PaddedHeight)
+        (*
+            Viewport is the visible area. Nothing is rendered outside.
+        *)
+        match c.Layout with
+        | NoobishLayout.Default ->
 
-        c.Children |> Array.iter(fun c ->
-            if not c.Hidden then
-                drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY innerRectangle
-        )
+            let viewport =
+                let bounds = c.Content
+                let startX = bounds.X + totalScrollX
+                let startY = bounds.Y + totalScrollY
+                let sourceStartX = max startX (float32 parentRectangle.X)
+                let sourceStartY = max startY (float32 parentRectangle.Y)
+                let sourceWidth = min (bounds.Width) (float32 parentRectangle.Right - startX)
+                let sourceHeight = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
+                createRectangle
+                    sourceStartX
+                    sourceStartY
+                    (min sourceWidth (float32 parentRectangle.Width))
+                    (min sourceHeight (float32 parentRectangle.Height))
+            for child in c.Children do
+                let cs = state.[child.Id]
+                if cs.Visible then
+                    drawComponent state content settings graphics spriteBatch debug time child totalScrollX totalScrollY viewport
+
+        | NoobishLayout.Grid(_cols, _rows) ->
+            for c in c.Children do
+                let cs = state.[c.Id]
+                if cs.Visible then
+                    let viewport =
+                        let bounds = c.ContentWithBorder
+                        createRectangle
+                            bounds.X
+                            bounds.Y
+                            bounds.Width
+                            bounds.Height
+                    drawComponent state content settings graphics spriteBatch debug time c totalScrollX totalScrollY viewport
+        | NoobishLayout.Absolute | NoobishLayout.OverlaySource ->
+            let viewport = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
+            for child in c.Children do
+                let cs = state.[child.Id]
+                if cs.Visible then
+                    drawComponent state content settings graphics spriteBatch debug time child totalScrollX totalScrollY viewport
+        | NoobishLayout.None -> ()
+
+
 
         graphics.ScissorRectangle <- oldScissorRect
 
@@ -432,31 +512,33 @@ module NoobishMonoGame =
 
         let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
         for layer in ui.Layers do
-            layer |> Array.iter(fun c ->
-                if not c.Hidden then
-                    drawComponent ui.State content ui.Settings graphics spriteBatch ui.Debug time c 0.0f 0.0f source
+            layer |> Array.iter(fun e ->
+                let es = ui.State.State.[e.Id]
+                if es.Visible then
+                    drawComponent ui.State.State content ui.Settings graphics spriteBatch ui.Debug time e 0.0f 0.0f source
             )
 
         if ui.Debug || ui.FPSEnabled then
             drawFps content spriteBatch ui time
 
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
-        let mousePosition = curState.Position
+        ui.State.TempState.Clear()
+        for kvp in ui.State.State do
+            ui.State.TempState.Add(kvp.Key, kvp.Value)
 
-        for kvp in ui.State do
-            ui.TempState.Add(kvp.Key, kvp.Value)
+        let mousePosition = curState.Position
 
         if curState.LeftButton = ButtonState.Pressed then
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                handled <- Input.press ui.Version ui.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                handled <- Noobish.Input.press ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                handled <- Input.click ui.Version ui.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                handled <- Noobish.Input.click ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
@@ -470,15 +552,14 @@ module NoobishMonoGame =
 
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
             for layer in ui.Layers do
-                Input.scroll ui.Version ui.TempState layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
-        ui.TempState.Clear()
+                Noobish.Input.scroll ui.Version ui.State.TempState layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
     let updateKeyboard (ui: NoobishUI)  (previous: KeyboardState) (current: KeyboardState) (_gameTime: GameTime) =
+        ui.State.TempState.Clear()
+        for kvp in ui.State.State do
+            ui.State.TempState.Add(kvp.Key, kvp.Value)
 
-        for kvp in ui.State do
-            ui.TempState.Add(kvp.Key, kvp.Value)
-
-        for kvp in ui.TempState do
+        for kvp in ui.State.TempState do
             let noobishKey = kvp.Value.KeyboardShortcut
             if noobishKey <> NoobishKeyId.None then
                 let key =
@@ -489,13 +570,14 @@ module NoobishMonoGame =
 
                 let c = ui.Components.[kvp.Key]
                 if kvp.Value.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
-                    c.OnClick()
+                    c.OnClickInternal()
 
-        ui.TempState.Clear()
+        ui.State.TempState.Clear()
+
     let updateMobile (ui: NoobishUI) (_prevState: TouchCollection) (curState: TouchCollection) (gameTime: GameTime) =
 
-        for kvp in ui.State do
-            ui.TempState.Add(kvp.Key, kvp.Value)
+        for kvp in ui.State.State do
+            ui.State.TempState.Add(kvp.Key, kvp.Value)
 
         for touch in curState  do
             match touch.State with
@@ -504,7 +586,7 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Input.press ui.Version ui.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- Noobish.Input.press ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
 
                     i <- i - 1
             | TouchLocationState.Released ->
@@ -512,42 +594,58 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Input.click ui.Version ui.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- Noobish.Input.click ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
                     i <- i - 1
             | _ -> ()
-        ui.TempState.Clear()
+
+        ui.State.TempState.Clear()
 
 module Program =
-    let rec private getComponents (components: Dictionary<string, LayoutComponent>) (c: LayoutComponent) =
-        components.[c.Id] <- c
-        for c2 in c.Children do
-            getComponents components c2
+    let rec private getElements (elements: Dictionary<string, NoobishLayoutElement>) (overlays: ResizeArray<NoobishLayoutElement>) (e: NoobishLayoutElement) =
+        elements.[e.Id] <- e
+
+        if e.Overlay then
+            overlays.Add e
+
+        for e2 in e.Children do
+            getElements elements overlays e2
 
     let withNoobishRenderer (ui: NoobishUI) (program: Program<_,_,_,_>) =
         let setState model dispatch =
-            let layers: list<list<Component>> = Program.view program model dispatch
+            let layers: list<list<NoobishElement>> = Program.view program model dispatch
             let width = (float32 ui.Width)
             let height = (float32 ui.Height)
 
             ui.Version <- Guid.NewGuid()
 
-            ui.Layers <- layers |> List.map (Logic.layout ui.MeasureText ui.Theme ui.Settings width height) |> List.toArray
+            ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.MeasureText ui.Theme ui.Settings ui.State.Update (i + 1) width height components) |> List.toArray
 
-            let oldState = Dictionary(ui.State)
-            ui.State.Clear()
+            ui.State.TempState.Clear()
+            for kvp in ui.State.State do
+                ui.State.State[kvp.Key] <- kvp.Value
+            ui.State.State.Clear()
 
             ui.Components.Clear()
 
+            let overlays = ResizeArray<NoobishLayoutElement>()
+
             for layer in ui.Layers do
-                for c in layer do
-                    getComponents ui.Components c
+                for e in layer do
+                    getElements ui.Components overlays e
+
+            ui.Layers <- Array.concat [ui.Layers; [| overlays.ToArray() |]]
 
             for kvp in ui.Components do
-                let (success, value) = oldState.TryGetValue kvp.Key
+                let (success, value) = ui.State.State.TryGetValue kvp.Key
                 if success then
-                    ui.State.[kvp.Key] <- {value with Version = ui.Version}
+                    ui.State.State.[kvp.Key] <- {value with Version = ui.Version; Model = kvp.Value.Model }
                 else
-                    ui.State.[kvp.Key] <- Logic.createLayoutComponentState kvp.Value.KeyboardShortcut ui.Version
+                    ui.State.State.[kvp.Key] <- Logic.createNoobishLayoutElementState ui.Version kvp.Value
+
+            ui.State.StateByName.Clear()
+            for c in ui.State.State.Values do
+                if c.Name <> "" then
+                    ui.State.StateByName.[c.Name] <- c
 
         program
             |> Program.withSetState setState

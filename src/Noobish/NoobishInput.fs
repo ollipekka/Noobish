@@ -3,12 +3,12 @@ module Noobish.Input
 open System
 open System.Collections.Generic
 
-open Noobish.Utils
+open Noobish.Internal
 
 let rec press
     (version: Guid)
-    (state: IReadOnlyDictionary<string, LayoutComponentState>)
-    (components: LayoutComponent[])
+    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (elements: NoobishLayoutElement[])
     (time: TimeSpan)
     (positionX: float32)
     (positionY: float32)
@@ -17,10 +17,10 @@ let rec press
     let mutable handled = false
     let mutable i = 0
 
-    while not handled && i < components.Length do
-        let c = components.[i]
+    while not handled && i < elements.Length do
+        let c = elements.[i]
         let cs = state.[c.Id]
-        if cs.Version = version && c.Enabled && (not c.Hidden) && cs.State <> ComponentState.Toggled && c.Contains positionX positionY scrollX scrollY  then
+        if cs.Version = version && c.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
                 if c.Children.Length > 0 then
                     press version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
@@ -30,15 +30,8 @@ let rec press
                 let cs = state.[c.Id]
                 cs.PressedTime <- time
                 handled <- true
+                c.OnPressInternal (struct(int positionX, int positionY)) c
 
-                match c.Slider with
-                | Some (slider') ->
-                    let bounds = c.RectangleWithPadding
-                    let relative = (positionX - bounds.X) / (bounds.Width)
-                    let newValue = slider'.Min + (relative * slider'.Max - slider'.Min)
-                    let steppedNewValue = truncate(newValue / slider'.Step) * slider'.Step
-                    slider'.OnValueChanged (clamp steppedNewValue slider'.Min slider'.Max)
-                | None -> ()
             else
                 handled <- true
 
@@ -46,8 +39,8 @@ let rec press
     handled
 let rec click
     (version: Guid)
-    (state: IReadOnlyDictionary<string, LayoutComponentState>)
-    (components: LayoutComponent[])
+    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (elements: NoobishLayoutElement[])
     (time: TimeSpan)
     (positionX: float32)
     (positionY: float32)
@@ -57,31 +50,35 @@ let rec click
     let mutable handled = false
     let mutable i = 0
 
-    while not handled && i < components.Length do
-        let c = components.[i]
+    while not handled && i < elements.Length do
+        let c = elements.[i]
         let cs = state.[c.Id]
-        if cs.Version = version && c.Enabled && (not c.Hidden) && c.Contains positionX positionY scrollX scrollY then
-            let cs = state.[c.Id]
+        if cs.Version = version && c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
+
             let handledByChild =
                 if c.Children.Length > 0 then
                     click version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
                 else
                     false
             if not handledByChild then
-                let cs = state.[c.Id]
+
                 cs.PressedTime <- time
-                c.OnClick()
+
+                c.OnClickInternal()
+
                 handled <- true
             else
                 handled <- true
+
+
 
         i <- i + 1
     handled
 
 let rec scroll
     (version: Guid)
-    (state: IReadOnlyDictionary<string, LayoutComponentState>)
-    (components: LayoutComponent[])
+    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (elements: NoobishLayoutElement[])
     (positionX: float32)
     (positionY: float32)
     (scale: float32)
@@ -92,9 +89,9 @@ let rec scroll
     let scaleValue v = v * scale
 
     let mutable handled = false;
-    for c in components do
+    for c in elements do
         let cs = state.[c.Id]
-        if cs.Version = version && c.Enabled && (not c.Hidden) && c.Contains positionX positionY scrollX scrollY then
+        if cs.Version = version && c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then
@@ -111,7 +108,7 @@ let rec scroll
                 if c.ScrollVertical && c.OverflowHeight > c.Height then
                     let scaledScroll = scaleValue scrollY
                     let nextScroll = cs.ScrollY + scaledScroll
-                    let minScroll = c.PaddedHeight - c.OverflowHeight
+                    let minScroll = c.ContentHeight - c.OverflowHeight
 
                     cs.ScrollY <- clamp nextScroll minScroll 0.0f
                     cs.ScrolledTime <- time

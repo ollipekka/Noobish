@@ -8,8 +8,8 @@ open Microsoft.Xna.Framework.Input
 open Microsoft.Xna.Framework.Input.Touch
 
 open Elmish
+
 open Noobish
-open Noobish.Components
 
 let loremIpsum1 =
     "Scroll me!\n\n Lorem\nipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -24,6 +24,9 @@ type DemoMessage =
     | ShowSliders
     | SliderValueChanged of float32
     | ChangePadding of int
+    | ChangeMargin of int
+    | ChangeBorderSize of int
+    | ComboboxValueChanged of string
     | ToggleDebug
 
 type ViewState = | Containers | Buttons | Text | Slider
@@ -33,6 +36,9 @@ type DemoModel =
         UI: NoobishUI
         State: ViewState
         Padding: int
+        Margin: int
+        BorderSize: int
+        ComboboxValue: string
         SliderAValue: float32
     }
 
@@ -45,15 +51,15 @@ module Text =
                 [
                 panelWithGrid 3 3
                     [
-                        label [text "Top Left"; textAlign TopLeft; fill]
-                        label [text "Top"; textAlign TopCenter; fill]
-                        label [text "Top Right"; textAlign TopRight; fill]
-                        label [text "Left"; textAlign Left; fill]
-                        label [text "Center"; textAlign Center; fill]
-                        label [text "Right"; textAlign Right; fill]
-                        label [text "Bottom Left"; textAlign BottomLeft; fill]
-                        label [text "Bottom Center"; textAlign BottomCenter; fill]
-                        label [text "Bottom Right"; textAlign BottomRight; fill]
+                        label [text "Top Left"; textTopLeft; fill]
+                        label [text "Top"; textTopCenter; fill]
+                        label [text "Top Right"; textTopRight; fill]
+                        label [text "Left"; textLeft; fill]
+                        label [text "Center"; textCenter; fill]
+                        label [text "Right"; textRight; fill]
+                        label [text "Bottom Left"; textBottomLeft; fill]
+                        label [text "Bottom Center"; textBottomCenter; fill]
+                        label [text "Bottom Right"; textBottomRight; fill]
                     ]
                     [
 
@@ -62,10 +68,11 @@ module Text =
                     [
                         scroll
                             [
-                                paragraph [text loremIpsum1; block]
-                                paragraph [text loremIpsum2; block]
+                                paragraph [text loremIpsum1; block; name "FailedLorem1"]
+                                paragraph [text loremIpsum2; block; name "FailedLorem2"]
                             ]
                             [
+                                name "FailedScroll"
                                 scrollVertical
                             ]
                     ]
@@ -74,13 +81,15 @@ module Text =
                     ]
                 panelWithGrid 1 3
                     [
-
-                        paragraph [text loremIpsum2; textAlign TopCenter; rowspan 1; name "Paragraph"]
+                        paragraph [text loremIpsum2; textTopCenter; rowspan 1; ]
                         scroll
                             [
-                                paragraph [text loremIpsum2; textAlign TopCenter; name "Paragraph"]
+                                paragraph [text loremIpsum2; textTopCenter;
+                                name "FailedParagraph2";]
                             ]
                             [
+                                rowspan 1
+                                name "FailedScroll2";
                             ]
                         scroll
                             [
@@ -131,25 +140,75 @@ module Text =
 
         ]
 
-module Buttons =
-    let view model dispatch =
+module Containers =
 
+
+
+    let view model dispatch =
         [
             grid 2 2
                 [
                 panel
                     [
-                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; fillHorizontal]
-                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding; fillHorizontal]
-                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding; fillHorizontal]
+                        div [
+                                header [text "Hello"; ];
+                                hr []
+                            ] [fillHorizontal];
+                        button [ text "Continue"; onClick ignore; padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal; enabled false];
+                        button [ text "Start"; onClick ignore; padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal; ];
+                        button [ text "Options"; onClick ignore; padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal; ];
                     ]
                     [
-                        padding model.Padding;
+                        name "ButtonsPanel"
+                        padding model.Padding; margin model.Margin; borderSize model.BorderSize;
 
                     ]
                 panel
                     [
+                        canvas
+                            [
+                                image
+                                    [
+                                        name "Pixel Origin"
+                                        texture "Pixel"
+                                        textureBestFitMin
+                                        minSize 10 10
+                                        textureColor 0xff0000ff
+                                        padding 0
+                                        margin 0
+                                        relativePosition -5 -5
 
+                                    ]
+                                image
+                                    [
+                                        name "Pixel 1"
+                                        texture "Pixel"
+                                        textureBestFitMin
+                                        minSize 10 10
+                                        textureColor 0xff0000ff
+                                        padding 0
+                                        margin 0
+                                        relativePosition -25 15
+
+                                    ]
+                                button [ text "y"; relativePosition -30 -30 ]
+                                button [ text "o"; relativePosition 30 30 ]
+                                image [
+                                        name "Pixel 2"
+                                        texture "Pixel"
+                                        textureBestFitMin
+                                        minSize 10 10
+                                        textureColor 0xff00FFff
+                                        padding 0
+                                        margin 0
+                                        relativePosition 15 -25
+
+                                    ]
+                            ]
+                            [
+                                fill
+                                text model.ComboboxValue; onChange (fun v -> dispatch (ComboboxValueChanged v))
+                            ]
                     ]
                     [
 
@@ -175,6 +234,70 @@ module Buttons =
         ]
 
 
+
+module Buttons =
+    let view model dispatch =
+
+        [
+            grid 2 2
+                [
+                panel
+                    [
+                        button [text "Padding 0"; onClick (fun () -> dispatch (ChangePadding 0)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                    ]
+                    [
+                        name "ButtonsPanel"
+                        padding model.Padding; margin model.Margin; borderSize model.BorderSize;
+                    ]
+                panel
+                    [
+                        combobox
+                            [
+                                option "Value 1"
+                                option "Value 2"
+                                option "Value 3"
+                            ]
+                            [
+                                text model.ComboboxValue; onChange (fun v -> dispatch (ComboboxValueChanged v))
+                            ]
+                    ]
+                    [
+
+                    ]
+                panel
+                    [
+                        button [text "Margin 0"; onClick (fun () -> dispatch (ChangeMargin 0)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Margin 2"; onClick (fun () -> dispatch (ChangeMargin 2)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Margin 4"; onClick (fun () -> dispatch (ChangeMargin 4)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Margin 6"; onClick (fun () -> dispatch (ChangeMargin 6)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                    ]
+                    [
+                        name "MarginPanel"
+
+                    ]
+                panel
+                    [
+                        button [text "BorderSize 0"; onClick (fun () -> dispatch (ChangeBorderSize 0)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "BorderSize 1"; onClick (fun () -> dispatch (ChangeBorderSize 1)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "BorderSize 2"; onClick (fun () -> dispatch (ChangeBorderSize 2)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "BorderSize 3"; onClick (fun () -> dispatch (ChangeBorderSize 3)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "BorderSize 4"; onClick (fun () -> dispatch (ChangeBorderSize 4)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                    ]
+                    [
+                        name "BorderPanel"
+
+                    ]
+                ]
+                [
+
+                ]
+
+        ]
+
+
 module Slider =
     let view model dispatch =
 
@@ -184,9 +307,9 @@ module Slider =
                 panel
                     [
                         label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
+                        slider [name "Slider1"; sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
+                        slider [name "Slider2"; sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
+                        slider [name "Slider3"; sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
                     ]
                     []
                 ]
@@ -232,17 +355,12 @@ type DemoGame () as game =
 
     override this.Initialize() =
 
-        let measureText (font: string) (text: string) =
-            let font = game.Content.Load<SpriteFont>(font)
-            let size = font.MeasureString text
-
-            int (ceil (size.X)), int (ceil (size.Y))
 
         let width = this.GraphicsDevice.Viewport.Width
         let height = this.GraphicsDevice.Viewport.Height
 
-        let settings = {
-            Scale = 1.0f
+        let settings: NoobishSettings = {
+            Scale = 1f
             FontSettings = {Small = "AnomyousPro16"; Normal = "AnonymousPro16"; Large = "AnonymousPro16"};
             Pixel = "Pixel"
         }
@@ -251,7 +369,7 @@ type DemoGame () as game =
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
-            { UI = nui; State = Buttons; Padding = 5; SliderAValue = 25.0f;}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; BorderSize = 2; SliderAValue = 25.0f;}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -265,8 +383,14 @@ type DemoGame () as game =
                 {model with State = Slider}, Cmd.none
             | SliderValueChanged v ->
                 {model with SliderAValue = v}, Cmd.none
+            | ComboboxValueChanged v ->
+                {model with ComboboxValue = v}, Cmd.none
             | ChangePadding padding ->
                 {model with Padding = padding}, Cmd.none
+            | ChangeMargin margin ->
+                {model with Margin = margin}, Cmd.none
+            | ChangeBorderSize borderSize ->
+                {model with BorderSize = borderSize}, Cmd.none
             | ToggleDebug ->
                 model.UI.Debug <- (not model.UI.Debug)
                 model, Cmd.none
@@ -275,16 +399,16 @@ type DemoGame () as game =
 
             let scrollItems =
                 [
-                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons)]
-                    button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text)]
-                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers)]
-                    button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider)]
+                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
+                    button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
+                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
+                    button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
                 ]
 
             let title, content  =
                 match model.State with
                 | Buttons -> "Buttons", Buttons.view model dispatch
-                | Containers -> "Containers", []
+                | Containers -> "Containers", Containers.view model dispatch
                 | Text -> "Labels", Text.view dispatch
                 | Slider -> "Slider", Slider.view model dispatch
 
@@ -310,8 +434,8 @@ type DemoGame () as game =
                                     colspan 9;
                                     rowspan 1
                                 ]
-                            panel [scroll scrollItems []] [colspan 3; rowspan 7]
-                            panel content [colspan 9; rowspan 7]
+                            panel [scroll scrollItems [name "LeftMenu";]] [colspan 3; rowspan 7;]
+                            panel content [colspan 9; rowspan 7;]
                         ]
                         [
                             padding 10
