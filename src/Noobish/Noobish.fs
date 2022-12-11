@@ -490,7 +490,7 @@ module Logic =
         let scaleTuple (left, right, top, bottom) =
             (scale left, scale right, scale top, scale bottom)
 
-        let theme = if theme.ComponentThemes.ContainsKey themeId then theme.ComponentThemes.[themeId] else theme.ComponentThemes.["Empty"]
+        let theme = if theme.Styles.ContainsKey themeId then theme.Styles.[themeId] else theme.Styles.["Empty"]
         let mutable name = ""
         let mutable enabled = true
         let mutable visible = true
