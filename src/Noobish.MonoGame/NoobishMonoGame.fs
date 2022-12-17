@@ -36,7 +36,35 @@ type NoobishUI = {
     // Contains layers of layout components. Bottom is 0, one above bototm is 1.
     mutable Layers: NoobishLayoutElement[][]
 
-}
+} with
+    member private this.DoElementsConsumeMouse (elements: NoobishLayoutElement[]) (positionX: float32) (positionY: float32) (button: NoobishMouseButtonId)=
+        let mutable handled = false
+        let mutable i = 0
+        while not handled && i < elements.Length do
+            let e = elements.[i]
+            let handledByChild =
+                if e.Children.Length > 0 then
+                    this.DoElementsConsumeMouse e.Children positionX positionY button
+                else
+                    false
+
+            if handledByChild then
+                handled <- true
+
+            elif not handledByChild && (e.ConsumedMouseButtons |> Array.contains button) && e.Contains positionX positionY 0f 0f then
+                handled <- true
+
+            i <- i + 1
+        handled
+
+    member this.ConsumeMouse (positionX: float32) (positionY: float32) (button: NoobishMouseButtonId) =
+        let mutable handled = false
+        let mutable l = 0
+        while not handled && l < this.Layers.Length do
+            let elements = this.Layers.[l]
+            handled <- this.DoElementsConsumeMouse elements positionX positionY button
+            l <- l + 1
+        handled
 
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
@@ -566,6 +594,7 @@ module NoobishMonoGame =
                     match noobishKey with
                     | NoobishKeyId.Enter -> Keys.Enter
                     | NoobishKeyId.Escape -> Keys.Escape
+                    | NoobishKeyId.Space -> Keys.Space
                     | NoobishKeyId.None -> failwith "None can't be here."
 
                 let c = ui.Components.[kvp.Key]

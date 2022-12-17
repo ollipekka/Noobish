@@ -20,9 +20,16 @@ type NoobishTextureSize = Stretch | BestFitMax | BestFitMin | Original
 
 [<RequireQualifiedAccess>]
 type NoobishKeyId =
-    | Escape
-    | Enter
-    | None
+| Escape
+| Enter
+| Space
+| None
+
+[<RequireQualifiedAccess>]
+type NoobishMouseButtonId =
+| Left
+| Right
+| None
 
 type FontSettings = {
     Small: string

@@ -92,6 +92,8 @@ type NoobishLayoutElement = {
 
     KeyboardShortcut: NoobishKeyId
 
+    ConsumedMouseButtons: NoobishMouseButtonId[]
+    ConsumedKeys: NoobishKeyId[]
     OnClickInternal: unit -> unit
     OnPressInternal: struct(int*int) -> NoobishLayoutElement -> unit
     OnChange: string -> unit
@@ -321,7 +323,7 @@ let scroll children attributes =
 let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
 
 let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = stackLayout :: block :: attributes}
-let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill:: attributes}
+let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill :: attributes}
 let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
 let div children attributes = { ThemeId = "Division"; Children = children; Attributes = stackLayout :: attributes}
 let window children attributes =
@@ -516,6 +518,8 @@ module Logic =
         let mutable isBlock = false
         let mutable onClick: unit -> unit = ignore
         let mutable onClickInternal: (string -> ComponentMessage -> unit) -> unit = ignore
+        let mutable consumedButtons = ResizeArray<NoobishMouseButtonId>()
+        let mutable consumedKeys = ResizeArray<NoobishKeyId>()
 
         let mutable onPress: struct(int*int) -> unit = ignore
         let mutable onPressInternal: (string -> ComponentMessage -> unit) -> (struct(int*int)) -> NoobishLayoutElement -> unit = (fun _ _ _ -> ())
@@ -644,11 +648,21 @@ module Logic =
             // Border
             | BorderSize(v) -> borderSize <- scale v
             | BorderColor(c) -> borderColor <-c
-            | OnClick(v) -> onClick <- v
-            | OnClickInternal(v) -> onClickInternal <- v
-            | OnPress(v) -> onPress <- v
-            | OnPressInternal(v) -> onPressInternal <- v
-            | OnChange(v) -> onChange <- v
+            | OnClick(v) ->
+                onClick <- v
+                consumedButtons.Add (NoobishMouseButtonId.Left)
+            | OnClickInternal(v) ->
+                onClickInternal <- v
+                consumedButtons.Add (NoobishMouseButtonId.Left)
+            | OnPress(v) ->
+                onPress <- v
+                consumedButtons.Add (NoobishMouseButtonId.Left)
+            | OnPressInternal(v) ->
+                onPressInternal <- v
+                consumedButtons.Add (NoobishMouseButtonId.Left)
+            | OnChange(v) ->
+                onChange <- v
+                consumedButtons.Add (NoobishMouseButtonId.Left)
             | Toggled(value) ->
                 toggled <- value
             | ZIndex(value) ->
@@ -708,6 +722,7 @@ module Logic =
                 relativeY <- scale y
             | KeyboardShortcut k ->
                 keyboardShortcut <- k
+                consumedKeys.Add k
         let maxWidth = parentWidth * float32 colspan
 
         model |> Option.iter (fun model' ->
@@ -813,6 +828,8 @@ module Logic =
                 onPress mousePos )
 
             OnChange = onChange
+            ConsumedMouseButtons = consumedButtons |> Seq.distinct |> Seq.toArray
+            ConsumedKeys = consumedKeys |> Seq.distinct |> Seq.toArray
 
             Layout = layout
             ColSpan = colspan
