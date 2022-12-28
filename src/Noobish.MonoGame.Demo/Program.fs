@@ -307,9 +307,9 @@ module Slider =
                 panel
                     [
                         label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
-                        slider [name "Slider1"; sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
-                        slider [name "Slider2"; sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
-                        slider [name "Slider3"; sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
                     ]
                     []
                 ]

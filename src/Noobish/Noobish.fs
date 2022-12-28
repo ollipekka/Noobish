@@ -215,6 +215,7 @@ type NoobishAttribute =
     | ColSpan of int
     | RelativePosition of x: int * y: int
     | KeyboardShortcut of NoobishKeyId
+    | UseFullyQualifiedIdForName
 
 type NoobishElement = {
     ThemeId: string
@@ -339,18 +340,9 @@ let window children attributes =
 let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
 
 let slider attributes =
-
-    let mutable sliderName = ""
-    for a in attributes do
-        match a with
-        | Name (n') ->
-            sliderName <- n'
-        | _ -> ()
-
-
     let handlePress (dispatch) (struct(x: int, y: int)) (c: NoobishLayoutElement) =
         let positionX = float32 x
-        //let positionY = float32 y
+        let _positionY = float32 y
 
         let changeModel m =
             match m with
@@ -363,9 +355,8 @@ let slider attributes =
                 Slider{s' with Value = steppedNewValue}
             | Combobox _ -> m
 
-        dispatch sliderName (ChangeModel changeModel)
-
-    {ThemeId = "Slider"; Children = []; Attributes = attributes @ [sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
+        dispatch c.Name (ChangeModel changeModel)
+    {ThemeId = "Slider"; Children = []; Attributes = attributes @ [UseFullyQualifiedIdForName; sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
 
 
 let combobox children attributes =
@@ -558,6 +549,8 @@ module Logic =
 
         let mutable keyboardShortcut = NoobishKeyId.None
 
+        let mutable useFullyQualifiedIdForName = false
+
         for a in attributes do
             match a with
             | Name v ->
@@ -723,6 +716,8 @@ module Logic =
             | KeyboardShortcut k ->
                 keyboardShortcut <- k
                 consumedKeys.Add k
+            | UseFullyQualifiedIdForName ->
+                useFullyQualifiedIdForName <- true
         let maxWidth = parentWidth * float32 colspan
 
         model |> Option.iter (fun model' ->
@@ -762,7 +757,7 @@ module Logic =
         {
             Id = cid
             Path = path
-            Name = name
+            Name = if String.IsNullOrEmpty name && useFullyQualifiedIdForName then (sprintf "%s/%s" path cid) else name
             ThemeId = themeId
             Enabled = enabled
             Visible = visible
