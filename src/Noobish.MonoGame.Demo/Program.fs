@@ -359,6 +359,11 @@ type DemoGame () as game =
         let width = this.GraphicsDevice.Viewport.Width
         let height = this.GraphicsDevice.Viewport.Height
 
+        this.Window.TextInput.Add(fun e ->
+            printfn "%c" (e.Character)
+            NoobishMonoGame.keyTyped nui (sprintf "%c" e.Character)
+        )
+
         let settings: NoobishSettings = {
             Scale = 1f
             FontSettings = {Small = "AnomyousPro16"; Normal = "AnonymousPro16"; Large = "AnonymousPro16"};

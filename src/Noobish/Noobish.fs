@@ -94,6 +94,7 @@ type NoobishLayoutElement = {
 
     ConsumedMouseButtons: NoobishMouseButtonId[]
     ConsumedKeys: NoobishKeyId[]
+    KeyTypedEnabled: bool
     OnClickInternal: unit -> unit
     OnPressInternal: struct(int*int) -> NoobishLayoutElement -> unit
     OnChange: string -> unit
@@ -216,6 +217,7 @@ type NoobishAttribute =
     | RelativePosition of x: int * y: int
     | KeyboardShortcut of NoobishKeyId
     | UseFullyQualifiedIdForName
+    | KeyTypedEnabled
 
 type NoobishElement = {
     ThemeId: string
@@ -308,6 +310,7 @@ let keyboardShortcut k = KeyboardShortcut k
 // Components
 let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
 let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
+let textBox attributes = { ThemeId = "TextBox"; Children = []; Attributes = attributes @ [KeyTypedEnabled] }
 let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlign.TopLeft :: attributes }
 let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
 let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
@@ -475,6 +478,7 @@ module Logic =
             KeyboardShortcut = c.KeyboardShortcut
             Version = version
             Model = c.Model
+            Text = ""
         }
 
     let private createNoobishLayoutElement (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
@@ -511,6 +515,7 @@ module Logic =
         let mutable onClickInternal: (string -> ComponentMessage -> unit) -> unit = ignore
         let mutable consumedButtons = ResizeArray<NoobishMouseButtonId>()
         let mutable consumedKeys = ResizeArray<NoobishKeyId>()
+        let mutable keyTypedEnabled = false
 
         let mutable onPress: struct(int*int) -> unit = ignore
         let mutable onPressInternal: (string -> ComponentMessage -> unit) -> (struct(int*int)) -> NoobishLayoutElement -> unit = (fun _ _ _ -> ())
@@ -716,6 +721,8 @@ module Logic =
             | KeyboardShortcut k ->
                 keyboardShortcut <- k
                 consumedKeys.Add k
+            | KeyTypedEnabled ->
+                keyTypedEnabled <- true
             | UseFullyQualifiedIdForName ->
                 useFullyQualifiedIdForName <- true
         let maxWidth = parentWidth * float32 colspan
@@ -825,6 +832,8 @@ module Logic =
             OnChange = onChange
             ConsumedMouseButtons = consumedButtons |> Seq.distinct |> Seq.toArray
             ConsumedKeys = consumedKeys |> Seq.distinct |> Seq.toArray
+
+            KeyTypedEnabled = keyTypedEnabled
 
             Layout = layout
             ColSpan = colspan

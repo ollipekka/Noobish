@@ -603,6 +603,19 @@ module NoobishMonoGame =
 
         ui.State.TempState.Clear()
 
+    let keyTyped (ui: NoobishUI) (typed: string) =
+        ui.State.TempState.Clear()
+        for kvp in ui.State.State do
+            ui.State.TempState.Add(kvp.Key, kvp.Value)
+        let mutable i = 0
+        let mutable handled = false
+
+        while not handled && i >= 0 do
+            handled <- Noobish.Input.keyTyped ui.Version ui.State.TempState ui.Layers.[i] typed
+            i <- i - 1
+
+        ui.State.TempState.Clear()
+
     let updateMobile (ui: NoobishUI) (_prevState: TouchCollection) (curState: TouchCollection) (gameTime: GameTime) =
 
         for kvp in ui.State.State do

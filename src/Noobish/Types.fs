@@ -99,6 +99,8 @@ module Internal =
         mutable ScrollX: float32
         mutable ScrollY: float32
 
+        mutable Text: string
+
         Version: Guid
         KeyboardShortcut: NoobishKeyId
 

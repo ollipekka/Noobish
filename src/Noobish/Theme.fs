@@ -115,6 +115,36 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 ScrollBarThickness = 2
                 ScrollPinThickness = 2
             }
+            "TextBox", {
+                TextFont = defaultFont
+                TextColor = textColor
+                TextColorDisabled = textColorDisabled
+                TextAlignment = NoobishTextAlign.Left
+
+                Width = 0
+                Height = 0
+
+                TextureColor = textureColor
+                TextureColorDisabled = textureColorDisabled
+
+                BorderSize = 1
+                BorderColor = 0xFFFFFFFF
+                BorderColorDisabled = 0xCCCCCCFF
+
+                Color = 0x00000000
+                ColorDisabled = 0x00000000
+
+                PressedColor = 0x00000000
+                HoverColor = 0x00000000
+
+                Padding = (0, 0, 0, 0)
+                Margin =  (5, 5, 2, 2)
+
+                ScrollBarColor = 0x00000000
+                ScrollPinColor = 0x00000000
+                ScrollBarThickness = 2
+                ScrollPinThickness = 2
+            }
             "Paragraph", {
                 TextFont = defaultFont
                 TextColor = textColor

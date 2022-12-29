@@ -37,6 +37,7 @@ let rec press
 
         i <- i + 1
     handled
+
 let rec click
     (version: Guid)
     (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
@@ -63,6 +64,41 @@ let rec click
             if not handledByChild then
 
                 cs.PressedTime <- time
+
+                c.OnClickInternal()
+
+                handled <- true
+            else
+                handled <- true
+
+
+
+        i <- i + 1
+    handled
+
+let rec keyTyped
+    (version: Guid)
+    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (elements: NoobishLayoutElement[])
+    (typed: string) =
+
+    let mutable handled = false
+    let mutable i = 0
+
+    while not handled && i < elements.Length do
+        let c = elements.[i]
+        let cs = state.[c.Id]
+        if cs.Version = version && c.Enabled && cs.Visible && c.KeyTypedEnabled then
+
+            let handledByChild =
+                if c.Children.Length > 0 then
+                    keyTyped version state c.Children typed
+                else
+                    false
+
+            if not handledByChild then
+
+                cs.Text <- typed
 
                 c.OnClickInternal()
 
