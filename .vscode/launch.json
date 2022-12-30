@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             //"preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/Noobish.MonoGame.Demo/bin/Debug/net5.0/Noobish.MonoGame.Demo.dll",
+            "program": "${workspaceFolder}/src/Noobish.MonoGame.Demo/bin/Debug/net6.0/Noobish.MonoGame.Demo.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,

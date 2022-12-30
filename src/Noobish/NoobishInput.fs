@@ -7,7 +7,7 @@ open Noobish.Internal
 
 let rec press
     (version: Guid)
-    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (state: NoobishState)
     (elements: NoobishLayoutElement[])
     (time: TimeSpan)
     (positionX: float32)
@@ -19,7 +19,7 @@ let rec press
 
     while not handled && i < elements.Length do
         let c = elements.[i]
-        let cs = state.[c.Id]
+        let cs = state.ElementsById.[c.Id]
         if cs.Version = version && c.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
                 if c.Children.Length > 0 then
@@ -27,10 +27,14 @@ let rec press
                 else
                     false
             if not handledByChild then
-                let cs = state.[c.Id]
+                let cs = state.ElementsById.[c.Id]
                 cs.PressedTime <- time
                 handled <- true
-                c.OnPressInternal (struct(int positionX, int positionY)) c
+
+                if c.CanFocus && not cs.Focused then 
+                    cs.Focused <- true 
+                else 
+                    c.OnPressInternal (struct(int positionX, int positionY)) c
 
             else
                 handled <- true
@@ -40,7 +44,7 @@ let rec press
 
 let rec click
     (version: Guid)
-    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (state: NoobishState)
     (elements: NoobishLayoutElement[])
     (time: TimeSpan)
     (positionX: float32)
@@ -53,7 +57,7 @@ let rec click
 
     while not handled && i < elements.Length do
         let c = elements.[i]
-        let cs = state.[c.Id]
+        let cs = state.ElementsById.[c.Id]
         if cs.Version = version && c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
@@ -65,7 +69,7 @@ let rec click
 
                 cs.PressedTime <- time
 
-                c.OnClickInternal()
+                c.OnClickInternal c
 
                 handled <- true
             else
@@ -100,7 +104,7 @@ let rec keyTyped
 
                 cs.Text <- typed
 
-                c.OnClickInternal()
+                c.OnClickInternal c
 
                 handled <- true
             else

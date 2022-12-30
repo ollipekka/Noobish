@@ -36,12 +36,15 @@ type NoobishTextureEffect =
 
 type NoobishLayoutElement = {
     Id: string
+    ParentId: string
+    
     Path: string
-    Name: string
+    
     ThemeId: string
     Enabled: bool
     Visible: bool
     Toggled: bool
+    CanFocus: bool
     ZIndex: int
     Overlay: bool
 
@@ -95,7 +98,7 @@ type NoobishLayoutElement = {
     ConsumedMouseButtons: NoobishMouseButtonId[]
     ConsumedKeys: NoobishKeyId[]
     KeyTypedEnabled: bool
-    OnClickInternal: unit -> unit
+    OnClickInternal: NoobishLayoutElement -> unit
     OnPressInternal: struct(int*int) -> NoobishLayoutElement -> unit
     OnChange: string -> unit
 
@@ -152,6 +155,7 @@ type NoobishLayoutElement = {
         not (x < startX || x > endX || y < startY || y > endY)
 
 type NoobishAttribute =
+
     | Name of string
     | Padding of left: int * right: int * top: int * bottom: int
     | PaddingLeft of int
@@ -185,8 +189,8 @@ type NoobishAttribute =
     | FillVertical
 
     | OnClick of (unit -> unit)
-    | OnClickInternal of ((string -> ComponentMessage -> unit) -> unit)
-    | OnPress of (struct(int*int) -> unit)
+    | OnClickInternal of ((string -> ComponentMessage -> unit) -> NoobishLayoutElement -> unit)
+    | OnPress of (struct(int*int) -> unit) 
     | OnPressInternal of ((string -> ComponentMessage -> unit) -> struct(int*int) -> NoobishLayoutElement -> unit)
     | OnChange of (string -> unit)
     | Toggled of bool
@@ -358,7 +362,7 @@ let slider attributes =
                 Slider{s' with Value = steppedNewValue}
             | Combobox _ -> m
 
-        dispatch c.Name (ChangeModel changeModel)
+        dispatch c.Id (ChangeModel changeModel)
     {ThemeId = "Slider"; Children = []; Attributes = attributes @ [UseFullyQualifiedIdForName; sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
 
 
@@ -370,14 +374,6 @@ let combobox children attributes =
             onChange <- onChange'
         | _ -> ()
 
-    let name = children |> List.fold (fun acc c' ->
-        let mutable text = ""
-        for a in c'.Attributes do
-            match a with
-            | Text (text') ->
-                text <- text'
-            | _ -> ()
-        (sprintf "%s-%s" acc text)) "combobox-panel"
 
     let children' = children |> List.map(fun c' ->
         let mutable text = ""
@@ -388,17 +384,18 @@ let combobox children attributes =
             | _ -> ()
 
         let onClick = OnClickInternal (
-            fun (dispatch) ->
-                dispatch name Hide
+            fun dispatch c ->
+                dispatch c.ParentId Hide
                 onChange (text)
             )
         {c' with Attributes = onClick :: c'.Attributes}
     )
 
-    let dropdown = panel children' [ Name(name); hidden; ZIndex(10 * 255); Overlay; Margin(0,0,0,0);]
+    let dropdown = panel children' [ hidden; ZIndex(10 * 255); Overlay; Margin(0,0,0,0);]
 
-    let onClickInternal = OnClickInternal(fun dispatch ->
-        dispatch name ToggleVisibility
+    let onClickInternal: NoobishAttribute = OnClickInternal(fun dispatch c ->
+        for child in c.Children do
+            dispatch child.Id ToggleVisibility
     )
 
     {ThemeId = "Combobox"; Children = [dropdown]; Attributes = Layout(NoobishLayout.OverlaySource) :: onClickInternal :: attributes}
@@ -466,8 +463,9 @@ module Logic =
     let createNoobishLayoutElementState (version: Guid) (c: NoobishLayoutElement) =
         {
             Id = c.Id
-            Name = c.Name
+            ParentId = c.ParentId
             Visible = c.Visible
+            Focused = false
             Toggled = false
             PressedTime = TimeSpan.Zero
             ScrolledTime = TimeSpan.Zero
@@ -479,9 +477,11 @@ module Logic =
             Version = version
             Model = c.Model
             Text = ""
+
+            Children = c.Children |> Array.map(fun child -> child.Id)
         }
 
-    let private createNoobishLayoutElement (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
+    let private createNoobishLayoutElement (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentId: string) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
 
         let scale (v: int) = float32 v * settings.Scale
         let scaleTuple (left, right, top, bottom) =
@@ -491,6 +491,7 @@ module Logic =
         let mutable name = ""
         let mutable enabled = true
         let mutable visible = true
+        let mutable canFocus = false
         let mutable toggled = false
         let mutable zIndex = zIndex
         let mutable overlay = false
@@ -512,7 +513,7 @@ module Logic =
 
         let mutable isBlock = false
         let mutable onClick: unit -> unit = ignore
-        let mutable onClickInternal: (string -> ComponentMessage -> unit) -> unit = ignore
+        let mutable onClickInternal: (string -> ComponentMessage -> unit) -> NoobishLayoutElement -> unit = (fun _ _ -> ())
         let mutable consumedButtons = ResizeArray<NoobishMouseButtonId>()
         let mutable consumedKeys = ResizeArray<NoobishKeyId>()
         let mutable keyTypedEnabled = false
@@ -722,6 +723,7 @@ module Logic =
                 keyboardShortcut <- k
                 consumedKeys.Add k
             | KeyTypedEnabled ->
+                canFocus <- true
                 keyTypedEnabled <- true
             | UseFullyQualifiedIdForName ->
                 useFullyQualifiedIdForName <- true
@@ -762,13 +764,14 @@ module Logic =
         let path = sprintf "%s/%s" parentPath themeId
 
         {
-            Id = cid
+            Id = (sprintf "%s/%s" path cid)
+            ParentId = parentId
             Path = path
-            Name = if String.IsNullOrEmpty name && useFullyQualifiedIdForName then (sprintf "%s/%s" path cid) else name
             ThemeId = themeId
             Enabled = enabled
             Visible = visible
             Toggled = toggled
+            CanFocus = canFocus
             ZIndex = zIndex
             Overlay = overlay
 
@@ -821,8 +824,8 @@ module Logic =
             MarginTop = marginTop
             MarginBottom = marginBottom
 
-            OnClickInternal = (fun _ ->
-                onClickInternal(mutateState)
+            OnClickInternal = (fun c ->
+                onClickInternal(mutateState) c
                 onClick())
 
             OnPressInternal = (fun mousePos c ->
@@ -873,6 +876,7 @@ module Logic =
         (settings: NoobishSettings)
         (mutateState: string -> ComponentMessage -> unit)
         (zIndex: int)
+        (parentId: string)
         (parentPath: string)
         (startX: float32)
         (startY: float32)
@@ -880,7 +884,7 @@ module Logic =
         (parentHeight: float32)
         (c: NoobishElement): NoobishLayoutElement  =
 
-        let parentComponent = createNoobishLayoutElement theme measureText settings mutateState zIndex parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
+        let parentComponent = createNoobishLayoutElement theme measureText settings mutateState zIndex parentId parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -919,7 +923,7 @@ module Logic =
 
 
                 let path = sprintf "%s:%i" parentComponent.Path i
-                let childComponent = layoutElement measureText theme settings mutateState zIndex path childStartX childStartY childWidth childHeight child
+                let childComponent = layoutElement measureText theme settings mutateState zIndex parentComponent.Id path childStartX childStartY childWidth childHeight child
 
                 newChildren.Add(childComponent)
 
@@ -976,7 +980,7 @@ module Logic =
                 let childStartX = floor (parentBounds.X + (float32 col) * (colWidth))
                 let childStartY = floor (parentBounds.Y + (float32 row) * (rowHeight))
                 let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
-                let childComponent = layoutElement measureText theme settings mutateState (zIndex + 1) path childStartX childStartY colWidth rowHeight child
+                let childComponent = layoutElement measureText theme settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY colWidth rowHeight child
 
                 newChildren.Add({
                     childComponent with
@@ -1000,7 +1004,7 @@ module Logic =
             if c.Children.Length <> 1 then failwith "Can only pop open one at a time."
 
             let path = sprintf "%s:overlay" parentComponent.Path
-            let childComponent = layoutElement measureText theme settings mutateState  (zIndex + 1) path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
+            let childComponent = layoutElement measureText theme settings mutateState  (zIndex + 1) parentComponent.Id path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
 
             {parentComponent with Children = [|childComponent|]}
         | NoobishLayout.Absolute ->
@@ -1014,7 +1018,7 @@ module Logic =
                 let childHeight = parentBounds.Height
 
                 let path = sprintf "%s:absolute(%g,%g)" parentComponent.Path childStartX childStartY
-                let childComponent = layoutElement measureText theme settings mutateState (zIndex + 1) path childStartX childStartY childWidth childHeight child
+                let childComponent = layoutElement measureText theme settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight child
                 newChildren.Add({ childComponent with StartX = childComponent.StartX; StartY = childComponent.StartY })
 
             {parentComponent with Children = newChildren.ToArray()}
@@ -1027,7 +1031,7 @@ module Logic =
         let path = sprintf "layer-%i" layer
         elements
             |> List.map(fun c ->
-                layoutElement measureText theme settings mutateState (layer * 128) path 0.0f 0.0f width height c
+                layoutElement measureText theme settings mutateState (layer * 128) "" path 0.0f 0.0f width height c
             ) |> List.toArray
 
 

@@ -261,8 +261,13 @@ module Buttons =
                                 option "Value 3"
                             ]
                             [
-                                text model.ComboboxValue; onChange (fun v -> dispatch (ComboboxValueChanged v))
+                                text model.ComboboxValue; 
+                                onChange (fun v -> dispatch (ComboboxValueChanged v))
+                                block;
                             ]
+                        textBox [
+                            text "Please insert coin"
+                        ]
                     ]
                     [
 

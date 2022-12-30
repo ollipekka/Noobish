@@ -88,11 +88,7 @@ module NoobishMonoGame =
             Theme = Theme.createDefaultTheme settings.FontSettings
             Settings = settings
             Components = Dictionary()
-            State = {
-                State = Dictionary()
-                StateByName = Dictionary()
-                TempState = Dictionary()
-            }
+            State = NoobishState()
             Debug = false
             Version = Guid.NewGuid()
             Layers = [||]
@@ -541,18 +537,18 @@ module NoobishMonoGame =
         let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
         for layer in ui.Layers do
             layer |> Array.iter(fun e ->
-                let es = ui.State.State.[e.Id]
+                let es = ui.State.ElementsById.[e.Id]
                 if es.Visible then
-                    drawComponent ui.State.State content ui.Settings graphics spriteBatch ui.Debug time e 0.0f 0.0f source
+                    drawComponent ui.State.ElementsById content ui.Settings graphics spriteBatch ui.Debug time e 0.0f 0.0f source
             )
 
         if ui.Debug || ui.FPSEnabled then
             drawFps content spriteBatch ui time
 
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
-        ui.State.TempState.Clear()
-        for kvp in ui.State.State do
-            ui.State.TempState.Add(kvp.Key, kvp.Value)
+        ui.State.TempElements.Clear()
+        for kvp in ui.State.ElementsById do
+            ui.State.TempElements.Add(kvp.Key, kvp.Value)
 
         let mousePosition = curState.Position
 
@@ -560,13 +556,13 @@ module NoobishMonoGame =
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                handled <- Noobish.Input.press ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                handled <- Noobish.Input.press ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                handled <- Noobish.Input.click ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                handled <- Noobish.Input.click ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
@@ -580,14 +576,14 @@ module NoobishMonoGame =
 
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
             for layer in ui.Layers do
-                Noobish.Input.scroll ui.Version ui.State.TempState layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
+                Noobish.Input.scroll ui.Version ui.State.TempElements layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
     let updateKeyboard (ui: NoobishUI)  (previous: KeyboardState) (current: KeyboardState) (_gameTime: GameTime) =
-        ui.State.TempState.Clear()
-        for kvp in ui.State.State do
-            ui.State.TempState.Add(kvp.Key, kvp.Value)
+        ui.State.TempElements.Clear()
+        for kvp in ui.State.ElementsById do
+            ui.State.TempElements.Add(kvp.Key, kvp.Value)
 
-        for kvp in ui.State.TempState do
+        for kvp in ui.State.TempElements do
             let noobishKey = kvp.Value.KeyboardShortcut
             if noobishKey <> NoobishKeyId.None then
                 let key =
@@ -599,27 +595,27 @@ module NoobishMonoGame =
 
                 let c = ui.Components.[kvp.Key]
                 if kvp.Value.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
-                    c.OnClickInternal()
-
-        ui.State.TempState.Clear()
+                    c.OnClickInternal c
+                    
+        ui.State.TempElements.Clear()
 
     let keyTyped (ui: NoobishUI) (typed: string) =
-        ui.State.TempState.Clear()
-        for kvp in ui.State.State do
-            ui.State.TempState.Add(kvp.Key, kvp.Value)
+        ui.State.TempElements.Clear()
+        for kvp in ui.State.ElementsById do
+            ui.State.TempElements.Add(kvp.Key, kvp.Value)
         let mutable i = 0
         let mutable handled = false
 
         while not handled && i >= 0 do
-            handled <- Noobish.Input.keyTyped ui.Version ui.State.TempState ui.Layers.[i] typed
+            handled <- Noobish.Input.keyTyped ui.Version ui.State.TempElements ui.Layers.[i] typed
             i <- i - 1
 
-        ui.State.TempState.Clear()
+        ui.State.TempElements.Clear()
 
     let updateMobile (ui: NoobishUI) (_prevState: TouchCollection) (curState: TouchCollection) (gameTime: GameTime) =
 
-        for kvp in ui.State.State do
-            ui.State.TempState.Add(kvp.Key, kvp.Value)
+        for kvp in ui.State.ElementsById do
+            ui.State.TempElements.Add(kvp.Key, kvp.Value)
 
         for touch in curState  do
             match touch.State with
@@ -628,7 +624,7 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Noobish.Input.press ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- Noobish.Input.press ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
 
                     i <- i - 1
             | TouchLocationState.Released ->
@@ -636,11 +632,11 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Noobish.Input.click ui.Version ui.State.TempState ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- Noobish.Input.click ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
                     i <- i - 1
             | _ -> ()
 
-        ui.State.TempState.Clear()
+        ui.State.TempElements.Clear()
 
 module Program =
     let rec private getElements (elements: Dictionary<string, NoobishLayoutElement>) (overlays: ResizeArray<NoobishLayoutElement>) (e: NoobishLayoutElement) =
@@ -662,10 +658,6 @@ module Program =
 
             ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.MeasureText ui.Theme ui.Settings ui.State.Update (i + 1) width height components) |> List.toArray
 
-            ui.State.TempState.Clear()
-            for kvp in ui.State.State do
-                ui.State.State[kvp.Key] <- kvp.Value
-            ui.State.State.Clear()
 
             ui.Components.Clear()
 
@@ -678,16 +670,12 @@ module Program =
             ui.Layers <- Array.concat [ui.Layers; [| overlays.ToArray() |]]
 
             for kvp in ui.Components do
-                let (success, value) = ui.State.State.TryGetValue kvp.Key
+                let (success, value) = ui.State.ElementsById.TryGetValue kvp.Key
                 if success then
-                    ui.State.State.[kvp.Key] <- {value with Version = ui.Version; Model = kvp.Value.Model }
+                    ui.State.ElementsById.[kvp.Key] <- {value with Version = ui.Version; Model = kvp.Value.Model }
                 else
-                    ui.State.State.[kvp.Key] <- Logic.createNoobishLayoutElementState ui.Version kvp.Value
+                    ui.State.ElementsById.[kvp.Key] <- Logic.createNoobishLayoutElementState ui.Version kvp.Value
 
-            ui.State.StateByName.Clear()
-            for c in ui.State.State.Values do
-                if c.Name <> "" then
-                    ui.State.StateByName.[c.Name] <- c
 
         program
             |> Program.withSetState setState

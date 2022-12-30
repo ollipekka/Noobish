@@ -90,7 +90,8 @@ module Internal =
 
     type NoobishLayoutElementState = {
         Id: string
-        Name: string
+        ParentId: string
+        mutable Focused: bool
         mutable Toggled: bool
         mutable Visible: bool
         mutable PressedTime: TimeSpan
@@ -105,22 +106,22 @@ module Internal =
         KeyboardShortcut: NoobishKeyId
 
         Model: option<NoobishComponentModel>
+
+        Children: string[]
     }
 
     type NoobishId = | NoobishId of string
 
-    type NoobishState = {
-        State: Dictionary<string, NoobishLayoutElementState>
-        StateByName: Dictionary<string, NoobishLayoutElementState>
-        TempState: Dictionary<string, NoobishLayoutElementState>
-    } with
+    type NoobishState () =
+        member val ElementsById = Dictionary<string, NoobishLayoutElementState>()
+        member val TempElements = Dictionary<string, NoobishLayoutElementState>()
+        member val FocusedElementId: Option<string> = None with get, set
 
-        member private s.UpdateState (name: string) (state: NoobishLayoutElementState) =
-            s.State.[state.Id] <- state
-            s.StateByName.[name] <- state
+        member private s.UpdateState (state: NoobishLayoutElementState) =
+            s.ElementsById.[state.Id] <- state
 
-        member s.Update (name: string) (message:ComponentMessage) =
-            let (success, cs) = s.StateByName.TryGetValue(name)
+        member s.Update (cid: string) (message:ComponentMessage) =
+            let (success, cs) = s.ElementsById.TryGetValue(cid)
             if success then
                 match message with
                 | Show ->
@@ -136,10 +137,11 @@ module Internal =
                 | ChangeModel(cb) ->
                     cs.Model |> Option.iter (fun model ->
                         let model' = cb model
-                        let cs = s.State.[cs.Id]
-                        s.UpdateState name {cs with Model = Some(model') })
+                        let cs: NoobishLayoutElementState = s.ElementsById.[cid]
+                        s.UpdateState {cs with Model = Some(model') })
 
-
+        member s.SetFocus(id: string) = 
+            s.FocusedElementId <- Some(id)
 
     let pi = float32 System.Math.PI
     let clamp n minVal maxVal = max (min n maxVal) minVal
