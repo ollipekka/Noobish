@@ -604,6 +604,29 @@ module NoobishMonoGame =
 
     let updateKeyboard (ui: NoobishUI)  (previous: KeyboardState) (current: KeyboardState) (_gameTime: GameTime) =
         ui.State.TempElements.Clear()
+
+        if ui.State.FocusedElementId.IsSome then
+            let cursorDelta =
+                if not (current.IsKeyDown Keys.Left) && previous.IsKeyDown Keys.Left then
+                    -1
+                elif not (current.IsKeyDown Keys.Right) && previous.IsKeyDown Keys.Right then
+                    1
+                else
+                    0
+
+            let cs = ui.State.ElementsById.[ui.State.FocusedElementId.Value]
+            let model' =
+                cs.Model
+                |> Option.map(fun model' ->
+                    match model' with
+                    | Textbox (model'') ->
+                        let cursorPos = clamp (model''.Cursor + cursorDelta) 0 model''.Text.Length
+                        Textbox({model'' with Cursor = cursorPos})
+                    | _ -> model'
+                )
+            ui.State.ElementsById.[ui.State.FocusedElementId.Value] <- {cs with Model = model'}
+
+
         for kvp in ui.State.ElementsById do
             ui.State.TempElements.Add(kvp.Key, kvp.Value)
 

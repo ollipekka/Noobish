@@ -42,7 +42,6 @@ type NoobishLayoutElement = {
     Enabled: bool
     Visible: bool
     Toggled: bool
-    CanFocus: bool
     ZIndex: int
     Overlay: bool
 
@@ -152,6 +151,8 @@ type NoobishLayoutElement = {
         let startY = l.Y + l.MarginTop + scrollY
         let endY = startY + l.Height
         not (x < startX || x > endX || y < startY || y > endY)
+
+
 
 type NoobishAttribute =
 
@@ -490,7 +491,6 @@ module Logic =
         let mutable name = ""
         let mutable enabled = true
         let mutable visible = true
-        let mutable canFocus = false
         let mutable toggled = false
         let mutable zIndex = zIndex
         let mutable overlay = false
@@ -723,7 +723,6 @@ module Logic =
                 keyboardShortcut <- k
                 consumedKeys.Add k
             | KeyTypedEnabled ->
-                canFocus <- true
                 keyTypedEnabled <- true
                 model <- Some(Textbox{ Text = ""; Cursor = 0})
 
@@ -774,7 +773,6 @@ module Logic =
             Enabled = enabled
             Visible = visible
             Toggled = toggled
-            CanFocus = canFocus
             ZIndex = zIndex
             Overlay = overlay
 

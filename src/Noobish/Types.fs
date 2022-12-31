@@ -112,7 +112,14 @@ module Internal =
         Model: option<NoobishComponentModel>
 
         Children: string[]
-    }
+    } with
+        member s.CanFocus with get() =
+            match s.Model with
+            | Some(model') ->
+                match model' with
+                | Textbox (_) -> true
+                | _ -> false
+            | None -> false
 
     type NoobishId = | NoobishId of string
 
