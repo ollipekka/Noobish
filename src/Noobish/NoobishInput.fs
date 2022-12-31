@@ -31,10 +31,7 @@ let rec press
                 cs.PressedTime <- time
                 handled <- true
 
-                if c.CanFocus && not cs.Focused then 
-                    cs.Focused <- true 
-                else 
-                    c.OnPressInternal (struct(int positionX, int positionY)) c
+                c.OnPressInternal (struct(int positionX, int positionY)) c
 
             else
                 handled <- true
@@ -69,7 +66,11 @@ let rec click
 
                 cs.PressedTime <- time
 
-                c.OnClickInternal c
+
+                if c.CanFocus && not cs.Focused then
+                    state.SetFocus cs.Id
+                else
+                    c.OnClickInternal c
 
                 handled <- true
             else
@@ -82,39 +83,30 @@ let rec click
 
 let rec keyTyped
     (version: Guid)
-    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (state: NoobishState)
     (elements: NoobishLayoutElement[])
     (typed: string) =
 
     let mutable handled = false
-    let mutable i = 0
+    state.FocusedElementId
+        |> Option.iter(fun focusedElementId ->
+            let cs = state.ElementsById.[focusedElementId]
 
-    while not handled && i < elements.Length do
-        let c = elements.[i]
-        let cs = state.[c.Id]
-        if cs.Version = version && c.Enabled && cs.Visible && c.KeyTypedEnabled then
+            if cs.Model.IsNone then failwith "Element is not a text box."
 
-            let handledByChild =
-                if c.Children.Length > 0 then
-                    keyTyped version state c.Children typed
-                else
-                    false
+            let model' = cs.Model |> Option.map (
+                fun model' ->
+                    match model' with
+                    | Textbox model' ->
+                        Textbox {model' with Text = model'.Text.Insert(model'.Cursor, typed); Cursor = model'.Cursor + 1}
+                    | _ -> failwith "Element is not a text box."
+            )
 
-            if not handledByChild then
+            state.ElementsById.[focusedElementId] <- {cs with Model = model'}
+            handled <- true
+        )
 
-                cs.Text <- typed
-
-                c.OnClickInternal c
-
-                handled <- true
-            else
-                handled <- true
-
-
-
-        i <- i + 1
     handled
-
 let rec scroll
     (version: Guid)
     (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)

@@ -7,6 +7,7 @@ type NoobishElementStyle = {
     TextFont: string
     TextColor: int
     TextColorDisabled: int
+    TextColorFocused: int
     TextAlignment: NoobishTextAlign
 
     Width: int
@@ -14,15 +15,18 @@ type NoobishElementStyle = {
 
     TextureColor: int
     TextureColorDisabled: int
+    TextureColorFocused: int
 
     BorderSize: int
     BorderColor: int
     BorderColorDisabled: int
+    BorderColorFocused: int
 
     Color: int
     PressedColor: int
     HoverColor: int
     ColorDisabled: int
+    ColorFocused: int
 
     Padding: int*int*int*int
     Margin: int*int*int*int
@@ -43,6 +47,7 @@ let empty defaultFont =
         TextFont = defaultFont
         TextColor = 0x00000000
         TextColorDisabled = 0x00000000
+        TextColorFocused = 0x00000000
         TextAlignment = NoobishTextAlign.Left
 
         Width = 0
@@ -50,13 +55,16 @@ let empty defaultFont =
 
         TextureColor = 0x00000000
         TextureColorDisabled = 0x00000000
+        TextureColorFocused = 0x00000000
 
         BorderSize = 0
         BorderColor = 0x00000000
         BorderColorDisabled = 0x00000000
+        BorderColorFocused = 0x00000000
 
         Color = 0x00000000
         ColorDisabled = 0x00000000
+        ColorFocused = 0x00000000
 
         PressedColor = 0x00000000
         HoverColor = 0x00000000
@@ -89,6 +97,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 TextFont = defaultFont
                 TextColor = textColor
                 TextColorDisabled = textColorDisabled
+                TextColorFocused = 0x00000000
                 TextAlignment = NoobishTextAlign.Left
 
                 Width = 0
@@ -96,13 +105,16 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
 
                 TextureColor = textureColor
                 TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = 0x00000000
 
                 BorderSize = 0
                 BorderColor = 0x00000000
                 BorderColorDisabled = 0x00000000
+                BorderColorFocused = 0x00000000
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000
+                ColorFocused = 0x000000
 
                 PressedColor = 0x00000000
                 HoverColor = 0x00000000
@@ -119,6 +131,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 TextFont = defaultFont
                 TextColor = textColor
                 TextColorDisabled = textColorDisabled
+                TextColorFocused = textColor
                 TextAlignment = NoobishTextAlign.Left
 
                 Width = 0
@@ -126,19 +139,22 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
 
                 TextureColor = textureColor
                 TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = 0x00000000
 
-                BorderSize = 1
-                BorderColor = 0xFFFFFFFF
-                BorderColorDisabled = 0xCCCCCCFF
+                BorderSize = 2
+                BorderColor = borderColor
+                BorderColorDisabled = borderColorDisabled
+                BorderColorFocused = 0xFF0000FF
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000
+                ColorFocused = 0x00000000
 
                 PressedColor = 0x00000000
                 HoverColor = 0x00000000
 
-                Padding = (0, 0, 0, 0)
-                Margin =  (5, 5, 2, 2)
+                Padding = (5, 5, 5, 5)
+                Margin =  (2, 2, 2, 2)
 
                 ScrollBarColor = 0x00000000
                 ScrollPinColor = 0x00000000
@@ -149,6 +165,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 TextFont = defaultFont
                 TextColor = textColor
                 TextColorDisabled = textColorDisabled
+                TextColorFocused = textColor
                 TextAlignment = NoobishTextAlign.TopLeft
 
 
@@ -157,13 +174,16 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
 
                 TextureColor = textureColor
                 TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = textureColor
 
                 BorderSize = 0
                 BorderColor = 0x00000000
                 BorderColorDisabled = 0x00000000
+                BorderColorFocused = 0x00000000
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000
+                ColorFocused = 0x00000000
 
                 PressedColor = 0x00000000
                 HoverColor = 0x00000000
@@ -180,6 +200,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 TextFont = defaultFont
                 TextColor = textColor
                 TextColorDisabled = textColorDisabled
+                TextColorFocused = textColor
                 TextAlignment = NoobishTextAlign.Left
 
                 Width = 0
@@ -187,13 +208,16 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
 
                 TextureColor = textureColor
                 TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = textureColor
 
                 BorderSize = 0
                 BorderColor = 0x00000000
                 BorderColorDisabled = 0x00000000
+                BorderColorFocused = 0x00000000
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000
+                ColorFocused = 0x00000000
 
                 PressedColor = 0x00000000
                 HoverColor = 0x00000000
@@ -210,6 +234,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 TextFont = defaultFont
                 TextColor = textColor
                 TextColorDisabled = textColorDisabled
+                TextColorFocused = textColor
                 TextAlignment = NoobishTextAlign.Center
 
                 Width = 0
@@ -217,13 +242,16 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
 
                 TextureColor = textureColor
                 TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = textureColor
 
                 BorderSize = 2
                 BorderColor = borderColor
                 BorderColorDisabled = borderColorDisabled
+                BorderColorFocused = borderColorDisabled
 
                 Color = backgroundColor
                 ColorDisabled = backgroundDisabled
+                ColorFocused= backgroundColor
 
                 PressedColor = backgroundColorLight
                 HoverColor = backgroundColorLight
@@ -240,6 +268,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 TextFont = defaultFont
                 TextColor = textColor
                 TextColorDisabled = textColorDisabled
+                TextColorFocused = textColorDisabled
                 TextAlignment = NoobishTextAlign.Center
 
                 Width = 0
@@ -247,13 +276,16 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
 
                 TextureColor = textureColor
                 TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = textureColor
 
                 BorderSize = 2
                 BorderColor = borderColor
                 BorderColorDisabled = borderColorDisabled
+                BorderColorFocused = borderColorDisabled
 
                 Color = backgroundColor
                 ColorDisabled = backgroundDisabled
+                ColorFocused = backgroundColor
 
                 PressedColor = backgroundColorLight
                 HoverColor = backgroundColorLight
@@ -270,6 +302,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 TextFont = defaultFont
                 TextColor = 0xffffffff
                 TextColorDisabled = 0x00000000
+                TextColorFocused = 0x00000000
                 TextAlignment = NoobishTextAlign.Center
 
                 Width = 0
@@ -277,13 +310,16 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
 
                 TextureColor = textureColor
                 TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = textureColor
 
                 BorderSize = 2
                 BorderColor = borderColor
                 BorderColorDisabled = borderColorDisabled
+                BorderColorFocused = borderColorDisabled
 
                 Color = backgroundColorDark
                 ColorDisabled = backgroundColorDark
+                ColorFocused = backgroundColorDark
 
                 PressedColor = backgroundColorDark
                 HoverColor = backgroundColorDark
@@ -298,22 +334,26 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
             }
             "Division", {
                 TextFont = defaultFont
-                TextColor = 0xffffffff
+                TextColor = textColor
+                TextColorDisabled = textColorDisabled
+                TextColorFocused = textColor
                 TextAlignment = NoobishTextAlign.Center
-                TextColorDisabled = 0x00000000
 
                 Width = 0
                 Height = 0
 
-                TextureColor = 0x00000000
-                TextureColorDisabled = 0x00000000
+                TextureColor = textureColor
+                TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = textureColor
 
                 BorderSize = 0
                 BorderColor = 0x00000000
                 BorderColorDisabled = 0x00000000
+                BorderColorFocused = 0x00000000
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000
+                ColorFocused = 0x00000000
 
                 PressedColor = 0x00000000
                 HoverColor = 0x00000000
@@ -328,22 +368,27 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
             }
             "HorizontalRule", {
                 TextFont = defaultFont
-                TextColor = 0x00000000
+                TextColor = textColor
+                TextColorDisabled = textColorDisabled
+                TextColorFocused = textColor
                 TextAlignment = NoobishTextAlign.Center
-                TextColorDisabled = 0x00000000
 
                 Width = 0
                 Height = 3
 
                 TextureColor = textureColor
                 TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = textureColor
 
                 BorderSize = 0
                 BorderColor = 0x00000000
                 BorderColorDisabled = borderColorDisabled
+                BorderColorFocused = borderColorDisabled
 
                 Color = borderColor
                 ColorDisabled = borderColorDisabled
+                ColorFocused = borderColor
+
 
                 PressedColor = 0xccaaaaff
                 HoverColor = 0xccaaaaff
@@ -358,22 +403,26 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
             }
             "Image", {
                 TextFont = defaultFont
-                TextColor = 0x00000000
+                TextColor = textColor
+                TextColorDisabled = textColorDisabled
+                TextColorFocused = textColor
                 TextAlignment = NoobishTextAlign.Center
-                TextColorDisabled = 0x00000000
 
                 Width = 0
                 Height = 0
 
                 TextureColor = textureColor
                 TextureColorDisabled = textureColorDisabled
+                TextureColorFocused = textureColor
 
                 BorderSize = 0
                 BorderColor = 0x00000000
                 BorderColorDisabled = 0x00000000
+                BorderColorFocused = 0x00000000
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000
+                ColorFocused = 0x00000000
 
                 PressedColor = 0x00000000
                 HoverColor = 0x00000000
@@ -388,22 +437,26 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
             }
             "Scroll", {
                 TextFont = defaultFont
-                TextColor = 0xffffffff
+                TextColor = textColor
+                TextColorDisabled = textColorDisabled
+                TextColorFocused = textColor
                 TextAlignment = NoobishTextAlign.Center
-                TextColorDisabled = 0x00000000
 
                 Width = 0
                 Height = 0
 
                 TextureColor = 0x00000000
                 TextureColorDisabled = 0x00000000
+                TextureColorFocused = 0x00000000
 
                 BorderSize = 0
                 BorderColor = 0x00000000
                 BorderColorDisabled = 0x00000000
+                BorderColorFocused = 0x00000000
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000
+                ColorFocused = 0x00000000
 
                 PressedColor = 0x00000000
                 HoverColor = 0x00000000
@@ -418,22 +471,26 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
             }
             "Slider", {
                 TextFont = defaultFont
-                TextColor = 0xffffffff
+                TextColor = textColor
+                TextColorDisabled = textColorDisabled
+                TextColorFocused = textColor
                 TextAlignment = NoobishTextAlign.Center
-                TextColorDisabled = 0x00000000
 
                 Width = 0
                 Height = 0
 
                 TextureColor = 0x00000000
                 TextureColorDisabled = 0x00000000
+                TextureColorFocused = 0x00000000
 
                 BorderSize = 0
                 BorderColor = 0x00000000
                 BorderColorDisabled = 0x00000000
+                BorderColorFocused = 0x00000000
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000
+                ColorFocused = 0x00000000
 
                 PressedColor = 0x00000000
                 HoverColor = 0x00000000

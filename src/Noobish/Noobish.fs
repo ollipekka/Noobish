@@ -37,9 +37,7 @@ type NoobishTextureEffect =
 type NoobishLayoutElement = {
     Id: string
     ParentId: string
-    
     Path: string
-    
     ThemeId: string
     Enabled: bool
     Visible: bool
@@ -81,6 +79,7 @@ type NoobishLayoutElement = {
     BorderSize: float32
     BorderColor: int
     BorderColorDisabled: int
+    BorderColorFocused: int
 
     ScrollBarColor: int
     ScrollPinColor: int
@@ -190,7 +189,7 @@ type NoobishAttribute =
 
     | OnClick of (unit -> unit)
     | OnClickInternal of ((string -> ComponentMessage -> unit) -> NoobishLayoutElement -> unit)
-    | OnPress of (struct(int*int) -> unit) 
+    | OnPress of (struct(int*int) -> unit)
     | OnPressInternal of ((string -> ComponentMessage -> unit) -> struct(int*int) -> NoobishLayoutElement -> unit)
     | OnChange of (string -> unit)
     | Toggled of bool
@@ -361,6 +360,7 @@ let slider attributes =
                 s'.OnValueChanged (clamp steppedNewValue s'.Min s'.Max)
                 Slider{s' with Value = steppedNewValue}
             | Combobox _ -> m
+            | Textbox _ -> m
 
         dispatch c.Id (ChangeModel changeModel)
     {ThemeId = "Slider"; Children = []; Attributes = attributes @ [UseFullyQualifiedIdForName; sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
@@ -476,7 +476,6 @@ module Logic =
             KeyboardShortcut = c.KeyboardShortcut
             Version = version
             Model = c.Model
-            Text = ""
 
             Children = c.Children |> Array.map(fun child -> child.Id)
         }
@@ -525,6 +524,7 @@ module Logic =
         let mutable borderSize = scale theme.BorderSize
         let mutable borderColor = theme.BorderColor
         let mutable borderColorDisabled = theme.BorderColorDisabled
+        let mutable borderColorFocused = theme.BorderColorFocused
 
         let mutable texture = NoobishTextureId.None
         let mutable textureEffect = NoobishTextureEffect.None
@@ -725,6 +725,8 @@ module Logic =
             | KeyTypedEnabled ->
                 canFocus <- true
                 keyTypedEnabled <- true
+                model <- Some(Textbox{ Text = ""; Cursor = 0})
+
             | UseFullyQualifiedIdForName ->
                 useFullyQualifiedIdForName <- true
         let maxWidth = parentWidth * float32 colspan
@@ -736,6 +738,7 @@ module Logic =
                 let thickness =  max scrollBarThickness scrollPinThickness
                 minHeight <- minHeight + thickness
                 | Combobox (_c) -> ()
+                | Textbox (_t) -> ()
         )
 
 
@@ -807,6 +810,7 @@ module Logic =
             BorderSize = borderSize
             BorderColor = borderColor
             BorderColorDisabled = borderColorDisabled
+            BorderColorFocused = borderColorFocused
 
             StartX = startX
             StartY = startY

@@ -162,7 +162,7 @@ module NoobishMonoGame =
 
         drawRectangle spriteBatch pixel color (bounds.X + scrollX) (bounds.Y + scrollY) bounds.Width bounds.Height
 
-    let private drawBorders  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) scrollX scrollY =
+    let private drawBorders  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (cs: NoobishLayoutElementState) scrollX scrollY =
         if c.BorderSize > 0.0f then
             let pixel = content.Load<Texture2D> settings.Pixel
             let bounds = c.ContentWithBorder
@@ -171,7 +171,15 @@ module NoobishMonoGame =
 
             let widthWithoutBorders = bounds.Width - c.BorderSize * 2.0f
 
-            let borderColor = toColor (if c.Enabled then c.BorderColor else c.BorderColorDisabled)
+            let borderColor = toColor (
+                    if cs.Focused then
+                        c.BorderColorFocused
+                    elif c.Enabled then
+                        c.BorderColor
+                    else
+                        c.BorderColorDisabled
+
+                )
             let borderSize = c.BorderSize
 
             //Left
@@ -200,10 +208,23 @@ module NoobishMonoGame =
             drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( bounds.Y + bounds.Height - borderSize) widthWithoutBorders borderSize
 
 
-    let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) scrollX scrollY =
+    let private drawText (content: ContentManager) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (cs: NoobishLayoutElementState) scrollX scrollY =
         let mutable startY = 0.0f
 
-        for line in c.Text do
+        let textLines =
+            cs.Model
+            |> Option.map(
+                function
+                | Textbox model' ->
+                    if not (String.IsNullOrEmpty model'.Text) then
+                        Some([|model'.Text|])
+                    else
+                        None
+                | _ -> None)
+            |> Option.flatten
+            |> Option.defaultValue c.Text
+
+        for line in textLines do
             let bounds = c.Content
 
             let font = content.Load<SpriteFont> c.TextFont
@@ -427,15 +448,16 @@ module NoobishMonoGame =
         | Some (texture) ->
             drawImage content settings spriteBatch c texture totalScrollX totalScrollY
         | None -> ()
-        drawBorders content settings spriteBatch c totalScrollX totalScrollY
-        drawText content spriteBatch c totalScrollX totalScrollY
+        drawBorders content settings spriteBatch c cs totalScrollX totalScrollY
+        drawText content spriteBatch c cs totalScrollX totalScrollY
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
 
         cs.Model
             |> Option.iter(
                 function
                 | Slider (s) -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX
-                | Combobox (_c) -> ())
+                | Combobox (_c) -> ()
+                | Textbox (_t) -> ())
 
         if debug then
             let childRect = c.Content
@@ -546,6 +568,7 @@ module NoobishMonoGame =
             drawFps content spriteBatch ui time
 
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
+
         ui.State.TempElements.Clear()
         for kvp in ui.State.ElementsById do
             ui.State.TempElements.Add(kvp.Key, kvp.Value)
@@ -562,6 +585,7 @@ module NoobishMonoGame =
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
+                ui.State.SetFocus ""
                 handled <- Noobish.Input.click ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
 
@@ -596,7 +620,7 @@ module NoobishMonoGame =
                 let c = ui.Components.[kvp.Key]
                 if kvp.Value.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
                     c.OnClickInternal c
-                    
+
         ui.State.TempElements.Clear()
 
     let keyTyped (ui: NoobishUI) (typed: string) =
@@ -607,7 +631,7 @@ module NoobishMonoGame =
         let mutable handled = false
 
         while not handled && i >= 0 do
-            handled <- Noobish.Input.keyTyped ui.Version ui.State.TempElements ui.Layers.[i] typed
+            handled <- Noobish.Input.keyTyped ui.Version ui.State ui.Layers.[i] typed
             i <- i - 1
 
         ui.State.TempElements.Clear()

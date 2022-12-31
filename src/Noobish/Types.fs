@@ -74,9 +74,15 @@ module Internal =
         Value: string
     }
 
+    type TextboxModel = {
+        Text: string
+        Cursor: int
+    }
+
     type NoobishComponentModel =
         | Slider of SliderModel
         | Combobox of ComboboxModel
+        | Textbox of TextboxModel
 
     type ComponentMessage =
         | Show
@@ -99,8 +105,6 @@ module Internal =
 
         mutable ScrollX: float32
         mutable ScrollY: float32
-
-        mutable Text: string
 
         Version: Guid
         KeyboardShortcut: NoobishKeyId
@@ -140,8 +144,19 @@ module Internal =
                         let cs: NoobishLayoutElementState = s.ElementsById.[cid]
                         s.UpdateState {cs with Model = Some(model') })
 
-        member s.SetFocus(id: string) = 
-            s.FocusedElementId <- Some(id)
+        member s.SetFocus (id: string) =
+            s.FocusedElementId |> Option.iter (
+                fun id ->
+                    let cs = s.ElementsById.[id]
+                    cs.Focused <- false
+            )
+            if id <> "" then
+                let cs = s.ElementsById.[id]
+                cs.Focused <- true
+                s.FocusedElementId <- Some(id)
+            else
+                s.FocusedElementId <- None
+
 
     let pi = float32 System.Math.PI
     let clamp n minVal maxVal = max (min n maxVal) minVal
