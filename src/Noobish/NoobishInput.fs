@@ -94,11 +94,24 @@ let rec keyTyped
 
             if cs.Model.IsNone then failwith "Element is not a text box."
 
+
             let model' = cs.Model |> Option.map (
                 fun model' ->
+
+
                     match model' with
-                    | Textbox model' ->
-                        Textbox {model' with Text = model'.Text.Insert(model'.Cursor, typed); Cursor = model'.Cursor + 1}
+                    | Textbox model'' ->
+
+                        let (text, cursor) =
+                            if typed = "\b" then
+                                if model''.Text.Length > 0 && model''.Cursor > 0 then
+                                    model''.Text.Remove(model''.Cursor - 1, 1), model''.Cursor - 1
+                                else
+                                    "", 0
+                            else
+                                model''.Text.Insert(model''.Cursor, typed), model''.Cursor + 1
+
+                        Textbox {model'' with Text = text; Cursor = cursor}
                     | _ -> failwith "Element is not a text box."
             )
 
