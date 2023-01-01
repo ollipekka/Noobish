@@ -224,8 +224,8 @@ module NoobishMonoGame =
             |> Option.flatten
             |> Option.defaultValue c.Text
 
+        let bounds = c.Content
         for line in textLines do
-            let bounds = c.Content
 
             let font = content.Load<SpriteFont> c.TextFont
 
@@ -328,6 +328,30 @@ module NoobishMonoGame =
 
         let color = c.ScrollPinColor |> toColor
         drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
+
+    let private drawCursor
+        (content: ContentManager)
+        (settings: NoobishSettings)
+        (spriteBatch: SpriteBatch)
+        (c: NoobishLayoutElement)
+        (textbox: TextboxModel)
+        (time: TimeSpan) =
+
+        let bounds = c.Content
+        let cursorIndex = textbox.Cursor
+
+        let textUpToCursor =
+            if textbox.Text.Length > 0 then
+
+                textbox.Text.Substring(0, cursorIndex)
+            else
+                ""
+
+        let font = content.Load<SpriteFont> c.TextFont
+        let size = font.MeasureString textUpToCursor
+
+        let pixel = content.Load<Texture2D> settings.Pixel
+        drawRectangle spriteBatch pixel Color.Red (bounds.X + size.X) bounds.Y 2f (float32 font.LineSpacing)
 
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
@@ -457,7 +481,11 @@ module NoobishMonoGame =
                 function
                 | Slider (s) -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX
                 | Combobox (_c) -> ()
-                | Textbox (_t) -> ())
+                | Textbox (t) ->
+                    if cs.Focused then
+                        drawCursor content settings spriteBatch c t time
+            )
+
 
         if debug then
             let childRect = c.Content

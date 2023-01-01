@@ -94,7 +94,6 @@ let rec keyTyped
 
             if cs.Model.IsNone then failwith "Element is not a text box."
 
-
             let model' = cs.Model |> Option.map (
                 fun model' ->
 
