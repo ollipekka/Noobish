@@ -41,7 +41,9 @@ type NoobishElementStyle = {
 type Theme = {
     FontSettings: FontSettings
     Styles: IDictionary<string, NoobishElementStyle>
+    CursorColor: int
 }
+
 let empty defaultFont =
     {
         TextFont = defaultFont
@@ -81,12 +83,14 @@ let empty defaultFont =
 let createDefaultTheme (fontSettings: FontSettings): Theme=
     let defaultFont = fontSettings.Normal
     let textColor = 0xbbbbbbFF
+    let textInputColor = 0xccccccFF
     let textColorDisabled = 0x806d5fff
     let backgroundDisabled = 0x4d4b39ff
     let backgroundColorDark = 0x262b33ff
     let backgroundColor = 0x39404dff
     let backgroundColorLight = 0x5f6b80ff
     let borderColor = 0x4c5666ff
+    let borderColorLight = 0x606d80ff
     let borderColorDisabled = 0x806d5fff
 
     let textureColor = 0xffffffff
@@ -144,7 +148,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 BorderSize = 2
                 BorderColor = borderColor
                 BorderColorDisabled = borderColorDisabled
-                BorderColorFocused = 0xFF0000FF
+                BorderColorFocused = borderColorLight
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000
@@ -508,4 +512,5 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
     {
         FontSettings = fontSettings
         Styles = NoobishElementStyles
+        CursorColor = 0xb2b2b2FF
     }

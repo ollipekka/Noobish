@@ -53,10 +53,14 @@ type NoobishLayoutElement = {
     TextFont: string
     TextColor: int
     TextColorDisabled: int
+    TextInputColor: int
     TextWrap: bool
     Texture: option<NoobishTexture>
     Color: int
     ColorDisabled: int
+
+    CursorColor: int
+
     PressedColor: int
     HoverColor: int
     StartX: float32
@@ -170,7 +174,8 @@ type NoobishAttribute =
     | MarginBottom of int
     | ZIndex of int
     | Overlay
-
+    | CursorColor of int
+    | TextInputColor of int
     | Text of string
     | TextFont of string
     | TextSmall
@@ -233,8 +238,10 @@ type NoobishElement = {
 // Attributes
 let name v = Name v
 let text value = Text(value)
+let cursorColor c = CursorColor (c)
 let textFont f = TextFont(f)
 let textColor c = TextColor (c)
+let textInputColor c = TextInputColor (c)
 let textAlign v = TextAlign (v)
 let textTopLeft = TextAlign NoobishTextAlign.TopLeft
 let textTopCenter = TextAlign NoobishTextAlign.TopCenter
@@ -501,6 +508,8 @@ module Logic =
         let mutable textFont = if theme.TextFont <> "" then theme.TextFont else settings.FontSettings.Normal
         let mutable textColor = theme.TextColor
         let mutable textColorDisabled = theme.TextColorDisabled
+        let mutable cursorColor = theme.TextColor
+        let mutable textInputColor = theme.TextColor
         let mutable textWrap = false
         let mutable color = theme.Color
         let mutable pressedColor = theme.PressedColor
@@ -591,11 +600,14 @@ module Logic =
             | MinSize (width, height) ->
                 minWidth <- scale width
                 minHeight <- scale height
+            | CursorColor(c) ->
+                cursorColor <- c
             // Text
             | Text(value) -> text <- value
             | TextFont(value) -> textFont <- value
             | TextAlign (value) -> textAlign <- value
             | TextColor (c) -> textColor <- c
+            | TextInputColor (c) -> textInputColor <- c
             | TextWrap -> textWrap <- true
             | TextSmall -> textFont <- settings.FontSettings.Small
             | TextLarge -> textFont <- settings.FontSettings.Large
@@ -781,9 +793,12 @@ module Logic =
             FillVertical = fillVertical
 
             TextAlignment = textAlign
+            CursorColor = cursorColor
+
             Text = textLines.Split '\n'
             TextFont = textFont
             TextColor = textColor
+            TextInputColor = textInputColor
             TextColorDisabled = textColorDisabled
             TextWrap = textWrap
 

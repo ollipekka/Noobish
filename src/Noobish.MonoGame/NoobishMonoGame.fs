@@ -260,7 +260,7 @@ module NoobishMonoGame =
                 | NoobishTextAlign.BottomCenter -> centerX(), bottomY()
                 | NoobishTextAlign.BottomRight -> rightX(), bottomY()
 
-            let textColor = toColor (if c.Enabled then c.TextColor else c.TextColorDisabled)
+            let textColor = toColor (if c.Enabled then (if c.Model.IsSome then c.TextInputColor else c.TextColor) else c.TextColorDisabled)
             spriteBatch.DrawString(font, line, Vector2(floor textX, floor (startY + textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
             startY <- startY + float32 font.LineSpacing
 
@@ -357,7 +357,7 @@ module NoobishMonoGame =
         let timeFocused = (time - cs.FocusedTime)
         let blinkProgress = MathF.Pow(float32 (timeFocused.TotalSeconds % blinkInterval.TotalSeconds), 5f)
 
-        let color = Color.Lerp(Color.Red, Color.Transparent, float32 blinkProgress)
+        let color = Color.Lerp(toColor(c.CursorColor), Color.Transparent, float32 blinkProgress)
 
         drawRectangle spriteBatch pixel color (bounds.X + size.X) bounds.Y 2f (float32 font.LineSpacing)
 
@@ -447,12 +447,10 @@ module NoobishMonoGame =
         (parentScrollY: float32)
         (parentRectangle: Rectangle)  =
 
-
         let cs = state.[c.Id]
 
         let totalScrollX = cs.ScrollX + parentScrollX
         let totalScrollY = cs.ScrollY + parentScrollY
-
 
         let outerRectangle =
             let bounds = c.ContentWithBorder
