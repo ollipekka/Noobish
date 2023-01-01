@@ -468,6 +468,7 @@ module Logic =
             Visible = c.Visible
             Focused = false
             Toggled = false
+            FocusedTime = TimeSpan.Zero
             PressedTime = TimeSpan.Zero
             ScrolledTime = TimeSpan.Zero
 

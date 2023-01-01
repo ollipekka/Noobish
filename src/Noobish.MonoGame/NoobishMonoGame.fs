@@ -329,11 +329,13 @@ module NoobishMonoGame =
         let color = c.ScrollPinColor |> toColor
         drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
 
+    let blinkInterval = TimeSpan.FromSeconds 1.2
     let private drawCursor
         (content: ContentManager)
         (settings: NoobishSettings)
         (spriteBatch: SpriteBatch)
         (c: NoobishLayoutElement)
+        (cs: NoobishLayoutElementState)
         (textbox: TextboxModel)
         (time: TimeSpan) =
 
@@ -351,7 +353,13 @@ module NoobishMonoGame =
         let size = font.MeasureString textUpToCursor
 
         let pixel = content.Load<Texture2D> settings.Pixel
-        drawRectangle spriteBatch pixel Color.Red (bounds.X + size.X) bounds.Y 2f (float32 font.LineSpacing)
+
+        let timeFocused = (time - cs.FocusedTime)
+        let blinkProgress = MathF.Pow(float32 (timeFocused.TotalSeconds % blinkInterval.TotalSeconds), 5f)
+
+        let color = Color.Lerp(Color.Red, Color.Transparent, float32 blinkProgress)
+
+        drawRectangle spriteBatch pixel color (bounds.X + size.X) bounds.Y 2f (float32 font.LineSpacing)
 
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
@@ -483,7 +491,7 @@ module NoobishMonoGame =
                 | Combobox (_c) -> ()
                 | Textbox (t) ->
                     if cs.Focused then
-                        drawCursor content settings spriteBatch c t time
+                        drawCursor content settings spriteBatch c cs t time
             )
 
 
@@ -613,7 +621,7 @@ module NoobishMonoGame =
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                ui.State.SetFocus ""
+                ui.State.SetFocus "" TimeSpan.Zero
                 handled <- Noobish.Input.click ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
 

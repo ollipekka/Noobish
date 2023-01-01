@@ -68,7 +68,7 @@ let rec click
 
 
                 if cs.CanFocus && not cs.Focused then
-                    state.SetFocus cs.Id
+                    state.SetFocus cs.Id time
                 else
                     c.OnClickInternal c
 

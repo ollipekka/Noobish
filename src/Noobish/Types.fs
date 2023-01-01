@@ -100,6 +100,8 @@ module Internal =
         mutable Focused: bool
         mutable Toggled: bool
         mutable Visible: bool
+
+        mutable FocusedTime: TimeSpan
         mutable PressedTime: TimeSpan
         mutable ScrolledTime: TimeSpan
 
@@ -151,15 +153,17 @@ module Internal =
                         let cs: NoobishLayoutElementState = s.ElementsById.[cid]
                         s.UpdateState {cs with Model = Some(model') })
 
-        member s.SetFocus (id: string) =
+        member s.SetFocus (id: string) (time: TimeSpan)=
             s.FocusedElementId |> Option.iter (
                 fun id ->
                     let cs = s.ElementsById.[id]
                     cs.Focused <- false
+                    cs.FocusedTime <- TimeSpan.Zero
             )
             if id <> "" then
                 let cs = s.ElementsById.[id]
                 cs.Focused <- true
+                cs.FocusedTime <- time
                 s.FocusedElementId <- Some(id)
             else
                 s.FocusedElementId <- None
