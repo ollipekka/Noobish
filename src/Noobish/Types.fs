@@ -77,6 +77,7 @@ module Internal =
     type TextboxModel = {
         Text: string
         Cursor: int
+        OnOpenKeyboard: (string -> unit) -> unit
     }
 
     type NoobishComponentModel =
@@ -108,10 +109,11 @@ module Internal =
         mutable ScrollX: float32
         mutable ScrollY: float32
 
+        mutable Model: option<NoobishComponentModel>
+
         Version: Guid
         KeyboardShortcut: NoobishKeyId
 
-        Model: option<NoobishComponentModel>
 
         Children: string[]
     } with
@@ -161,10 +163,41 @@ module Internal =
                     cs.FocusedTime <- TimeSpan.Zero
             )
             if id <> "" then
+
+                s.FocusedElementId <- Some(id)
                 let cs = s.ElementsById.[id]
                 cs.Focused <- true
                 cs.FocusedTime <- time
-                s.FocusedElementId <- Some(id)
+
+                cs.Model <-
+                    cs.Model
+                    |> Option.map(
+                        fun model' ->
+                            match model' with
+                            | Textbox (model'') -> Textbox {model'' with Text = ""; Cursor = 0}
+                            | _ -> model'
+                    )
+
+
+                let setText (text: string) =
+                    let model =
+                        cs.Model
+                        |> Option.map(
+                            fun model' ->
+                                match model' with
+                                | Textbox (model'') -> Textbox {model'' with Text = text}
+                                | _ -> failwith "Not a textbox"
+                        )
+
+                    cs.Model <- model
+
+                // Send open keyboard event.
+                cs.Model |> Option.iter (
+                    function
+                    | Textbox (model') ->
+                        model'.OnOpenKeyboard(setText)
+                    | _ -> ()
+                )
             else
                 s.FocusedElementId <- None
 

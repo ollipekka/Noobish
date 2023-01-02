@@ -261,12 +261,13 @@ module Buttons =
                                 option "Value 3"
                             ]
                             [
-                                text model.ComboboxValue; 
+                                text model.ComboboxValue;
                                 onChange (fun v -> dispatch (ComboboxValueChanged v))
                                 block;
                             ]
                         textBox [
                             text "Please insert coin"
+                            //onOpenKeyboard (fun setText -> setText "opened")
                         ]
                     ]
                     [
@@ -365,8 +366,7 @@ type DemoGame () as game =
         let height = this.GraphicsDevice.Viewport.Height
 
         this.Window.TextInput.Add(fun e ->
-            printfn "%c" (e.Character)
-            NoobishMonoGame.keyTyped nui (sprintf "%c" e.Character)
+            NoobishMonoGame.keyTyped nui e.Character
         )
 
         let settings: NoobishSettings = {

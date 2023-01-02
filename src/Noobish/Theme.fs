@@ -90,7 +90,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
     let backgroundColor = 0x39404dff
     let backgroundColorLight = 0x5f6b80ff
     let borderColor = 0x4c5666ff
-    let borderColorLight = 0x606d80ff
+    let borderColorFocused = 0xffd700ff
     let borderColorDisabled = 0x806d5fff
 
     let textureColor = 0xffffffff
@@ -148,7 +148,7 @@ let createDefaultTheme (fontSettings: FontSettings): Theme=
                 BorderSize = 2
                 BorderColor = borderColor
                 BorderColorDisabled = borderColorDisabled
-                BorderColorFocused = borderColorLight
+                BorderColorFocused = borderColorFocused
 
                 Color = 0x00000000
                 ColorDisabled = 0x00000000

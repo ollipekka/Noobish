@@ -85,7 +85,7 @@ let rec keyTyped
     (version: Guid)
     (state: NoobishState)
     (elements: NoobishLayoutElement[])
-    (typed: string) =
+    (typed: char) =
 
     let mutable handled = false
     state.FocusedElementId
@@ -102,13 +102,18 @@ let rec keyTyped
                     | Textbox model'' ->
 
                         let (text, cursor) =
-                            if typed = "\b" then
+                            if int typed = 8 then // backspace
                                 if model''.Text.Length > 0 && model''.Cursor > 0 then
                                     model''.Text.Remove(model''.Cursor - 1, 1), model''.Cursor - 1
                                 else
                                     "", 0
+                            elif int typed = 127 then // deleted
+                                if model''.Text.Length > 0 && model''.Cursor < model''.Text.Length - 1 then
+                                    model''.Text.Remove(model''.Cursor, 1), model''.Cursor
+                                else
+                                    "", 0
                             else
-                                model''.Text.Insert(model''.Cursor, typed), model''.Cursor + 1
+                                model''.Text.Insert(model''.Cursor, typed.ToString()), model''.Cursor + 1
 
                         Textbox {model'' with Text = text; Cursor = cursor}
                     | _ -> failwith "Element is not a text box."

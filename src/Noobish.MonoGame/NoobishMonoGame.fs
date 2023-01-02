@@ -359,7 +359,7 @@ module NoobishMonoGame =
 
         let color = Color.Lerp(toColor(c.CursorColor), Color.Transparent, float32 blinkProgress)
 
-        drawRectangle spriteBatch pixel color (bounds.X + size.X) bounds.Y 2f (float32 font.LineSpacing)
+        drawRectangle spriteBatch pixel color (bounds.X + size.X) bounds.Y c.CursorWidth (float32 font.LineSpacing)
 
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
@@ -680,7 +680,7 @@ module NoobishMonoGame =
 
         ui.State.TempElements.Clear()
 
-    let keyTyped (ui: NoobishUI) (typed: string) =
+    let keyTyped (ui: NoobishUI) (char: char) =
         ui.State.TempElements.Clear()
         for kvp in ui.State.ElementsById do
             ui.State.TempElements.Add(kvp.Key, kvp.Value)
@@ -688,7 +688,7 @@ module NoobishMonoGame =
         let mutable handled = false
 
         while not handled && i >= 0 do
-            handled <- Noobish.Input.keyTyped ui.Version ui.State ui.Layers.[i] typed
+            handled <- Noobish.Input.keyTyped ui.Version ui.State ui.Layers.[i] char
             i <- i - 1
 
         ui.State.TempElements.Clear()

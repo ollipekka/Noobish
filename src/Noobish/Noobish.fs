@@ -60,6 +60,7 @@ type NoobishLayoutElement = {
     ColorDisabled: int
 
     CursorColor: int
+    CursorWidth: float32
 
     PressedColor: int
     HoverColor: int
@@ -174,7 +175,10 @@ type NoobishAttribute =
     | MarginBottom of int
     | ZIndex of int
     | Overlay
+
     | CursorColor of int
+    | CursorWidth of int
+
     | TextInputColor of int
     | Text of string
     | TextFont of string
@@ -225,6 +229,7 @@ type NoobishAttribute =
     | ColSpan of int
     | RelativePosition of x: int * y: int
     | KeyboardShortcut of NoobishKeyId
+    | OnOpenKeyboard of ((string -> unit) -> unit)
     | UseFullyQualifiedIdForName
     | KeyTypedEnabled
 
@@ -239,6 +244,7 @@ type NoobishElement = {
 let name v = Name v
 let text value = Text(value)
 let cursorColor c = CursorColor (c)
+let cursorWidth w = CursorWidth (w)
 let textFont f = TextFont(f)
 let textColor c = TextColor (c)
 let textInputColor c = TextInputColor (c)
@@ -317,6 +323,8 @@ let rowspan s = RowSpan s
 let relativePosition x y = RelativePosition(x, y)
 
 let keyboardShortcut k = KeyboardShortcut k
+
+let onOpenKeyboard cb = OnOpenKeyboard cb
 
 // Components
 let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
@@ -503,13 +511,17 @@ module Logic =
         let mutable zIndex = zIndex
         let mutable overlay = false
         let mutable disabledColor = theme.ColorDisabled
+
+
+        let mutable cursorColor = theme.TextColor
+        let mutable cursorWidth = 2f
+
         let mutable textAlign = theme.TextAlignment
         let mutable text = ""
         let mutable textFont = if theme.TextFont <> "" then theme.TextFont else settings.FontSettings.Normal
         let mutable textColor = theme.TextColor
-        let mutable textColorDisabled = theme.TextColorDisabled
-        let mutable cursorColor = theme.TextColor
         let mutable textInputColor = theme.TextColor
+        let mutable textColorDisabled = theme.TextColorDisabled
         let mutable textWrap = false
         let mutable color = theme.Color
         let mutable pressedColor = theme.PressedColor
@@ -602,6 +614,8 @@ module Logic =
                 minHeight <- scale height
             | CursorColor(c) ->
                 cursorColor <- c
+            | CursorWidth(w) ->
+                cursorWidth <- float32 w
             // Text
             | Text(value) -> text <- value
             | TextFont(value) -> textFont <- value
@@ -737,7 +751,20 @@ module Logic =
                 consumedKeys.Add k
             | KeyTypedEnabled ->
                 keyTypedEnabled <- true
-                model <- Some(Textbox{ Text = ""; Cursor = 0})
+                if model.IsNone then
+                    model <- Some(Textbox{ Text = ""; Cursor = 0; OnOpenKeyboard = fun _ -> ()})
+            | OnOpenKeyboard (o) ->
+                keyTypedEnabled <- true
+                if model.IsNone then
+                    model <- Some(Textbox{ Text = ""; Cursor = 0; OnOpenKeyboard = fun _ -> ()})
+
+                model <- model |> Option.map(
+                    fun model' ->
+                        match model' with
+                        | Textbox(model'') ->
+                            Textbox({model'' with OnOpenKeyboard = o})
+                        | _ -> model'
+                )
 
             | UseFullyQualifiedIdForName ->
                 useFullyQualifiedIdForName <- true
@@ -793,7 +820,9 @@ module Logic =
             FillVertical = fillVertical
 
             TextAlignment = textAlign
+
             CursorColor = cursorColor
+            CursorWidth = cursorWidth
 
             Text = textLines.Split '\n'
             TextFont = textFont
