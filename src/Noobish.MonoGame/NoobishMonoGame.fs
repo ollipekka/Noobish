@@ -172,9 +172,7 @@ module NoobishMonoGame =
             let widthWithoutBorders = bounds.Width - c.BorderSize * 2.0f
 
             let borderColor = toColor (
-                    if cs.Focused then
-                        c.BorderColorFocused
-                    elif c.Enabled then
+                    if c.Enabled then
                         c.BorderColor
                     else
                         c.BorderColorDisabled
@@ -190,6 +188,35 @@ module NoobishMonoGame =
             drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) scrolledStartY widthWithoutBorders borderSize
             // Bottom
             drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( scrolledStartY + bounds.Height - borderSize) widthWithoutBorders borderSize
+
+
+    let private drawFocusBorder  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (cs: NoobishLayoutElementState) scrollX scrollY =
+        if cs.Focused then
+            let pixel = content.Load<Texture2D> settings.Pixel
+            let bounds = c.ContentWithBorder
+
+            let scrolledStartY = bounds.Y + scrollY
+
+            let widthWithoutBorders = bounds.Width - c.BorderSize * 2.0f
+
+            let borderColor = toColor (c.BorderColorFocused)
+            let borderSize = c.BorderSize
+            let focusBorderSize = 1f
+            let focusBorderOffset = 1f
+
+
+            let width = widthWithoutBorders - focusBorderOffset * 2f
+            let height = bounds.Height - c.BorderSize * 2f - focusBorderOffset * 2f
+
+            //Left
+            drawRectangle spriteBatch pixel borderColor (bounds.X + scrollX + borderSize + focusBorderOffset) (scrolledStartY + borderSize + focusBorderOffset) focusBorderSize height
+            // Right
+            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize - focusBorderOffset - focusBorderSize) (scrolledStartY + borderSize + focusBorderOffset) focusBorderSize height
+            // Top
+            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize + focusBorderOffset) (scrolledStartY + borderSize + focusBorderOffset) width focusBorderSize
+            // Bottom
+            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize + focusBorderOffset) ( scrolledStartY + bounds.Height - borderSize - focusBorderOffset - focusBorderSize) width focusBorderSize
+
 
     let private debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
 
@@ -479,6 +506,7 @@ module NoobishMonoGame =
             drawImage content settings spriteBatch c texture totalScrollX totalScrollY
         | None -> ()
         drawBorders content settings spriteBatch c cs totalScrollX totalScrollY
+        drawFocusBorder content settings spriteBatch c cs totalScrollX totalScrollY
         drawText content spriteBatch c cs totalScrollX totalScrollY
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
 
