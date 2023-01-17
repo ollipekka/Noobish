@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <MonoGamePlatform>DesktopGL</MonoGamePlatform>
+    <OutputPath>../../bin/</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MonoGameContentReference Include="../Content/Test.mgcb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.1.303" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noobish.TextureAtlas.PipelineExtension\Noobish.TextureAtlas.PipelineExtension.fsproj" />
+  </ItemGroup>
+
+</Project>

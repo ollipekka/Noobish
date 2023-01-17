@@ -1,16 +1,18 @@
 
-#----------------------------- Global Properties ----------------------------#
-
-/intermediateDir:obj
-/platform:MacOSX
-/config:
-/profile:Reach
-/compress:False
-
-#-------------------------------- References --------------------------------#
+/reference:../../../Noobish.TextureAtlas/bin/net6.0/Noobish.TextureAtlas.PipelineExtension.dll
+/reference:../../../Noobish.TextureAtlas/bin/net6.0/Newtonsoft.Json.dll
 
 
-#---------------------------------- Content ---------------------------------#
+#begin TestAtlas.json
+/importer:TextureAtlasImporter
+/processor:TextureAtlasProcessor
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:IsColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeToPowerOfTwo=True
+/processorParam:TextureFormat=Color
+/build:TestAtlas.json
 
 #begin AnonymousPro22.spritefont
 /importer:FontDescriptionImporter
