@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Noobish\Noobish.fsproj" />
+    <ProjectReference Include="..\Noobish.TextureAtlas\Noobish.TextureAtlas.fsproj" />
   </ItemGroup>
 
 </Project>

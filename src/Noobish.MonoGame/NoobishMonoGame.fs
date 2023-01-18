@@ -7,6 +7,7 @@ open Elmish
 open Noobish
 open Noobish.Internal
 open Noobish.Theme
+open Noobish.TextureAtlas
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
@@ -399,7 +400,11 @@ module NoobishMonoGame =
             | NoobishTextureId.Atlas(textureId, sx, sy, sw, sh) ->
                 let texture = content.Load<Texture2D> textureId
                 (texture, Rectangle(sx, sy, sw, sh) )
-            | NoobishTextureId.NinePatch _ -> failwith "Not implemented"
+            | NoobishTextureId.NinePatch (aid, tid) ->
+
+                let atlas = content.Load<TextureAtlas> aid
+                let texture = atlas.[tid]
+                failwith "lol"
             | NoobishTextureId.None -> failwith "Can't have empty texture at this point."
 
         let rect =
@@ -531,6 +536,7 @@ module NoobishMonoGame =
                 else Color.Multiply(Color.Yellow, 0.1f)
 
             let pixel = content.Load<Texture2D> settings.Pixel
+
             drawRectangle spriteBatch pixel debugColor (childRect.X + totalScrollX) (childRect.Y + totalScrollY) (childRect.Width) (childRect.Height)
             if c.ThemeId = "Scroll"  then
                 let r = {

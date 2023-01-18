@@ -14,7 +14,7 @@ open System
 [<RequireQualifiedAccess>]
 type NoobishTextureId =
     | None
-    | NinePatch of string
+    | NinePatch of atlasId: string * ninePatchId: string
     | Basic of string
     | Atlas of id: string * sx: int * sy: int * sw: int * sh: int
 
@@ -268,7 +268,7 @@ let sliderStep v = SliderStep v
 let sliderOnValueChanged cb = SliderValueChanged cb
 
 let texture t = Texture (NoobishTextureId.Basic t)
-let ninePatch t = Texture (NoobishTextureId.NinePatch t)
+let ninePatch aid tid = Texture (NoobishTextureId.NinePatch(aid,tid))
 let atlasTexture t sx sy sw sh = Texture(NoobishTextureId.Atlas (t, sx, sy, sw, sh))
 let textureColor c = TextureColor c
 let textureColorDisabled c = TextureColorDisabled c
@@ -345,7 +345,8 @@ let scroll children attributes =
 
 let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
 
-let panel children attributes = { ThemeId = "Panel"; Children = children; Attributes = stackLayout :: block :: attributes}
+let panel children attributes =
+    { ThemeId = "Panel"; Children = children; Attributes = stackLayout :: block :: attributes}
 let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill :: attributes}
 let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
 let div children attributes = { ThemeId = "Division"; Children = children; Attributes = stackLayout :: attributes}

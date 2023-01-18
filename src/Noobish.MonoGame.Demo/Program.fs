@@ -110,10 +110,10 @@ module Text =
                     [
                         div
                             [
-                                label [text "Font size 22"; textFont "AnonymousPro22"; block]
-                                label [text "Regular"; textFont "AnonymousPro22"; textColor 0xac3232aa; block]
-                                label [text "Bold"; textFont "AnonymousProBold22"; textColor 0x4b692faa; block]
-                                label [text "Italic"; textFont "AnonymousProItalic22"; textColor 0x3f3f74aa; block]
+                                label [text "Font size 22"; textFont "Content/AnonymousPro22"; block]
+                                label [text "Regular"; textFont "Content/AnonymousPro22"; textColor 0xac3232aa; block]
+                                label [text "Bold"; textFont "Content/AnonymousProBold22"; textColor 0x4b692faa; block]
+                                label [text "Italic"; textFont "Content/AnonymousProItalic22"; textColor 0x3f3f74aa; block]
                             ]
                             [
 
@@ -122,8 +122,8 @@ module Text =
                             [
                                 label [text "Font size 16"; block]
                                 label [text "Regular"; textColor 0xac3232aa; block]
-                                label [text "Bold"; textFont "AnonymousProBold16"; textColor 0x4b692faa; block]
-                                label [text "Italic"; textFont "AnonymousProItalic16"; textColor 0x3f3f74aa; block]
+                                label [text "Bold"; textFont "Content/AnonymousProBold16"; textColor 0x4b692faa; block]
+                                label [text "Italic"; textFont "Content/AnonymousProItalic16"; textColor 0x3f3f74aa; block]
                             ]
                             [
 
@@ -371,8 +371,9 @@ type DemoGame () as game =
 
         let settings: NoobishSettings = {
             Scale = 1f
-            FontSettings = {Small = "AnomyousPro16"; Normal = "AnonymousPro16"; Large = "AnonymousPro16"};
-            Pixel = "Pixel"
+            FontSettings = {Small = "Content/AnomyousPro16"; Normal = "Content/AnonymousPro16"; Large = "Content/AnonymousPro16"}
+            Pixel = "Content/Pixel"
+            TextureAtlasName = "TestAtlas"
         }
 
         nui <- NoobishMonoGame.create game.Content width height settings
@@ -426,15 +427,15 @@ type DemoGame () as game =
                 [
                     grid 12 8
                         [
-                            panel [label [text "Noobish"; textFont "AnonymousProBold22"]] [colspan 3; rowspan 1]
+                            panel [label [text "Noobish"; textFont "Content/AnonymousProBold22"]] [colspan 3; rowspan 1]
                             panelWithGrid 12 1
                                 [
-                                    label [text title; textFont "AnonymousProBold22"; fill; colspan 10];
+                                    label [text title; textFont "Content/AnonymousProBold22"; fill; colspan 10];
                                     button
                                         [
                                             text "Debug";
                                             toggled model.UI.Debug;
-                                            textFont "AnonymousProBold22";
+                                            textFont "Content/AnonymousProBold22";
                                             fill;
                                             onClick (fun () -> dispatch ToggleDebug)
                                             colspan 2
@@ -445,7 +446,7 @@ type DemoGame () as game =
                                     rowspan 1
                                 ]
                             panel [scroll scrollItems [name "LeftMenu";]] [colspan 3; rowspan 7;]
-                            panel content [colspan 9; rowspan 7;]
+                            panel content [colspan 9; rowspan 7; ninePatch "TestAtlas" "window_background.9"]
                         ]
                         [
                             padding 10
