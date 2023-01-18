@@ -14,15 +14,15 @@
 
   <ItemGroup>
     <PackageReference Include="Elmish" Version="3.0.6" />
-    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.0.1641" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2"/>
-    <PackageReference Include="Glob" Version="1.1.3"/>
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.1" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Noobish\Noobish.fsproj" />
     <ProjectReference Include="..\Noobish.MonoGame\Noobish.MonoGame.fsproj" />
+    <ProjectReference Include="..\Noobish.TextureAtlas\Noobish.TextureAtlas.fsproj" />
   </ItemGroup>
 
 </Project>

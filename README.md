@@ -21,11 +21,11 @@ Since Noobish is designed for Elmish, the whole element tree is rebuilt on each 
 
 ## Scaling
 
-Noobish supports scaling the UI components for larger screens. Due to use of spritefonts, text will not be scaled.
+Noobish supports scaling the UI components for larger screens. The library relies on spritefonts and text will not be scaled.
 
 ## Theme
 
-Noobish monogame implementation supports only a single theme. Each component can be themed separately.
+Noobish has a default renderer. Only single theme is supported. Each component can be themed separately using NinePatches.
 
 ## Limitations
 
@@ -38,6 +38,17 @@ Noobish tracks identity of a component by its location. Noobish can't handle lay
 ## Getting started
 
 Preferred usage is to include source files directly into your project.
+
+## Project Layout
+
+* *Noobish:* the element tree and layout modules.
+* *Noobish.Test:* unit tests for the element tree and layout modules.
+* *Noobish.MonoGame:* MonoGame related implementation.
+* *Noobish.MonoGame.Demo:* Executable MonoGame related kitchen sink and demo.
+* *Noobish.TextureAtlas:* The texture atlas library.
+* *Noobish.TextureAtlas.PipelineExtension:* MonoGame related processort that packs textures and turns them into .xnb file.
+* *Noobish.TextureAtlas.PipelineExtension:* MonoGame related test processort with test content.
+
 
 ## ToDo
 

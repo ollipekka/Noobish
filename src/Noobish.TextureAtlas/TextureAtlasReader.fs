@@ -2,7 +2,7 @@ namespace Noobish.TextureAtlas
 
 open Microsoft.Xna.Framework;
 open Microsoft.Xna.Framework.Content;
-open  Microsoft.Xna.Framework.Graphics;
+open Microsoft.Xna.Framework.Graphics;
 
 type TextureAtlasReader () =
     inherit ContentTypeReader<TextureAtlas>()
