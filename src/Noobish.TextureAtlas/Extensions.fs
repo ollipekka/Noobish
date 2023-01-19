@@ -64,7 +64,6 @@ type SpriteBatch with
             let scaleX = stretchedMiddleWidth / middleWidthf / scale.X
             let scaleY = stretchedMiddleHeight / middleHeightf / scale.Y
 
-
             do
                 let topLeft = Rectangle(sourceRect.Left, sourceRect.Top, left + 1, top + 1)
 

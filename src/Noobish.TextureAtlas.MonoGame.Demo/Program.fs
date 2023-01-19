@@ -64,7 +64,7 @@ type DemoGame () as game =
 
         spriteBatch.DrawAtlasNinePatch(
             sheet.["window_background.9"],
-            Vector2(150f, 150f),
+            Vector2(10f, 10f),
             1000f,
             500f,
             Color.White,

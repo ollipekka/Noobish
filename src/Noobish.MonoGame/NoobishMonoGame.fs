@@ -163,68 +163,11 @@ module NoobishMonoGame =
 
         drawRectangle spriteBatch pixel color (bounds.X + scrollX) (bounds.Y + scrollY) bounds.Width bounds.Height
 
-    let private drawBorders  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (cs: NoobishLayoutElementState) scrollX scrollY =
-        if c.BorderSize > 0.0f then
-            let pixel = content.Load<Texture2D> settings.Pixel
-            let bounds = c.ContentWithBorder
-
-            let scrolledStartY = bounds.Y + scrollY
-
-            let widthWithoutBorders = bounds.Width - c.BorderSize * 2.0f
-
-            let borderColor = toColor (
-                    if c.Enabled then
-                        c.BorderColor
-                    else
-                        c.BorderColorDisabled
-
-                )
-            let borderSize = c.BorderSize
-
-            //Left
-            drawRectangle spriteBatch pixel borderColor (bounds.X + scrollX) scrolledStartY borderSize bounds.Height
-            // Right
-            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width- borderSize) scrolledStartY borderSize bounds.Height
-            // Top
-            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) scrolledStartY widthWithoutBorders borderSize
-            // Bottom
-            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( scrolledStartY + bounds.Height - borderSize) widthWithoutBorders borderSize
-
-
-    let private drawFocusBorder  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (cs: NoobishLayoutElementState) scrollX scrollY =
-        if cs.Focused then
-            let pixel = content.Load<Texture2D> settings.Pixel
-            let bounds = c.ContentWithBorder
-
-            let scrolledStartY = bounds.Y + scrollY
-
-            let widthWithoutBorders = bounds.Width - c.BorderSize * 2.0f
-
-            let borderColor = toColor (c.BorderColorFocused)
-            let borderSize = c.BorderSize
-            let focusBorderSize = 1f
-            let focusBorderOffset = 1f
-
-
-            let width = widthWithoutBorders - focusBorderOffset * 2f
-            let height = bounds.Height - c.BorderSize * 2f - focusBorderOffset * 2f
-
-            //Left
-            drawRectangle spriteBatch pixel borderColor (bounds.X + scrollX + borderSize + focusBorderOffset) (scrolledStartY + borderSize + focusBorderOffset) focusBorderSize height
-            // Right
-            drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize - focusBorderOffset - focusBorderSize) (scrolledStartY + borderSize + focusBorderOffset) focusBorderSize height
-            // Top
-            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize + focusBorderOffset) (scrolledStartY + borderSize + focusBorderOffset) width focusBorderSize
-            // Bottom
-            drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize + focusBorderOffset) ( scrolledStartY + bounds.Height - borderSize - focusBorderOffset - focusBorderSize) width focusBorderSize
-
-
     let private debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
 
 
             let borderSize = 2f
             let widthWithoutBorders = float32 bounds.Width - borderSize
-
 
             //Left
             drawRectangle spriteBatch pixel borderColor (bounds.X) bounds.Y borderSize bounds.Height
@@ -313,7 +256,7 @@ module NoobishMonoGame =
 
             let scrollBarWidth = c.ScrollBarThickness
             let bounds = c.ContentWithBorder
-            let x = bounds.X + bounds.Width - c.BorderSize - scrollBarWidth
+            let x = bounds.X + bounds.Width - scrollBarWidth
             let color = Color.Multiply(c.ScrollBarColor |> toColor, progress)
             drawRectangle spriteBatch pixel color x bounds.Y scrollBarWidth bounds.Height
 
@@ -390,80 +333,109 @@ module NoobishMonoGame =
         drawRectangle spriteBatch pixel color (bounds.X + size.X) bounds.Y c.CursorWidth (float32 font.LineSpacing)
 
 
+    let private calculateBounds (textureSize: NoobishTextureSize) (bounds: NoobishRectangle) (textureWidth: int) (textureHeight: int) (scrollX: float32) (scrollY: float32) =
+        match textureSize with
+        | NoobishTextureSize.Stretch ->
+            createRectangle
+                (bounds.X + scrollX)
+                (bounds.Y + scrollY)
+                bounds.Width
+                bounds.Height
+
+        | NoobishTextureSize.BestFitMax ->
+            let ratio = max (bounds.Width / float32 textureWidth) (bounds.Height / float32 textureHeight)
+            let width = ratio * float32 textureWidth
+            let height = ratio * float32 textureHeight
+            let padLeft = (bounds.Width - width) / 2.0f
+            let padTop = (bounds.Height - height) / 2.0f
+            createRectangle
+                (bounds.X + scrollX + padLeft)
+                (bounds.Y + scrollY + padTop)
+                width
+                height
+
+        | NoobishTextureSize.BestFitMin ->
+            let ratio = min (bounds.Width / float32 textureWidth) (bounds.Height / float32 textureHeight)
+            let width = ratio * float32 textureWidth
+            let height = ratio * float32 textureHeight
+            let padLeft = (bounds.Width - width) / 2.0f
+            let padTop = (bounds.Height - height) / 2.0f
+            createRectangle
+                (bounds.X + scrollX + padLeft)
+                (bounds.Y + scrollY + padTop)
+                width
+                height
+
+        | NoobishTextureSize.Original ->
+            createRectangle
+                (bounds.X + scrollX)
+                (bounds.Y + scrollY)
+                bounds.Width
+                bounds.Height
+
+    let getTextureEfffect (t: NoobishTextureEffect) =
+        if t = NoobishTextureEffect.FlipHorizontally then
+            SpriteEffects.FlipHorizontally
+        else if t = NoobishTextureEffect.FlipVertically then
+            SpriteEffects.FlipVertically
+        else
+            SpriteEffects.None
+
+
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
-
-        let texture, sourceRect =
-            match t.Texture with
-            | NoobishTextureId.Basic(textureId) ->
-                let texture = content.Load<Texture2D> textureId
-                (texture, Rectangle(0, 0, texture.Width, texture.Height) )
-            | NoobishTextureId.Atlas(textureId, sx, sy, sw, sh) ->
-                let texture = content.Load<Texture2D> textureId
-                (texture, Rectangle(sx, sy, sw, sh) )
-            | NoobishTextureId.NinePatch (aid, tid) ->
-
-                let atlas = content.Load<TextureAtlas> aid
-                let texture = atlas.[tid]
-                failwith "lol"
-            | NoobishTextureId.None -> failwith "Can't have empty texture at this point."
-
-        let rect =
-            match t.TextureSize with
-            | NoobishTextureSize.Stretch ->
-                let bounds = c.ContentWithBorder
-                createRectangle
-                    (bounds.X + scrollX)
-                    (bounds.Y + scrollY)
-                    bounds.Width
-                    bounds.Height
-
-            | NoobishTextureSize.BestFitMax ->
-                let bounds = c.ContentWithBorder
-                let ratio = max (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
-                let width = ratio * float32 sourceRect.Width
-                let height = ratio * float32 sourceRect.Height
-                let padLeft = (bounds.Width - width) / 2.0f
-                let padTop = (bounds.Height - height) / 2.0f
-                createRectangle
-                    (bounds.X + scrollX + padLeft)
-                    (bounds.Y + scrollY + padTop)
-                    width
-                    height
-
-            | NoobishTextureSize.BestFitMin ->
-                let bounds = c.ContentWithBorder
-                let ratio = min (float32 bounds.Width / float32 sourceRect.Width) (float32 bounds.Height / float32 sourceRect.Height)
-                let width = ratio * float32 sourceRect.Width
-                let height = ratio * float32 sourceRect.Height
-                let padLeft = (bounds.Width - width) / 2.0f
-                let padTop = (bounds.Height - height) / 2.0f
-                createRectangle
-                    (bounds.X + scrollX + padLeft)
-                    (bounds.Y + scrollY + padTop)
-                    width
-                    height
-
-            | NoobishTextureSize.Original ->
-                let bounds = c.ContentWithBorder
-                createRectangle
-                    (bounds.X + scrollX)
-                    (bounds.Y + scrollY)
-                    bounds.Width
-                    bounds.Height
-
-        let textureEffect =
-            if t.TextureEffect = NoobishTextureEffect.FlipHorizontally then
-                SpriteEffects.FlipHorizontally
-            else if t.TextureEffect = NoobishTextureEffect.FlipVertically then
-                SpriteEffects.FlipVertically
-            else
-                SpriteEffects.None
+        match t.Texture with
+        | NoobishTextureId.Basic(textureId) ->
+            let texture = content.Load<Texture2D> textureId
 
 
-        let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
-        let rotation = toRadians t.Rotation
-        let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
-        spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
+            let textureEffect = getTextureEfffect t.TextureEffect
+            let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
+            let rect = calculateBounds t.TextureSize c.ContentWithBorder texture.Width texture.Height scrollX scrollY
+
+            let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
+            let rotation = toRadians t.Rotation
+            let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
+            spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
+
+
+        | NoobishTextureId.Atlas(aid, tid) ->
+
+            let atlas = content.Load<TextureAtlas> aid
+            let texture = atlas.[tid]
+
+            let textureEffect = getTextureEfffect t.TextureEffect
+            let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
+            let rect = calculateBounds t.TextureSize c.ContentWithBorder texture.Width texture.Height scrollX scrollY
+
+            let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
+            let rotation = toRadians t.Rotation
+            let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
+
+            spriteBatch.Draw(texture.Atlas, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
+
+        | NoobishTextureId.NinePatch (aid, tid) ->
+
+            let atlas = content.Load<TextureAtlas> aid
+            let texture = atlas.[tid]
+
+            let textureEffect = getTextureEfffect t.TextureEffect
+            let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
+            let rect = c.ContentWithBorder
+            let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
+            spriteBatch.DrawAtlasNinePatch(
+                texture,
+                Vector2(float32 rect.X, float32 rect.Y),
+                float32 rect.Width,
+                float32 rect.Height,
+                textureColor,
+                0f,
+                Vector2.One,
+                textureEffect,
+                0f )
+
+        | NoobishTextureId.None -> failwith "Can't have empty texture at this point."
+
+
 
 
     let rec private drawComponent
@@ -510,8 +482,6 @@ module NoobishMonoGame =
         | Some (texture) ->
             drawImage content settings spriteBatch c texture totalScrollX totalScrollY
         | None -> ()
-        drawBorders content settings spriteBatch c cs totalScrollX totalScrollY
-        drawFocusBorder content settings spriteBatch c cs totalScrollX totalScrollY
         drawText content spriteBatch c cs totalScrollX totalScrollY
         drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
 

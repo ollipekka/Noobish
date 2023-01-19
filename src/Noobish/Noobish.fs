@@ -16,7 +16,7 @@ type NoobishTextureId =
     | None
     | NinePatch of atlasId: string * ninePatchId: string
     | Basic of string
-    | Atlas of id: string * sx: int * sy: int * sw: int * sh: int
+    | Atlas of atlasId: string * textureId: string
 
 [<RequireQualifiedAccess>]
 type NoobishTextureEffect =
@@ -80,11 +80,6 @@ type NoobishLayoutElement = {
     MarginTop: float32
     MarginBottom: float32
 
-    BorderSize: float32
-    BorderColor: int
-    BorderColorDisabled: int
-    BorderColorFocused: int
-
     ScrollBarColor: int
     ScrollPinColor: int
     ScrollBarThickness: float32
@@ -117,10 +112,10 @@ type NoobishLayoutElement = {
     member l.PaddingHorizontal with get() = l.PaddingRight+ l.PaddingLeft
 
     member l.Hidden with get() = not l.Visible
-    member l.ContentStartX with get() = l.X + l.PaddingLeft + l.MarginLeft + l.BorderSize
-    member l.ContentStartY with get() = l.Y + l.PaddingTop + l.MarginTop + l.BorderSize
-    member l.ContentWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal - 2f * l.BorderSize
-    member l.ContentHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical - 2f * l.BorderSize
+    member l.ContentStartX with get() = l.X + l.PaddingLeft + l.MarginLeft
+    member l.ContentStartY with get() = l.Y + l.PaddingTop + l.MarginTop
+    member l.ContentWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal
+    member l.ContentHeight with get() = l.OuterHeight - l.MarginVertical - l.PaddingVertical
     member l.X with get() = l.StartX + l.RelativeX
     member l.Y with get() = l.StartY + l.RelativeY
     member l.Width with get() = l.OuterWidth - l.MarginHorizontal
@@ -209,8 +204,6 @@ type NoobishAttribute =
     | Visible of bool
     | Enabled of bool
     | DisabledColor of int
-    | BorderColor of int
-    | BorderSize of int
     | Texture of NoobishTextureId
     | TextureEffect of NoobishTextureEffect
     | TextureColor of int
@@ -269,7 +262,7 @@ let sliderOnValueChanged cb = SliderValueChanged cb
 
 let texture t = Texture (NoobishTextureId.Basic t)
 let ninePatch aid tid = Texture (NoobishTextureId.NinePatch(aid,tid))
-let atlasTexture t sx sy sw sh = Texture(NoobishTextureId.Atlas (t, sx, sy, sw, sh))
+let atlasTexture aid tid = Texture(NoobishTextureId.Atlas (aid, tid))
 let textureColor c = TextureColor c
 let textureColorDisabled c = TextureColorDisabled c
 let textureSize s = TextureSize s
@@ -308,8 +301,6 @@ let visible v = Visible(v)
 
 let hidden = Visible(false)
 
-let borderSize v = BorderSize(v)
-let borderColor c = BorderColor(c)
 let scrollVertical = ScrollVertical
 let scrollHorizontal = ScrollHorizontal
 let scrollBoth = Scroll
@@ -544,10 +535,6 @@ module Logic =
         let mutable onPressInternal: (string -> ComponentMessage -> unit) -> (struct(int*int)) -> NoobishLayoutElement -> unit = (fun _ _ _ -> ())
 
         let mutable onChange: string -> unit = ignore
-        let mutable borderSize = scale theme.BorderSize
-        let mutable borderColor = theme.BorderColor
-        let mutable borderColorDisabled = theme.BorderColorDisabled
-        let mutable borderColorFocused = theme.BorderColorFocused
 
         let mutable texture = NoobishTextureId.None
         let mutable textureEffect = NoobishTextureEffect.None
@@ -568,8 +555,8 @@ module Logic =
         let mutable rowspan = 1
         let mutable colspan = 1
 
-        let mutable minWidth = scale theme.Width
-        let mutable minHeight = scale theme.Height
+        let mutable minWidth = 0f
+        let mutable minHeight = 0f
 
         let mutable relativeX = 0.0f
         let mutable relativeY = 0.0f
@@ -672,9 +659,6 @@ module Logic =
                             Slider ({s with OnValueChanged = cb})
                         | _ -> failwith "Model is not a slider."
                     )
-            // Border
-            | BorderSize(v) -> borderSize <- scale v
-            | BorderColor(c) -> borderColor <-c
             | OnClick(v) ->
                 onClick <- v
                 consumedButtons.Add (NoobishMouseButtonId.Left)
@@ -789,8 +773,8 @@ module Logic =
 
             let (contentWidth, contentHeight) = measureText textFont textLines
 
-            minWidth <- float32 contentWidth + 2f * borderSize
-            minHeight <- float32 contentHeight + 2f * borderSize
+            minWidth <- float32 contentWidth
+            minHeight <- float32 contentHeight
 
         let width =
             if fillHorizontal then
@@ -850,11 +834,6 @@ module Logic =
                     )
                 else
                     None
-
-            BorderSize = borderSize
-            BorderColor = borderColor
-            BorderColorDisabled = borderColorDisabled
-            BorderColorFocused = borderColorFocused
 
             StartX = startX
             StartY = startY
@@ -957,8 +936,8 @@ module Logic =
         | NoobishLayout.Default ->
 
             // In this layout, actual parent component height might be zero at this point. We don't know. Use available height.
-            let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.MarginHorizontal - parentComponent.PaddingHorizontal - parentComponent.BorderSize * 2f
-            let availableHeight = (parentHeight * float32 parentComponent.RowSpan)- parentComponent.MarginVertical - parentComponent.PaddingVertical - parentComponent.BorderSize * 2f
+            let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.MarginHorizontal - parentComponent.PaddingHorizontal
+            let availableHeight = (parentHeight * float32 parentComponent.RowSpan)- parentComponent.MarginVertical - parentComponent.PaddingVertical
 
             let parentBounds = parentComponent.Content
             for i = 0 to c.Children.Length - 1 do
@@ -986,14 +965,14 @@ module Logic =
                 if parentComponent.FillHorizontal then
                     availableWidth + parentComponent.PaddingHorizontal
                 else
-                    let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal + parentComponent.BorderSize * 2f
+                    let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
                     clamp childWidth 0f availableWidth
 
             let height =
                 if parentComponent.FillVertical then
                     availableHeight + parentComponent.PaddingVertical
                 else
-                    let childHeight = calculateChildHeight() + parentComponent.PaddingVertical + parentComponent.MarginVertical + parentComponent.BorderSize * 2f
+                    let childHeight = calculateChildHeight() + parentComponent.PaddingVertical + parentComponent.MarginVertical
                     clamp childHeight 0f availableHeight
 
             let overflowHeight = calculateOverflowHeight()
