@@ -108,10 +108,10 @@ module Text =
                     [
                         div
                             [
-                                label [text "Font size 22"; textFont "Content/AnonymousPro22"; block]
-                                label [text "Regular"; textFont "Content/AnonymousPro22"; textColor 0xac3232aa; block]
-                                label [text "Bold"; textFont "Content/AnonymousProBold22"; textColor 0x4b692faa; block]
-                                label [text "Italic"; textFont "Content/AnonymousProItalic22"; textColor 0x3f3f74aa; block]
+                                label [text "Font size 22"; block]
+                                label [text "Regular"; block]
+                                label [text "Bold"; block]
+                                label [text "Italic"; block]
                             ]
                             [
 
@@ -119,9 +119,9 @@ module Text =
                         div
                             [
                                 label [text "Font size 16"; block]
-                                label [text "Regular"; textColor 0xac3232aa; block]
-                                label [text "Bold"; textFont "Content/AnonymousProBold16"; textColor 0x4b692faa; block]
-                                label [text "Italic"; textFont "Content/AnonymousProItalic16"; textColor 0x3f3f74aa; block]
+                                label [text "Regular"; block]
+                                label [text "Bold"; block]
+                                label [text "Italic"; block]
                             ]
                             [
 
@@ -171,7 +171,6 @@ module Containers =
                                         texture "Pixel"
                                         textureBestFitMin
                                         minSize 10 10
-                                        textureColor 0xff0000ff
                                         padding 0
                                         margin 0
                                         relativePosition -5 -5
@@ -183,7 +182,6 @@ module Containers =
                                         texture "Pixel"
                                         textureBestFitMin
                                         minSize 10 10
-                                        textureColor 0xff0000ff
                                         padding 0
                                         margin 0
                                         relativePosition -25 15
@@ -196,7 +194,6 @@ module Containers =
                                         texture "Pixel"
                                         textureBestFitMin
                                         minSize 10 10
-                                        textureColor 0xff00FFff
                                         padding 0
                                         margin 0
                                         relativePosition 15 -25
@@ -417,15 +414,14 @@ type DemoGame () as game =
                 [
                     grid 12 8
                         [
-                            panel [label [text "Noobish"; textFont "Content/AnonymousProBold22"]] [colspan 3; rowspan 1]
+                            panel [label [text "Noobish";]] [colspan 3; rowspan 1]
                             panelWithGrid 12 1
                                 [
-                                    label [text title; textFont "Content/AnonymousProBold22"; fill; colspan 10];
+                                    label [text title; fill; colspan 10];
                                     button
                                         [
                                             text "Debug";
                                             toggled model.UI.Debug;
-                                            textFont "Content/AnonymousProBold22";
                                             fill;
                                             onClick (fun () -> dispatch ToggleDebug)
                                             colspan 2

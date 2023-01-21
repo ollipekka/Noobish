@@ -52,18 +52,13 @@ type NoobishLayoutElement = {
     Text: string[]
     TextFont: string
     TextColor: int
-    TextColorDisabled: int
-    TextInputColor: int
     TextWrap: bool
     Texture: option<NoobishTexture>
     Color: int
     ColorDisabled: int
 
-    CursorColor: int
     CursorWidth: float32
 
-    PressedColor: int
-    HoverColor: int
     StartX: float32
     StartY: float32
     RelativeX: float32
@@ -171,16 +166,10 @@ type NoobishAttribute =
     | ZIndex of int
     | Overlay
 
-    | CursorColor of int
-    | CursorWidth of int
-
-    | TextInputColor of int
     | Text of string
-    | TextFont of string
     | TextSmall
     | TextLarge
     | TextAlign of NoobishTextAlign
-    | TextColor of int
     | TextWrap
 
     | SliderRange of min:float32 * max:float32
@@ -203,11 +192,8 @@ type NoobishAttribute =
     | FgColor of int
     | Visible of bool
     | Enabled of bool
-    | DisabledColor of int
     | Texture of NoobishTextureId
     | TextureEffect of NoobishTextureEffect
-    | TextureColor of int
-    | TextureColorDisabled of int
     | TextureSize of NoobishTextureSize
     | TextureRotation of int
     | ScrollHorizontal
@@ -236,11 +222,7 @@ type NoobishElement = {
 // Attributes
 let name v = Name v
 let text value = Text(value)
-let cursorColor c = CursorColor (c)
-let cursorWidth w = CursorWidth (w)
-let textFont f = TextFont(f)
-let textColor c = TextColor (c)
-let textInputColor c = TextInputColor (c)
+
 let textAlign v = TextAlign (v)
 let textTopLeft = TextAlign NoobishTextAlign.TopLeft
 let textTopCenter = TextAlign NoobishTextAlign.TopCenter
@@ -263,8 +245,7 @@ let sliderOnValueChanged cb = SliderValueChanged cb
 let texture t = Texture (NoobishTextureId.Basic t)
 let ninePatch aid tid = Texture (NoobishTextureId.NinePatch(aid,tid))
 let atlasTexture aid tid = Texture(NoobishTextureId.Atlas (aid, tid))
-let textureColor c = TextureColor c
-let textureColorDisabled c = TextureColorDisabled c
+
 let textureSize s = TextureSize s
 let textureEffect s = TextureEffect s
 let textureFlipHorizontally = TextureEffect NoobishTextureEffect.FlipHorizontally
@@ -491,35 +472,31 @@ module Logic =
 
     let private createNoobishLayoutElement (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentId: string) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
 
+        let cid = $"%s{parentPath}-%s{themeId}-(%g{startX},%g{startY})"
+        let cstate = "default"
+
         let scale (v: int) = float32 v * settings.Scale
         let scaleTuple (left, right, top, bottom) =
             (scale left, scale right, scale top, scale bottom)
 
-        let theme = if theme.Styles.ContainsKey themeId then theme.Styles.[themeId] else theme.Styles.["Empty"]
         let mutable name = ""
         let mutable enabled = true
         let mutable visible = true
         let mutable toggled = false
         let mutable zIndex = zIndex
         let mutable overlay = false
-        let mutable disabledColor = theme.ColorDisabled
 
 
-        let mutable cursorColor = theme.TextColor
         let mutable cursorWidth = 2f
 
-        let mutable textAlign = theme.TextAlignment
+        let mutable textAlign = NoobishTextAlign.Left
         let mutable text = ""
-        let mutable textFont = if theme.TextFont <> "" then theme.TextFont else settings.FontSettings.Normal
-        let mutable textColor = theme.TextColor
-        let mutable textInputColor = theme.TextColor
-        let mutable textColorDisabled = theme.TextColorDisabled
+        let mutable textFont = theme.GetFont cid cstate
+        let mutable textColor = theme.GetFontColor cid cstate
         let mutable textWrap = false
-        let mutable color = theme.Color
-        let mutable pressedColor = theme.PressedColor
-        let mutable hoverColor = theme.HoverColor
-        let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = scaleTuple theme.Padding
-        let mutable marginLeft, marginRight, marginTop, marginBottom = scaleTuple theme.Margin
+        let mutable color = theme.GetColor cid cstate
+        let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = scaleTuple (theme.GetPadding cid cstate)
+        let mutable marginLeft, marginRight, marginTop, marginBottom = scaleTuple (theme.GetMargin cid cstate)
 
         let mutable fillHorizontal = false
         let mutable fillVertical = false
@@ -538,17 +515,17 @@ module Logic =
 
         let mutable texture = NoobishTextureId.None
         let mutable textureEffect = NoobishTextureEffect.None
-        let mutable textureColor = theme.TextureColor
-        let mutable textureColorDisabled = theme.TextColorDisabled
+        let mutable textureColor = theme.GetColor cid cstate
         let mutable textureSize = NoobishTextureSize.BestFitMax
         let mutable textureRotation = 0
 
         let mutable scrollHorizontal = false
         let mutable scrollVertical = false
-        let mutable scrollBarColor = theme.ScrollBarColor
-        let mutable scrollPinColor = theme.ScrollPinColor
-        let mutable scrollBarThickness = scale theme.ScrollBarThickness
-        let mutable scrollPinThickness = scale theme.ScrollPinThickness
+
+        let mutable scrollBarColor = 0x4d4139aa
+        let mutable scrollPinColor = 0xdf7126aa
+        let mutable scrollBarThickness = scale 2
+        let mutable scrollPinThickness = scale 2
 
         let mutable layout = NoobishLayout.None
 
@@ -600,16 +577,9 @@ module Logic =
             | MinSize (width, height) ->
                 minWidth <- scale width
                 minHeight <- scale height
-            | CursorColor(c) ->
-                cursorColor <- c
-            | CursorWidth(w) ->
-                cursorWidth <- float32 w
             // Text
             | Text(value) -> text <- value
-            | TextFont(value) -> textFont <- value
             | TextAlign (value) -> textAlign <- value
-            | TextColor (c) -> textColor <- c
-            | TextInputColor (c) -> textInputColor <- c
             | TextWrap -> textWrap <- true
             | TextSmall -> textFont <- settings.FontSettings.Small
             | TextLarge -> textFont <- settings.FontSettings.Large
@@ -691,13 +661,10 @@ module Logic =
             | Block -> isBlock <- true
             | Enabled (v) -> enabled <- v
             | Visible (v) -> visible <- v
-            | DisabledColor(c) -> disabledColor <- c
             | Texture (t) ->
                 texture <- t
             | TextureEffect (t) ->
                 textureEffect <- t
-            | TextureColor (c) -> textureColor <- c
-            | TextureColorDisabled (c) -> textureColorDisabled <- c
             | TextureSize (s) ->
                 textureSize <- s
             | TextureRotation (t) ->
@@ -786,7 +753,6 @@ module Logic =
             else
                 minHeight + paddingTop + paddingBottom + marginTop + marginBottom
 
-        let cid = sprintf "%s%A%s%s-%g-%g-%g-%g-%i-%i" text texture themeId name startX startY width height colspan rowspan
 
         let path = sprintf "%s/%s" parentPath themeId
 
@@ -806,14 +772,10 @@ module Logic =
 
             TextAlignment = textAlign
 
-            CursorColor = cursorColor
-            CursorWidth = cursorWidth
-
             Text = textLines.Split '\n'
             TextFont = textFont
+
             TextColor = textColor
-            TextInputColor = textInputColor
-            TextColorDisabled = textColorDisabled
             TextWrap = textWrap
 
             Model = model
@@ -827,7 +789,7 @@ module Logic =
                             Texture = texture
                             TextureEffect = textureEffect
                             TextureColor = textureColor
-                            TextureColorDisabled = textureColorDisabled
+                            TextureColorDisabled = 0xCCCCCCFF
                             TextureSize = textureSize
                             Rotation = textureRotation
                         }
@@ -869,11 +831,10 @@ module Logic =
             ColSpan = colspan
             RowSpan = rowspan
 
-            Color = color
-            ColorDisabled = disabledColor
+            Color = theme.GetColor cid "default"
+            ColorDisabled = theme.GetColor cid "disabled"
 
-            PressedColor = pressedColor
-            HoverColor = hoverColor
+            CursorWidth = 2f
 
             ScrollHorizontal = scrollHorizontal
             ScrollVertical = scrollVertical

@@ -1,0 +1,10 @@
+{
+    "Name": "ThemeAtlas",
+    "Include": [
+        "*.png"
+    ],
+    "Exclude": [
+        "*excluded*.png",
+        "*atlas*"
+    ]
+}
