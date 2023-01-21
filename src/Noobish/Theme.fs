@@ -78,17 +78,17 @@ let styles2 = [
     ];
     "TextBox", [
         "default", [
-            color 0xFF0000
+            color 0xFF0000FF
             fontColor 0xAAAAAA
             drawables [
-                ninePatch "textbox-default.9"
+                ninePatch "panel-default.9"
             ]
         ];
         "focused", [
-            color 0xFFFF
+            color 0xFFFF00FF
             drawables [
-                ninePatch "textbox-default.9"
-                ninePatch "textbox-focused.9"
+                ninePatch "panel-default.9"
+                ninePatch "panel-default.9"
             ]
         ]
     ];

@@ -233,7 +233,6 @@ module NoobishMonoGame =
                 let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
                 let texture = atlas.[tid]
 
-                let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
                 let rect = c.ContentWithBorder
                 spriteBatch.DrawAtlasNinePatch(
                     texture,
@@ -245,8 +244,6 @@ module NoobishMonoGame =
                     Vector2.One,
                     SpriteEffects.None,
                     0f )
-
-        drawRectangle spriteBatch pixel color (bounds.X + scrollX) (bounds.Y + scrollY) bounds.Width bounds.Height
 
     let private debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
 
@@ -479,9 +476,6 @@ module NoobishMonoGame =
                 0f )
 
         | NoobishTextureId.None -> failwith "Can't have empty texture at this point."
-
-
-
 
     let rec private drawComponent
         (theme: Theme)

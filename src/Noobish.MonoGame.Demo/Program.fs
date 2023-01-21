@@ -430,10 +430,9 @@ type DemoGame () as game =
                                 [
                                     colspan 9;
                                     rowspan 1
-                                    ninePatch "Content/TestAtlas" "window_background.9"
                                 ]
                             panel [scroll scrollItems [name "LeftMenu";]] [colspan 3; rowspan 7;]
-                            panel content [colspan 9; rowspan 7; ninePatch "Content/TestAtlas" "window_background.9"]
+                            panel content [colspan 9; rowspan 7;]
                         ]
                         [
                             padding 10
