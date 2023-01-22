@@ -193,36 +193,35 @@ module NoobishMonoGame =
     let private drawBackground (theme: Theme) (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (time: TimeSpan) scrollX scrollY =
         let cs = state.[c.Id]
 
-        let pixel = content.Load<Texture2D> settings.Pixel
-
-        let bounds = c.ContentWithBorder
-
         let color =
-            if not c.Enabled then
-                //toColor c.ColorDisabled
+            if cs.CanFocus && cs.Focused then
+                theme.GetColor c.ThemeId "focused" |> toColor
+            elif not c.Enabled then
                 theme.GetColor c.ThemeId "disabled" |> toColor
             elif c.Toggled then
                 //toColor c.PressedColor
-                theme.GetColor c.ThemeId "pressed" |> toColor
-             else
+                theme.GetColor c.ThemeId "toggled" |> toColor
+            else
                 if cs.Visible then
                     let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 0.2) 1.0
 
                     let color = theme.GetColor c.ThemeId "default" |> toColor
-                    let pressedColor = theme.GetColor c.ThemeId "pressed" |> toColor
+                    let pressedColor = theme.GetColor c.ThemeId "toggled" |> toColor
                     Color.Lerp(color, pressedColor, float32 progress)
                 else if cs.Toggled then
-                    theme.GetColor c.ThemeId "pressed" |> toColor
+                    theme.GetColor c.ThemeId "toggled" |> toColor
                 else
                     Color.Transparent
 
         let state =
-            if c.Enabled then
-                "default"
+            if cs.CanFocus && cs.Focused then
+                "focused"
+            elif not c.Enabled then
+                "disabled"
             elif c.Toggled then
                 "toggled"
             else
-                "disabled"
+                "default"
         let drawables = theme.GetDrawables c.ThemeId state
 
         for drawable in drawables do
@@ -240,6 +239,21 @@ module NoobishMonoGame =
                     float32 rect.Width,
                     float32 rect.Height,
                     color,
+                    0f,
+                    Vector2.One,
+                    SpriteEffects.None,
+                    0f )
+            | NoobishDrawable.NinePatchWithColor(tid, color) ->
+                let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
+                let texture = atlas.[tid]
+
+                let rect = c.ContentWithBorder
+                spriteBatch.DrawAtlasNinePatch(
+                    texture,
+                    Vector2(float32 rect.X, float32 rect.Y),
+                    float32 rect.Width,
+                    float32 rect.Height,
+                    toColor(color),
                     0f,
                     Vector2.One,
                     SpriteEffects.None,
@@ -277,6 +291,13 @@ module NoobishMonoGame =
             |> Option.flatten
             |> Option.defaultValue c.Text
 
+
+        let state =
+            if cs.CanFocus && cs.Focused then "focused"
+            elif not c.Enabled then "disabled"
+            elif cs.Toggled then "toggled"
+            else "default"
+
         let bounds = c.Content
         for line in textLines do
 
@@ -313,12 +334,6 @@ module NoobishMonoGame =
                 | NoobishTextAlign.BottomCenter -> centerX(), bottomY()
                 | NoobishTextAlign.BottomRight -> rightX(), bottomY()
 
-
-            let state =
-                if c.Enabled then
-                    if c.Model.IsSome then "focused" else "default"
-                else
-                    "disabled"
 
             let textColor = toColor(theme.GetFontColor c.ThemeId state)
             spriteBatch.DrawString(font, line, Vector2(floor textX, floor (startY + textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
@@ -390,7 +405,9 @@ module NoobishMonoGame =
         drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
 
     let blinkInterval = TimeSpan.FromSeconds 1.2
+
     let private drawCursor
+        (theme: Theme)
         (content: ContentManager)
         (settings: NoobishSettings)
         (spriteBatch: SpriteBatch)
@@ -404,7 +421,6 @@ module NoobishMonoGame =
 
         let textUpToCursor =
             if textbox.Text.Length > 0 then
-
                 textbox.Text.Substring(0, cursorIndex)
             else
                 ""
@@ -412,16 +428,46 @@ module NoobishMonoGame =
         let font = content.Load<SpriteFont> c.TextFont
         let size = font.MeasureString textUpToCursor
 
-        let pixel = content.Load<Texture2D> settings.Pixel
-
         let timeFocused = (time - cs.FocusedTime)
         let blinkProgress = MathF.Pow(float32 (timeFocused.TotalSeconds % blinkInterval.TotalSeconds), 5f)
 
-        let color = Color.Lerp(Color.Red, Color.Transparent, float32 blinkProgress)
+        let cursorColor = theme.GetColor "Cursor" "default" |> toColor
+        let color = Color.Lerp(cursorColor, Color.Transparent, float32 blinkProgress)
 
-        drawRectangle spriteBatch pixel color (bounds.X + size.X) bounds.Y c.CursorWidth (float32 font.LineSpacing)
 
+        let drawables = theme.GetDrawables "Cursor" "default"
 
+        for drawable in drawables do
+            match drawable with
+            | NoobishDrawable.Texture _ -> failwith "Texture not supported for cursor."
+            | NoobishDrawable.NinePatch(tid) ->
+                let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
+                let texture = atlas.[tid]
+
+                spriteBatch.DrawAtlasNinePatch(
+                    texture,
+                    Vector2(float32 bounds.X + size.X - (float32 texture.Width / 2f), float32 bounds.Y),
+                    float32 texture.Width,
+                    float32 font.LineSpacing,
+                    color,
+                    0f,
+                    Vector2.One,
+                    SpriteEffects.None,
+                    0f )
+            | NoobishDrawable.NinePatchWithColor(tid, color) ->
+                let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
+                let texture = atlas.[tid]
+
+                spriteBatch.DrawAtlasNinePatch(
+                    texture,
+                    Vector2(float32 bounds.X + size.X - (float32 texture.Width / 2f), float32 bounds.Y),
+                    float32 texture.Width,
+                    float32 font.LineSpacing,
+                    toColor(color),
+                    0f,
+                    Vector2.One,
+                    SpriteEffects.None,
+                    0f )
 
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
@@ -532,7 +578,7 @@ module NoobishMonoGame =
                 | Combobox (_c) -> ()
                 | Textbox (t) ->
                     if cs.Focused then
-                        drawCursor content settings spriteBatch c cs t time
+                        drawCursor theme content settings spriteBatch c cs t time
             )
 
 

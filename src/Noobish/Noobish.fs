@@ -495,8 +495,8 @@ module Logic =
         let mutable textColor = theme.GetFontColor cid cstate
         let mutable textWrap = false
         let mutable color = theme.GetColor cid cstate
-        let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = scaleTuple (theme.GetPadding cid cstate)
-        let mutable marginLeft, marginRight, marginTop, marginBottom = scaleTuple (theme.GetMargin cid cstate)
+        let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = scaleTuple (theme.GetPadding themeId cstate)
+        let mutable marginLeft, marginRight, marginTop, marginBottom = scaleTuple (theme.GetMargin themeId cstate)
 
         let mutable fillHorizontal = false
         let mutable fillVertical = false
@@ -755,6 +755,7 @@ module Logic =
 
 
         let path = sprintf "%s/%s" parentPath themeId
+        let text = if String.IsNullOrWhiteSpace textLines then [||] else textLines.Split '\n'
 
         {
             Id = (sprintf "%s/%s" path cid)
@@ -772,7 +773,7 @@ module Logic =
 
             TextAlignment = textAlign
 
-            Text = textLines.Split '\n'
+            Text = text
             TextFont = textFont
 
             TextColor = textColor
@@ -831,8 +832,8 @@ module Logic =
             ColSpan = colspan
             RowSpan = rowspan
 
-            Color = theme.GetColor cid "default"
-            ColorDisabled = theme.GetColor cid "disabled"
+            Color = theme.GetColor themeId "default"
+            ColorDisabled = theme.GetColor themeId "disabled"
 
             CursorWidth = 2f
 

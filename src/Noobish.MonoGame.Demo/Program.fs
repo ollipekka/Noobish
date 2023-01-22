@@ -168,7 +168,7 @@ module Containers =
                                 image
                                     [
                                         name "Pixel Origin"
-                                        texture "Pixel"
+                                        texture "Content/Pixel"
                                         textureBestFitMin
                                         minSize 10 10
                                         padding 0
@@ -179,7 +179,7 @@ module Containers =
                                 image
                                     [
                                         name "Pixel 1"
-                                        texture "Pixel"
+                                        texture "Content/Pixel"
                                         textureBestFitMin
                                         minSize 10 10
                                         padding 0
@@ -191,7 +191,7 @@ module Containers =
                                 button [ text "o"; relativePosition 30 30 ]
                                 image [
                                         name "Pixel 2"
-                                        texture "Pixel"
+                                        texture "Content/Pixel"
                                         textureBestFitMin
                                         minSize 10 10
                                         padding 0

@@ -21,6 +21,7 @@ open DictionaryExtensions
 [<RequireQualifiedAccess>]
 type NoobishDrawable=
 | NinePatch of string
+| NinePatchWithColor of string*int
 | Texture of string
 
 [<RequireQualifiedAccess>]
@@ -42,57 +43,82 @@ let color c = NoobishStyle.Color(c)
 let drawables d = NoobishStyle.Drawables d
 let texture t = NoobishDrawable.Texture t
 let ninePatch t = NoobishDrawable.NinePatch t
+let ninePatchWithColor t c = NoobishDrawable.NinePatchWithColor(t,c)
 let padding t r b l = NoobishStyle.Padding(t,r,b,l)
 let margin t r b l = NoobishStyle.Margin(t,r,b,l)
 
 let styles2 = [
-    "Panel", [
+    "Default", [
         "default", [
             padding 5 5 5 5
             margin 2 2 2 2
+            fontColor 0xbbbbbbFF
+            color 0x39404dff
+        ];
+        "disabled", [
+            padding 5 5 5 5
+            margin 2 2 2 2
+            fontColor 0x806d5fff
+            color 0x39404dff
+        ]
+    ]
+    "Panel", [
+        "default", [
             drawables [
                 ninePatch "panel-default.9"
             ]
         ]
     ]
+    "Division", [
+        "default", [
+        ]
+    ];
     "Button", [
         "default", [
-            color 0xFFFFFFFF
-            fontColor 0xAAAAAA
             drawables [
                 ninePatch "button-default.9"
             ]
         ];
         "toggled", [
-            color 0xFFFFFFFF
             drawables [
                 ninePatch "button-toggled.9"
             ]
         ]
         "disabled", [
-            color 0xFFFFFFFF
             drawables [
                 ninePatch "button-disabled.9"
             ]
         ]
     ];
+    "Combobox", [
+        "default", [
+            drawables [
+                ninePatch "button-default.9"
+            ]
+        ];
+    ];
     "TextBox", [
         "default", [
-            color 0xFF0000FF
-            fontColor 0xAAAAAA
             drawables [
-                ninePatch "panel-default.9"
+                ninePatch "textbox-default.9"
             ]
         ];
         "focused", [
-            color 0xFFFF00FF
             drawables [
-                ninePatch "panel-default.9"
-                ninePatch "panel-default.9"
+                ninePatch "textbox-default.9"
+                ninePatchWithColor "textbox-focused.9" 0xdf7126aa
             ]
         ]
     ];
-    "checkbox", [
+    "Cursor", [
+        "default", [
+            color 0xdf7126aa
+            drawables [
+                ninePatch "cursor.9"
+            ]
+        ]
+    ]
+    "Checkbox", [
         "default", [
             drawables [
                 texture "checkbox"
@@ -117,79 +143,47 @@ type Theme = {
     Drawables: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishDrawable[]>>
 } with
 
-    member t.GetFont (cid: string) (state: string) =
-        let (success, fonts) = t.Fonts.TryGetValue(cid)
-
+    static member private GetDefault (d: IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>) (themeId: string) (state: string) (fallback: 'T): 'T =
+        let (success, defaultDict) = d.TryGetValue(themeId)
         if success then
-            let success', font = fonts.TryGetValue(state)
+            let (success', v) = defaultDict.TryGetValue state
             if success' then
-                font
+                v
             else
-                t.FontSettings.Normal
+                Theme.GetDefault d "Default" state fallback
         else
-            t.FontSettings.Normal
+            fallback
+
+
+    static member private GetValue (d: IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>) (themeId: string) (state: string) (fallback: 'T): 'T =
+        let (success, defaultDict) = d.TryGetValue(themeId)
+        if success then
+            let (success', v) = defaultDict.TryGetValue state
+            if success' then
+                v
+            else
+                Theme.GetDefault d themeId "default" fallback
+        else
+            Theme.GetDefault d "Default" "default" fallback
+
+
+    member t.GetFont (cid: string) (state: string) =
+        Theme.GetValue t.Fonts cid state t.FontSettings.Normal
 
     member t.GetFontColor (cid: string) (state: string) =
-        let (success, fontColors) = t.FontColors.TryGetValue(cid)
-
-        if success then
-            let success', color = fontColors.TryGetValue(state)
-            if success' then
-                color
-            else
-                0xFFFFFFFF
-        else
-            0xFFFFFFFF
-
+        Theme.GetValue t.FontColors cid state 0xFFFFFFFF
 
     member t.GetColor (cid: string) (state: string) =
-        let (success, colors) = t.Colors.TryGetValue(cid)
-
-        if success then
-            let success', color = colors.TryGetValue(state)
-            if success' then
-                color
-            else
-                0xFFFFFFFF
-        else
-            0xFFFFFFFF
-
+        Theme.GetValue t.Colors cid state 0xFFFFFFFF
 
     member t.GetPadding (cid: string) (state: string) =
-        let (success, paddings) = t.Paddings.TryGetValue(cid)
-
-        if success then
-            let success', padding = paddings.TryGetValue(state)
-            if success' then
-                padding
-            else
-                (0,0,0,0)
-        else
-            (0,0,0,0)
+        Theme.GetValue t.Paddings cid state (0, 0, 0, 0)
 
     member t.GetMargin (cid: string) (state: string) =
-        let (success, margins) = t.Margins.TryGetValue(cid)
-
-        if success then
-            let success', margin = margins.TryGetValue(state)
-            if success' then
-                margin
-            else
-                (0,0,0,0)
-        else
-            (0,0,0,0)
+        Theme.GetValue t.Margins cid state (0, 0, 0, 0)
 
     member t.GetDrawables (cid: string) (state: string) =
-        let (success, drawables) = t.Drawables.TryGetValue(cid)
-
-        if success then
-            let success', drawables = drawables.TryGetValue(state)
-            if success' then
-                drawables
-            else
-                [||]
-        else
-            [||]
+        Theme.GetValue t.Drawables cid state [||]
 
 
 (*
@@ -595,8 +589,6 @@ let createDefaultTheme (fontSettings: FontSettings)  =
                 | NoobishStyle.Margin (m) ->
                     let marginsByComponent = margins.GetOrAdd name (fun () -> Dictionary())
                     marginsByComponent.[stateId] <- m
-
-
 
     {
         FontSettings = fontSettings
