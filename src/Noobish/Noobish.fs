@@ -50,8 +50,6 @@ type NoobishLayoutElement = {
 
     TextAlignment: NoobishTextAlign
     Text: string[]
-    TextFont: string
-    TextColor: int
     TextWrap: bool
     Texture: option<NoobishTexture>
     Color: int
@@ -472,7 +470,7 @@ module Logic =
 
     let private createNoobishLayoutElement (theme: Theme) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentId: string) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
 
-        let cid = $"%s{parentPath}-%s{themeId}-(%g{startX},%g{startY})"
+        let cid = $"%s{parentPath}/%s{themeId}-(%g{startX},%g{startY})"
         let cstate = "default"
 
         let scale (v: int) = float32 v * settings.Scale
@@ -492,7 +490,6 @@ module Logic =
         let mutable textAlign = NoobishTextAlign.Left
         let mutable text = ""
         let mutable textFont = theme.GetFont cid cstate
-        let mutable textColor = theme.GetFontColor cid cstate
         let mutable textWrap = false
         let mutable color = theme.GetColor cid cstate
         let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = scaleTuple (theme.GetPadding themeId cstate)
@@ -758,7 +755,7 @@ module Logic =
         let text = if String.IsNullOrWhiteSpace textLines then [||] else textLines.Split '\n'
 
         {
-            Id = (sprintf "%s/%s" path cid)
+            Id = cid
             ParentId = parentId
             Path = path
             ThemeId = themeId
@@ -774,9 +771,6 @@ module Logic =
             TextAlignment = textAlign
 
             Text = text
-            TextFont = textFont
-
-            TextColor = textColor
             TextWrap = textWrap
 
             Model = model

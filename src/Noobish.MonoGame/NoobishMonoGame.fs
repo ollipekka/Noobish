@@ -193,26 +193,6 @@ module NoobishMonoGame =
     let private drawBackground (theme: Theme) (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (time: TimeSpan) scrollX scrollY =
         let cs = state.[c.Id]
 
-        let color =
-            if cs.CanFocus && cs.Focused then
-                theme.GetColor c.ThemeId "focused" |> toColor
-            elif not c.Enabled then
-                theme.GetColor c.ThemeId "disabled" |> toColor
-            elif c.Toggled then
-                //toColor c.PressedColor
-                theme.GetColor c.ThemeId "toggled" |> toColor
-            else
-                if cs.Visible then
-                    let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 0.2) 1.0
-
-                    let color = theme.GetColor c.ThemeId "default" |> toColor
-                    let pressedColor = theme.GetColor c.ThemeId "toggled" |> toColor
-                    Color.Lerp(color, pressedColor, float32 progress)
-                else if cs.Toggled then
-                    theme.GetColor c.ThemeId "toggled" |> toColor
-                else
-                    Color.Transparent
-
         let state =
             if cs.CanFocus && cs.Focused then
                 "focused"
@@ -222,6 +202,38 @@ module NoobishMonoGame =
                 "toggled"
             else
                 "default"
+
+        let color =
+            if cs.CanFocus && cs.Focused then
+                theme.GetColor c.ThemeId "focused" |> toColor
+            elif not c.Enabled then
+                theme.GetColor c.ThemeId "disabled" |> toColor
+            elif c.Toggled then
+                theme.GetColor c.ThemeId "toggled" |> toColor
+            else
+                if cs.Visible then
+                    let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 1.0) 1.0
+
+                    let color, pressedColor = 
+                        if state = "toggled" then 
+                            theme.GetColor c.ThemeId "toggled" |> toColor,
+                            theme.GetColor c.ThemeId "default" |> toColor
+                        else 
+                            theme.GetColor c.ThemeId "default" |> toColor,
+                            theme.GetColor c.ThemeId "toggled" |> toColor
+                            
+                    let finalColor = Color.Lerp(color, pressedColor, float32 progress)
+                    if progress <> 0.0 then 
+                        printfn $"%s{c.ThemeId} %f{progress} - %A{color} %A{pressedColor} %A{finalColor}"
+                    
+                    finalColor
+
+                else if cs.Toggled then
+                    theme.GetColor c.ThemeId "toggled" |> toColor
+                else
+                    Color.Transparent
+
+
         let drawables = theme.GetDrawables c.ThemeId state
 
         for drawable in drawables do
@@ -298,10 +310,12 @@ module NoobishMonoGame =
             elif cs.Toggled then "toggled"
             else "default"
 
+        let fontId = theme.GetFont c.ThemeId state
+        let font = content.Load<SpriteFont> fontId
+
         let bounds = c.Content
         for line in textLines do
 
-            let font = content.Load<SpriteFont> c.TextFont
 
             let size = font.MeasureString (line)
 
@@ -425,7 +439,8 @@ module NoobishMonoGame =
             else
                 ""
 
-        let font = content.Load<SpriteFont> c.TextFont
+        let fontId = theme.GetFont c.ThemeId "default"
+        let font = content.Load<SpriteFont>  fontId
         let size = font.MeasureString textUpToCursor
 
         let timeFocused = (time - cs.FocusedTime)
@@ -842,6 +857,7 @@ module Program =
 
             for kvp in ui.Components do
                 let (success, value) = ui.State.ElementsById.TryGetValue kvp.Key
+
                 if success then
                     ui.State.ElementsById.[kvp.Key] <- {value with Version = ui.Version; Model = kvp.Value.Model }
                 else

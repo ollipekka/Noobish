@@ -61,14 +61,21 @@ let styles2 = [
             fontColor 0x806d5fff
             color 0x39404dff
         ]
-    ]
+    ];
     "Panel", [
         "default", [
             drawables [
                 ninePatch "panel-default.9"
             ]
         ]
-    ]
+        "toggled", [
+            color 0xFF0000FF
+            drawables [
+                ninePatch "panel-default.9"
+            ]
+
+        ]
+    ];
     "Division", [
         "default", [
         ]
@@ -80,6 +87,7 @@ let styles2 = [
             ]
         ];
         "toggled", [
+            color 0xFF0000F
             drawables [
                 ninePatch "button-toggled.9"
             ]
@@ -117,7 +125,7 @@ let styles2 = [
                 ninePatch "cursor.9"
             ]
         ]
-    ]
+    ];
     "Checkbox", [
         "default", [
             drawables [
