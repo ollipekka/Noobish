@@ -143,7 +143,7 @@ let styles2 = [
         "default", [
             color 0xdf7126aa
             drawables [
-                ninePatch "scrollbar-pin.9"
+                ninePatch "scrollbar-pin-default.9"
             ]
         ]
     ];
@@ -151,7 +151,7 @@ let styles2 = [
         "default", [
             color 0x5f6b80ff
             drawables [
-                ninePatch "scrollbar.9"
+                ninePatch "scrollbar-default.9"
             ]
         ]
     ]

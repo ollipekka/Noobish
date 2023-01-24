@@ -190,6 +190,39 @@ module NoobishMonoGame =
 
         Color(r, g, b, a)
 
+    let private drawDrawable (content: ContentManager) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (color: Color) (drawables: NoobishDrawable[]) =
+        for drawable in drawables do
+            match drawable with
+            | NoobishDrawable.Texture _ -> failwith "Texture not supported for cursor."
+            | NoobishDrawable.NinePatch(tid) ->
+                let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
+                let texture = atlas.[tid]
+
+                spriteBatch.DrawAtlasNinePatch(
+                    texture,
+                    position,
+                    size.X,
+                    size.Y,
+                    color,
+                    0f,
+                    Vector2.One,
+                    SpriteEffects.None,
+                    0f )
+            | NoobishDrawable.NinePatchWithColor(tid, color) ->
+                let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
+                let texture = atlas.[tid]
+
+                spriteBatch.DrawAtlasNinePatch(
+                    texture,
+                    position,
+                    size.X,
+                    size.Y,
+                    toColor color,
+                    0f,
+                    Vector2.One,
+                    SpriteEffects.None,
+                    0f )
+
     let private drawBackground (theme: Theme) (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)  (content: ContentManager) (settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (time: TimeSpan) scrollX scrollY =
         let cs = state.[c.Id]
 
@@ -214,18 +247,18 @@ module NoobishMonoGame =
                 if cs.Visible then
                     let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 1.0) 1.0
 
-                    let color, pressedColor = 
-                        if state = "toggled" then 
+                    let color, pressedColor =
+                        if state = "toggled" then
                             theme.GetColor c.ThemeId "toggled" |> toColor,
                             theme.GetColor c.ThemeId "default" |> toColor
-                        else 
+                        else
                             theme.GetColor c.ThemeId "default" |> toColor,
                             theme.GetColor c.ThemeId "toggled" |> toColor
-                            
+
                     let finalColor = Color.Lerp(color, pressedColor, float32 progress)
-                    if progress <> 0.0 then 
+                    if progress <> 0.0 then
                         printfn $"%s{c.ThemeId} %f{progress} - %A{color} %A{pressedColor} %A{finalColor}"
-                    
+
                     finalColor
 
                 else if cs.Toggled then
@@ -354,6 +387,7 @@ module NoobishMonoGame =
             startY <- startY + float32 font.LineSpacing
 
     let private drawScrollBars
+        (theme: Theme)
         (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
         (content: ContentManager)
         (settings: NoobishSettings)
@@ -368,21 +402,27 @@ module NoobishMonoGame =
         let delta = float32 (min (time - cs.ScrolledTime).TotalSeconds 0.3)
         let progress = 1.0f - delta / 0.3f
 
+        let scrollBarWidth = 4f
+
         if c.ScrollVertical && progress > 0.0f then
 
-            let pixel = content.Load<Texture2D> settings.Pixel
+            let scrollBarColor = theme.GetColor "ScrollBar" "default" |> toColor
+            let scrollbarDrawable = theme.GetDrawables "ScrollBar" "default"
 
-            let scrollBarWidth = c.ScrollBarThickness
+            let scrollbarPinColor = theme.GetColor "ScrollBarPin" "default" |> toColor
+            let scrollbarPinDrawable = theme.GetDrawables "ScrollBar" "default"
+
             let bounds = c.ContentWithBorder
             let x = bounds.X + bounds.Width - scrollBarWidth
-            let color = Color.Multiply(c.ScrollBarColor |> toColor, progress)
-            drawRectangle spriteBatch pixel color x bounds.Y scrollBarWidth bounds.Height
+            let color = Color.Multiply(scrollBarColor, progress)
+
+            drawDrawable content spriteBatch (Vector2(x, bounds.Y))(Vector2(scrollBarWidth, bounds.Height)) color scrollbarDrawable
 
             let pinPosition =  - ( cs.ScrollY / c.OverflowHeight) * bounds.Height
             let pinHeight = ( c.Height / c.OverflowHeight) * bounds.Height
-            let color = Color.Multiply(c.ScrollPinColor |> toColor, progress)
+            let color = Color.Multiply(scrollbarPinColor, progress)
 
-            drawRectangle spriteBatch pixel color x (bounds.Y + pinPosition) scrollBarWidth pinHeight
+            drawDrawable content spriteBatch (Vector2(x, bounds.Y + pinPosition))(Vector2(scrollBarWidth, pinHeight)) color scrollbarPinDrawable
 
     let private drawSlider
         (content: ContentManager)
@@ -452,7 +492,15 @@ module NoobishMonoGame =
 
         let drawables = theme.GetDrawables "Cursor" "default"
 
+
+        let position = Vector2(float32 bounds.X + size.X, float32 bounds.Y)
+
+        let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
+        let texture = atlas.["cursor.9"]
+        let size = Vector2(float32 texture.Width, float32 font.LineSpacing)
+        drawDrawable content spriteBatch position size color drawables
         for drawable in drawables do
+
             match drawable with
             | NoobishDrawable.Texture _ -> failwith "Texture not supported for cursor."
             | NoobishDrawable.NinePatch(tid) ->
@@ -584,7 +632,7 @@ module NoobishMonoGame =
             drawImage content settings spriteBatch c texture totalScrollX totalScrollY
         | None -> ()
         drawText theme content spriteBatch c cs totalScrollX totalScrollY
-        drawScrollBars state content settings spriteBatch c time totalScrollX totalScrollY
+        drawScrollBars theme state content settings spriteBatch c time totalScrollX totalScrollY
 
         cs.Model
             |> Option.iter(
