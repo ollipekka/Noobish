@@ -15,7 +15,6 @@ module TexturePacker =
     let createTextures (fileNames: string[]) =
         fileNames
             |> Array.map (fun fileName ->
-                printfn "%s" fileName
                 let name, textureType, image =
                     if isNinePatch fileName then
                         NinePatch.createData fileName
@@ -62,7 +61,7 @@ module TexturePacker =
 
 
 
-    let findTexturePosition (textures: Texture[]) (placement: IReadOnlyDictionary<string, Rectangle>) (textureWidth: int) (index: int) =
+    let findTexturePosition (textures: Texture[]) (placement: IReadOnlyDictionary<string, Rectangle>) (padding: int) (textureWidth: int) (index: int) =
             let mutable x = 0
             let mutable y = 0
             let mutable success = false
@@ -80,7 +79,7 @@ module TexturePacker =
 
                     x <- previousRegion.X + previousRegion.Width
 
-                    if ( x + texture.Image.Width > textureWidth ) then
+                    if ( x + texture.Image.Width + padding * 2 > textureWidth ) then
                         x <- 0
                         y <- y + 1
 
@@ -110,19 +109,19 @@ module TexturePacker =
     let createRegions (maxWidth: int) (maxHeight: int) (padding: int) (isPowerOfTwo: bool) (textures: Texture[])  =
         let result = Dictionary<string, Rectangle>()
 
-        let sortedTextures = textures |> Array.sortByDescending(fun t -> (t.Image.Height + 2*padding) * 1000 + (t.Image.Width + 2*padding))
-        result.[sortedTextures.[0].Name] <- Rectangle(padding, padding, sortedTextures.[0].Image.Width + 2 * padding, sortedTextures.[0].Image.Height + 2 * padding)
+        let sortedTextures = textures |> Array.sortByDescending(fun t -> (t.Image.Height + 2 * padding) * 1000 + (t.Image.Width + 2 * padding))
+        result.[sortedTextures.[0].Name] <- Rectangle(0, 0, sortedTextures.[0].Image.Width + 2 * padding, sortedTextures.[0].Image.Height + 2 * padding)
 
         let mutable atlasWidth = guessWidth textures padding isPowerOfTwo
         let mutable atlasHeight = 0
 
         for i = 0 to sortedTextures.Length - 1 do
             let texture = sortedTextures.[i]
-            let (x, y) = findTexturePosition sortedTextures result atlasWidth i
-            let x = x + padding
-            let y = y + padding
-            let width = texture.Image.Width + padding
-            let height = texture.Image.Height + padding
+            let (x, y) = findTexturePosition sortedTextures result padding atlasWidth i
+            let x = x
+            let y = y
+            let width = texture.Image.Width + padding * 2
+            let height = texture.Image.Height + padding * 2
             result.[texture.Name] <- Rectangle(x, y, width, height)
 
             atlasHeight <- max atlasHeight (y + height )
@@ -139,15 +138,13 @@ module TexturePacker =
 
         (result, atlasWidth, atlasHeight)
 
-    let createImage (textures: Texture[]) (regions: IReadOnlyDictionary<string, Rectangle>) (atlasWidth: int) (atlasHeight: int ) =
+    let createImage (textures: Texture[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) (atlasWidth: int) (atlasHeight: int ) =
         let atlasImage = new Image<Rgba32>(atlasWidth, atlasHeight)
-
         for texture in textures do
             let destinationRectangle = regions.[texture.Name]
-
             for x = 0 to texture.Image.Width - 1 do
                 for y = 0 to texture.Image.Height - 1 do
-                    atlasImage.[destinationRectangle.X + x, destinationRectangle.Y + y] <- texture.Image.[x, y]
+                    atlasImage.[destinationRectangle.X + x + padding, destinationRectangle.Y + y + padding] <- texture.Image.[x, y]
 
 
         atlasImage
@@ -170,10 +167,10 @@ module TexturePacker =
                 binaryWriter.Write("Texture")
 
             let region = regions.[texture.Name]
-            binaryWriter.Write (region.X - padding)
-            binaryWriter.Write (region.Y - padding)
-            binaryWriter.Write (region.Width - padding)
-            binaryWriter.Write (region.Height - padding)
+            binaryWriter.Write (region.X + padding)
+            binaryWriter.Write (region.Y + padding)
+            binaryWriter.Write (region.Width - padding * 2)
+            binaryWriter.Write (region.Height - padding * 2)
 
 
     let readIndex () =
@@ -206,6 +203,11 @@ module TexturePacker =
                 let width = reader.ReadInt32()
                 let height = reader.ReadInt32()
                 Rectangle(x, y, width, height)
+
+            if region.X + region.Width > atlasImage.Width then
+                failwith "Something wrong with the width of the region"
+            if region.Y + region.Height > atlasImage.Height then
+                failwith "Something wrong with the height of the region"
 
             let image =
                 let img = new Image<Rgba32>(region.Width, region.Height)

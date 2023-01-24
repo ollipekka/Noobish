@@ -118,14 +118,6 @@ let styles2 = [
             ]
         ]
     ];
-    "Cursor", [
-        "default", [
-            color 0xdf7126aa
-            drawables [
-                ninePatch "cursor.9"
-            ]
-        ]
-    ];
     "Checkbox", [
         "default", [
             drawables [
@@ -136,6 +128,30 @@ let styles2 = [
             drawables [
                 texture "checkbox"
                 texture "checkbox-checked"
+            ]
+        ]
+    ];
+    "Cursor", [
+        "default", [
+            color 0xdf7126aa
+            drawables [
+                ninePatch "cursor.9"
+            ]
+        ]
+    ];
+    "ScrollBarPin", [
+        "default", [
+            color 0xdf7126aa
+            drawables [
+                ninePatch "scrollbar-pin.9"
+            ]
+        ]
+    ];
+    "ScrollBar", [
+        "default", [
+            color 0x5f6b80ff
+            drawables [
+                ninePatch "scrollbar.9"
             ]
         ]
     ]

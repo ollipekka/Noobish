@@ -21,6 +21,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.TextureAtlas.Pipeli
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.TextureAtlas.PipelineExtension.Test", "src\Noobish.TextureAtlas.PipelineExtension.Test\Noobish.TextureAtlas.PipelineExtension.Test.fsproj", "{31B21794-6753-4828-BC86-7E315E96DF34}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.TextureAtlas.Test", "src\Noobish.TextureAtlas.Test\Noobish.TextureAtlas.Test.fsproj", "{55D64186-DFF6-4B8F-B172-CA677816EBFE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -130,6 +132,18 @@ Global
 		{31B21794-6753-4828-BC86-7E315E96DF34}.Release|x64.Build.0 = Release|Any CPU
 		{31B21794-6753-4828-BC86-7E315E96DF34}.Release|x86.ActiveCfg = Release|Any CPU
 		{31B21794-6753-4828-BC86-7E315E96DF34}.Release|x86.Build.0 = Release|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Debug|x64.Build.0 = Debug|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Debug|x86.Build.0 = Debug|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Release|x64.ActiveCfg = Release|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Release|x64.Build.0 = Release|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Release|x86.ActiveCfg = Release|Any CPU
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D5332513-8F67-430B-8748-62BEE811F665} = {4DCE249E-1A37-4679-B1A0-7E6A9BCD373D}
@@ -140,5 +154,6 @@ Global
 		{8D0B4430-D274-4F07-8F2B-94CCE0AE77B4} = {4DCE249E-1A37-4679-B1A0-7E6A9BCD373D}
 		{53438D12-1732-43C3-8DFC-FDC59B0A58B0} = {4DCE249E-1A37-4679-B1A0-7E6A9BCD373D}
 		{31B21794-6753-4828-BC86-7E315E96DF34} = {4DCE249E-1A37-4679-B1A0-7E6A9BCD373D}
+		{55D64186-DFF6-4B8F-B172-CA677816EBFE} = {4DCE249E-1A37-4679-B1A0-7E6A9BCD373D}
 	EndGlobalSection
 EndGlobal

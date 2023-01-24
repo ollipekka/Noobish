@@ -1,6 +1,6 @@
 
-/reference:../../../Noobish.TextureAtlas/bin/net6.0/Noobish.TextureAtlas.PipelineExtension.dll
-/reference:../../../Noobish.TextureAtlas/bin/net6.0/Newtonsoft.Json.dll
+/reference:../../bin/net6.0/Noobish.TextureAtlas.PipelineExtension.dll
+/reference:../../bin/net6.0/Newtonsoft.Json.dll
 
 
 #begin TestAtlas.json
@@ -10,7 +10,7 @@
 /processorParam:IsColorKeyEnabled=True
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyTextureAlpha=True
-/processorParam:ResizeToPowerOfTwo=True
+/processorParam:ResizeToPowerOfTwo=false
 /processorParam:TextureFormat=Color
 /build:TestAtlas.json
 
@@ -21,7 +21,7 @@
 /processorParam:IsColorKeyEnabled=True
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyTextureAlpha=True
-/processorParam:ResizeToPowerOfTwo=True
+/processorParam:ResizeToPowerOfTwo=False
 /processorParam:TextureFormat=Color
 /build:Theme/ThemeAtlas.json
 

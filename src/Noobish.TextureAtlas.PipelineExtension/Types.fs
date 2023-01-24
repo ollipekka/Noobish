@@ -92,6 +92,7 @@ type Texture = {
 
 type TextureAtlasContent = {
     Name: string
+    Padding: int
     Textures: Texture[]
     Regions: System.Collections.Generic.IReadOnlyDictionary<string, Rectangle>
     Texture: ExternalReference<TextureContent>

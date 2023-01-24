@@ -60,7 +60,7 @@ type TextureAtlasProcessor () =
         let textures = TexturePacker.createTextures textureFileNames
         let (regions, atlasWidth, atlasHeight) = TexturePacker.createRegions s.MaxAtlasWidth s.MaxAtlasHeight s.Padding s.ResizeToPowerOfTwo textures
 
-        let image = TexturePacker.createImage textures regions atlasWidth atlasHeight
+        let image = TexturePacker.createImage textures regions s.Padding atlasWidth atlasHeight
 
         let atlasTextureFileName = Path.Combine(context.OutputDirectory, (sprintf "%sTexture.png" input.Name))
         let stream = File.OpenWrite(atlasTextureFileName)
@@ -69,11 +69,4 @@ type TextureAtlasProcessor () =
 
         context.AddOutputFile(atlasTextureFileName)
 
-
-        let resultRegions = Dictionary<string, Rectangle>()
-        for kvp in regions do
-            let value = kvp.Value
-            resultRegions.[kvp.Key] <- Rectangle(value.X - s.Padding, value.Y - s.Padding, value.Width - s.Padding, value.Height - s.Padding)
-
-
-        {Name = input.Name; Textures = textures; Regions = resultRegions; Texture = s.BuildTexture (sprintf "%sTexture" input.Name) atlasTextureFileName context}
+        {Name = input.Name; Padding = s.Padding; Textures = textures; Regions = regions; Texture = s.BuildTexture (sprintf "%sTexture" input.Name) atlasTextureFileName context}

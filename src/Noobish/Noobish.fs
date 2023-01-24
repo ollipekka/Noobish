@@ -55,8 +55,6 @@ type NoobishLayoutElement = {
     Color: int
     ColorDisabled: int
 
-    CursorWidth: float32
-
     StartX: float32
     StartY: float32
     RelativeX: float32
@@ -828,8 +826,6 @@ module Logic =
 
             Color = theme.GetColor themeId "default"
             ColorDisabled = theme.GetColor themeId "disabled"
-
-            CursorWidth = 2f
 
             ScrollHorizontal = scrollHorizontal
             ScrollVertical = scrollVertical
