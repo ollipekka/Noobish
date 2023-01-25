@@ -27,6 +27,9 @@ type NoobishDrawable=
 [<RequireQualifiedAccess>]
 type NoobishStyle =
 
+| Width of int
+| Height of int
+
 // Text related styles.
 | Font of string
 | FontColor of int
@@ -36,9 +39,11 @@ type NoobishStyle =
 | Padding of (int*int*int*int)
 | Margin of (int*int*int*int)
 
-let font f = NoobishStyle.Font
+let font f = NoobishStyle.Font f
 let fontColor c = NoobishStyle.FontColor c
 
+let width w = NoobishStyle.Width(w)
+let height h = NoobishStyle.Height(h)
 let color c = NoobishStyle.Color(c)
 let drawables d = NoobishStyle.Drawables d
 let texture t = NoobishDrawable.Texture t
@@ -139,11 +144,28 @@ let styles2 = [
             ]
         ]
     ];
+    "SliderPin", [
+        "default", [
+            color 0xdf7126aa
+            height 16
+            drawables [
+                ninePatch "slider-pin.9"
+            ]
+        ]
+    ];
+    "Slider", [
+        "default", [
+            color 0x5f6b80ff
+            drawables [
+                ninePatch "slider.9"
+            ]
+        ]
+    ]
     "ScrollBarPin", [
         "default", [
             color 0xdf7126aa
             drawables [
-                ninePatch "scrollbar-pin-default.9"
+                ninePatch "scrollbar-pin.9"
             ]
         ]
     ];
@@ -151,7 +173,7 @@ let styles2 = [
         "default", [
             color 0x5f6b80ff
             drawables [
-                ninePatch "scrollbar-default.9"
+                ninePatch "scrollbar.9"
             ]
         ]
     ]
@@ -159,6 +181,8 @@ let styles2 = [
 
 type Theme = {
     FontSettings: FontSettings
+    Widths: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
+    Heights: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
     Paddings: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int*int*int*int>>
     Margins: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int*int*int*int>>
     Colors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>
@@ -191,6 +215,13 @@ type Theme = {
             Theme.GetDefault d "Default" "default" fallback
 
 
+
+    member t.GetWidth (cid: string) (state: string) =
+        Theme.GetValue t.Widths cid state 0f
+
+    member t.GetHeight (cid: string) (state: string) =
+        Theme.GetValue t.Heights cid state 0f
+
     member t.GetFont (cid: string) (state: string) =
         Theme.GetValue t.Fonts cid state t.FontSettings.Normal
 
@@ -210,379 +241,15 @@ type Theme = {
         Theme.GetValue t.Drawables cid state [||]
 
 
-(*
-let empty defaultFont =
-    {
-        TextFont = defaultFont
-        TextColor = 0x00000000
-        TextColorDisabled = 0x00000000
-        TextColorFocused = 0x00000000
-        TextAlignment = NoobishTextAlign.Left
-
-        TextureColor = 0x00000000
-        TextureColorDisabled = 0x00000000
-        TextureColorFocused = 0x00000000
-
-        Color = 0x00000000
-        ColorDisabled = 0x00000000
-        ColorFocused = 0x00000000
-
-        PressedColor = 0x00000000
-        HoverColor = 0x00000000
-
-        Padding = (0, 0, 0, 0)
-        Margin =  (0, 0, 0, 0)
-
-        ScrollBarColor = 0x00000000
-        ScrollPinColor = 0x00000000
-        ScrollBarThickness = 2
-        ScrollPinThickness = 2
-    }
-
-let createDefaultTheme (fontSettings: FontSettings): Theme=
-    let defaultFont = fontSettings.Normal
-    let textColor = 0xbbbbbbFF
-    let textInputColor = 0xccccccFF
-    let textColorDisabled = 0x806d5fff
-    let backgroundDisabled = 0x4d4b39ff
-    let backgroundColorDark = 0x262b33ff
-    let backgroundColor = 0x39404dff
-    let backgroundColorLight = 0x5f6b80ff
-    let borderColor = 0x4c5666ff
-    let borderColorFocused = 0xffd700ff
-    let borderColorDisabled = 0x806d5fff
-
-    let textureColor = 0xffffffff
-    let textureColorDisabled = 0xccccccff
-    let NoobishElementStyles =
-        dict [
-            "Label", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = 0x00000000
-                TextAlignment = NoobishTextAlign.Left
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = 0x00000000
-
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
-                ColorFocused = 0x000000
-
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
-
-                Padding = (0, 0, 0, 0)
-                Margin =  (5, 5, 2, 2)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "TextBox", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColor
-                TextAlignment = NoobishTextAlign.Left
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = 0x00000000
-
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
-                ColorFocused = 0x00000000
-
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
-
-                Padding = (5, 5, 5, 5)
-                Margin =  (2, 2, 2, 2)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "Paragraph", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColor
-                TextAlignment = NoobishTextAlign.TopLeft
-
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = textureColor
-
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
-                ColorFocused = 0x00000000
-
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
-
-                Padding = (0, 0, 0, 0)
-                Margin =  (5, 5, 2, 2)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "Header", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColor
-                TextAlignment = NoobishTextAlign.Left
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = textureColor
-
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
-                ColorFocused = 0x00000000
-
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
-
-                Padding = (0, 0, 0, 0)
-                Margin =  (5, 5, 2, 2)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "Button", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColor
-                TextAlignment = NoobishTextAlign.Center
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = textureColor
-
-                Color = backgroundColor
-                ColorDisabled = backgroundDisabled
-                ColorFocused= backgroundColor
-
-                PressedColor = backgroundColorLight
-                HoverColor = backgroundColorLight
-
-                Padding = (5, 5, 5, 5)
-                Margin =  (2, 2, 2, 2)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "Combobox", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColorDisabled
-                TextAlignment = NoobishTextAlign.Center
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = textureColor
-
-                Color = backgroundColor
-                ColorDisabled = backgroundDisabled
-                ColorFocused = backgroundColor
-
-                PressedColor = backgroundColorLight
-                HoverColor = backgroundColorLight
-
-                Padding = (5, 5, 5, 5)
-                Margin =  (2, 2, 2, 2)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "Panel", {
-                TextFont = defaultFont
-                TextColor = 0xffffffff
-                TextColorDisabled = 0x00000000
-                TextColorFocused = 0x00000000
-                TextAlignment = NoobishTextAlign.Center
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = textureColor
-
-                Color = backgroundColorDark
-                ColorDisabled = backgroundColorDark
-                ColorFocused = backgroundColorDark
-
-                PressedColor = backgroundColorDark
-                HoverColor = backgroundColorDark
-
-                Padding = (5, 5, 5, 5)
-                Margin =  (2, 2, 2, 2)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "Division", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColor
-                TextAlignment = NoobishTextAlign.Center
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = textureColor
-
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
-                ColorFocused = 0x00000000
-
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
-
-                Padding = (0, 0, 0, 0)
-                Margin =  (0, 0, 0, 0)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "HorizontalRule", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColor
-                TextAlignment = NoobishTextAlign.Center
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = textureColor
-
-                Color = borderColor
-                ColorDisabled = borderColorDisabled
-                ColorFocused = borderColor
-
-
-                PressedColor = 0xccaaaaff
-                HoverColor = 0xccaaaaff
-
-                Padding = (5, 5, 0, 0)
-                Margin =  (5, 5, 5, 5)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 0
-                ScrollPinThickness = 0
-            }
-            "Image", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColor
-                TextAlignment = NoobishTextAlign.Center
-
-                TextureColor = textureColor
-                TextureColorDisabled = textureColorDisabled
-                TextureColorFocused = textureColor
-
-
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
-                ColorFocused = 0x00000000
-
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
-
-                Padding = (5, 5, 5, 5)
-                Margin =  (5, 5, 0, 0)
-
-                ScrollBarColor = 0x00000000
-                ScrollPinColor = 0x00000000
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "Scroll", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColor
-                TextAlignment = NoobishTextAlign.Center
-
-                TextureColor = 0x00000000
-                TextureColorDisabled = 0x00000000
-                TextureColorFocused = 0x00000000
-
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
-                ColorFocused = 0x00000000
-
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
-
-                Padding = (2, 2, 2, 2)
-                Margin =  (0, 0, 0, 0)
-
-                ScrollBarColor = 0x4d4139aa
-                ScrollPinColor = 0xdf7126aa
-                ScrollBarThickness = 2
-                ScrollPinThickness = 2
-            }
-            "Slider", {
-                TextFont = defaultFont
-                TextColor = textColor
-                TextColorDisabled = textColorDisabled
-                TextColorFocused = textColor
-                TextAlignment = NoobishTextAlign.Center
-
-                TextureColor = 0x00000000
-                TextureColorDisabled = 0x00000000
-                TextureColorFocused = 0x00000000
-
-                Color = 0x00000000
-                ColorDisabled = 0x00000000
-                ColorFocused = 0x00000000
-
-                PressedColor = 0x00000000
-                HoverColor = 0x00000000
-
-                Padding = (2, 2, 2, 2)
-                Margin =  (0, 0, 4, 4)
-
-                ScrollBarColor = 0x4d4139aa
-                ScrollPinColor = 0xdf7126aa
-                ScrollBarThickness = 6
-                ScrollPinThickness = 12
-            }
-            "Empty", empty defaultFont
-        ]
-*)
-
-
 let toReadOnlyDictionary (dictionary: Dictionary<string, Dictionary<string, 'T>>) =
     dictionary
         |> Seq.map(fun kvp -> KeyValuePair(kvp.Key, kvp.Value :> IReadOnlyDictionary<string, 'T>))
         |> Dictionary
         :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>
 
-let createDefaultTheme (fontSettings: FontSettings)  =
+let createDefaultTheme (fontSettings: FontSettings) =
+    let widths = Dictionary<string, Dictionary<string, float32>>()
+    let heights = Dictionary<string, Dictionary<string, float32>>()
 
     let fonts = Dictionary<string, Dictionary<string, string>>()
     let fontColors = Dictionary<string, Dictionary<string, int>>()
@@ -595,6 +262,13 @@ let createDefaultTheme (fontSettings: FontSettings)  =
         for (stateId, styles) in componentStyles do
             for style in styles do
                 match style with
+                | NoobishStyle.Width(w) ->
+                    let widthsByComponent = widths.GetOrAdd name (fun () -> Dictionary())
+                    widthsByComponent.[stateId] <- float32 w
+                | NoobishStyle.Height(h) ->
+
+                    let heightsByComponent = heights.GetOrAdd name (fun () -> Dictionary())
+                    heightsByComponent.[stateId] <- float32 h
                 | NoobishStyle.Font (font) ->
                     let fontsByComponent = fonts.GetOrAdd name (fun () -> Dictionary())
                     fontsByComponent.[stateId] <- font
@@ -616,6 +290,8 @@ let createDefaultTheme (fontSettings: FontSettings)  =
 
     {
         FontSettings = fontSettings
+        Widths = widths |> toReadOnlyDictionary
+        Heights = heights |> toReadOnlyDictionary
         Fonts = fonts |> toReadOnlyDictionary
         FontColors = fontColors |> toReadOnlyDictionary
         Colors = colors |> toReadOnlyDictionary

@@ -267,42 +267,13 @@ module NoobishMonoGame =
                     Color.Transparent
 
 
+        let rect = c.ContentWithPadding
         let drawables = theme.GetDrawables c.ThemeId state
 
-        for drawable in drawables do
-            match drawable with
-            | NoobishDrawable.Texture(tid) ->
-                ()
-            | NoobishDrawable.NinePatch(tid) ->
-                let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
-                let texture = atlas.[tid]
+        let position = Vector2(float32 rect.X, float32 rect.Y)
+        let size = Vector2( float32 rect.Width, float32 rect.Height)
 
-                let rect = c.ContentWithBorder
-                spriteBatch.DrawAtlasNinePatch(
-                    texture,
-                    Vector2(float32 rect.X, float32 rect.Y),
-                    float32 rect.Width,
-                    float32 rect.Height,
-                    color,
-                    0f,
-                    Vector2.One,
-                    SpriteEffects.None,
-                    0f )
-            | NoobishDrawable.NinePatchWithColor(tid, color) ->
-                let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
-                let texture = atlas.[tid]
-
-                let rect = c.ContentWithBorder
-                spriteBatch.DrawAtlasNinePatch(
-                    texture,
-                    Vector2(float32 rect.X, float32 rect.Y),
-                    float32 rect.Width,
-                    float32 rect.Height,
-                    toColor(color),
-                    0f,
-                    Vector2.One,
-                    SpriteEffects.None,
-                    0f )
+        drawDrawable content spriteBatch position size color drawables
 
     let private debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
 
@@ -412,7 +383,7 @@ module NoobishMonoGame =
             let scrollbarPinColor = theme.GetColor "ScrollBarPin" "default" |> toColor
             let scrollbarPinDrawable = theme.GetDrawables "ScrollBar" "default"
 
-            let bounds = c.ContentWithBorder
+            let bounds = c.ContentWithPadding
             let x = bounds.X + bounds.Width - scrollBarWidth
             let color = Color.Multiply(scrollBarColor, progress)
 
@@ -425,6 +396,7 @@ module NoobishMonoGame =
             drawDrawable content spriteBatch (Vector2(x, bounds.Y + pinPosition))(Vector2(scrollBarWidth, pinHeight)) color scrollbarPinDrawable
 
     let private drawSlider
+        (theme: Theme)
         (content: ContentManager)
         (settings: NoobishSettings)
         (spriteBatch: SpriteBatch)
@@ -434,29 +406,42 @@ module NoobishMonoGame =
         _scrollX
         _scrollY =
 
+        let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
         let pinWidth = 25.0f
-        let pinHeight = c.ScrollPinThickness
-        let barHeight = c.ScrollBarThickness
+        let pinHeight =
+            let w = theme.GetHeight "SliderPin" "default"
 
-        let pixel = content.Load<Texture2D> settings.Pixel
+            if w > 0f then
+                w
+            else
+
+                let pinTexture = atlas.["slider-pin.9"]
+                float32 pinTexture.Height
+        let barTexture = atlas.["slider.9"]
+        let barHeight = float32 barTexture.Height
 
         // Bar
         let bounds = c.Content
-        let barPositionX = bounds.X + pinWidth / 2.0f
-        let barPositionY = bounds.Y + (bounds.Height / 2.0f) - (barHeight / 2.0f)
-        let barWidth = bounds.Width - pinWidth
-        let color = c.ScrollBarColor |> toColor
+        let barPosition = Vector2(
+            bounds.X + pinWidth / 2.0f,
+            bounds.Y + (bounds.Height / 2.0f) - (barHeight / 2.0f))
+        let barSize = Vector2(bounds.Width - pinWidth, barHeight)
+        let color = theme.GetColor "Slider" "default" |> toColor
 
-        drawRectangle spriteBatch pixel color barPositionX barPositionY barWidth barHeight
+        let barDrawables = theme.GetDrawables "Slider" "default"
+        drawDrawable content spriteBatch barPosition barSize color barDrawables
 
         // Pin
         let relativePosition = (slider.Value - slider.Min) / (slider.Max - slider.Min)
 
-        let pinPositionX = bounds.X + (barWidth * relativePosition) - (pinWidth / 2.0f) + (pinWidth / 2.0f)
-        let pinPositionY = bounds.Y + (bounds.Height / 2.0f) - (pinHeight / 2.0f)
+        let pinPosition = Vector2(
+            bounds.X + (barSize.X * relativePosition) - (pinWidth / 2.0f) + (pinWidth / 2.0f),
+            bounds.Y + (bounds.Height / 2.0f) - (pinHeight / 2.0f))
+        let pinSize = Vector2(pinWidth, pinHeight)
+        let color = theme.GetColor "SliderPin" "default" |> toColor
 
-        let color = c.ScrollPinColor |> toColor
-        drawRectangle spriteBatch pixel color pinPositionX pinPositionY pinWidth pinHeight
+        let pinDrawables = theme.GetDrawables "SliderPin" "default"
+        drawDrawable content spriteBatch pinPosition pinSize  color pinDrawables
 
     let blinkInterval = TimeSpan.FromSeconds 1.2
 
@@ -492,46 +477,12 @@ module NoobishMonoGame =
 
         let drawables = theme.GetDrawables "Cursor" "default"
 
-
         let position = Vector2(float32 bounds.X + size.X, float32 bounds.Y)
 
         let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
         let texture = atlas.["cursor.9"]
         let size = Vector2(float32 texture.Width, float32 font.LineSpacing)
         drawDrawable content spriteBatch position size color drawables
-        for drawable in drawables do
-
-            match drawable with
-            | NoobishDrawable.Texture _ -> failwith "Texture not supported for cursor."
-            | NoobishDrawable.NinePatch(tid) ->
-                let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
-                let texture = atlas.[tid]
-
-                spriteBatch.DrawAtlasNinePatch(
-                    texture,
-                    Vector2(float32 bounds.X + size.X - (float32 texture.Width / 2f), float32 bounds.Y),
-                    float32 texture.Width,
-                    float32 font.LineSpacing,
-                    color,
-                    0f,
-                    Vector2.One,
-                    SpriteEffects.None,
-                    0f )
-            | NoobishDrawable.NinePatchWithColor(tid, color) ->
-                let atlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
-                let texture = atlas.[tid]
-
-                spriteBatch.DrawAtlasNinePatch(
-                    texture,
-                    Vector2(float32 bounds.X + size.X - (float32 texture.Width / 2f), float32 bounds.Y),
-                    float32 texture.Width,
-                    float32 font.LineSpacing,
-                    toColor(color),
-                    0f,
-                    Vector2.One,
-                    SpriteEffects.None,
-                    0f )
-
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
         match t.Texture with
@@ -541,7 +492,7 @@ module NoobishMonoGame =
 
             let textureEffect = getTextureEfffect t.TextureEffect
             let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
-            let rect = calculateBounds t.TextureSize c.ContentWithBorder texture.Width texture.Height scrollX scrollY
+            let rect = calculateBounds t.TextureSize c.ContentWithPadding texture.Width texture.Height scrollX scrollY
 
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = toRadians t.Rotation
@@ -556,7 +507,7 @@ module NoobishMonoGame =
 
             let textureEffect = getTextureEfffect t.TextureEffect
             let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
-            let rect = calculateBounds t.TextureSize c.ContentWithBorder texture.Width texture.Height scrollX scrollY
+            let rect = calculateBounds t.TextureSize c.ContentWithPadding texture.Width texture.Height scrollX scrollY
 
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = toRadians t.Rotation
@@ -571,7 +522,7 @@ module NoobishMonoGame =
 
             let textureEffect = getTextureEfffect t.TextureEffect
             let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
-            let rect = c.ContentWithBorder
+            let rect = c.ContentWithPadding
             let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
             spriteBatch.DrawAtlasNinePatch(
                 texture,
@@ -606,7 +557,7 @@ module NoobishMonoGame =
         let totalScrollY = cs.ScrollY + parentScrollY
 
         let outerRectangle =
-            let bounds = c.ContentWithBorder
+            let bounds = c.ContentWithPadding
             let startX = bounds.X + totalScrollX
             let startY = bounds.Y + totalScrollY
             let sourceStartX = max startX (float32 parentRectangle.X)
@@ -626,24 +577,25 @@ module NoobishMonoGame =
         graphics.ScissorRectangle <- outerRectangle
         spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
-        drawBackground theme state  content settings spriteBatch c time totalScrollX totalScrollY
+
+        match cs.Model with
+        | Some(model) ->
+            match model with
+            | Slider (s) -> drawSlider theme content settings spriteBatch c s time totalScrollX totalScrollX
+            | Combobox (_c) ->
+                drawBackground theme state  content settings spriteBatch c time totalScrollX totalScrollY
+            | Textbox (t) ->
+                drawBackground theme state  content settings spriteBatch c time totalScrollX totalScrollY
+                if cs.Focused then
+                    drawCursor theme content settings spriteBatch c cs t time
+        | None ->
+            drawBackground theme state  content settings spriteBatch c time totalScrollX totalScrollY
         match c.Texture with
         | Some (texture) ->
             drawImage content settings spriteBatch c texture totalScrollX totalScrollY
         | None -> ()
         drawText theme content spriteBatch c cs totalScrollX totalScrollY
         drawScrollBars theme state content settings spriteBatch c time totalScrollX totalScrollY
-
-        cs.Model
-            |> Option.iter(
-                function
-                | Slider (s) -> drawSlider content settings spriteBatch c s time totalScrollX totalScrollX
-                | Combobox (_c) -> ()
-                | Textbox (t) ->
-                    if cs.Focused then
-                        drawCursor theme content settings spriteBatch c cs t time
-            )
-
 
         if debug then
             let childRect = c.Content
@@ -696,7 +648,7 @@ module NoobishMonoGame =
                 let cs = state.[c.Id]
                 if cs.Visible then
                     let viewport =
-                        let bounds = c.ContentWithBorder
+                        let bounds = c.ContentWithPadding
                         createRectangle
                             bounds.X
                             bounds.Y

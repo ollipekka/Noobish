@@ -71,10 +71,6 @@ type NoobishLayoutElement = {
     MarginTop: float32
     MarginBottom: float32
 
-    ScrollBarColor: int
-    ScrollPinColor: int
-    ScrollBarThickness: float32
-    ScrollPinThickness: float32
     ScrollHorizontal: bool
     ScrollVertical: bool
     OverflowWidth: float32
@@ -120,7 +116,7 @@ type NoobishLayoutElement = {
             Height = l.ContentHeight
         }
 
-    member l.ContentWithBorder with get() =
+    member l.ContentWithPadding with get() =
         {
             X = l.X + l.MarginLeft
             Y = l.Y + l.MarginTop
@@ -128,7 +124,7 @@ type NoobishLayoutElement = {
             Height = l.Height
         }
 
-    member l.ContentWithBorderAndMargin with get() =
+    member l.ContentWithMargin with get() =
         {
             X = l.X
             Y = l.Y
@@ -195,10 +191,6 @@ type NoobishAttribute =
     | ScrollHorizontal
     | ScrollVertical
     | Scroll
-    | ScrollBarColor of int
-    | ScrollPinColor of int
-    | ScrollBarThickness of int
-    | ScrollPinThickness of int
     | Layout of NoobishLayout
     | RowSpan of int
     | ColSpan of int
@@ -517,11 +509,6 @@ module Logic =
         let mutable scrollHorizontal = false
         let mutable scrollVertical = false
 
-        let mutable scrollBarColor = 0x4d4139aa
-        let mutable scrollPinColor = 0xdf7126aa
-        let mutable scrollBarThickness = scale 2
-        let mutable scrollPinThickness = scale 2
-
         let mutable layout = NoobishLayout.None
 
         let mutable rowspan = 1
@@ -674,10 +661,6 @@ module Logic =
                 scrollHorizontal <- true
             | ScrollVertical ->
                 scrollVertical <- true
-            | ScrollBarColor c -> scrollBarColor <- c
-            | ScrollPinColor c -> scrollPinColor <- c
-            | ScrollBarThickness h -> scrollBarThickness <- scale h
-            | ScrollPinThickness h -> scrollPinThickness <- scale h
             | Layout (s) ->
                 layout <- s
             | ColSpan (cs) ->
@@ -721,8 +704,6 @@ module Logic =
                 match model' with
                 | Slider (_s) ->
                 minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
-                let thickness =  max scrollBarThickness scrollPinThickness
-                minHeight <- minHeight + thickness
                 | Combobox (_c) -> ()
                 | Textbox (_t) -> ()
         )
@@ -829,10 +810,6 @@ module Logic =
 
             ScrollHorizontal = scrollHorizontal
             ScrollVertical = scrollVertical
-            ScrollBarColor = scrollBarColor
-            ScrollPinColor = scrollPinColor
-            ScrollBarThickness = scrollBarThickness
-            ScrollPinThickness = scrollPinThickness
             OverflowWidth = width
             OverflowHeight = height
 
