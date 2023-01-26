@@ -444,9 +444,9 @@ module Logic =
             Visible = c.Visible
             Focused = false
             Toggled = false
-            FocusedTime = TimeSpan.Zero
-            PressedTime = TimeSpan.Zero
-            ScrolledTime = TimeSpan.Zero
+            FocusedTime = TimeSpan.FromDays(-1)
+            PressedTime = TimeSpan.FromDays(-1)
+            ScrolledTime = TimeSpan.FromDays(-1)
 
             ScrollX = 0.0f
             ScrollY = 0.0f
@@ -701,11 +701,12 @@ module Logic =
         let maxWidth = parentWidth * float32 colspan
 
         model |> Option.iter (fun model' ->
-                match model' with
-                | Slider (_s) ->
+            match model' with
+            | Slider (_s) ->
                 minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
-                | Combobox (_c) -> ()
-                | Textbox (_t) -> ()
+                minHeight <- minHeight + theme.GetHeight "Slider" "default"
+            | Combobox (_c) -> ()
+            | Textbox (_t) -> ()
         )
 
 

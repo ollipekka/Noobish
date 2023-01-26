@@ -65,7 +65,7 @@ type SpriteBatch with
             let scaleY = stretchedMiddleHeight / middleHeightf / scale.Y
 
             do
-                let topLeft = Rectangle(sourceRect.Left, sourceRect.Top, left + 1, top + 1)
+                let topLeft = Rectangle(sourceRect.Left, sourceRect.Top, left, top)
 
                 spriteBatch.Draw(
                     texture.Atlas,
@@ -79,7 +79,7 @@ type SpriteBatch with
                     layerDepth )
 
             do
-                let topRight = Rectangle(sourceRect.Right - right + 1, sourceRect.Top, right + 1, top + 1)
+                let topRight = Rectangle(sourceRect.Right - right, sourceRect.Top, right, top)
 
                 spriteBatch.Draw(
                     texture.Atlas,
@@ -93,7 +93,7 @@ type SpriteBatch with
                     layerDepth )
 
             do
-                let topMiddle = Rectangle(sourceRect.Left + left + 1, sourceRect.Top, sourceRect.Width - left - right, top + 1)
+                let topMiddle = Rectangle(sourceRect.Left + left, sourceRect.Top, sourceRect.Width - left - right, top)
 
                 spriteBatch.Draw(
                     texture.Atlas,
@@ -107,7 +107,7 @@ type SpriteBatch with
                     layerDepth )
 
             do
-                let middleLeft = Rectangle(sourceRect.Left, sourceRect.Top + top + 1, left + 1, sourceRect.Height - top - bottom)
+                let middleLeft = Rectangle(sourceRect.Left, sourceRect.Top + top, left, sourceRect.Height - top - bottom)
 
                 spriteBatch.Draw(
                     texture.Atlas,
@@ -123,8 +123,8 @@ type SpriteBatch with
 
             do
                 let center = Rectangle(
-                        sourceRect.Left + left + 1,
-                        sourceRect.Top + top + 1,
+                        sourceRect.Left + left,
+                        sourceRect.Top + top,
                         sourceRect.Width - left - right,
                         sourceRect.Height - top - bottom)
 
@@ -141,7 +141,7 @@ type SpriteBatch with
                     layerDepth )
 
             do
-                let middleRight = Rectangle(sourceRect.Right - right + 1, sourceRect.Top + top + 1, right + 1, sourceRect.Height - top - bottom)
+                let middleRight = Rectangle(sourceRect.Right - right, sourceRect.Top + top, right, sourceRect.Height - top - bottom)
 
                 spriteBatch.Draw(
                     texture.Atlas,
@@ -155,7 +155,7 @@ type SpriteBatch with
                     layerDepth )
 
             do
-                let bottomLeft = Rectangle(sourceRect.Left, sourceRect.Top + sourceRect.Height - bottom + 1, left + 1, bottom)
+                let bottomLeft = Rectangle(sourceRect.Left, sourceRect.Top + sourceRect.Height - bottom, left, bottom)
 
                 spriteBatch.Draw(
                     texture.Atlas,
@@ -170,7 +170,7 @@ type SpriteBatch with
 
             do
 
-                let bottomMiddle = Rectangle(sourceRect.Left + left + 1, sourceRect.Top + sourceRect.Height - bottom + 1, sourceRect.Width - left - right, bottom)
+                let bottomMiddle = Rectangle(sourceRect.Left + left, sourceRect.Top + sourceRect.Height - bottom, sourceRect.Width - left - right, bottom)
 
                 spriteBatch.Draw(
                     texture.Atlas,
@@ -184,7 +184,7 @@ type SpriteBatch with
                     layerDepth )
 
             do
-                let bottomRight = Rectangle(sourceRect.Right - right + 1, sourceRect.Top + sourceRect.Height - bottom + 1, right, bottom)
+                let bottomRight = Rectangle(sourceRect.Right - right, sourceRect.Top + sourceRect.Height - bottom, right, bottom)
 
                 spriteBatch.Draw(
                     texture.Atlas,

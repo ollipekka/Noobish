@@ -136,6 +136,9 @@ module Internal =
         member private s.UpdateState (state: NoobishLayoutElementState) =
             s.ElementsById.[state.Id] <- state
 
+        member s.Item
+            with get (tid: string) = s.ElementsById.[tid]
+
         member s.Update (cid: string) (message:ComponentMessage) =
             let (success, cs) = s.ElementsById.TryGetValue(cid)
             if success then

@@ -64,6 +64,8 @@ let rec click
                     false
             if not handledByChild then
 
+
+
                 cs.PressedTime <- time
                 printfn $"Pressed time set for %s{c.ThemeId} new time %A{time}."
 

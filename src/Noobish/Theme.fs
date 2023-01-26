@@ -73,13 +73,6 @@ let styles2 = [
                 ninePatch "panel-default.9"
             ]
         ]
-        "toggled", [
-            color 0xFF0000FF
-            drawables [
-                ninePatch "panel-default.9"
-            ]
-
-        ]
     ];
     "Division", [
         "default", [
@@ -92,7 +85,7 @@ let styles2 = [
             ]
         ];
         "toggled", [
-            color 0xFF0000F
+            color 0x4b692fff
             drawables [
                 ninePatch "button-toggled.9"
             ]
@@ -138,6 +131,7 @@ let styles2 = [
     ];
     "Cursor", [
         "default", [
+            width 2
             color 0xdf7126aa
             drawables [
                 ninePatch "cursor.9"
@@ -156,6 +150,7 @@ let styles2 = [
     "Slider", [
         "default", [
             color 0x5f6b80ff
+            height 4
             drawables [
                 ninePatch "slider.9"
             ]
@@ -171,6 +166,7 @@ let styles2 = [
     ];
     "ScrollBar", [
         "default", [
+            width 4
             color 0x5f6b80ff
             drawables [
                 ninePatch "scrollbar.9"
