@@ -41,7 +41,6 @@ type NoobishSettings = {
     Scale: float32
     Pixel: string
     FontSettings: FontSettings
-    TextureAtlasName: string
 }
 
 

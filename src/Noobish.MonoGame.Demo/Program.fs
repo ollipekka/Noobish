@@ -362,10 +362,10 @@ type DemoGame () as game =
             Scale = 1f
             FontSettings = {Small = "Content/AnomyousPro16"; Normal = "Content/AnonymousPro16"; Large = "Content/AnonymousPro16"}
             Pixel = "Content/Pixel"
-            TextureAtlasName = "TestAtlas"
         }
 
-        nui <- NoobishMonoGame.create game.Content width height settings
+        let theme = Theme.createDefaultTheme settings.FontSettings Styles.light
+        nui <- NoobishMonoGame.create game.Content theme width height settings
             |> NoobishMonoGame.overrideDebug false
 
         let init () =

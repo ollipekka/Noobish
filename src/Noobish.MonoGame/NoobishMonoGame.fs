@@ -128,7 +128,7 @@ module NoobishMonoGame =
             SpriteEffects.None
 
 
-    let create (content: ContentManager) width height (settings: NoobishSettings) =
+    let create (content: ContentManager) (theme: Theme) width height (settings: NoobishSettings) =
         let measureText (font: string) (text: string) =
             let font = content.Load<SpriteFont> font
             let size = font.MeasureString text
@@ -138,7 +138,7 @@ module NoobishMonoGame =
             MeasureText = measureText
             Width = width
             Height = height
-            Theme = Theme.createDefaultTheme settings.FontSettings
+            Theme = theme
             Settings = settings
             Components = Dictionary()
             State = NoobishState()
@@ -243,22 +243,13 @@ module NoobishMonoGame =
                 theme.GetColor c.ThemeId "toggled" |> toColor
             else
                 if cs.Visible then
-                    //let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 1.0) 1.0
-                    theme.GetColor c.ThemeId "default" |> toColor
-                    (*
-                    let color, pressedColor =
-                        if state.WasUntoggled c.Id then
+                    let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 0.15) 1.0
 
-                            theme.GetColor c.ThemeId "default" |> toColor
-                        else
-                            theme.GetColor c.ThemeId "default" |> toColor,
-                            theme.GetColor c.ThemeId "toggled" |> toColor
-
+                    let color = theme.GetColor c.ThemeId "default" |> toColor
+                    let pressedColor = theme.GetColor c.ThemeId "toggled" |> toColor
                     let finalColor = Color.Lerp(color, pressedColor, float32 progress)
-                    if progress <> 0.0 then
-                        printfn $"%s{c.ThemeId} %s{cstate} %f{progress} - %A{color} %A{pressedColor} %A{finalColor}"
 
-                    finalColor*)
+                    finalColor
 
                 else if cs.Toggled then
                     theme.GetColor c.ThemeId "toggled" |> toColor
@@ -567,7 +558,7 @@ module NoobishMonoGame =
         spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
 
-        let textureAtlas = content.Load<TextureAtlas> "Content/Theme/ThemeAtlas"
+        let textureAtlas = content.Load<TextureAtlas> theme.AtlasId
         match cs.Model with
         | Some(model) ->
             match model with

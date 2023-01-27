@@ -14,7 +14,7 @@
 /processorParam:TextureFormat=Color
 /build:TestAtlas.json
 
-#begin Theme/ThemeAtlas.json
+#begin Dark/DatkAtlas.json
 /importer:TextureAtlasImporter
 /processor:TextureAtlasProcessor
 /processorParam:ColorKeyColor=0,0,0,255
@@ -23,7 +23,18 @@
 /processorParam:PremultiplyTextureAlpha=True
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:TextureFormat=Color
-/build:Theme/ThemeAtlas.json
+/build:Dark/DarkAtlas.json
+
+#begin Light/LightAtlas.json
+/importer:TextureAtlasImporter
+/processor:TextureAtlasProcessor
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:IsColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/build:Light/LightAtlas.json
 
 #begin AnonymousPro22.spritefont
 /importer:FontDescriptionImporter

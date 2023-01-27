@@ -52,130 +52,14 @@ let ninePatchWithColor t c = NoobishDrawable.NinePatchWithColor(t,c)
 let padding t r b l = NoobishStyle.Padding(t,r,b,l)
 let margin t r b l = NoobishStyle.Margin(t,r,b,l)
 
-let styles2 = [
-    "Default", [
-        "default", [
-            padding 5 5 5 5
-            margin 2 2 2 2
-            fontColor 0xbbbbbbFF
-            color 0x39404dff
-        ];
-        "disabled", [
-            padding 5 5 5 5
-            margin 2 2 2 2
-            fontColor 0x806d5fff
-            color 0x39404dff
-        ]
-    ];
-    "Panel", [
-        "default", [
-            drawables [
-                ninePatch "panel-default.9"
-            ]
-        ]
-    ];
-    "Division", [
-        "default", [
-        ]
-    ];
-    "Button", [
-        "default", [
-            drawables [
-                ninePatch "button-default.9"
-            ]
-        ];
-        "toggled", [
-            color 0x4b692fff
-            drawables [
-                ninePatch "button-toggled.9"
-            ]
-        ]
-        "disabled", [
-            drawables [
-                ninePatch "button-disabled.9"
-            ]
-        ]
-    ];
-    "Combobox", [
-        "default", [
-            drawables [
-                ninePatch "button-default.9"
-            ]
-        ];
-    ];
-    "TextBox", [
-        "default", [
-            drawables [
-                ninePatch "textbox-default.9"
-            ]
-        ];
-        "focused", [
-            drawables [
-                ninePatch "textbox-default.9"
-                ninePatchWithColor "textbox-focused.9" 0xdf7126aa
-            ]
-        ]
-    ];
-    "Checkbox", [
-        "default", [
-            drawables [
-                texture "checkbox"
-            ]
-        ];
-        "checked", [
-            drawables [
-                texture "checkbox"
-                texture "checkbox-checked"
-            ]
-        ]
-    ];
-    "Cursor", [
-        "default", [
-            width 2
-            color 0xdf7126aa
-            drawables [
-                ninePatch "cursor.9"
-            ]
-        ]
-    ];
-    "SliderPin", [
-        "default", [
-            color 0xdf7126aa
-            height 16
-            drawables [
-                ninePatch "slider-pin.9"
-            ]
-        ]
-    ];
-    "Slider", [
-        "default", [
-            color 0x5f6b80ff
-            height 4
-            drawables [
-                ninePatch "slider.9"
-            ]
-        ]
-    ]
-    "ScrollBarPin", [
-        "default", [
-            color 0xdf7126aa
-            drawables [
-                ninePatch "scrollbar-pin.9"
-            ]
-        ]
-    ];
-    "ScrollBar", [
-        "default", [
-            width 4
-            color 0x5f6b80ff
-            drawables [
-                ninePatch "scrollbar.9"
-            ]
-        ]
-    ]
-]
+type NoobishStyleSheet = {
+    TextureAtlasId: string
+    Styles: list<string*list<string*list<NoobishStyle>>>
+}
+
 
 type Theme = {
+    AtlasId: string
     FontSettings: FontSettings
     Widths: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
     Heights: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
@@ -185,6 +69,7 @@ type Theme = {
     Fonts: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>
     FontColors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>
     Drawables: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishDrawable[]>>
+
 } with
 
     static member private GetDefault (d: IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>) (themeId: string) (state: string) (fallback: 'T): 'T =
@@ -243,7 +128,7 @@ let toReadOnlyDictionary (dictionary: Dictionary<string, Dictionary<string, 'T>>
         |> Dictionary
         :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>
 
-let createDefaultTheme (fontSettings: FontSettings) =
+let createDefaultTheme (fontSettings: FontSettings) (sheet: NoobishStyleSheet)=
     let widths = Dictionary<string, Dictionary<string, float32>>()
     let heights = Dictionary<string, Dictionary<string, float32>>()
 
@@ -254,7 +139,7 @@ let createDefaultTheme (fontSettings: FontSettings) =
     let paddings = Dictionary<string, Dictionary<string, (int*int*int*int)>>()
     let margins = Dictionary<string, Dictionary<string, (int*int*int*int)>>()
 
-    for (name, componentStyles) in styles2 do
+    for (name, componentStyles) in sheet.Styles do
         for (stateId, styles) in componentStyles do
             for style in styles do
                 match style with
@@ -285,6 +170,7 @@ let createDefaultTheme (fontSettings: FontSettings) =
                     marginsByComponent.[stateId] <- m
 
     {
+        AtlasId = sheet.TextureAtlasId
         FontSettings = fontSettings
         Widths = widths |> toReadOnlyDictionary
         Heights = heights |> toReadOnlyDictionary
