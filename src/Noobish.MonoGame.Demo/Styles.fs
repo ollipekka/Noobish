@@ -163,6 +163,7 @@ let light = {
             ];
             "toggled", [
                 fontColor 0x9badb7FF
+                color 0x76428aff
                 drawables [
                     ninePatch "button-toggled.9"
                 ]
@@ -189,7 +190,7 @@ let light = {
             "focused", [
                 drawables [
                     ninePatch "textbox-default.9"
-                    ninePatchWithColor "textbox-focused.9" 0xdf7126aa
+                    ninePatchWithColor "textbox-focused.9" 0x76428aff
                 ]
             ]
         ];
@@ -209,7 +210,7 @@ let light = {
         "Cursor", [
             "default", [
                 width 2
-                color 0x0000FFFF
+                color 0x76428aff
                 drawables [
                     ninePatch "cursor.9"
                 ]
@@ -217,7 +218,7 @@ let light = {
         ];
         "SliderPin", [
             "default", [
-                color 0xdf7126aa
+                color 0x76428aff
                 height 16
                 drawables [
                     ninePatch "slider-pin.9"
@@ -235,7 +236,8 @@ let light = {
         ]
         "ScrollBarPin", [
             "default", [
-                color 0xdf7126aa
+                width 8
+                color 0x76428aff
                 drawables [
                     ninePatch "scrollbar-pin.9"
                 ]
@@ -243,8 +245,8 @@ let light = {
         ];
         "ScrollBar", [
             "default", [
-                width 4
-                color 0x5f6b80ff
+                width 8
+                color 0xbbbbffFF
                 drawables [
                     ninePatch "scrollbar.9"
                 ]

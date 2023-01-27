@@ -24,10 +24,10 @@ type NoobishUI = {
     MeasureText: string -> string -> int*int
     Width: int
     Height: int
-    Theme: Theme
     Settings: NoobishSettings
     Components: Dictionary<string, NoobishLayoutElement>
     State: NoobishState
+    mutable Theme: Theme
     mutable Debug: bool
     mutable Version: Guid
     mutable FPSEnabled: bool
@@ -380,7 +380,7 @@ module NoobishMonoGame =
             let pinHeight = ( c.Height / c.OverflowHeight) * bounds.Height
             let color = Color.Multiply(scrollbarPinColor, progress)
 
-            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + pinPosition + 1f))(Vector2(scrollBarWidth, pinHeight - 2f)) color scrollbarPinDrawable
+            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + pinPosition + 4f))(Vector2(scrollBarWidth, pinHeight - 8f)) color scrollbarPinDrawable
 
     let private drawSlider
         (theme: Theme)
@@ -421,7 +421,7 @@ module NoobishMonoGame =
         let color = theme.GetColor "SliderPin" "default" |> toColor
 
         let pinDrawables = theme.GetDrawables "SliderPin" "default"
-        drawDrawable textureAtlas spriteBatch pinPosition pinSize  color pinDrawables
+        drawDrawable textureAtlas spriteBatch pinPosition pinSize color pinDrawables
 
     let blinkInterval = TimeSpan.FromSeconds 1.2
 

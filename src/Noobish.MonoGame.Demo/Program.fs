@@ -27,6 +27,10 @@ type DemoMessage =
     | ChangeMargin of int
     | ComboboxValueChanged of string
     | ToggleDebug
+    | ToggleDarkMode
+    | ToggleLightMode
+
+type StyleMode = LightMode | DarkMode
 
 type ViewState = | Containers | Buttons | Text | Slider
 
@@ -34,6 +38,7 @@ type DemoModel =
     {
         UI: NoobishUI
         State: ViewState
+        StyleMode: StyleMode
         Padding: int
         Margin: int
         ComboboxValue: string
@@ -369,7 +374,7 @@ type DemoGame () as game =
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
-            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f;}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = LightMode}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -392,6 +397,12 @@ type DemoGame () as game =
             | ToggleDebug ->
                 model.UI.Debug <- (not model.UI.Debug)
                 model, Cmd.none
+            | ToggleLightMode ->
+                nui.Theme <- Theme.createDefaultTheme model.UI.Settings.FontSettings Styles.light
+                {model with StyleMode = LightMode}, Cmd.none
+            | ToggleDarkMode ->
+                nui.Theme <- Theme.createDefaultTheme model.UI.Settings.FontSettings Styles.dark
+                {model with StyleMode = DarkMode}, Cmd.none
 
         let view (model: DemoModel) dispatch =
 
@@ -417,7 +428,23 @@ type DemoGame () as game =
                             panel [label [text "Noobish";]] [colspan 3; rowspan 1]
                             panelWithGrid 12 1
                                 [
-                                    label [text title; fill; colspan 10];
+                                    label [text title; fill; colspan 6];
+                                    button
+                                        [
+                                            text "Dark";
+                                            toggled (model.StyleMode = DarkMode);
+                                            fill;
+                                            onClick (fun () -> dispatch ToggleDarkMode)
+                                            colspan 2
+                                        ]
+                                    button
+                                        [
+                                            text "Light";
+                                            toggled (model.StyleMode = LightMode);
+                                            fill;
+                                            onClick (fun () -> dispatch ToggleLightMode)
+                                            colspan 2
+                                        ]
                                     button
                                         [
                                             text "Debug";

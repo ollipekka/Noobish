@@ -967,15 +967,15 @@ module Logic =
         | NoobishLayout.Absolute ->
             let parentBounds = parentComponent.Content
 
-            for child in c.Children do
+            for i = 0 to c.Children.Length - 1 do
                 let childStartX = parentBounds.X + parentBounds.Width / 2.0f
                 let childStartY = parentBounds.Y + parentBounds.Height / 2.0f
 
                 let childWidth = parentBounds.Width
                 let childHeight = parentBounds.Height
 
-                let path = sprintf "%s:absolute(%g,%g)" parentComponent.Path childStartX childStartY
-                let childComponent = layoutElement measureText theme settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight child
+                let path = sprintf "%s:absolute:%i" parentComponent.Path i
+                let childComponent = layoutElement measureText theme settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight c.Children.[i]
                 newChildren.Add({ childComponent with StartX = childComponent.StartX; StartY = childComponent.StartY })
 
             {parentComponent with Children = newChildren.ToArray()}
