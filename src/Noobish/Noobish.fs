@@ -159,8 +159,6 @@ type NoobishAttribute =
     | Overlay
 
     | Text of string
-    | TextSmall
-    | TextLarge
     | TextAlign of NoobishTextAlign
     | TextWrap
 
@@ -181,7 +179,6 @@ type NoobishAttribute =
     | Toggled of bool
     | Block
     | MinSize of width: int * height: int
-    | FgColor of int
     | Visible of bool
     | Enabled of bool
     | Texture of NoobishTextureId
@@ -197,7 +194,6 @@ type NoobishAttribute =
     | RelativePosition of x: int * y: int
     | KeyboardShortcut of NoobishKeyId
     | OnOpenKeyboard of ((string -> unit) -> unit)
-    | UseFullyQualifiedIdForName
     | KeyTypedEnabled
 
 type NoobishElement = {
@@ -222,8 +218,6 @@ let textBottomLeft = TextAlign NoobishTextAlign.BottomRight
 let textBottomCenter = TextAlign NoobishTextAlign.BottomCenter
 let textBottomRight = TextAlign NoobishTextAlign.BottomRight
 let textWrap = TextWrap
-let textSmall = TextSmall
-let textLarge = TextLarge
 
 let sliderRange min max = SliderRange(min, max)
 let sliderValue v = SliderValue v
@@ -263,7 +257,6 @@ let fillHorizontal = FillHorizontal
 let fillVertical = FillVertical
 
 let minSize w h = MinSize(w, h)
-let color c = FgColor (c)
 let enabled v = Enabled(v)
 
 let visible v = Visible(v)
@@ -340,7 +333,7 @@ let slider attributes =
             | Textbox _ -> m
 
         dispatch c.Id (ChangeModel changeModel)
-    {ThemeId = "Slider"; Children = []; Attributes = attributes @ [UseFullyQualifiedIdForName; sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
+    {ThemeId = "Slider"; Children = []; Attributes = attributes @ [sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
 
 
 let combobox children attributes =
@@ -479,9 +472,7 @@ module Logic =
 
         let mutable textAlign = NoobishTextAlign.Left
         let mutable text = ""
-        let mutable textFont = theme.GetFont cid cstate
         let mutable textWrap = false
-        let mutable color = theme.GetColor cid cstate
         let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = scaleTuple (theme.GetPadding themeId cstate)
         let mutable marginLeft, marginRight, marginTop, marginBottom = scaleTuple (theme.GetMargin themeId cstate)
 
@@ -524,8 +515,6 @@ module Logic =
 
         let mutable keyboardShortcut = NoobishKeyId.None
 
-        let mutable useFullyQualifiedIdForName = false
-
         for a in attributes do
             match a with
             | Name v ->
@@ -563,8 +552,6 @@ module Logic =
             | Text(value) -> text <- value
             | TextAlign (value) -> textAlign <- value
             | TextWrap -> textWrap <- true
-            | TextSmall -> textFont <- settings.FontSettings.Small
-            | TextLarge -> textFont <- settings.FontSettings.Large
             // Slider
             | SliderRange (min, max) ->
 
@@ -639,7 +626,6 @@ module Logic =
                 fillHorizontal <- true
             | FillVertical ->
                 fillVertical <- true
-            | FgColor (c) -> color <- c
             | Block -> isBlock <- true
             | Enabled (v) -> enabled <- v
             | Visible (v) -> visible <- v
@@ -696,8 +682,11 @@ module Logic =
                         | _ -> model'
                 )
 
-            | UseFullyQualifiedIdForName ->
-                useFullyQualifiedIdForName <- true
+
+
+        let color = theme.GetColor cid cstate
+        let textFont = theme.GetFont cid cstate
+
         let maxWidth = parentWidth * float32 colspan
 
         model |> Option.iter (fun model' ->
