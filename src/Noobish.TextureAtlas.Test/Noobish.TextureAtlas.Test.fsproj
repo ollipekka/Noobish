@@ -8,8 +8,7 @@
 
   <ItemGroup>
     <Compile Include="Program.fs" />
-    <None Include="../Content/*.*" CopyToOutputDirectory="PreserveNewest" Link="%(RecursiveDir)\%(Filename)%(Extension)" />
-    <None Include="../Content/Theme/*.*" CopyToOutputDirectory="PreserveNewest" Link="%(RecursiveDir)\%(Filename)%(Extension)" />
+    <None Include="../Content/*/*.*" CopyToOutputDirectory="PreserveNewest" Link="%(RecursiveDir)\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
