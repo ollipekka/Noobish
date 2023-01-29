@@ -2,8 +2,8 @@ namespace Noobish.PipelineExtension
 
 open Noobish.TextureAtlas
 
-open Microsoft.Xna.Framework.Content.Pipeline;
-open Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler;
+open Microsoft.Xna.Framework.Content.Pipeline
+open Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 
 [<ContentTypeWriter>]
 type TextureAtlasWriter () =

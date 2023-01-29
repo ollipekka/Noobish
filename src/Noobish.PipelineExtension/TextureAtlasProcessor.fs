@@ -10,7 +10,7 @@ open Microsoft.Xna.Framework.Content.Pipeline
 open Microsoft.Xna.Framework.Content.Pipeline.Graphics
 open Microsoft.Xna.Framework.Content.Pipeline.Processors
 
-[<ContentProcessor(DisplayName = "TextureAtlasContent procesor")>]
+[<ContentProcessor(DisplayName = "Texture Atlas Procesor")>]
 type TextureAtlasProcessor () =
     inherit ContentProcessor<TextureAtlasJson, TextureAtlasContent>()
 

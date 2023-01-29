@@ -7,6 +7,7 @@ open SixLabors.ImageSharp.PixelFormats
 open SixLabors.ImageSharp.Processing
 open Microsoft.Xna.Framework.Content.Pipeline
 open Microsoft.Xna.Framework.Content.Pipeline.Graphics
+open System.Collections.Generic
 
 module NinePatch =
     open Noobish.PipelineExtension
@@ -107,10 +108,9 @@ module TextureAtlasJson =
     open Microsoft.Extensions.FileSystemGlobbing
     open Microsoft.Extensions.FileSystemGlobbing.Abstractions
 
-    let fromJson (fileName: string) =
-        use fileStream = File.OpenRead(fileName)
-        use textReader = new StreamReader(fileStream)
-        use jsonReader = new JsonTextReader(textReader)
+    let fromJsonFile (fileName: string) =
+        use fileStream = File.OpenText(fileName)
+        use jsonReader = new JsonTextReader(fileStream)
         let serializer = new JsonSerializer()
         serializer.Deserialize<TextureAtlasJson>(jsonReader)
 
@@ -123,3 +123,44 @@ module TextureAtlasJson =
             matcher.AddExclude path |> ignore
 
         matcher.Execute(new DirectoryInfoWrapper(new DirectoryInfo(path))).Files |> Seq.map (fun f -> sprintf "%s/%s" path f.Path) |> Seq.toArray
+
+[<RequireQualifiedAccess>]
+[<System.Flags>]
+type StyleFlags =
+| None      = 0b0000000
+| FontColor = 0b0000001
+| Color     = 0b0000010
+| Padding   = 0b0000100
+| Margin    = 0b0001000
+| Drawables = 0b0010000
+
+type StyleJson = {
+    width: int
+    height: int
+    font: string
+    fontColor: string
+    color: string
+    padding: int[]
+    margin: int[]
+    drawables: string[]
+}
+
+type StyleSheetJson = {
+    TextureAtlas: string
+    Font: string
+    Styles: Dictionary<string, Dictionary<string, StyleJson>>
+}
+
+module StyleSheetJson =
+    let fromJsonFile (fileName: string) =
+        use fileStream = new JsonTextReader(File.OpenText fileName)
+        let serializer = JsonSerializer()
+        serializer.Deserialize<StyleSheetJson>(fileStream)
+
+
+type StyleSheetContent = {
+    Name: string
+    Font: string
+    TextureAtlas: ExternalReference<TextureAtlasContent>
+    Styles: Dictionary<string, Dictionary<string, StyleJson>>
+}

@@ -13,6 +13,11 @@
     <Compile Include="TextureAtlasWriter.fs" />
     <Compile Include="TextureAtlasImporter.fs" />
 
+
+    <Compile Include="StyleSheetProcessor.fs" />
+    <Compile Include="StyleSheetWriter.fs" />
+    <Compile Include="StyleSheetImporter.fs" />
+
   </ItemGroup>
 
   <ItemGroup>

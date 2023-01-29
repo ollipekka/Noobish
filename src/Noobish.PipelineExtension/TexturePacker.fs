@@ -153,7 +153,7 @@ module TexturePacker =
 
     let writeIndex (textures: NoobishTextureOutput[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) =
 
-        use binaryWriter = new BinaryWriter(File.OpenWrite("atlas.index"))
+        use binaryWriter = new BinaryWriter(File.OpenWrite("testOut/atlas.index"))
 
         binaryWriter.Write(textures.Length)
         for texture in textures do
@@ -177,8 +177,8 @@ module TexturePacker =
 
     let readIndex () =
 
-        let reader = new BinaryReader(File.OpenRead("atlas.index"))
-        let atlasImage = Image.Load<Rgba32>("atlas.png")
+        let reader = new BinaryReader(File.OpenRead("testOut/atlas.index"))
+        let atlasImage = Image.Load<Rgba32>("testOut/atlas.png")
 
         let count = reader .ReadInt32()
 

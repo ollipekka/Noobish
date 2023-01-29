@@ -10,6 +10,8 @@
     <Compile Include="Types.fs" />
     <Compile Include="TextureAtlasReader.fs" />
     <Compile Include="Extensions.fs" />
+    <Compile Include="StyleSheetReader.fs" />
+
   </ItemGroup>
 
   <ItemGroup>

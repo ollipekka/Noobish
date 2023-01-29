@@ -39,7 +39,9 @@ let (regions, atlasWidth, atlasHeight) = TexturePacker.createRegions 1024 1024 p
 
 let image = TexturePacker.createImage textures regions padding atlasWidth atlasHeight
 
-let stream = File.OpenWrite("atlas.png")
+Directory.CreateDirectory("testOut") |> ignore
+
+let stream = File.OpenWrite("testOut/atlas.png")
 image.Save(stream, new PngEncoder())
 stream.Close()
 
@@ -48,10 +50,7 @@ TexturePacker.writeIndex textures regions padding
 
 let textures2, regions2 = TexturePacker.readIndex()
 
-Directory.CreateDirectory("testOut") |> ignore
 
-
-let reader = new JsonTextReader(new StreamReader(File.OpenRead("bin/net6.0/Dark/Dark.json")))
 
 type StyleJson = {
     fontColor: string
@@ -59,20 +58,19 @@ type StyleJson = {
     padding: int[]
     margin: int[]
     drawables: string[][]
-
-
 }
 
 type StyleSheetJson = {
     TextureAtlas: string
+    Font: string
     Styles: Dictionary<string, Dictionary<string, StyleJson>>
 }
 
-let file = new JsonTextReader(File.OpenText "bin/net6.0/Dark/Dark.json")
+let fileStream = new JsonTextReader(File.OpenText "bin/net6.0/Dark/Dark.json")
 
 let serializer = JsonSerializer()
 
-let jsonStyleSheet = serializer.Deserialize<StyleSheetJson>(file)
+let jsonStyleSheet = serializer.Deserialize<StyleSheetJson>(fileStream)
 
 
 
