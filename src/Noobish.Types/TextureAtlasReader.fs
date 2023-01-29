@@ -1,8 +1,11 @@
-namespace Noobish.TextureAtlas
+namespace Noobish.PipelineExtension
+
 
 open Microsoft.Xna.Framework;
 open Microsoft.Xna.Framework.Content;
 open Microsoft.Xna.Framework.Graphics;
+
+open Noobish.TextureAtlas
 
 type TextureAtlasReader () =
     inherit ContentTypeReader<TextureAtlas>()
@@ -13,7 +16,7 @@ type TextureAtlasReader () =
         let atlasTexture = reader.ReadExternalReference<Texture2D>()
         let count = reader.ReadInt32()
 
-        let textures = System.Collections.Generic.Dictionary<string, Noobish.TextureAtlas.Texture>()
+        let textures = System.Collections.Generic.Dictionary<string, Texture>()
 
         for i = 0 to count - 1 do
             let textureName = reader.ReadString()

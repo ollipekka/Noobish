@@ -1,4 +1,4 @@
-﻿namespace Noobish.TextureAtlas.PipelineExtension
+﻿namespace Noobish.PipelineExtension
 
 open System.IO
 open Newtonsoft.Json
@@ -8,11 +8,8 @@ open SixLabors.ImageSharp.Processing
 open Microsoft.Xna.Framework.Content.Pipeline
 open Microsoft.Xna.Framework.Content.Pipeline.Graphics
 
-type TextureType =
-    | Texture
-    | NinePatch of top: int * right: int * bottom: int * left: int
-
 module NinePatch =
+    open Noobish.PipelineExtension
 
     let fileExtension = ".9.png"
 
@@ -81,19 +78,19 @@ module NinePatch =
 
 
         // Subtract 1 from all sides because of the metadata row / col.
-        (name, NinePatch (top - 1, right - 1, bottom - 1, left - 1), image)
+        (name, Noobish.TextureAtlas.TextureType.NinePatch (top - 1, right - 1, bottom - 1, left - 1), image)
 
 
-type Texture = {
+type NoobishTextureOutput = {
     Name: string
-    TextureType: TextureType
+    TextureType: Noobish.TextureAtlas.TextureType
     Image: Image<Rgba32>
 }
 
 type TextureAtlasContent = {
     Name: string
     Padding: int
-    Textures: Texture[]
+    Textures: NoobishTextureOutput[]
     Regions: System.Collections.Generic.IReadOnlyDictionary<string, Rectangle>
     Texture: ExternalReference<TextureContent>
 }

@@ -41,6 +41,7 @@ Preferred usage is to include source files directly into your project.
 
 ## Project Layout
 
+* *NoobishTypes* the common types provided by the library usable independently of .
 * *Noobish:* the element tree and layout modules.
 * *Noobish.Test:* unit tests for the element tree and layout modules.
 * *Noobish.MonoGame:* MonoGame related implementation.

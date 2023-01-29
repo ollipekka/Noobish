@@ -1,4 +1,4 @@
-﻿namespace Noobish.TextureAtlas.PipelineExtension.Test
+﻿namespace Noobish.PipelineExtension.Test
 
 module Say =
     let hello name =

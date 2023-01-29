@@ -1,4 +1,4 @@
-namespace Noobish.TextureAtlas.PipelineExtension
+namespace Noobish.PipelineExtension
 
 open System.IO
 

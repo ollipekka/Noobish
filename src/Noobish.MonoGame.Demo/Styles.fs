@@ -2,7 +2,7 @@
 module Styles
 
 open Noobish.Theme
-
+(*
 let dark = {
     TextureAtlasId = "Content/Dark/DarkAtlas";
     Styles = [
@@ -253,4 +253,4 @@ let light = {
             ]
         ]
     ]
-}
+}*)

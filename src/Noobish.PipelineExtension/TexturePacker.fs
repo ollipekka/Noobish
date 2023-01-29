@@ -1,4 +1,6 @@
-namespace Noobish.TextureAtlas.PipelineExtension
+namespace Noobish.PipelineExtension
+
+open Noobish.TextureAtlas
 
 module TexturePacker =
 
@@ -33,7 +35,7 @@ module TexturePacker =
                 }
             )
 
-    let findPreviousIntersection (textures: Texture[]) (placement: IReadOnlyDictionary<string, Rectangle>) (x:int) (y: int) (index: int) =
+    let findPreviousIntersection (textures: NoobishTextureOutput[]) (placement: IReadOnlyDictionary<string, Rectangle>) (x:int) (y: int) (index: int) =
 
         let mutable i = 0
         let mutable intersectionIndex = -1
@@ -61,7 +63,7 @@ module TexturePacker =
 
 
 
-    let findTexturePosition (textures: Texture[]) (placement: IReadOnlyDictionary<string, Rectangle>) (padding: int) (textureWidth: int) (index: int) =
+    let findTexturePosition (textures: NoobishTextureOutput[]) (placement: IReadOnlyDictionary<string, Rectangle>) (padding: int) (textureWidth: int) (index: int) =
             let mutable x = 0
             let mutable y = 0
             let mutable success = false
@@ -87,7 +89,7 @@ module TexturePacker =
                     success <- true
             (x, y)
 
-    let guessWidth (textures: Texture[]) (padding: int ) (isPowerOfTwo: bool) =
+    let guessWidth (textures: NoobishTextureOutput[]) (padding: int ) (isPowerOfTwo: bool) =
 
             let spriteWidths =
                 textures
@@ -106,7 +108,7 @@ module TexturePacker =
             else
                 proposedWidth
 
-    let createRegions (maxWidth: int) (maxHeight: int) (padding: int) (isPowerOfTwo: bool) (textures: Texture[])  =
+    let createRegions (maxWidth: int) (maxHeight: int) (padding: int) (isPowerOfTwo: bool) (textures: NoobishTextureOutput[])  =
         let result = Dictionary<string, Rectangle>()
 
         let sortedTextures = textures |> Array.sortByDescending(fun t -> (t.Image.Height + 2 * padding) * 1000 + (t.Image.Width + 2 * padding))
@@ -138,7 +140,7 @@ module TexturePacker =
 
         (result, atlasWidth, atlasHeight)
 
-    let createImage (textures: Texture[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) (atlasWidth: int) (atlasHeight: int ) =
+    let createImage (textures: NoobishTextureOutput[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) (atlasWidth: int) (atlasHeight: int ) =
         let atlasImage = new Image<Rgba32>(atlasWidth, atlasHeight)
         for texture in textures do
             let destinationRectangle = regions.[texture.Name]
@@ -149,7 +151,7 @@ module TexturePacker =
 
         atlasImage
 
-    let writeIndex (textures: Texture[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) =
+    let writeIndex (textures: NoobishTextureOutput[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) =
 
         use binaryWriter = new BinaryWriter(File.OpenWrite("atlas.index"))
 
@@ -180,7 +182,7 @@ module TexturePacker =
 
         let count = reader .ReadInt32()
 
-        let textures = ResizeArray<Texture>()
+        let textures = ResizeArray<NoobishTextureOutput>()
         let regions = Dictionary<string, Rectangle>()
 
         for i = 0 to count - 1 do
@@ -193,9 +195,9 @@ module TexturePacker =
                     let right = reader.ReadInt32()
                     let bottom = reader.ReadInt32()
                     let left = reader.ReadInt32()
-                    NinePatch(top, right, bottom, left)
+                    TextureType.NinePatch(top, right, bottom, left)
                 else
-                    Texture
+                    TextureType.Texture
 
             let region =
                 let x = reader.ReadInt32()

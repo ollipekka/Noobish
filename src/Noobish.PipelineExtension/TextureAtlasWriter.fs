@@ -1,4 +1,6 @@
-namespace Noobish.TextureAtlas.PipelineExtension
+namespace Noobish.PipelineExtension
+
+open Noobish.TextureAtlas
 
 open Microsoft.Xna.Framework.Content.Pipeline;
 open Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler;

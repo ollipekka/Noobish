@@ -16,4 +16,8 @@
     <PackageReference Include="Elmish" Version="3.0.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Noobish.Types\Noobish.Types.fsproj" />
+  </ItemGroup>
+
 </Project>

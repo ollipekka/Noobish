@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Noobish.TextureAtlas.PipelineExtension\Noobish.TextureAtlas.PipelineExtension.fsproj" />
+    <ProjectReference Include="..\Noobish.PipelineExtension\Noobish.PipelineExtension.fsproj" />
   </ItemGroup>
 
 </Project>

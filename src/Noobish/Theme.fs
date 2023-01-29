@@ -18,27 +18,7 @@ module private DictionaryExtensions =
 
 open DictionaryExtensions
 
-[<RequireQualifiedAccess>]
-type NoobishDrawable=
-| NinePatch of string
-| NinePatchWithColor of string*int
-| Texture of string
-
-[<RequireQualifiedAccess>]
-type NoobishStyle =
-
-| Width of int
-| Height of int
-
-// Text related styles.
-| Font of string
-| FontColor of int
-
-| Color of int
-| Drawables of list<NoobishDrawable>
-| Padding of (int*int*int*int)
-| Margin of (int*int*int*int)
-
+(*
 let font f = NoobishStyle.Font f
 let fontColor c = NoobishStyle.FontColor c
 
@@ -51,12 +31,9 @@ let ninePatch t = NoobishDrawable.NinePatch t
 let ninePatchWithColor t c = NoobishDrawable.NinePatchWithColor(t,c)
 let padding t r b l = NoobishStyle.Padding(t,r,b,l)
 let margin t r b l = NoobishStyle.Margin(t,r,b,l)
+*)
 
-type NoobishStyleSheet = {
-    TextureAtlasId: string
-    Styles: list<string*list<string*list<NoobishStyle>>>
-}
-
+open Noobish.Styles
 
 type Theme = {
     AtlasId: string
@@ -83,7 +60,6 @@ type Theme = {
         else
             fallback
 
-
     static member private GetValue (d: IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>) (themeId: string) (state: string) (fallback: 'T): 'T =
         let (success, defaultDict) = d.TryGetValue(themeId)
         if success then
@@ -94,8 +70,6 @@ type Theme = {
                 Theme.GetDefault d themeId "default" fallback
         else
             Theme.GetDefault d "Default" "default" fallback
-
-
 
     member t.GetWidth (cid: string) (state: string) =
         Theme.GetValue t.Widths cid state 0f
@@ -128,7 +102,8 @@ let toReadOnlyDictionary (dictionary: Dictionary<string, Dictionary<string, 'T>>
         |> Dictionary
         :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>
 
-let createDefaultTheme (fontSettings: FontSettings) (sheet: NoobishStyleSheet)=
+(*
+let createDefaultTheme (fontSettings: FontSettings) (styleSheetId: string)=
     let widths = Dictionary<string, Dictionary<string, float32>>()
     let heights = Dictionary<string, Dictionary<string, float32>>()
 
@@ -183,3 +158,4 @@ let createDefaultTheme (fontSettings: FontSettings) (sheet: NoobishStyleSheet)=
 
 
     }
+*)

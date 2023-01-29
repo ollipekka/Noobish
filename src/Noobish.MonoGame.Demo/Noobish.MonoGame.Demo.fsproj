@@ -21,9 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Noobish.Types\Noobish.Types.fsproj" />
     <ProjectReference Include="..\Noobish\Noobish.fsproj" />
     <ProjectReference Include="..\Noobish.MonoGame\Noobish.MonoGame.fsproj" />
-    <ProjectReference Include="..\Noobish.TextureAtlas\Noobish.TextureAtlas.fsproj" />
   </ItemGroup>
 
 </Project>

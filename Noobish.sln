@@ -5,24 +5,25 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{4DCE249E-1A37-4679-B1A0-7E6A9BCD373D}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.Types", "src\Noobish.Types\Noobish.Types.fsproj", "{8D0B4430-D274-4F07-8F2B-94CCE0AE77B4}"
+EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish", "src\Noobish\Noobish.fsproj", "{D5332513-8F67-430B-8748-62BEE811F665}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.Content", "src\Noobish.Content\Noobish.Content.fsproj", "{31B21794-6753-4828-BC86-7E315E96DF34}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.Test", "src\Noobish.Test\Noobish.Test.fsproj", "{55D64186-DFF6-4B8F-B172-CA677816EBFE}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.MonoGame", "src\Noobish.MonoGame\Noobish.MonoGame.fsproj", "{98F9882D-B190-407A-AE10-7F95E5B71D50}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.Test", "src\Noobish.Test\Noobish.Test.fsproj", "{9B16793E-7B28-427E-BC32-37F79D8C3319}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.MonoGame.Demo", "src\Noobish.MonoGame.Demo\Noobish.MonoGame.Demo.fsproj", "{9A665AE3-6B82-4999-B588-A39EA12F9473}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.TextureAtlas.MonoGame.Demo", "src\Noobish.TextureAtlas.MonoGame.Demo\Noobish.TextureAtlas.MonoGame.Demo.fsproj", "{7887E81A-8B9C-4662-8379-29298AEB0D35}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.PipelineExtension", "src\Noobish.PipelineExtension\Noobish.PipelineExtension.fsproj", "{53438D12-1732-43C3-8DFC-FDC59B0A58B0}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.TextureAtlas", "src\Noobish.TextureAtlas\Noobish.TextureAtlas.fsproj", "{8D0B4430-D274-4F07-8F2B-94CCE0AE77B4}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.PipelineExtension.Demo", "src\Noobish.PipelineExtension.Demo\Noobish.PipelineExtension.Demo.fsproj", "{7887E81A-8B9C-4662-8379-29298AEB0D35}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.TextureAtlas.PipelineExtension", "src\Noobish.TextureAtlas.PipelineExtension\Noobish.TextureAtlas.PipelineExtension.fsproj", "{53438D12-1732-43C3-8DFC-FDC59B0A58B0}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.PipelineExtension.Test", "src\Noobish.PipelineExtension.Test\Noobish.PipelineExtension.Test.fsproj", "{9B16793E-7B28-427E-BC32-37F79D8C3319}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.TextureAtlas.PipelineExtension.Test", "src\Noobish.TextureAtlas.PipelineExtension.Test\Noobish.TextureAtlas.PipelineExtension.Test.fsproj", "{31B21794-6753-4828-BC86-7E315E96DF34}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Noobish.TextureAtlas.Test", "src\Noobish.TextureAtlas.Test\Noobish.TextureAtlas.Test.fsproj", "{55D64186-DFF6-4B8F-B172-CA677816EBFE}"
-EndProject
+
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

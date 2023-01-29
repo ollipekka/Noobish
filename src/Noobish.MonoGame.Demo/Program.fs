@@ -10,6 +10,7 @@ open Microsoft.Xna.Framework.Input.Touch
 open Elmish
 
 open Noobish
+open Noobish.Styles
 
 let loremIpsum1 =
     "Scroll me!\n\n Lorem\nipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -369,8 +370,8 @@ type DemoGame () as game =
             Pixel = "Content/Pixel"
         }
 
-        let theme = Theme.createDefaultTheme settings.FontSettings Styles.light
-        nui <- NoobishMonoGame.create game.Content theme width height settings
+        //let theme = Theme.createDefaultTheme settings.FontSettings "Content/Dark/Dark.json"
+        nui <- NoobishMonoGame.create game.Content "Content/Dark/Dark" width height settings
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
@@ -398,10 +399,10 @@ type DemoGame () as game =
                 model.UI.Debug <- (not model.UI.Debug)
                 model, Cmd.none
             | ToggleLightMode ->
-                nui.Theme <- Theme.createDefaultTheme model.UI.Settings.FontSettings Styles.light
+                nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Content/Light/Light"
                 {model with StyleMode = LightMode}, Cmd.none
             | ToggleDarkMode ->
-                nui.Theme <- Theme.createDefaultTheme model.UI.Settings.FontSettings Styles.dark
+                nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Content/Dark/Dark"
                 {model with StyleMode = DarkMode}, Cmd.none
 
         let view (model: DemoModel) dispatch =
