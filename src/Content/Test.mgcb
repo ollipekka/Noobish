@@ -14,16 +14,23 @@
 /processorParam:TextureFormat=Color
 /build:TestAtlas.json
 
+
+
 #begin Dark/Dark.json
 /importer:StyleSheetImporter
 /processor:StyleSheetProcessor
+/build:Dark/Dark.json
+
+#begin Dark/DarkAtlas.json
+/importer:TextureAtlasImporter
+/processor:TextureAtlasProcessor
 /processorParam:ColorKeyColor=0,0,0,255
 /processorParam:IsColorKeyEnabled=True
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyTextureAlpha=True
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:TextureFormat=Color
-/build:Dark/Dark.json
+/build:Dark/DarkAtlas.json
 
 #begin Light/LightAtlas.json
 /importer:TextureAtlasImporter

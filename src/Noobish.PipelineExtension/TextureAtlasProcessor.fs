@@ -12,7 +12,7 @@ open Microsoft.Xna.Framework.Content.Pipeline.Processors
 
 [<ContentProcessor(DisplayName = "Texture Atlas Procesor")>]
 type TextureAtlasProcessor () =
-    inherit ContentProcessor<TextureAtlasJson, TextureAtlasContent>()
+    inherit ContentProcessor<string*string*string[], TextureAtlasContent>()
 
     member val Padding = 1 with get, set
 
@@ -48,25 +48,22 @@ type TextureAtlasProcessor () =
             assetName = name );
 
 
-    override s.Process(input: TextureAtlasJson, context: ContentProcessorContext) =
+    override s.Process((_path: string, name: string, files: string[]), context: ContentProcessorContext) =
 
 
-        let outputFilePath = Path.GetDirectoryName(context.OutputFilename)
+        for f in files do
+            context.AddDependency f
 
-        let relativePath = Path.GetRelativePath (context.OutputDirectory, outputFilePath)
-
-        let textureFileNames = TextureAtlasJson.getFiles relativePath input
-
-        let textures = TexturePacker.createTextures textureFileNames
+        let textures = TexturePacker.createTextures files
         let (regions, atlasWidth, atlasHeight) = TexturePacker.createRegions s.MaxAtlasWidth s.MaxAtlasHeight s.Padding s.ResizeToPowerOfTwo textures
 
         let image = TexturePacker.createImage textures regions s.Padding atlasWidth atlasHeight
 
-        let atlasTextureFileName = Path.Combine(context.OutputDirectory, (sprintf "%sTexture.png" input.Name))
+        let atlasTextureFileName = Path.Combine(context.OutputDirectory, (sprintf "%sTexture.png" name))
         let stream = File.OpenWrite(atlasTextureFileName)
         image.Save(stream, new PngEncoder())
         stream.Close()
 
         context.AddOutputFile(atlasTextureFileName)
 
-        {Name = input.Name; Padding = s.Padding; Textures = textures; Regions = regions; Texture = s.BuildTexture (sprintf "%sTexture" input.Name) atlasTextureFileName context}
+        {Name = name; Padding = s.Padding; Textures = textures; Regions = regions; Texture = s.BuildTexture (sprintf "%sTexture" name) atlasTextureFileName context}

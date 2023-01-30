@@ -30,7 +30,7 @@ type StyleSheetWriter () =
 
     override s.Write(writer: ContentWriter, input: StyleSheetContent) =
         writer.Write input.Name
-        writer.WriteExternalReference input.TextureAtlas
+        writer.Write input.TextureAtlas
         writer.Write input.Font
 
 

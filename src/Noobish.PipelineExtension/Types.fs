@@ -124,6 +124,10 @@ module TextureAtlasJson =
 
         matcher.Execute(new DirectoryInfoWrapper(new DirectoryInfo(path))).Files |> Seq.map (fun f -> sprintf "%s/%s" path f.Path) |> Seq.toArray
 
+type TextureAtlasImporterResult = {
+    Files: string[]
+}
+
 [<RequireQualifiedAccess>]
 [<System.Flags>]
 type StyleFlags =
@@ -161,6 +165,6 @@ module StyleSheetJson =
 type StyleSheetContent = {
     Name: string
     Font: string
-    TextureAtlas: ExternalReference<TextureAtlasContent>
+    TextureAtlas: string
     Styles: Dictionary<string, Dictionary<string, StyleJson>>
 }
