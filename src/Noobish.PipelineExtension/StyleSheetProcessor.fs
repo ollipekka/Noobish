@@ -38,18 +38,22 @@ type StyleSheetProcessor () =
 
         let sourceAtlas = ExternalReference<TextureAtlasContent>( sourcePath )
         sourceAtlas.Name <- name;
-
+        printfn "%s %A %s" sourcePath sourceAtlas name
         context.BuildAsset<TextureAtlasContent, TextureAtlasContent>(
             sourceAsset = sourceAtlas,
             processorName ="TextureAtlasProcessor",
             processorParameters = parameters,
             importerName = "TextureAtlasImporter",
-            assetName = name );
+            assetName = name)
 
 
     override s.Process(input: StyleSheetJson, context: ContentProcessorContext) =
 
-        let atlas = s.BuildTextureAtlas (Path.GetFileNameWithoutExtension input.TextureAtlas) input.TextureAtlas context
+
+        let atlasName = Path.GetFileNameWithoutExtension input.TextureAtlas
+        let atlas = s.BuildTextureAtlas atlasName input.TextureAtlas context
+
+
 
         {
             Name = Path.GetFileNameWithoutExtension context.OutputFilename

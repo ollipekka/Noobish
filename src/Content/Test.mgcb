@@ -1,5 +1,5 @@
 
-/reference:../../bin/net6.0/Noobish.TextureAtlas.PipelineExtension.dll
+/reference:../../bin/net6.0/Noobish.PipelineExtension.dll
 /reference:../../bin/net6.0/Newtonsoft.Json.dll
 
 
@@ -14,16 +14,16 @@
 /processorParam:TextureFormat=Color
 /build:TestAtlas.json
 
-#begin Dark/DatkAtlas.json
-/importer:TextureAtlasImporter
-/processor:TextureAtlasProcessor
+#begin Dark/Dark.json
+/importer:StyleSheetImporter
+/processor:StyleSheetProcessor
 /processorParam:ColorKeyColor=0,0,0,255
 /processorParam:IsColorKeyEnabled=True
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyTextureAlpha=True
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:TextureFormat=Color
-/build:Dark/DarkAtlas.json
+/build:Dark/Dark.json
 
 #begin Light/LightAtlas.json
 /importer:TextureAtlasImporter

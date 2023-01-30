@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Noobish.Types\Noobish.Types.fsproj" />
     <ProjectReference Include="..\Noobish\Noobish.fsproj" />
+    <ProjectReference Include="..\Noobish.Content\Noobish.Content.fsproj" />
     <ProjectReference Include="..\Noobish.MonoGame\Noobish.MonoGame.fsproj" />
   </ItemGroup>
 

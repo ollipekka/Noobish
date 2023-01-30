@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Noobish.Types\Noobish.Types.fsproj" />
+    <ProjectReference Include="..\Noobish.Content\Noobish.Content.fsproj" />
   </ItemGroup>
 
 </Project>
