@@ -146,25 +146,21 @@ type StyleJson = {
     color: string
     padding: int[]
     margin: int[]
-    drawables: string[]
+    drawables: string[][]
 }
-
-type StyleSheetJson = {
-    TextureAtlas: string
-    Font: string
-    Styles: Dictionary<string, Dictionary<string, StyleJson>>
-}
-
-module StyleSheetJson =
-    let fromJsonFile (fileName: string) =
-        use fileStream = new JsonTextReader(File.OpenText fileName)
-        let serializer = JsonSerializer()
-        serializer.Deserialize<StyleSheetJson>(fileStream)
 
 
 type StyleSheetContent = {
     Name: string
     Font: string
     TextureAtlas: string
-    Styles: Dictionary<string, Dictionary<string, StyleJson>>
+
+    Widths: (string*(string*float32)[])[]
+    Heights: (string*(string*float32)[])[]
+    Fonts: (string*(string*string)[])[]
+    FontColors: (string*(string*string)[])[]
+    Colors: (string*(string*string)[])[]
+    Drawables: (string*(string*string[][])[])[]
+    Paddings: (string*(string*(int*int*int*int))[])[]
+    Margins: (string*(string*(int*int*int*int))[])[]
 }

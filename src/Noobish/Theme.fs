@@ -81,11 +81,6 @@ type Theme = {
         Theme.GetValue t.Drawables cid state [||]
 
 
-let toReadOnlyDictionary (dictionary: Dictionary<string, Dictionary<string, 'T>>) =
-    dictionary
-        |> Seq.map(fun kvp -> KeyValuePair(kvp.Key, kvp.Value :> IReadOnlyDictionary<string, 'T>))
-        |> Dictionary
-        :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>
 
 (*
 let createDefaultTheme (fontSettings: FontSettings) (styleSheetId: string)=

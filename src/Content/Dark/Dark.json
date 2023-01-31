@@ -18,7 +18,7 @@
         },
         "Panel": {
             "default": {
-                "drawable": [
+                "drawables": [
                     ["panel-default.9"]
                 ]
             }
@@ -28,37 +28,37 @@
         },
         "Button": {
             "default": {
-                "drawable": [
+                "drawables": [
                     ["button-default.9"]
                 ]
             },
             "toggled": {
                 "color": "4b692fff",
-                "drawable": [
+                "drawables": [
                     ["button-toggled.9"]
                 ]
             },
             "disabled": {
-                "drawable": [
+                "drawables": [
                     ["button-toggled.9"]
                 ]
             }
         },
         "Combobox": {
             "default": {
-                "drawable": [
+                "drawables": [
                     ["button-default.9"]
                 ]
             }
         },
         "TextBox": {
             "default": {
-                "drawable": [
+                "drawables": [
                     ["textbox-default.9"]
                 ]
             },
             "focused": {
-                "drawable": [
+                "drawables": [
                     ["textbox-default.9"],
                     ["textbox-focused.9", "df7126aa"]
                 ]
@@ -68,7 +68,7 @@
             "default": {
                 "width": 2,
                 "color": "f7126aa",
-                "drawable": [
+                "drawables": [
                     ["cursor.9"]
                 ]
             }
@@ -77,27 +77,27 @@
             "default": {
                 "color": "df7126aa",
                 "height": 16,
-                "drawable": [ ["slider-pin.9"] ]
+                "drawables": [ ["slider-pin.9"] ]
             }
         },
         "Slider": {
             "default": {
                 "color": "5f6b80ff",
                 "height": 4,
-                "drawable": [ ["slider.9"] ]
+                "drawables": [ ["slider.9"] ]
             }
         },
         "ScrollBarPin": {
             "default": {
                 "color": "df7126aa",
-                "drawable": [ ["scrollbar-pin.9"] ]
+                "drawables": [ ["scrollbar-pin.9"] ]
             }
         },
         "ScrollBar": {
             "default": {
                 "width": 4,
                 "color": "5f6b80ff",
-                "drawable": [ ["scrollbar.9"] ]
+                "drawables": [ ["scrollbar.9"] ]
             }
         }
     }

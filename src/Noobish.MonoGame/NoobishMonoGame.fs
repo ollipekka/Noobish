@@ -560,7 +560,7 @@ module NoobishMonoGame =
         spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
 
-        let textureAtlas = content.Load<TextureAtlas> styleSheet.TextureAtlasId
+        let textureAtlas = content.Load<TextureAtlas> ("Content/" + styleSheet.TextureAtlasId)
         match cs.Model with
         | Some(model) ->
             match model with

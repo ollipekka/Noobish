@@ -53,8 +53,8 @@ module Styles =
     | Margin of (int*int*int*int)
 
     type NoobishStyleSheet = {
+        Name: string
         TextureAtlasId: string
-        AtlasId: string
         Font: string
         Widths: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
         Heights: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>

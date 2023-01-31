@@ -1,42 +1,162 @@
 namespace Noobish.PipelineExtension
 
+open System
 
 open Microsoft.Xna.Framework;
 open Microsoft.Xna.Framework.Content;
 open Microsoft.Xna.Framework.Graphics;
 
 open Noobish.TextureAtlas
+open Noobish.Styles
+open System.Collections.Generic
+
+
+module private DictionaryExtensions =
+    type Dictionary<'TKey, 'TValue> with
+
+        member d.GetOrAdd (key: 'TKey) (init: unit -> 'TValue) =
+
+            let (success, value) = d.TryGetValue(key)
+
+            if success then
+                value
+            else
+                let value = init()
+                d.[key] <- value
+                value
+
+open DictionaryExtensions
 
 type StyleSheetReader () =
-    inherit ContentTypeReader<TextureAtlas>()
+    inherit ContentTypeReader<NoobishStyleSheet>()
 
-    override s.Read(reader: ContentReader, input: TextureAtlas) =
+    let toReadOnlyDictionary (dictionary: Dictionary<string, Dictionary<string, 'T>>) =
+        dictionary
+            |> Seq.map(fun kvp -> KeyValuePair(kvp.Key, kvp.Value :> IReadOnlyDictionary<string, 'T>))
+            |> Dictionary
+            :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>
 
-        let name = reader.ReadString()
-        let atlasTexture = reader.ReadExternalReference<Texture2D>()
+    let readFloat32Arrays (reader: ContentReader)  =
+
+        let dict = Dictionary<string, Dictionary<string, float32>>()
         let count = reader.ReadInt32()
 
-        let textures = System.Collections.Generic.Dictionary<string, Texture>()
+        for i = 0 to count - 1 do
+            let name = reader.ReadString()
+            let count2 = reader.ReadInt32()
+
+            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+
+            for j = 0 to count2 - 1 do
+                let state = reader.ReadString()
+                let v = reader.ReadSingle()
+                dict2.[state] <- v
+
+        toReadOnlyDictionary dict
+
+    let readStringArrays (reader: ContentReader)  =
+
+        let dict = Dictionary<string, Dictionary<string, string>>()
+        let count = reader.ReadInt32()
 
         for i = 0 to count - 1 do
-            let textureName = reader.ReadString()
-            let textureType =
-                let t = reader.ReadString()
-                if t = "NinePatch" then
-                    let top = reader.ReadInt32()
-                    let right = reader.ReadInt32()
-                    let bottom = reader.ReadInt32()
-                    let left = reader.ReadInt32()
-                    TextureType.NinePatch(top, right, bottom, left)
-                else
-                    TextureType.Texture
+            let name = reader.ReadString()
+            let count2 = reader.ReadInt32()
 
-            let x = reader.ReadInt32()
-            let y = reader.ReadInt32()
-            let w = reader.ReadInt32()
-            let h = reader.ReadInt32()
-            let region = Rectangle(x, y, w, h)
-            textures.[textureName] <- {Name = name; TextureType = textureType; SourceRectangle = region; Atlas = atlasTexture}
+            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+
+            for j = 0 to count2 - 1 do
+                let state = reader.ReadString()
+                let v = reader.ReadString()
+                dict2.[state] <- v
+
+        toReadOnlyDictionary dict
+
+    let readColorArrays (reader: ContentReader)  =
+
+        let dict = Dictionary<string, Dictionary<string, int>>()
+        let count = reader.ReadInt32()
+
+        for i = 0 to count - 1 do
+            let name = reader.ReadString()
+            let count2 = reader.ReadInt32()
+
+            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+
+            for j = 0 to count2 - 1 do
+                let state = reader.ReadString()
+                dict2.[state] <-reader.ReadInt32()
+
+        toReadOnlyDictionary dict
+
+    let readDrawables (reader: ContentReader)  =
+
+        let dict = Dictionary<string, Dictionary<string, NoobishDrawable[]>>()
+        let count = reader.ReadInt32()
+
+        for i = 0 to count - 1 do
+            let name = reader.ReadString()
+            let count2 = reader.ReadInt32()
+
+            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+
+            for j = 0 to count2 - 1 do
+                let state = reader.ReadString()
+
+                let count3 = reader.ReadInt32()
+
+                let v = Array.init count3 (
+                    fun k ->
+
+                        let kind = reader.ReadInt32()
+
+                        if kind = 1 then
+                            NoobishDrawable.NinePatch (reader.ReadString())
+                        elif kind = 2 then
+                            NoobishDrawable.NinePatchWithColor (reader.ReadString(), reader.ReadInt32())
+                        else
+                            failwith "Mangled drawable."
+
+                )
+
+                dict2.[state] <- v
+
+        toReadOnlyDictionary dict
 
 
-        {Name = name; Textures = textures}
+    let readIntTuple4Array (reader: ContentReader)  =
+
+        let dict = Dictionary<string, Dictionary<string, (int*int*int*int)>>()
+        let count = reader.ReadInt32()
+
+        for i = 0 to count - 1 do
+            let name = reader.ReadString()
+            let count2 = reader.ReadInt32()
+
+            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+
+            for j = 0 to count2 - 1 do
+                let state = reader.ReadString()
+                let t = reader.ReadInt32()
+                let r = reader.ReadInt32()
+                let b = reader.ReadInt32()
+                let l = reader.ReadInt32()
+                dict2.[state] <- (t, r, b, l)
+
+        toReadOnlyDictionary dict
+
+    override s.Read(reader: ContentReader, input: NoobishStyleSheet) =
+
+        {
+            Name = reader.ReadString()
+            TextureAtlasId = reader.ReadString()
+            Font = reader.ReadString()
+            Widths = readFloat32Arrays reader
+            Heights = readFloat32Arrays reader
+            Fonts = readStringArrays reader
+            FontColors = readColorArrays reader
+            Colors = readColorArrays reader
+            Drawables = readDrawables reader
+            Paddings = readIntTuple4Array reader
+            Margins = readIntTuple4Array reader
+        }

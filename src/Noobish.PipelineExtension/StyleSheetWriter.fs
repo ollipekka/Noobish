@@ -7,96 +7,88 @@ open System.Collections.Generic
 open Microsoft.Xna.Framework.Content.Pipeline;
 open Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 
-module private DictionaryExtensions =
-    type Dictionary<'TKey, 'TValue> with
-
-        member d.GetOrAdd (key: 'TKey) (init: unit -> 'TValue) =
-
-            let (success, value) = d.TryGetValue(key)
-
-            if success then
-                value
-            else
-                let value = init()
-                d.[key] <- value
-                value
-
-open DictionaryExtensions
-
-
 [<ContentTypeWriter>]
 type StyleSheetWriter () =
     inherit ContentTypeWriter<StyleSheetContent>()
+
+    let writeFloat32Arrays (writer: ContentWriter) (s: (string*(string*float32)[])[]) =
+        writer.Write s.Length
+        for (name, byState) in s do
+            writer.Write name
+            writer.Write byState.Length
+
+            for (state, v) in byState do
+                writer.Write state
+                writer.Write v
+
+    let writeColors (writer: ContentWriter) (s: (string*(string*string)[])[]) =
+        writer.Write s.Length
+        for (name, byState) in s do
+            writer.Write name
+            writer.Write byState.Length
+
+            for (state, v) in byState do
+                writer.Write state
+                writer.Write (System.Convert.ToInt32 (v, 16))
+
+    let writeStringArrays (writer: ContentWriter) (s: (string*(string*string)[])[]) =
+        writer.Write s.Length
+        for (name, valueByState) in s do
+            writer.Write name
+            writer.Write valueByState.Length
+
+            for (state, v) in valueByState do
+                writer.Write state
+                writer.Write v
+
+    let writeDrawables (writer: ContentWriter) (s: (string*(string*string[][])[])[]) =
+        writer.Write s.Length
+        for (name, valueByState) in s do
+            writer.Write name
+            writer.Write valueByState.Length
+
+            for (state, values) in valueByState do
+                writer.Write state
+                writer.Write values.Length
+                for v in values do
+                    if v.Length = 1 then
+                        writer.Write 1
+                        writer.Write v.[0]
+                    elif v.Length = 2 then
+                        writer.Write 2
+                        writer.Write v.[0]
+                        writer.Write (System.Convert.ToInt32 (v.[1], 16))
+                    else
+                        failwith $"Unrecoginzed drawable %A{v}"
+
+    let writeIntTuple4Array (writer: ContentWriter) (s: (string*(string*(int*int*int*int))[])[]) =
+        writer.Write s.Length
+        for (name, valueByState) in s do
+            writer.Write name
+            writer.Write valueByState.Length
+
+            for (state, (t, r, b, l)) in valueByState do
+                writer.Write state
+                writer.Write t
+                writer.Write r
+                writer.Write b
+                writer.Write l
 
     override s.Write(writer: ContentWriter, input: StyleSheetContent) =
         writer.Write input.Name
         writer.Write input.TextureAtlas
         writer.Write input.Font
+        writeFloat32Arrays writer input.Widths
+        writeFloat32Arrays writer input.Heights
 
+        writeStringArrays writer input.Fonts
+        writeColors writer input.FontColors
 
-        let styles = input.Styles |> Seq.map(fun kvp ->  (kvp.Key, kvp.Value |> Seq.map (fun kvp -> (kvp.Key, kvp.Value))|> Seq.toArray)) |> Seq.toArray
-        writer.Write styles.Length
+        writeColors writer input.Colors
 
+        writeDrawables writer input.Drawables
 
-        let widths = Dictionary<string, Dictionary<string, float32>>()
-        let heights = Dictionary<string, Dictionary<string, float32>>()
+        writeIntTuple4Array writer input.Margins
+        writeIntTuple4Array writer input.Paddings
 
-        let fonts = Dictionary<string, Dictionary<string, string>>()
-        let fontColors = Dictionary<string, Dictionary<string, string>>()
-        let colors = Dictionary<string, Dictionary<string, string>>()
-        let drawables = Dictionary<string, Dictionary<string, string[]>>()
-        let paddings = Dictionary<string, Dictionary<string, (int*int*int*int)>>()
-        let margins = Dictionary<string, Dictionary<string, (int*int*int*int)>>()
-
-
-        for (name, componentStyles) in styles do
-
-            for (stateId, style) in componentStyles do
-                match style.color with
-                | null -> ()
-                | color ->
-                    let colorsByComponent = colors.GetOrAdd name (fun () -> Dictionary())
-                    colorsByComponent.[stateId] <- color
-
-                match style.font with
-                | null -> ()
-                | font ->
-                    let fontByComponent = fonts.GetOrAdd name (fun () -> Dictionary())
-                    fontByComponent.[stateId] <- font
-
-                match style.fontColor with
-                | null -> ()
-                | fontColor ->
-                    let fontColorsByComponent = fontColors.GetOrAdd name (fun () -> Dictionary())
-                    fontColorsByComponent.[stateId] <- fontColor
-
-                match style.padding with
-                | null -> ()
-                | p ->
-                    let paddingsByComponent = paddings.GetOrAdd name (fun () -> Dictionary())
-                    paddingsByComponent.[stateId] <- (p.[0], p.[1], p.[2], p.[3])
-
-                match style.margin with
-                | null -> ()
-                | m ->
-                    let marginsByComponent = margins.GetOrAdd name (fun () -> Dictionary())
-                    marginsByComponent.[stateId] <- (m.[0], m.[1], m.[2], m.[3])
-
-                match style.drawables with
-                | null -> ()
-                | d ->
-                    let drawablesByComponent = drawables.GetOrAdd name (fun () -> Dictionary())
-                    drawablesByComponent.[stateId] <- d
-
-                if style.width > 0 then
-                    let widthsByComponent = widths.GetOrAdd name (fun () -> Dictionary())
-                    widthsByComponent.[stateId] <- float32 style.width
-
-
-                if style.height > 0 then
-                    let heightsByComponent = heights.GetOrAdd name (fun () -> Dictionary())
-                    heightsByComponent.[stateId] <- float32 style.height
-
-
-
-    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.TextureAtlas.TextureAtlasReader, Noobish.TextureAtlas"
+    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.PipelineExtension.StyleSheetReader, Noobish.Types"

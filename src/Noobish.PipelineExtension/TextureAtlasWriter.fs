@@ -35,4 +35,4 @@ type TextureAtlasWriter () =
             writer.Write (region.Height - 2 * input.Padding)
 
 
-    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.TextureAtlas.TextureAtlasReader, Noobish.TextureAtlas"
+    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.PipelineExtension.TextureAtlasReader, Noobish.Types"
