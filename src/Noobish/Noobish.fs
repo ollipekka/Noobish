@@ -294,7 +294,7 @@ let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attr
 
 
 let scroll children attributes =
-    { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical] @ attributes}
+    { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical; margin 16; padding 16] @ attributes}
 
 let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
 
@@ -395,7 +395,6 @@ let windowWithGrid cols rows children attributes =
 module Logic =
     open Noobish
     open Noobish.Internal
-    open Noobish.Theme
 
     let splitLines (measureString: string -> int * int) width (text: string) =
 
@@ -856,7 +855,7 @@ module Logic =
 
             // In this layout, actual parent component height might be zero at this point. We don't know. Use available height.
             let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.MarginHorizontal - parentComponent.PaddingHorizontal
-            let availableHeight = (parentHeight * float32 parentComponent.RowSpan)- parentComponent.MarginVertical - parentComponent.PaddingVertical
+            let availableHeight = (parentHeight * float32 parentComponent.RowSpan) - parentComponent.MarginVertical - parentComponent.PaddingVertical
 
             let parentBounds = parentComponent.Content
             for i = 0 to c.Children.Length - 1 do
@@ -882,14 +881,14 @@ module Logic =
 
             let width =
                 if parentComponent.FillHorizontal then
-                    availableWidth + parentComponent.PaddingHorizontal
+                    availableWidth + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
                 else
                     let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
                     clamp childWidth 0f availableWidth
 
             let height =
                 if parentComponent.FillVertical then
-                    availableHeight + parentComponent.PaddingVertical
+                    availableHeight + parentComponent.PaddingVertical + parentComponent.MarginVertical
                 else
                     let childHeight = calculateChildHeight() + parentComponent.PaddingVertical + parentComponent.MarginVertical
                     clamp childHeight 0f availableHeight

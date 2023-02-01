@@ -6,7 +6,6 @@ open System.Collections.Generic
 open Elmish
 open Noobish
 open Noobish.Internal
-open Noobish.Theme
 open Noobish.TextureAtlas
 open Noobish.Styles
 
@@ -75,7 +74,6 @@ module NoobishMonoGame =
 
     open Noobish
     open Noobish.Internal
-    open Noobish.Theme
     let private createRectangle (x: float32) (y:float32) (width: float32) (height: float32) =
         Rectangle (int (x), int (y), int (width), int (height))
 
