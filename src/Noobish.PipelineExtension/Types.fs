@@ -128,16 +128,6 @@ type TextureAtlasImporterResult = {
     Files: string[]
 }
 
-[<RequireQualifiedAccess>]
-[<System.Flags>]
-type StyleFlags =
-| None      = 0b0000000
-| FontColor = 0b0000001
-| Color     = 0b0000010
-| Padding   = 0b0000100
-| Margin    = 0b0001000
-| Drawables = 0b0010000
-
 type StyleJson = {
     width: int
     height: int
