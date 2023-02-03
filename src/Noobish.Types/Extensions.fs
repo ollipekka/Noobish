@@ -37,9 +37,10 @@ type SpriteBatch with
             color: Color,
             rotation: float32,
             scale: Vector2,
-            effect:SpriteEffects,
+            effect: SpriteEffects,
             layerDepth: float32) =
 
+        let position = position //+ Vector2(0.5f, 0.5f)
         match texture.TextureType with
         | TextureType.Texture -> failwith "This is meant for ninepatch"
         | TextureType.NinePatch(top, right, bottom, left) ->

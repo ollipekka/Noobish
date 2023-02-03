@@ -294,7 +294,7 @@ let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attr
 
 
 let scroll children attributes =
-    { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical; margin 16; padding 16] @ attributes}
+    { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical; ] @ attributes}
 
 let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
 

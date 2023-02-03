@@ -7,6 +7,7 @@ module TexturePacker =
     open System.IO
     open SixLabors.ImageSharp
     open SixLabors.ImageSharp.PixelFormats
+    open SixLabors.ImageSharp.Processing
     open System.Collections.Generic
 
     let textureExtension = ".png"
@@ -142,6 +143,8 @@ module TexturePacker =
 
     let createImage (textures: NoobishTextureOutput[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) (atlasWidth: int) (atlasHeight: int ) =
         let atlasImage = new Image<Rgba32>(atlasWidth, atlasHeight)
+        // Add debug border
+        atlasImage.Mutate(fun i -> (i.BackgroundColor(Rgba32(1f, 0f, 0.498f, 1f)) |> ignore ))
         for texture in textures do
             let destinationRectangle = regions.[texture.Name]
             for x = 0 to texture.Image.Width - 1 do
@@ -150,77 +153,6 @@ module TexturePacker =
 
 
         atlasImage
-
-    let writeIndex (textures: NoobishTextureOutput[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) =
-
-        use binaryWriter = new BinaryWriter(File.OpenWrite("testOut/atlas.index"))
-
-        binaryWriter.Write(textures.Length)
-        for texture in textures do
-            binaryWriter.Write texture.Name
-            match texture.TextureType with
-            | TextureType.NinePatch(top, right, bottom, left) ->
-                binaryWriter.Write("NinePatch")
-                binaryWriter.Write top
-                binaryWriter.Write right
-                binaryWriter.Write bottom
-                binaryWriter.Write left
-            | TextureType.Texture ->
-                binaryWriter.Write("Texture")
-
-            let region = regions.[texture.Name]
-            binaryWriter.Write (region.X + padding)
-            binaryWriter.Write (region.Y + padding)
-            binaryWriter.Write (region.Width - padding * 2)
-            binaryWriter.Write (region.Height - padding * 2)
-
-
-    let readIndex () =
-
-        let reader = new BinaryReader(File.OpenRead("testOut/atlas.index"))
-        let atlasImage = Image.Load<Rgba32>("testOut/atlas.png")
-
-        let count = reader .ReadInt32()
-
-        let textures = ResizeArray<NoobishTextureOutput>()
-        let regions = Dictionary<string, Rectangle>()
-
-        for i = 0 to count - 1 do
-            let name = reader.ReadString()
-            let textureType =
-                let t = reader.ReadString()
-
-                if t = "NinePatch" then
-                    let top = reader.ReadInt32()
-                    let right = reader.ReadInt32()
-                    let bottom = reader.ReadInt32()
-                    let left = reader.ReadInt32()
-                    TextureType.NinePatch(top, right, bottom, left)
-                else
-                    TextureType.Texture
-
-            let region =
-                let x = reader.ReadInt32()
-                let y = reader.ReadInt32()
-                let width = reader.ReadInt32()
-                let height = reader.ReadInt32()
-                Rectangle(x, y, width, height)
-
-            if region.X + region.Width > atlasImage.Width then
-                failwith "Something wrong with the width of the region"
-            if region.Y + region.Height > atlasImage.Height then
-                failwith "Something wrong with the height of the region"
-
-            let image =
-                let img = new Image<Rgba32>(region.Width, region.Height)
-                for x' = 0 to region.Width - 1 do
-                    for y' = 0 to region.Height - 1 do
-                        img.[x', y'] <- atlasImage[region.X + x', region.Y + y']
-                img
-
-            textures.Add({Name = name; TextureType = textureType; Image = image})
-            regions.[name] <- region
-        textures, regions
 
 
 

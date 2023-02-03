@@ -329,7 +329,7 @@ let createGraphicsDevice (game: Game) =
     graphics.PreferredBackBufferHeight <- 720
     #endif
     graphics.PreferMultiSampling <- true
-
+    //graphics.PreferHalfPixelOffset <- true
     graphics.SupportedOrientations <-
         DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
     graphics.ApplyChanges()
@@ -375,7 +375,7 @@ type DemoGame () as game =
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
-            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = LightMode}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with

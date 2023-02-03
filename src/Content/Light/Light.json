@@ -1,19 +1,19 @@
 {
-    "TextureAtlas": "Content/Dark/DarkAtlas.json",
+    "TextureAtlas": "Content/Light/LightAtlas.json",
     "Font": "Content/AnonymousPro16",
     "Styles": {
         "Default": {
             "default": {
                 "padding": [5, 5, 5 ,5],
                 "margin": [4, 4, 4, 4],
-                "fontColor": "bbbbbbFF",
-                "color": "39404dff"
+                "fontColor": "4b692fff",
+                "color": "cbdbfcff"
             },
             "disabled": {
                 "padding": [5, 5, 5 ,5],
                 "margin": [4, 4, 4, 4],
-                "fontColor": "806d5fff",
-                "color": "524b24ff"
+                "fontColor": "4b692fff",
+                "color": "306082ff"
             }
         },
         "Panel": {
