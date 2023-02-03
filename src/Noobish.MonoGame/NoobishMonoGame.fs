@@ -605,23 +605,25 @@ module NoobishMonoGame =
         *)
         match c.Layout with
         | NoobishLayout.Default ->
-
-            let viewport =
-                let bounds = c.Content
-                let startX = bounds.X + totalScrollX
-                let startY = bounds.Y + totalScrollY
-                let sourceStartX = max startX (float32 parentRectangle.X)
-                let sourceStartY = max startY (float32 parentRectangle.Y)
-                let sourceWidth = min (bounds.Width) (float32 parentRectangle.Right - startX)
-                let sourceHeight = min (bounds.Height) (float32 parentRectangle.Bottom - startY)
-                createRectangle
-                    sourceStartX
-                    sourceStartY
-                    (min sourceWidth (float32 parentRectangle.Width))
-                    (min sourceHeight (float32 parentRectangle.Height))
+            let parentBounds = c.Content
             for child in c.Children do
                 let cs = state.[child.Id]
                 if cs.Visible then
+
+                    let viewport =
+                        let bounds = child.ContentWithPadding
+                        let startX = bounds.X + totalScrollX
+                        let startY = bounds.Y + totalScrollY
+                        let sourceStartX = max startX (float32 parentBounds.X)
+                        let sourceStartY = max startY (float32 parentBounds.Y)
+                        let sourceWidth = min bounds.Width (float32 parentBounds.Right - startX)
+                        let sourceHeight = min bounds.Height (float32 parentBounds.Bottom - startY)
+                        createRectangle
+                            sourceStartX
+                            sourceStartY
+                            (min sourceWidth (float32 parentBounds.Width))
+                            (min sourceHeight (float32 parentBounds.Height))
+
                     drawComponent styleSheet state content settings graphics spriteBatch debug time child totalScrollX totalScrollY viewport
 
         | NoobishLayout.Grid(_cols, _rows) ->
