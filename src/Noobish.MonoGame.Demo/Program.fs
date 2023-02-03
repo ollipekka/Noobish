@@ -329,7 +329,7 @@ let createGraphicsDevice (game: Game) =
     graphics.PreferredBackBufferHeight <- 720
     #endif
     graphics.PreferMultiSampling <- true
-    //graphics.PreferHalfPixelOffset <- true
+    graphics.PreferHalfPixelOffset <- true
     graphics.SupportedOrientations <-
         DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
     graphics.ApplyChanges()

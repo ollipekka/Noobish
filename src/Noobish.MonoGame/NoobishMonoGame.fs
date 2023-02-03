@@ -546,8 +546,8 @@ module NoobishMonoGame =
             createRectangle
                 sourceStartX
                 sourceStartY
-                (min sourceWidth (float32 parentRectangle.Width))
-                (min sourceHeight (float32 parentRectangle.Height))
+                ((min sourceWidth (float32 parentRectangle.Width)) + 1f)
+                ((min sourceHeight (float32 parentRectangle.Height)) + 1f)
 
 
         let oldScissorRect = graphics.ScissorRectangle

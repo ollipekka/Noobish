@@ -144,7 +144,7 @@ module TexturePacker =
     let createImage (textures: NoobishTextureOutput[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) (atlasWidth: int) (atlasHeight: int ) =
         let atlasImage = new Image<Rgba32>(atlasWidth, atlasHeight)
         // Add debug border
-        atlasImage.Mutate(fun i -> (i.BackgroundColor(Rgba32(1f, 0f, 0.498f, 1f)) |> ignore ))
+        //atlasImage.Mutate(fun i -> (i.BackgroundColor(Rgba32(1f, 0f, 0.498f, 1f)) |> ignore ))
         for texture in textures do
             let destinationRectangle = regions.[texture.Name]
             for x = 0 to texture.Image.Width - 1 do
