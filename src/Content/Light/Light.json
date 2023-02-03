@@ -1,0 +1,105 @@
+{
+    "TextureAtlas": "Content/Light/LightAtlas.json",
+    "Font": "Content/AnonymousPro16",
+    "Styles": {
+        "Default": {
+            "default": {
+                "padding": [5, 5, 5 ,5],
+                "margin": [4, 4, 4, 4],
+                "fontColor": "4b692fff",
+                "color": "cbdbfcff"
+            },
+            "disabled": {
+                "padding": [5, 5, 5 ,5],
+                "margin": [4, 4, 4, 4],
+                "fontColor": "4b692fff",
+                "color": "306082ff"
+            }
+        },
+        "Panel": {
+            "default": {
+                "drawables": [
+                    ["panel-default.9"]
+                ]
+            }
+        },
+        "Division": {
+
+        },
+        "Button": {
+            "default": {
+                "drawables": [
+                    ["button-default.9"]
+                ]
+            },
+            "toggled": {
+                "color": "4b692fff",
+                "drawables": [
+                    ["button-toggled.9"]
+                ]
+            },
+            "disabled": {
+                "drawables": [
+                    ["button-toggled.9"]
+                ]
+            }
+        },
+        "Combobox": {
+            "default": {
+                "drawables": [
+                    ["button-default.9"]
+                ]
+            }
+        },
+        "TextBox": {
+            "default": {
+                "drawables": [
+                    ["textbox-default.9"]
+                ]
+            },
+            "focused": {
+                "drawables": [
+                    ["textbox-default.9"],
+                    ["textbox-focused.9", "df7126aa"]
+                ]
+            }
+        },
+        "Cursor": {
+            "default": {
+                "width": 2,
+                "color": "df7126aa",
+                "drawables": [
+                    ["cursor.9"]
+                ]
+            }
+        },
+        "SliderPin": {
+            "default": {
+                "color": "df7126aa",
+                "height": 16,
+                "drawables": [ ["slider-pin.9"] ]
+            }
+        },
+        "Slider": {
+            "default": {
+                "color": "5f6b80ff",
+                "height": 4,
+                "drawables": [ ["slider.9"] ]
+            }
+        },
+        "ScrollBarPin": {
+            "default": {
+                "width": 8,
+                "color": "df7126aa",
+                "drawables": [ ["scrollbar-pin.9"] ]
+            }
+        },
+        "ScrollBar": {
+            "default": {
+                "width": 8,
+                "color": "5f6b80ff",
+                "drawables": [ ["scrollbar.9"] ]
+            }
+        }
+    }
+}

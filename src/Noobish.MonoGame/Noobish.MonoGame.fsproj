@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
+    <OutputPath>../../bin/</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,11 +11,12 @@
 
   <ItemGroup>
     <PackageReference Include="Elmish" Version="3.0.6" />
-    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.0.1641" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Noobish\Noobish.fsproj" />
+    <ProjectReference Include="..\Noobish.Types\Noobish.Types.fsproj" />
   </ItemGroup>
 
 </Project>

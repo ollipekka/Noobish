@@ -74,9 +74,16 @@ module Internal =
         Value: string
     }
 
+    type TextboxModel = {
+        Text: string
+        Cursor: int
+        OnOpenKeyboard: (string -> unit) -> unit
+    }
+
     type NoobishComponentModel =
         | Slider of SliderModel
         | Combobox of ComboboxModel
+        | Textbox of TextboxModel
 
     type ComponentMessage =
         | Show
@@ -90,35 +97,49 @@ module Internal =
 
     type NoobishLayoutElementState = {
         Id: string
-        Name: string
+        ParentId: string
+        mutable Focused: bool
         mutable Toggled: bool
         mutable Visible: bool
+
+        mutable FocusedTime: TimeSpan
         mutable PressedTime: TimeSpan
         mutable ScrolledTime: TimeSpan
 
         mutable ScrollX: float32
         mutable ScrollY: float32
 
+        mutable Model: option<NoobishComponentModel>
+
         Version: Guid
         KeyboardShortcut: NoobishKeyId
 
-        Model: option<NoobishComponentModel>
-    }
+
+        Children: string[]
+    } with
+        member s.CanFocus with get() =
+            match s.Model with
+            | Some(model') ->
+                match model' with
+                | Textbox (_) -> true
+                | _ -> false
+            | None -> false
 
     type NoobishId = | NoobishId of string
 
-    type NoobishState = {
-        State: Dictionary<string, NoobishLayoutElementState>
-        StateByName: Dictionary<string, NoobishLayoutElementState>
-        TempState: Dictionary<string, NoobishLayoutElementState>
-    } with
+    type NoobishState () =
+        member val ElementsById = Dictionary<string, NoobishLayoutElementState>()
+        member val TempElements = Dictionary<string, NoobishLayoutElementState>()
+        member val FocusedElementId: Option<string> = None with get, set
 
-        member private s.UpdateState (name: string) (state: NoobishLayoutElementState) =
-            s.State.[state.Id] <- state
-            s.StateByName.[name] <- state
+        member private s.UpdateState (state: NoobishLayoutElementState) =
+            s.ElementsById.[state.Id] <- state
 
-        member s.Update (name: string) (message:ComponentMessage) =
-            let (success, cs) = s.StateByName.TryGetValue(name)
+        member s.Item
+            with get (tid: string) = s.ElementsById.[tid]
+
+        member s.Update (cid: string) (message:ComponentMessage) =
+            let (success, cs) = s.ElementsById.TryGetValue(cid)
             if success then
                 match message with
                 | Show ->
@@ -134,9 +155,54 @@ module Internal =
                 | ChangeModel(cb) ->
                     cs.Model |> Option.iter (fun model ->
                         let model' = cb model
-                        let cs = s.State.[cs.Id]
-                        s.UpdateState name {cs with Model = Some(model') })
+                        let cs: NoobishLayoutElementState = s.ElementsById.[cid]
+                        s.UpdateState {cs with Model = Some(model') })
 
+        member s.SetFocus (id: string) (time: TimeSpan)=
+            s.FocusedElementId |> Option.iter (
+                fun id ->
+                    let cs = s.ElementsById.[id]
+                    cs.Focused <- false
+                    cs.FocusedTime <- TimeSpan.Zero
+            )
+            if id <> "" then
+
+                s.FocusedElementId <- Some(id)
+                let cs = s.ElementsById.[id]
+                cs.Focused <- true
+                cs.FocusedTime <- time
+
+                cs.Model <-
+                    cs.Model
+                    |> Option.map(
+                        fun model' ->
+                            match model' with
+                            | Textbox (model'') -> Textbox {model'' with Text = ""; Cursor = 0}
+                            | _ -> model'
+                    )
+
+
+                let setText (text: string) =
+                    let model =
+                        cs.Model
+                        |> Option.map(
+                            fun model' ->
+                                match model' with
+                                | Textbox (model'') -> Textbox {model'' with Text = text}
+                                | _ -> failwith "Not a textbox"
+                        )
+
+                    cs.Model <- model
+
+                // Send open keyboard event.
+                cs.Model |> Option.iter (
+                    function
+                    | Textbox (model') ->
+                        model'.OnOpenKeyboard(setText)
+                    | _ -> ()
+                )
+            else
+                s.FocusedElementId <- None
 
 
     let pi = float32 System.Math.PI

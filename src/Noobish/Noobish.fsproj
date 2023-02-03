@@ -1,18 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
+    <OutputPath>../../bin/</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="Types.fs" />
-    <Compile Include="Theme.fs" />
     <Compile Include="Noobish.fs" />
     <Compile Include="NoobishInput.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Elmish" Version="3.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noobish.Types\Noobish.Types.fsproj" />
   </ItemGroup>
 
 </Project>

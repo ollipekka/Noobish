@@ -1,0 +1,105 @@
+
+/reference:../../bin/net6.0/Noobish.PipelineExtension.dll
+/reference:../../bin/net6.0/Newtonsoft.Json.dll
+
+
+#begin TestAtlas.json
+/importer:TextureAtlasImporter
+/processor:TextureAtlasProcessor
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:IsColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeToPowerOfTwo=false
+/processorParam:TextureFormat=Color
+/build:TestAtlas.json
+
+
+
+#begin Dark/Dark.json
+/importer:StyleSheetImporter
+/processor:StyleSheetProcessor
+/build:Dark/Dark.json
+
+#begin Dark/DarkAtlas.json
+/importer:TextureAtlasImporter
+/processor:TextureAtlasProcessor
+/processorParam:Padding=2
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:IsColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/build:Dark/DarkAtlas.json
+
+#begin Light/Light.json
+/importer:StyleSheetImporter
+/processor:StyleSheetProcessor
+/build:Light/Light.json
+
+#begin Light/LightAtlas.json
+/importer:TextureAtlasImporter
+/processor:TextureAtlasProcessor
+/processorParam:Padding=2
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:IsColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyTextureAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:TextureFormat=Color
+/build:Light/LightAtlas.json
+
+#begin AnonymousPro22.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:AnonymousPro22.spritefont
+
+#begin AnonymousProItalic22.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:AnonymousProItalic22.spritefont
+
+#begin AnonymousProBold22.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:AnonymousProBold22.spritefont
+
+#begin AnonymousPro16.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:AnonymousPro16.spritefont
+
+#begin AnonymousProItalic16.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:AnonymousProItalic16.spritefont
+
+#begin AnonymousProBold16.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:AnonymousProBold16.spritefont
+
+#begin Pixel.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Pixel.png

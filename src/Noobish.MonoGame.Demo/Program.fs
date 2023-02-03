@@ -10,6 +10,7 @@ open Microsoft.Xna.Framework.Input.Touch
 open Elmish
 
 open Noobish
+open Noobish.Styles
 
 let loremIpsum1 =
     "Scroll me!\n\n Lorem\nipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -25,9 +26,12 @@ type DemoMessage =
     | SliderValueChanged of float32
     | ChangePadding of int
     | ChangeMargin of int
-    | ChangeBorderSize of int
     | ComboboxValueChanged of string
     | ToggleDebug
+    | ToggleDarkMode
+    | ToggleLightMode
+
+type StyleMode = LightMode | DarkMode
 
 type ViewState = | Containers | Buttons | Text | Slider
 
@@ -35,9 +39,9 @@ type DemoModel =
     {
         UI: NoobishUI
         State: ViewState
+        StyleMode: StyleMode
         Padding: int
         Margin: int
-        BorderSize: int
         ComboboxValue: string
         SliderAValue: float32
     }
@@ -110,10 +114,10 @@ module Text =
                     [
                         div
                             [
-                                label [text "Font size 22"; textFont "AnonymousPro22"; block]
-                                label [text "Regular"; textFont "AnonymousPro22"; textColor 0xac3232aa; block]
-                                label [text "Bold"; textFont "AnonymousProBold22"; textColor 0x4b692faa; block]
-                                label [text "Italic"; textFont "AnonymousProItalic22"; textColor 0x3f3f74aa; block]
+                                label [text "Font size 22"; block]
+                                label [text "Regular"; block]
+                                label [text "Bold"; block]
+                                label [text "Italic"; block]
                             ]
                             [
 
@@ -121,9 +125,9 @@ module Text =
                         div
                             [
                                 label [text "Font size 16"; block]
-                                label [text "Regular"; textColor 0xac3232aa; block]
-                                label [text "Bold"; textFont "AnonymousProBold16"; textColor 0x4b692faa; block]
-                                label [text "Italic"; textFont "AnonymousProItalic16"; textColor 0x3f3f74aa; block]
+                                label [text "Regular"; block]
+                                label [text "Bold"; block]
+                                label [text "Italic"; block]
                             ]
                             [
 
@@ -154,13 +158,13 @@ module Containers =
                                 header [text "Hello"; ];
                                 hr []
                             ] [fillHorizontal];
-                        button [ text "Continue"; onClick ignore; padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal; enabled false];
-                        button [ text "Start"; onClick ignore; padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal; ];
-                        button [ text "Options"; onClick ignore; padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal; ];
+                        button [ text "Continue"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; enabled false];
+                        button [ text "Start"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; ];
+                        button [ text "Options"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; ];
                     ]
                     [
                         name "ButtonsPanel"
-                        padding model.Padding; margin model.Margin; borderSize model.BorderSize;
+                        padding model.Padding; margin model.Margin;
 
                     ]
                 panel
@@ -170,10 +174,9 @@ module Containers =
                                 image
                                     [
                                         name "Pixel Origin"
-                                        texture "Pixel"
+                                        texture "Content/Pixel"
                                         textureBestFitMin
                                         minSize 10 10
-                                        textureColor 0xff0000ff
                                         padding 0
                                         margin 0
                                         relativePosition -5 -5
@@ -182,10 +185,9 @@ module Containers =
                                 image
                                     [
                                         name "Pixel 1"
-                                        texture "Pixel"
+                                        texture "Content/Pixel"
                                         textureBestFitMin
                                         minSize 10 10
-                                        textureColor 0xff0000ff
                                         padding 0
                                         margin 0
                                         relativePosition -25 15
@@ -195,10 +197,9 @@ module Containers =
                                 button [ text "o"; relativePosition 30 30 ]
                                 image [
                                         name "Pixel 2"
-                                        texture "Pixel"
+                                        texture "Content/Pixel"
                                         textureBestFitMin
                                         minSize 10 10
-                                        textureColor 0xff00FFff
                                         padding 0
                                         margin 0
                                         relativePosition 15 -25
@@ -243,14 +244,14 @@ module Buttons =
                 [
                 panel
                     [
-                        button [text "Padding 0"; onClick (fun () -> dispatch (ChangePadding 0)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Padding 0"; onClick (fun () -> dispatch (ChangePadding 0)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding; margin model.Margin; fillHorizontal]
                     ]
                     [
                         name "ButtonsPanel"
-                        padding model.Padding; margin model.Margin; borderSize model.BorderSize;
+                        padding model.Padding; margin model.Margin;
                     ]
                 panel
                     [
@@ -261,18 +262,24 @@ module Buttons =
                                 option "Value 3"
                             ]
                             [
-                                text model.ComboboxValue; onChange (fun v -> dispatch (ComboboxValueChanged v))
+                                text model.ComboboxValue;
+                                onChange (fun v -> dispatch (ComboboxValueChanged v))
+                                block;
                             ]
+                        textBox [
+                            text "Please insert coin"
+                            //onOpenKeyboard (fun setText -> setText "opened")
+                        ]
                     ]
                     [
 
                     ]
                 panel
                     [
-                        button [text "Margin 0"; onClick (fun () -> dispatch (ChangeMargin 0)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "Margin 2"; onClick (fun () -> dispatch (ChangeMargin 2)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "Margin 4"; onClick (fun () -> dispatch (ChangeMargin 4)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "Margin 6"; onClick (fun () -> dispatch (ChangeMargin 6)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
+                        button [text "Margin 0"; onClick (fun () -> dispatch (ChangeMargin 0)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Margin 2"; onClick (fun () -> dispatch (ChangeMargin 2)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Margin 4"; onClick (fun () -> dispatch (ChangeMargin 4)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Margin 6"; onClick (fun () -> dispatch (ChangeMargin 6)); padding model.Padding; margin model.Margin; fillHorizontal]
                     ]
                     [
                         name "MarginPanel"
@@ -280,14 +287,8 @@ module Buttons =
                     ]
                 panel
                     [
-                        button [text "BorderSize 0"; onClick (fun () -> dispatch (ChangeBorderSize 0)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "BorderSize 1"; onClick (fun () -> dispatch (ChangeBorderSize 1)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "BorderSize 2"; onClick (fun () -> dispatch (ChangeBorderSize 2)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "BorderSize 3"; onClick (fun () -> dispatch (ChangeBorderSize 3)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
-                        button [text "BorderSize 4"; onClick (fun () -> dispatch (ChangeBorderSize 4)); padding model.Padding; margin model.Margin; borderSize model.BorderSize; fillHorizontal]
                     ]
                     [
-                        name "BorderPanel"
 
                     ]
                 ]
@@ -328,7 +329,7 @@ let createGraphicsDevice (game: Game) =
     graphics.PreferredBackBufferHeight <- 720
     #endif
     graphics.PreferMultiSampling <- true
-
+    //graphics.PreferHalfPixelOffset <- true
     graphics.SupportedOrientations <-
         DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
     graphics.ApplyChanges()
@@ -359,17 +360,22 @@ type DemoGame () as game =
         let width = this.GraphicsDevice.Viewport.Width
         let height = this.GraphicsDevice.Viewport.Height
 
+        this.Window.TextInput.Add(fun e ->
+            NoobishMonoGame.keyTyped nui e.Character
+        )
+
         let settings: NoobishSettings = {
             Scale = 1f
-            FontSettings = {Small = "AnomyousPro16"; Normal = "AnonymousPro16"; Large = "AnonymousPro16"};
-            Pixel = "Pixel"
+            FontSettings = {Small = "Content/AnomyousPro16"; Normal = "Content/AnonymousPro16"; Large = "Content/AnonymousPro16"}
+            Pixel = "Content/Pixel"
         }
 
-        nui <- NoobishMonoGame.create game.Content width height settings
+        //let theme = Theme.createDefaultTheme settings.FontSettings "Content/Dark/Dark.json"
+        nui <- NoobishMonoGame.create game.Content "Content/Dark/Dark" width height settings
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
-            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; BorderSize = 2; SliderAValue = 25.0f;}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -389,20 +395,24 @@ type DemoGame () as game =
                 {model with Padding = padding}, Cmd.none
             | ChangeMargin margin ->
                 {model with Margin = margin}, Cmd.none
-            | ChangeBorderSize borderSize ->
-                {model with BorderSize = borderSize}, Cmd.none
             | ToggleDebug ->
                 model.UI.Debug <- (not model.UI.Debug)
                 model, Cmd.none
+            | ToggleLightMode ->
+                nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Content/Light/Light"
+                {model with StyleMode = LightMode}, Cmd.none
+            | ToggleDarkMode ->
+                nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Content/Dark/Dark"
+                {model with StyleMode = DarkMode}, Cmd.none
 
         let view (model: DemoModel) dispatch =
 
             let scrollItems =
                 [
-                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
-                    button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
-                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
-                    button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; borderSize model.BorderSize;]
+                    button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
+                    button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
+                    button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
+                    button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; ]
                 ]
 
             let title, content  =
@@ -416,15 +426,30 @@ type DemoGame () as game =
                 [
                     grid 12 8
                         [
-                            panel [label [text "Noobish"; textFont "AnonymousProBold22"]] [colspan 3; rowspan 1]
+                            panel [label [text "Noobish";]] [colspan 3; rowspan 1]
                             panelWithGrid 12 1
                                 [
-                                    label [text title; textFont "AnonymousProBold22"; fill; colspan 10];
+                                    label [text title; fill; colspan 6];
+                                    button
+                                        [
+                                            text "Dark";
+                                            toggled (model.StyleMode = DarkMode);
+                                            fill;
+                                            onClick (fun () -> dispatch ToggleDarkMode)
+                                            colspan 2
+                                        ]
+                                    button
+                                        [
+                                            text "Light";
+                                            toggled (model.StyleMode = LightMode);
+                                            fill;
+                                            onClick (fun () -> dispatch ToggleLightMode)
+                                            colspan 2
+                                        ]
                                     button
                                         [
                                             text "Debug";
                                             toggled model.UI.Debug;
-                                            textFont "AnonymousProBold22";
                                             fill;
                                             onClick (fun () -> dispatch ToggleDebug)
                                             colspan 2

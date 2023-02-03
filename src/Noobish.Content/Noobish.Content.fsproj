@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <MonoGamePlatform>DesktopGL</MonoGamePlatform>
+    <OutputType>Exe</OutputType>
+    <OutputPath>../../bin/</OutputPath>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+    <MonoGameContentReference Include="../Content/Test.mgcb" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.1.303" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noobish.Types\Noobish.Types.fsproj" />
+    <ProjectReference Include="..\Noobish.PipelineExtension\Noobish.PipelineExtension.fsproj" />
+  </ItemGroup>
+
+
+  <Target Name="Hack" DependsOnTargets="ResolveReferences" AfterTargets="ResolveReferences" BeforeTargets="CollectContentReferences">
+    <Message Text="HACK HACK HACK" />
+  </Target>
+</Project>
