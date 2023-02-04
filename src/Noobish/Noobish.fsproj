@@ -6,6 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+
+    <Compile Include="DictionaryExtensions.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="TextureAtlas.fs" />
     <Compile Include="TextureAtlasReader.fs" />
@@ -20,10 +22,6 @@
   <ItemGroup>
     <PackageReference Include="Elmish" Version="3.0.6" />
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Noobish.Types\Noobish.Types.fsproj" />
   </ItemGroup>
 
 </Project>

@@ -10,22 +10,6 @@ open Microsoft.Xna.Framework.Content.Pipeline
 open Microsoft.Xna.Framework.Content.Pipeline.Graphics
 open Microsoft.Xna.Framework.Content.Pipeline.Processors
 
-module private DictionaryExtensions =
-    type Dictionary<'TKey, 'TValue> with
-
-        member d.GetOrAdd (key: 'TKey) (init: unit -> 'TValue) =
-
-            let (success, value) = d.TryGetValue(key)
-
-            if success then
-                value
-            else
-                let value = init()
-                d.[key] <- value
-                value
-
-open DictionaryExtensions
-
 [<ContentProcessor(DisplayName = "Style Sheet Procesor")>]
 type StyleSheetProcessor () =
     inherit ContentProcessor<string*string*Dictionary<string, Dictionary<string, StyleJson>>, StyleSheetContent>()

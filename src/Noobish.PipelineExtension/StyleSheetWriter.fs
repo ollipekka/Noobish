@@ -89,4 +89,4 @@ type StyleSheetWriter () =
         writeIntTuple4Array writer input.Margins
         writeIntTuple4Array writer input.Paddings
 
-    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.PipelineExtension.StyleSheetReader, Noobish.Types"
+    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.PipelineExtension.StyleSheetReader, Noobish"

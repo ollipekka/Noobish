@@ -11,22 +11,6 @@ open Noobish.Styles
 open System.Collections.Generic
 
 
-module private DictionaryExtensions =
-    type Dictionary<'TKey, 'TValue> with
-
-        member d.GetOrAdd (key: 'TKey) (init: unit -> 'TValue) =
-
-            let (success, value) = d.TryGetValue(key)
-
-            if success then
-                value
-            else
-                let value = init()
-                d.[key] <- value
-                value
-
-open DictionaryExtensions
-
 type StyleSheetReader () =
     inherit ContentTypeReader<NoobishStyleSheet>()
 

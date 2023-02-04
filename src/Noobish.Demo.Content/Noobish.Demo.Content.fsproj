@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Noobish.Types\Noobish.Types.fsproj" />
     <ProjectReference Include="..\Noobish.PipelineExtension\Noobish.PipelineExtension.fsproj" />
   </ItemGroup>
 
