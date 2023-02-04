@@ -1,4 +1,4 @@
-﻿module Noobish.Content
+﻿module Noobish.Demo.Content
 
 module Say =
     let hello name =

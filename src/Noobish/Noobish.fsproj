@@ -9,6 +9,7 @@
     <Compile Include="Types.fs" />
     <Compile Include="Noobish.fs" />
     <Compile Include="NoobishInput.fs" />
+    <Compile Include="NoobishMonoGame.fs" />
   </ItemGroup>
 
   <ItemGroup>

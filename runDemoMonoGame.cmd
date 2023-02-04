@@ -1,1 +1,1 @@
-dotnet run --project src/Noobish.MonoGame.Demo
+dotnet run --project src/Noobish.Demo

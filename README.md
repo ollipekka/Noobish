@@ -37,16 +37,22 @@ Noobish tracks identity of a component by its location. Noobish can't handle lay
 
 ## Getting started
 
-Preferred usage is to include source files directly into your project.
+### Project Setup
+
+From your main project, add reference to:
+
+* Noobish.dll and Noobish.Types.dll
+
+In your content pipeline, add reference to
+
+* Noobish.PipelineExtension.
 
 ## Project Layout
 
-* *NoobishTypes* the common types provided by the library usable independently of .
 * *Noobish:* the element tree and layout modules.
+* *Noobish.Types* provides the types to use NinePatch, StyleSheet and TextureAtlas content.
 * *Noobish.Test:* unit tests for the element tree and layout modules.
-* *Noobish.MonoGame:* MonoGame related implementation.
-* *Noobish.MonoGame.Demo:* Executable MonoGame related kitchen sink and demo.
-* *Noobish.TextureAtlas:* The texture atlas library.
+* *Noobish.Demo:* Executable MonoGame related kitchen sink and demo.
 * *Noobish.TextureAtlas.PipelineExtension:* MonoGame related processort that packs textures and turns them into .xnb file.
 * *Noobish.TextureAtlas.PipelineExtension:* MonoGame related test processort with test content.
 
