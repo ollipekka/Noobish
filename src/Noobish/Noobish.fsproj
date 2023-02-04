@@ -7,6 +7,11 @@
 
   <ItemGroup>
     <Compile Include="Types.fs" />
+    <Compile Include="TextureAtlas.fs" />
+    <Compile Include="TextureAtlasReader.fs" />
+    <Compile Include="StyleSheet.fs" />
+    <Compile Include="StyleSheetReader.fs" />
+    <Compile Include="StyleSheetExtensions.fs" />
     <Compile Include="Noobish.fs" />
     <Compile Include="NoobishInput.fs" />
     <Compile Include="NoobishMonoGame.fs" />
@@ -14,6 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="Elmish" Version="3.0.6" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
   </ItemGroup>
 
   <ItemGroup>

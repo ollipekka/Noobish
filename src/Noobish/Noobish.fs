@@ -1,16 +1,20 @@
 [<AutoOpen>]
 module Noobish.Components
 
+
+open System
+
+open Microsoft.Xna.Framework
+
+open Noobish
+open Noobish.Styles
+open Noobish.Internal
+
 (*
     This file contains the user-facing interface. User should be able to take
     the library into use with a single import aside from where its set up.
 *)
 
-open Noobish
-open Noobish.Internal
-open Noobish.Styles
-open System
-open Microsoft.Xna.Framework
 
 [<RequireQualifiedAccess>]
 type NoobishTextureId =
