@@ -1,7 +1,5 @@
 namespace Noobish.PipelineExtension
 
-open Noobish.TextureAtlas
-
 open Microsoft.Xna.Framework.Content.Pipeline
 open Microsoft.Xna.Framework.Content.Pipeline.Serialization.Compiler
 
@@ -15,20 +13,20 @@ type TextureAtlasWriter () =
         writer.WriteExternalReference input.Texture
         writer.Write input.Textures.Length
 
-        for texture in input.Textures do
+        for (name, textureType, image) in input.Textures do
 
-            writer.Write texture.Name
-            match texture.TextureType with
-            | TextureType.NinePatch(top, right, bottom, left) ->
+            writer.Write name
+            match textureType with
+            | NinePatch(top, right, bottom, left) ->
                 writer.Write("NinePatch")
                 writer.Write top
                 writer.Write right
                 writer.Write bottom
                 writer.Write left
-            | TextureType.Texture ->
+            | Texture ->
                 writer.Write("Texture")
 
-            let region = input.Regions.[texture.Name]
+            let region = input.Regions.[name]
             writer.Write (region.X + input.Padding)
             writer.Write (region.Y + input.Padding)
             writer.Write (region.Width - 2 * input.Padding)

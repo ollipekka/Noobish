@@ -1,7 +1,5 @@
 namespace Noobish.PipelineExtension
 
-open Noobish.TextureAtlas
-
 open System.Collections.Generic
 
 open Microsoft.Xna.Framework.Content.Pipeline;

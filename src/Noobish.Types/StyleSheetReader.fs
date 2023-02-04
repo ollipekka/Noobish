@@ -30,6 +30,14 @@ open DictionaryExtensions
 type StyleSheetReader () =
     inherit ContentTypeReader<NoobishStyleSheet>()
 
+    let toColor (v: int) =
+        let r = (v >>> 24) &&& 255;
+        let g = (v >>> 16) &&& 255;
+        let b = (v >>> 8) &&& 255;
+        let a = v &&& 255;
+        Color(r, g, b, a)
+
+
     let toReadOnlyDictionary (dictionary: Dictionary<string, Dictionary<string, 'T>>) =
         dictionary
             |> Seq.map(fun kvp -> KeyValuePair(kvp.Key, kvp.Value :> IReadOnlyDictionary<string, 'T>))
@@ -74,7 +82,7 @@ type StyleSheetReader () =
 
     let readColorArrays (reader: ContentReader)  =
 
-        let dict = Dictionary<string, Dictionary<string, int>>()
+        let dict = Dictionary<string, Dictionary<string, Color>>()
         let count = reader.ReadInt32()
 
         for i = 0 to count - 1 do
@@ -85,7 +93,9 @@ type StyleSheetReader () =
 
             for j = 0 to count2 - 1 do
                 let state = reader.ReadString()
-                dict2.[state] <-reader.ReadInt32()
+                let v = reader.ReadInt32()
+
+                dict2.[state] <- toColor v
 
         toReadOnlyDictionary dict
 
@@ -113,7 +123,7 @@ type StyleSheetReader () =
                         if kind = 1 then
                             NoobishDrawable.NinePatch (reader.ReadString())
                         elif kind = 2 then
-                            NoobishDrawable.NinePatchWithColor (reader.ReadString(), reader.ReadInt32())
+                            NoobishDrawable.NinePatchWithColor (reader.ReadString(), reader.ReadInt32() |> toColor)
                         else
                             failwith "Mangled drawable."
 

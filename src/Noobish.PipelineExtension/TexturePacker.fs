@@ -1,6 +1,5 @@
 namespace Noobish.PipelineExtension
 
-open Noobish.TextureAtlas
 
 module TexturePacker =
 
@@ -22,32 +21,31 @@ module TexturePacker =
                     if isNinePatch fileName then
                         NinePatch.createData fileName
                     else
-                        Path.GetFileNameWithoutExtension fileName, TextureType.Texture, (Image.Load<Rgba32> fileName)
+                        Path.GetFileNameWithoutExtension fileName, Texture, (Image.Load<Rgba32> fileName)
 
                 let name =
                     if name.StartsWith "./" then
                         name.Substring(2)
                     else
                         name
-                {
-                    Name = name
-                    TextureType = textureType
-                    Image = image
-                }
+
+                name, textureType, image
+
             )
 
-    let findPreviousIntersection (textures: NoobishTextureOutput[]) (placement: IReadOnlyDictionary<string, Rectangle>) (x:int) (y: int) (index: int) =
+    let findPreviousIntersection (textures: (string*TextureAtlasItem*Image<Rgba32>)[]) (placement: IReadOnlyDictionary<string, Rectangle>) (x:int) (y: int) (index: int) =
 
         let mutable i = 0
         let mutable intersectionIndex = -1
 
 
-        let texture = textures.[index]
-        let w = texture.Image.Width
-        let h = texture.Image.Height
+        let (_,_,image) = textures.[index]
+        let w = image.Width
+        let h = image.Height
 
         let getPlacement (index) =
-            placement.[textures.[index].Name]
+            let (name, _, _) = textures.[index]
+            placement.[name]
 
         while i < index && intersectionIndex = -1 do
             let previousPlacement = getPlacement i
@@ -64,25 +62,25 @@ module TexturePacker =
 
 
 
-    let findTexturePosition (textures: NoobishTextureOutput[]) (placement: IReadOnlyDictionary<string, Rectangle>) (padding: int) (textureWidth: int) (index: int) =
+    let findTexturePosition (textures: (string*TextureAtlasItem*Image<Rgba32>)[]) (placement: IReadOnlyDictionary<string, Rectangle>) (padding: int) (textureWidth: int) (index: int) =
             let mutable x = 0
             let mutable y = 0
             let mutable success = false
 
-            let texture = textures.[index]
+            let (_,_, image) = textures.[index]
             while not success do
 
                 let intersectionIndex = findPreviousIntersection textures placement x y index
 
                 if intersectionIndex <> -1 then
 
-                    let previousTexture = textures.[intersectionIndex]
-                    let (success, previousRegion) = placement.TryGetValue previousTexture.Name
+                    let (name, _, _) = textures.[intersectionIndex]
+                    let (success, previousRegion) = placement.TryGetValue name
                     if not success then failwith "No placement for previous sprite."
 
                     x <- previousRegion.X + previousRegion.Width
 
-                    if ( x + texture.Image.Width + padding * 2 > textureWidth ) then
+                    if ( x + image.Width + padding * 2 > textureWidth ) then
                         x <- 0
                         y <- y + 1
 
@@ -90,11 +88,11 @@ module TexturePacker =
                     success <- true
             (x, y)
 
-    let guessWidth (textures: NoobishTextureOutput[]) (padding: int ) (isPowerOfTwo: bool) =
+    let guessWidth (textures: (string*TextureAtlasItem*Image<Rgba32>)[]) (padding: int ) (isPowerOfTwo: bool) =
 
             let spriteWidths =
                 textures
-                |> Array.map( fun t -> t.Image.Width + padding * 2 )
+                |> Array.map( fun (_,_,i) -> i.Width + padding * 2 )
                 |> Array.sort
 
             let maxWidth = spriteWidths.[spriteWidths.Length - 1]
@@ -109,23 +107,24 @@ module TexturePacker =
             else
                 proposedWidth
 
-    let createRegions (maxWidth: int) (maxHeight: int) (padding: int) (isPowerOfTwo: bool) (textures: NoobishTextureOutput[])  =
+    let createRegions (maxWidth: int) (maxHeight: int) (padding: int) (isPowerOfTwo: bool) (textures: (string*TextureAtlasItem*Image<Rgba32>)[])  =
         let result = Dictionary<string, Rectangle>()
 
-        let sortedTextures = textures |> Array.sortByDescending(fun t -> (t.Image.Height + 2 * padding) * 1000 + (t.Image.Width + 2 * padding))
-        result.[sortedTextures.[0].Name] <- Rectangle(0, 0, sortedTextures.[0].Image.Width + 2 * padding, sortedTextures.[0].Image.Height + 2 * padding)
+        let sortedTextures = textures |> Array.sortByDescending(fun (_,_,image) -> (image.Height + 2 * padding) * 1000 + (image.Width + 2 * padding))
+        let (firstName, _, firstImage) = sortedTextures.[0]
+        result.[firstName] <- Rectangle(0, 0, firstImage.Width + 2 * padding, firstImage.Height + 2 * padding)
 
         let mutable atlasWidth = guessWidth textures padding isPowerOfTwo
         let mutable atlasHeight = 0
 
         for i = 0 to sortedTextures.Length - 1 do
-            let texture = sortedTextures.[i]
+            let (name,_ ,image) = sortedTextures.[i]
             let (x, y) = findTexturePosition sortedTextures result padding atlasWidth i
             let x = x
             let y = y
-            let width = texture.Image.Width + padding * 2
-            let height = texture.Image.Height + padding * 2
-            result.[texture.Name] <- Rectangle(x, y, width, height)
+            let width = image.Width + padding * 2
+            let height = image.Height + padding * 2
+            result.[name] <- Rectangle(x, y, width, height)
 
             atlasHeight <- max atlasHeight (y + height )
 
@@ -141,15 +140,15 @@ module TexturePacker =
 
         (result, atlasWidth, atlasHeight)
 
-    let createImage (textures: NoobishTextureOutput[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) (atlasWidth: int) (atlasHeight: int ) =
+    let createImage (textures: (string*TextureAtlasItem*Image<Rgba32>)[]) (regions: IReadOnlyDictionary<string, Rectangle>) (padding: int) (atlasWidth: int) (atlasHeight: int ) =
         let atlasImage = new Image<Rgba32>(atlasWidth, atlasHeight)
         // Add debug border
         //atlasImage.Mutate(fun i -> (i.BackgroundColor(Rgba32(1f, 0f, 0.498f, 1f)) |> ignore ))
-        for texture in textures do
-            let destinationRectangle = regions.[texture.Name]
-            for x = 0 to texture.Image.Width - 1 do
-                for y = 0 to texture.Image.Height - 1 do
-                    atlasImage.[destinationRectangle.X + x + padding, destinationRectangle.Y + y + padding] <- texture.Image.[x, y]
+        for (name,_,image) in textures do
+            let destinationRectangle = regions.[name]
+            for x = 0 to image.Width - 1 do
+                for y = 0 to image.Height - 1 do
+                    atlasImage.[destinationRectangle.X + x + padding, destinationRectangle.Y + y + padding] <- image.[x, y]
 
 
         atlasImage

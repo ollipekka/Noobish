@@ -9,8 +9,11 @@ open Microsoft.Xna.Framework.Content.Pipeline
 open Microsoft.Xna.Framework.Content.Pipeline.Graphics
 open System.Collections.Generic
 
+type TextureAtlasItem =
+| Texture
+| NinePatch of top:int*right:int*bottom:int*left:int
+
 module NinePatch =
-    open Noobish.PipelineExtension
 
     let fileExtension = ".9.png"
 
@@ -79,19 +82,13 @@ module NinePatch =
 
 
         // Subtract 1 from all sides because of the metadata row / col.
-        (name, Noobish.TextureAtlas.TextureType.NinePatch (top - 1, right - 1, bottom - 1, left - 1), image)
+        (name, NinePatch (top - 1, right - 1, bottom - 1, left - 1), image)
 
-
-type NoobishTextureOutput = {
-    Name: string
-    TextureType: Noobish.TextureAtlas.TextureType
-    Image: Image<Rgba32>
-}
 
 type TextureAtlasContent = {
     Name: string
     Padding: int
-    Textures: NoobishTextureOutput[]
+    Textures: (string*TextureAtlasItem*Image<Rgba32>)[]
     Regions: System.Collections.Generic.IReadOnlyDictionary<string, Rectangle>
     Texture: ExternalReference<TextureContent>
 }

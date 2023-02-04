@@ -70,13 +70,10 @@ type NoobishUI = {
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
 
-
-
     open Noobish
     open Noobish.Internal
     let private createRectangle (x: float32) (y:float32) (width: float32) (height: float32) =
         Rectangle (int (x), int (y), int (width), int (height))
-
 
     let private calculateBounds (textureSize: NoobishTextureSize) (bounds: NoobishRectangle) (textureWidth: int) (textureHeight: int) (scrollX: float32) (scrollY: float32) =
         match textureSize with
@@ -180,14 +177,6 @@ module NoobishMonoGame =
             SpriteEffects.None,
             1.0f)
 
-    let private toColor (v: int) =
-        let r = (v >>> 24) &&& 255;
-        let g = (v >>> 16) &&& 255; // 255
-        let b = (v >>> 8) &&& 255; // 122
-        let a = v &&& 255; // 15
-
-        Color(r, g, b, a)
-
     let private drawDrawable (textureAtlas: TextureAtlas) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (color: Color) (drawables: NoobishDrawable[]) =
         for drawable in drawables do
             match drawable with
@@ -213,7 +202,7 @@ module NoobishMonoGame =
                     position,
                     size.X,
                     size.Y,
-                    toColor color,
+                    color,
                     0f,
                     Vector2.One,
                     SpriteEffects.None,
@@ -234,23 +223,23 @@ module NoobishMonoGame =
 
         let color =
             if cs.CanFocus && cs.Focused then
-                styleSheet.GetColor c.ThemeId "focused" |> toColor
+                styleSheet.GetColor c.ThemeId "focused"
             elif not c.Enabled then
-                styleSheet.GetColor c.ThemeId "disabled" |> toColor
+                styleSheet.GetColor c.ThemeId "disabled"
             elif c.Toggled then
-                styleSheet.GetColor c.ThemeId "toggled" |> toColor
+                styleSheet.GetColor c.ThemeId "toggled"
             else
                 if cs.Visible then
                     let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 0.15) 1.0
 
-                    let color = styleSheet.GetColor c.ThemeId "default" |> toColor
-                    let pressedColor = styleSheet.GetColor c.ThemeId "toggled" |> toColor
+                    let color = styleSheet.GetColor c.ThemeId "default"
+                    let pressedColor = styleSheet.GetColor c.ThemeId "toggled"
                     let finalColor = Color.Lerp(color, pressedColor, float32 progress)
 
                     finalColor
 
                 else if cs.Toggled then
-                    styleSheet.GetColor c.ThemeId "toggled" |> toColor
+                    styleSheet.GetColor c.ThemeId "toggled"
                 else
                     Color.Transparent
 
@@ -339,7 +328,7 @@ module NoobishMonoGame =
                 | NoobishTextAlign.BottomRight -> rightX(), bottomY()
 
 
-            let textColor = toColor(styleSheet.GetFontColor c.ThemeId state)
+            let textColor = styleSheet.GetFontColor c.ThemeId state
             spriteBatch.DrawString(font, line, Vector2(floor textX, floor (startY + textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
             startY <- startY + float32 font.LineSpacing
 
@@ -362,10 +351,10 @@ module NoobishMonoGame =
         if scrollBarWidth = 0f then failwith "Missing width for styleSheet 'ScrollBar' mode 'default'."
         if c.ScrollVertical && progress > 0.0f then
 
-            let scrollBarColor = styleSheet.GetColor "ScrollBar" "default" |> toColor
+            let scrollBarColor = styleSheet.GetColor "ScrollBar" "default"
             let scrollbarDrawable = styleSheet.GetDrawables "ScrollBar" "default"
 
-            let scrollbarPinColor = styleSheet.GetColor "ScrollBarPin" "default" |> toColor
+            let scrollbarPinColor = styleSheet.GetColor "ScrollBarPin" "default"
             let scrollbarPinDrawable = styleSheet.GetDrawables "ScrollBar" "default"
 
             let bounds = c.ContentWithPadding
@@ -404,7 +393,7 @@ module NoobishMonoGame =
             bounds.X + pinWidth / 2.0f,
             bounds.Y)
         let barSize = Vector2(bounds.Width - pinWidth, barHeight)
-        let color = styleSheet.GetColor "Slider" "default" |> toColor
+        let color = styleSheet.GetColor "Slider" "default"
 
         let barDrawables = styleSheet.GetDrawables "Slider" "default"
         drawDrawable textureAtlas spriteBatch barPosition barSize color barDrawables
@@ -416,7 +405,7 @@ module NoobishMonoGame =
             bounds.X + (barSize.X * relativePosition) - (pinWidth / 2.0f) + (pinWidth / 2.0f),
             bounds.Y + barHeight / 2f - pinHeight / 2f)
         let pinSize = Vector2(pinWidth, pinHeight)
-        let color = styleSheet.GetColor "SliderPin" "default" |> toColor
+        let color = styleSheet.GetColor "SliderPin" "default"
 
         let pinDrawables = styleSheet.GetDrawables "SliderPin" "default"
         drawDrawable textureAtlas spriteBatch pinPosition pinSize color pinDrawables
@@ -449,7 +438,7 @@ module NoobishMonoGame =
         let timeFocused = (time - cs.FocusedTime)
         let blinkProgress = MathF.Pow(float32 (timeFocused.TotalSeconds % blinkInterval.TotalSeconds), 5f)
 
-        let cursorColor = styleSheet.GetColor "Cursor" "default" |> toColor
+        let cursorColor = styleSheet.GetColor "Cursor" "default"
         let color = Color.Lerp(cursorColor, Color.Transparent, float32 blinkProgress)
 
 
@@ -474,7 +463,7 @@ module NoobishMonoGame =
 
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = toRadians t.Rotation
-            let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
+            let textureColor = if c.Enabled then t.TextureColor else t.TextureColorDisabled
             spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
 
 
@@ -489,7 +478,7 @@ module NoobishMonoGame =
 
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = toRadians t.Rotation
-            let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
+            let textureColor = if c.Enabled then t.TextureColor else t.TextureColorDisabled
 
             spriteBatch.Draw(texture.Atlas, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
 
@@ -501,7 +490,7 @@ module NoobishMonoGame =
             let textureEffect = getTextureEfffect t.TextureEffect
             let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
             let rect = c.ContentWithPadding
-            let textureColor = toColor (if c.Enabled then t.TextureColor else t.TextureColorDisabled)
+            let textureColor = if c.Enabled then t.TextureColor else t.TextureColorDisabled
             spriteBatch.DrawAtlasNinePatch(
                 texture,
                 Vector2(float32 rect.X, float32 rect.Y),

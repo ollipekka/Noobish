@@ -10,6 +10,7 @@ open Noobish
 open Noobish.Internal
 open Noobish.Styles
 open System
+open Microsoft.Xna.Framework
 
 [<RequireQualifiedAccess>]
 type NoobishTextureId =
@@ -27,8 +28,8 @@ type NoobishTextureEffect =
     type NoobishTexture = {
         Texture: NoobishTextureId
         TextureEffect: NoobishTextureEffect
-        TextureColor: int
-        TextureColorDisabled:int
+        TextureColor: Color
+        TextureColorDisabled: Color
         TextureSize: NoobishTextureSize
         Rotation: int
     }
@@ -52,8 +53,8 @@ type NoobishLayoutElement = {
     Text: string[]
     TextWrap: bool
     Texture: option<NoobishTexture>
-    Color: int
-    ColorDisabled: int
+    Color: Color
+    ColorDisabled: Color
 
     StartX: float32
     StartY: float32
@@ -752,7 +753,7 @@ module Logic =
                             Texture = texture
                             TextureEffect = textureEffect
                             TextureColor = textureColor
-                            TextureColorDisabled = 0xCCCCCCFF
+                            TextureColorDisabled = Color.DimGray
                             TextureSize = textureSize
                             Rotation = textureRotation
                         }

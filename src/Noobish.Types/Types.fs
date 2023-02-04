@@ -31,11 +31,13 @@ module TextureAtlas =
 module Styles =
 
     open System.Collections.Generic
+    open Microsoft.Xna.Framework
+    open Microsoft.Xna.Framework.Graphics
 
     [<RequireQualifiedAccess>]
     type NoobishDrawable=
     | NinePatch of string
-    | NinePatchWithColor of string*int
+    | NinePatchWithColor of string*Color
     | Texture of string
 
     [<RequireQualifiedAccess>]
@@ -45,7 +47,7 @@ module Styles =
 
     // Text related styles.
     | Font of string
-    | FontColor of int
+    | FontColor of Color
 
     | Color of int
     | Drawables of list<NoobishDrawable>
@@ -60,9 +62,9 @@ module Styles =
         Heights: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
         Paddings: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int*int*int*int>>
         Margins: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int*int*int*int>>
-        Colors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>
+        Colors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, Color>>
         Fonts: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>
-        FontColors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>
+        FontColors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, Color>>
         Drawables: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishDrawable[]>>
 
     } with
@@ -99,10 +101,10 @@ module Styles =
             NoobishStyleSheet.GetValue t.Fonts cid state t.Font
 
         member t.GetFontColor (cid: string) (state: string) =
-            NoobishStyleSheet.GetValue t.FontColors cid state 0xFFFFFFFF
+            NoobishStyleSheet.GetValue t.FontColors cid state Color.White
 
         member t.GetColor (cid: string) (state: string) =
-            NoobishStyleSheet.GetValue t.Colors cid state 0xFFFFFFFF
+            NoobishStyleSheet.GetValue t.Colors cid state Color.White
 
         member t.GetPadding (cid: string) (state: string) =
             NoobishStyleSheet.GetValue t.Paddings cid state (0, 0, 0, 0)
