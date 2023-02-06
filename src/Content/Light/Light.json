@@ -7,13 +7,11 @@
                 "padding": [5, 5, 5 ,5],
                 "margin": [4, 4, 4, 4],
                 "fontColor": "4b692fff",
-                "color": "cbdbfcff"
             },
             "disabled": {
                 "padding": [5, 5, 5 ,5],
                 "margin": [4, 4, 4, 4],
-                "fontColor": "4b692fff",
-                "color": "306082ff"
+                "fontColor": "3f3f74ff",
             }
         },
         "Panel": {
@@ -33,14 +31,13 @@
                 ]
             },
             "toggled": {
-                "color": "4b692fff",
                 "drawables": [
                     ["button-toggled.9"]
                 ]
             },
             "disabled": {
                 "drawables": [
-                    ["button-toggled.9"]
+                    ["button-disabled.9"]
                 ]
             }
         },

@@ -151,3 +151,51 @@ type StyleSheetContent = {
     Paddings: (string*(string*(int*int*int*int))[])[]
     Margins: (string*(string*(int*int*int*int))[])[]
 }
+
+
+type MSDFAtlas = {
+    ``type``: string
+    distanceRange: int
+    size: float32
+    width: int
+    height: int
+    yOrigin: string
+
+}
+
+type MSDFMetrics = {
+    emSize: int
+    lineHeight: float32
+    ascender: float32
+    descender: float32
+    underlineY: float32
+    underlineThickness: float32
+}
+
+type MSDFBounds = {
+    top:float32
+    right:float32
+    bottom: float32
+    left: float32
+}
+
+type MSDFGlyph = {
+    unicode: int
+    advance: float32
+    planeBounds: MSDFBounds
+    atlasBounds: MSDFBounds
+}
+
+type MSDFKerning = {
+    unicode1: int
+    unicode2: int
+    advance: float32
+}
+
+
+type MSDFFont = {
+    atlas: MSDFAtlas
+    metrics: MSDFMetrics
+    glyphs: MSDFGlyph[]
+    kerning: MSDFKerning[]
+}

@@ -47,7 +47,7 @@ type NoobishStyleSheet = {
             if success' then
                 v
             else
-                NoobishStyleSheet.GetDefault d "Default" state fallback
+                NoobishStyleSheet.GetDefault d "Default" "default" fallback
         else
             fallback
 
@@ -60,7 +60,7 @@ type NoobishStyleSheet = {
             else
                 NoobishStyleSheet.GetDefault d themeId "default" fallback
         else
-            NoobishStyleSheet.GetDefault d "Default" "default" fallback
+            NoobishStyleSheet.GetDefault d "Default" state fallback
 
     member t.GetWidth (cid: string) (state: string) =
         NoobishStyleSheet.GetValue t.Widths cid state 0f
