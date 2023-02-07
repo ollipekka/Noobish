@@ -11,6 +11,7 @@ open Elmish
 
 open Noobish
 open Noobish.Styles
+open Noobish.Fonts
 
 let loremIpsum1 =
     "Scroll me!\n\n Lorem\nipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -482,6 +483,7 @@ type DemoGame () as game =
 
         ()
 
+
     override _this.UnloadContent() = ()
 
     override this.Update gameTime =
@@ -510,6 +512,37 @@ type DemoGame () as game =
         base.Draw(gameTime)
         this.GraphicsDevice.Clear(Color.Black)
         NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch nui gameTime.TotalGameTime
+
+
+
+        let font = this.Content.Load<NoobishFont> "Content/Times"
+
+
+
+        let drawGlyph c x =
+
+            let a = font.Glyphs.[int64(c)]
+
+            let struct(top, right, bottom, left) = a.AtlasBounds
+            let rect = Rectangle(
+                int left,
+                font.Atlas.Height - int(top - bottom) - int bottom,
+                int (right - left),
+                int (top - bottom)
+            )
+            spriteBatch.Draw(font.Texture, Rectangle(50 + x, 50, rect.Width * 5, rect.Height * 5), rect, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.0f)
+
+        spriteBatch.Begin()
+
+        drawGlyph 'a' 0
+
+        drawGlyph 's' 80
+        drawGlyph 'd' 160
+        drawGlyph 'f' 240
+
+        spriteBatch.End()
+
+        ()
 
 
 

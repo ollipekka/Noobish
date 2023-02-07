@@ -21,7 +21,7 @@
 /build:Times.json
 
 
-#begin Times.png
+#begin TimesAtlas.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=0,0,0,255
@@ -31,7 +31,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:Times.png
+/build:TimesAtlas.png
 
 #begin Dark/Dark.json
 /importer:StyleSheetImporter

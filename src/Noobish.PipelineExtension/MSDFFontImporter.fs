@@ -10,7 +10,7 @@ open Newtonsoft.Json
 
 [<ContentImporter( fileExtension=".txt", DefaultProcessor = "MSDFFontProcessor", DisplayName = "SDFont Importer" )>]
 type MSDFFontImporter () =
-    inherit ContentImporter<MSDFFont>()
+    inherit ContentImporter<string*MSDFFont>()
 
 
     override s.Import(fileName: string, context: ContentImporterContext) =
@@ -22,7 +22,5 @@ type MSDFFontImporter () =
         let serializer = new JsonSerializer()
         let font = serializer.Deserialize<MSDFFont>(jsonReader)
 
-        printfn "%A" font.glyphs
-
-        font
+        fileName, font
 

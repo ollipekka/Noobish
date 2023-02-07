@@ -14,6 +14,8 @@
     <Compile Include="StyleSheet.fs" />
     <Compile Include="StyleSheetReader.fs" />
     <Compile Include="StyleSheetExtensions.fs" />
+    <Compile Include="NoobishFont.fs" />
+    <Compile Include="MSDFFontReader.fs" />
     <Compile Include="Noobish.fs" />
     <Compile Include="NoobishInput.fs" />
     <Compile Include="NoobishMonoGame.fs" />

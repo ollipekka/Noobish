@@ -14,3 +14,10 @@ module DictionaryExtensions =
                 let value = init()
                 d.[key] <- value
                 value
+
+
+    let toReadOnlyDictionary (dictionary: Dictionary<'K1, Dictionary<'K2, 'T>>) =
+        dictionary
+            |> Seq.map(fun kvp -> KeyValuePair(kvp.Key, kvp.Value :> IReadOnlyDictionary<'K2, 'T>))
+            |> Dictionary<'K1, IReadOnlyDictionary<'K2, 'T>>
+            :> IReadOnlyDictionary<'K1, IReadOnlyDictionary<'K2, 'T>>

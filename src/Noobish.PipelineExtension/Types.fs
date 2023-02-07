@@ -8,6 +8,7 @@ open SixLabors.ImageSharp.Processing
 open Microsoft.Xna.Framework.Content.Pipeline
 open Microsoft.Xna.Framework.Content.Pipeline.Graphics
 open System.Collections.Generic
+open Microsoft.Xna.Framework.Graphics
 
 type TextureAtlasItem =
 | Texture
@@ -155,7 +156,7 @@ type StyleSheetContent = {
 
 type MSDFAtlas = {
     ``type``: string
-    distanceRange: int
+    distanceRange: float32
     size: float32
     width: int
     height: int
@@ -180,15 +181,15 @@ type MSDFBounds = {
 }
 
 type MSDFGlyph = {
-    unicode: int
+    unicode: int64
     advance: float32
     planeBounds: MSDFBounds
     atlasBounds: MSDFBounds
 }
 
 type MSDFKerning = {
-    unicode1: int
-    unicode2: int
+    unicode1: int64
+    unicode2: int64
     advance: float32
 }
 
@@ -198,4 +199,5 @@ type MSDFFont = {
     metrics: MSDFMetrics
     glyphs: MSDFGlyph[]
     kerning: MSDFKerning[]
+    texture: ExternalReference<TextureContent>
 }

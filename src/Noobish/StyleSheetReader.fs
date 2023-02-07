@@ -21,13 +21,6 @@ type StyleSheetReader () =
         let a = v &&& 255;
         Color(r, g, b, a)
 
-
-    let toReadOnlyDictionary (dictionary: Dictionary<string, Dictionary<string, 'T>>) =
-        dictionary
-            |> Seq.map(fun kvp -> KeyValuePair(kvp.Key, kvp.Value :> IReadOnlyDictionary<string, 'T>))
-            |> Dictionary
-            :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>
-
     let readFloat32Arrays (reader: ContentReader)  =
 
         let dict = Dictionary<string, Dictionary<string, float32>>()
