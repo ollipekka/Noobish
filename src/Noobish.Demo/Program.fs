@@ -342,6 +342,8 @@ type DemoGame () as game =
 
     let _graphics = createGraphicsDevice game
 
+    let textBatch = TextBatch(10)
+
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
 
     let mutable nui = Unchecked.defaultof<NoobishUI>
@@ -519,26 +521,11 @@ type DemoGame () as game =
 
 
 
-        let drawGlyph c x =
 
-            let a = font.Glyphs.[int64(c)]
 
-            let struct(top, right, bottom, left) = a.AtlasBounds
-            let rect = Rectangle(
-                int left,
-                font.Atlas.Height - int(top - bottom) - int bottom,
-                int (right - left),
-                int (top - bottom)
-            )
-            spriteBatch.Draw(font.Texture, Rectangle(50 + x, 50, rect.Width * 5, rect.Height * 5), rect, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.0f)
 
         spriteBatch.Begin()
-
-        drawGlyph 'a' 0
-
-        drawGlyph 's' 80
-        drawGlyph 'd' 160
-        drawGlyph 'f' 240
+        textBatch.Draw spriteBatch "Hello, world!" font (Vector2(50f, 50f))
 
         spriteBatch.End()
 
