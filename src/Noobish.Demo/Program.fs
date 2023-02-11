@@ -342,7 +342,7 @@ type DemoGame () as game =
 
     let _graphics = createGraphicsDevice game
 
-    let textBatch = TextBatch(10)
+    let mutable textBatch = Unchecked.defaultof<TextBatch>
 
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
 
@@ -474,6 +474,7 @@ type DemoGame () as game =
         base.Initialize()
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
+        textBatch <- new TextBatch(this.GraphicsDevice, 10)
 
 
         Program.mkProgram init update view
@@ -524,10 +525,8 @@ type DemoGame () as game =
 
 
 
-        spriteBatch.Begin()
-        textBatch.Draw spriteBatch "Hello, world!" font (Vector2(50f, 50f))
+        textBatch.Draw "Hello, world! Why would you?" font (Vector2(50f, 50f))
 
-        spriteBatch.End()
 
         ()
 
