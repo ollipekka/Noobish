@@ -474,7 +474,7 @@ type DemoGame () as game =
         base.Initialize()
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
-        textBatch <- new TextBatch(this.GraphicsDevice, 10)
+        textBatch <- new TextBatch(this.GraphicsDevice, 1024)
 
 
         Program.mkProgram init update view
@@ -524,10 +524,10 @@ type DemoGame () as game =
 
 
 
-
         textBatch.Draw "Hello, world! Why would you?" font (Vector2(50f, 50f))
 
 
+        textBatch.Draw "Big brown bear mauled the programmer" font (Vector2(150f, 150f))
         ()
 
 

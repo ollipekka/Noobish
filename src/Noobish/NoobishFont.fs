@@ -42,20 +42,30 @@ type TextBatch (graphics: GraphicsDevice, batchSize: int) =
 
     let mutable vertexCount = 0
     let vertices = Array.create batchSize (VertexPositionColorTexture())
-
+    let indices = Array.create (batchSize * 6) (int16 0)
 
     let effect = new BasicEffect(graphics)
 
-    let addVertex (v:Vector2) (c:Color) (t: Vector2) =
-        vertices.[vertexCount] <- VertexPositionColorTexture(Vector3(v.X, v.Y, 0.0f), c, t)
+    let addVertex (v:Vector3) (c:Color) (t: Vector2) =
+        vertices.[vertexCount] <- VertexPositionColorTexture(v, c, t)
         vertexCount <- vertexCount + 1
 
     let addDegenerate () =
         let v = vertices.[vertexCount - 1]
-        addVertex (Vector2(v.Position.X, v.Position.Y)) Color.Pink v.TextureCoordinate
+        addVertex v.Position Color.Pink v.TextureCoordinate
 
+    member val World = Matrix.Identity
+    member val View = Matrix.Identity
 
-    let flush () =
+    member val Projection =
+        let vp = graphics.Viewport
+        #if PSM || DIRECTX
+        Matrix.CreateOrthographicOffCenter(0.0f, float32 vp.Width, float32 vp.Height, 0.0f, -1.0f, 0.0f)
+        #else
+        Matrix.CreateOrthographicOffCenter(0.0f, float32 vp.Width, float32 vp.Height, 0.0f, 0.0f, 1.0f)
+        #endif
+
+    member s.Flush () =
         if vertexCount > 0 then
             effect.VertexColorEnabled <- true
             effect.TextureEnabled <- true
@@ -65,38 +75,53 @@ type TextBatch (graphics: GraphicsDevice, batchSize: int) =
 
             vertexCount <- 0
 
+    member s.Glyph (font: NoobishFont) (center: Vector2) (halfSize: Vector2) (color: Color) (glyph: NoobishGlyph) =
 
-    member s.Glyph (center: Vector2) (halfSize: Vector2) (color: Color) (glyph: NoobishGlyph) =
+        if vertexCount + 4 > vertices.Length then
+            s.Flush()
 
-        if vertexCount + 8 > vertices.Length then
-            flush()
+        let halfWidth = halfSize.X
+        let halfHeight = halfSize.Y
 
-        let startPos = center - halfSize
-        let endPos = center + halfSize
-
-        let textureWidth = halfSize.X * 2f
-        let textureHeight = halfSize.Y * 2f
+        let textureWidth = float32 font.Texture.Width
+        let textureHeight = float32 font.Texture.Height
 
         let struct(top, right, bottom, left) = glyph.AtlasBounds
         let u = left / textureWidth
         let u2 = right / textureWidth
-        let v = bottom / textureHeight
-        let v2 = top / textureHeight
+        let v = 1f - top / textureHeight
+        let v2 = v  + (top - bottom) / textureHeight
 
+        let t1 = Vector2(u, v)
+        let p1 = center + Vector2(-halfWidth, -halfHeight)
+        let t2 = Vector2(u2, v)
+        let p2 = center + Vector2(halfWidth, -halfHeight)
+        let t3 = Vector2(u, v2)
+        let p3 = center + Vector2(-halfWidth, halfHeight)
+        let t4 = Vector2(u2, v2)
+        let p4 = center + Vector2(halfWidth, halfHeight)
+
+        let layer = 0f
 
         if(vertexCount > 0) then
-            addVertex (Vector2(startPos.X, startPos.Y)) Color.Pink (Vector2(u, v))
+            addVertex (Vector3(p1.X, p1.Y, layer)) Color.Pink (Vector2(u2, v2))
 
-        addVertex (Vector2(startPos.X, startPos.Y)) color (Vector2(u, v))
-        addVertex (Vector2(endPos.X, startPos.Y)) color (Vector2(u, v2))
-        addVertex (Vector2(startPos.X, endPos.Y)) color (Vector2(u2, v))
-        addVertex (Vector2(endPos.X, endPos.Y)) color (Vector2(u2, v2))
+
+        addVertex (Vector3(p1.X, p1.Y, layer)) color t1
+        addVertex (Vector3(p2.X, p2.Y, layer)) color t2
+        addVertex (Vector3(p3.X, p3.Y, layer)) color t3
+        addVertex (Vector3(p4.X, p4.Y, layer)) color t4
+
 
         addDegenerate()
 
 
 
     member s.Draw (text:string) (font: NoobishFont) (position: Vector2) =
+        effect.World <- s.World
+        effect.View <- s.View
+        effect.Projection <- s.Projection
+        effect.Texture <- font.Texture
 
         let mutable nextPosX = position.X
         for c in text do
@@ -120,13 +145,17 @@ type TextBatch (graphics: GraphicsDevice, batchSize: int) =
             let yOffset = oBottom * font.Atlas.Size
             let y = position.Y + (font.Metrics.LineHeight * font.Atlas.Size - float32 sourceRect.Height) - yOffset
 
+            let size = (Vector2(float32 sourceRect.Width / 2f, float32 sourceRect.Height / 2f))
+            let position = Vector2(x, y) + size
 
-            s.Glyph (Vector2(x, y)) (Vector2(float32 sourceRect.Width / 2f, float32 sourceRect.Height / 2f)) Color.White glyph
-            //spriteBatch.Draw(font.Texture, Rectangle(int(x + xOffset), int(y), sourceRect.Width, sourceRect.Height), sourceRect, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.0f)
+            s.Glyph font position size Color.White glyph
 
             let advance = glyph.Advance * font.Atlas.Size / float32 font.Metrics.EmSize
             nextPosX <- x + advance
 
-        flush()
+        s.Flush()
 
 
+    interface System.IDisposable with
+        member s.Dispose() =
+            effect.Dispose()
