@@ -529,7 +529,7 @@ type DemoGame () as game =
         textBatch.Draw font 25 (Vector2(50f, 50f)) Color.White "Hello, world!"
 
 
-        textBatch.Draw font 15 (Vector2(150f, 150f)) Color.DimGray "Big brown bear mauled the programmer (programmer=you)"
+        textBatch.Draw font 12 (Vector2(150f, 150f)) Color.DimGray "Big brown bear mauled the programmer (programmer=you)"
         ()
 
 

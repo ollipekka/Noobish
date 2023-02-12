@@ -150,7 +150,8 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
     member s.Draw (font: NoobishFont) (sizeInPt: int) (position: Vector2) (color: Color) (text:string) =
 
-        let size = float32 sizeInPt / float32 font.Metrics.EmSize
+        let size = float32 sizeInPt * 4f / 3f / float32 font.Metrics.EmSize // Size in PX
+
 
         let wvp = s.World * s.View * s.Projection
         effect.Parameters["WorldViewProjection"].SetValue(wvp)
