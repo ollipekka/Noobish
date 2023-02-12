@@ -474,7 +474,9 @@ type DemoGame () as game =
         base.Initialize()
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
-        textBatch <- new TextBatch(this.GraphicsDevice, 1024)
+
+        let fontEffect = this.Content.Load<Effect>("Content/MSDFFontEffect")
+        textBatch <- new TextBatch(this.GraphicsDevice, fontEffect, 1024)
 
 
         Program.mkProgram init update view
@@ -524,10 +526,10 @@ type DemoGame () as game =
 
 
 
-        textBatch.Draw "Hello, world! Why would you?" font (Vector2(50f, 50f))
+        textBatch.Draw font 25 (Vector2(50f, 50f)) Color.White "Hello, world!"
 
 
-        textBatch.Draw "Big brown bear mauled the programmer" font (Vector2(150f, 150f))
+        textBatch.Draw font 15 (Vector2(150f, 150f)) Color.DimGray "Big brown bear mauled the programmer (programmer=you)"
         ()
 
 
