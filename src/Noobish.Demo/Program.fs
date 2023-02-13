@@ -175,7 +175,7 @@ module Containers =
                                 image
                                     [
                                         name "Pixel Origin"
-                                        texture "Content/Pixel"
+                                        texture "Pixel"
                                         textureBestFitMin
                                         minSize 10 10
                                         padding 0
@@ -186,7 +186,7 @@ module Containers =
                                 image
                                     [
                                         name "Pixel 1"
-                                        texture "Content/Pixel"
+                                        texture "Pixel"
                                         textureBestFitMin
                                         minSize 10 10
                                         padding 0
@@ -198,7 +198,7 @@ module Containers =
                                 button [ text "o"; relativePosition 30 30 ]
                                 image [
                                         name "Pixel 2"
-                                        texture "Content/Pixel"
+                                        texture "Pixel"
                                         textureBestFitMin
                                         minSize 10 10
                                         padding 0
@@ -358,7 +358,7 @@ type DemoGame () as game =
     let mutable touchState = Unchecked.defaultof<TouchCollection>
 
     override this.Initialize() =
-
+        this.Content.RootDirectory <- "Content/"
 
         let width = this.GraphicsDevice.Viewport.Width
         let height = this.GraphicsDevice.Viewport.Height
@@ -369,12 +369,10 @@ type DemoGame () as game =
 
         let settings: NoobishSettings = {
             Scale = 1f
-            FontSettings = {Small = "Content/AnomyousPro16"; Normal = "Content/AnonymousPro16"; Large = "Content/AnonymousPro16"}
-            Pixel = "Content/Pixel"
+            Pixel = "Pixel"
         }
 
-        //let theme = Theme.createDefaultTheme settings.FontSettings "Content/Dark/Dark.json"
-        nui <- NoobishMonoGame.create game.Content "Content/Dark/Dark" width height settings
+        nui <- NoobishMonoGame.create game.Content "Dark/Dark" width height settings
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
@@ -402,10 +400,10 @@ type DemoGame () as game =
                 model.UI.Debug <- (not model.UI.Debug)
                 model, Cmd.none
             | ToggleLightMode ->
-                nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Content/Light/Light"
+                nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Light/Light"
                 {model with StyleMode = LightMode}, Cmd.none
             | ToggleDarkMode ->
-                nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Content/Dark/Dark"
+                nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Dark/Dark"
                 {model with StyleMode = DarkMode}, Cmd.none
 
         let view (model: DemoModel) dispatch =
@@ -429,10 +427,10 @@ type DemoGame () as game =
                 [
                     grid 12 8
                         [
-                            panel [label [text "Noobish";]] [colspan 3; rowspan 1]
+                            panel [h1 [text "Noobish"; fill]] [colspan 3; rowspan 1]
                             panelWithGrid 12 1
                                 [
-                                    label [text title; fill; colspan 6];
+                                    h1 [text title; fill; colspan 6];
                                     button
                                         [
                                             text "Dark";
@@ -475,7 +473,7 @@ type DemoGame () as game =
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
 
-        let fontEffect = this.Content.Load<Effect>("Content/MSDFFontEffect")
+        let fontEffect = this.Content.Load<Effect>("MSDFFontEffect")
         textBatch <- new TextBatch(this.GraphicsDevice, fontEffect, 1024)
 
 
@@ -516,20 +514,7 @@ type DemoGame () as game =
     override this.Draw (gameTime) =
         base.Draw(gameTime)
         this.GraphicsDevice.Clear(Color.Black)
-        NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch nui gameTime.TotalGameTime
-
-
-
-        let font = this.Content.Load<NoobishFont> "Content/Times"
-
-
-
-
-
-        textBatch.Draw font 25 (Vector2(50f, 50f)) Color.White "Hello, world!"
-
-
-        textBatch.Draw font 12 (Vector2(150f, 150f)) Color.DimGray "Big brown bear mauled the programmer (programmer=you)"
+        NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
         ()
 
 

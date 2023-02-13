@@ -31,18 +31,11 @@ type NoobishMouseButtonId =
 | Right
 | None
 
-type FontSettings = {
-    Small: string
-    Normal: string
-    Large: string
-}
 
 type NoobishSettings = {
     Scale: float32
     Pixel: string
-    FontSettings: FontSettings
 }
-
 
 module Internal =
 

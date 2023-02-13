@@ -28,13 +28,13 @@ type NoobishStyle =
 type NoobishStyleSheet = {
     Name: string
     TextureAtlasId: string
-    Font: string
     Widths: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
     Heights: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
     Paddings: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int*int*int*int>>
     Margins: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int*int*int*int>>
     Colors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, Color>>
     Fonts: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>
+    FontSizes: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>
     FontColors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, Color>>
     Drawables: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishDrawable[]>>
 
@@ -69,7 +69,10 @@ type NoobishStyleSheet = {
         NoobishStyleSheet.GetValue t.Heights cid state 0f
 
     member t.GetFont (cid: string) (state: string) =
-        NoobishStyleSheet.GetValue t.Fonts cid state t.Font
+        NoobishStyleSheet.GetValue t.Fonts cid state "None"
+
+    member t.GetFontSize (cid: string) (state: string) =
+        NoobishStyleSheet.GetValue t.FontSizes cid state 25
 
     member t.GetFontColor (cid: string) (state: string) =
         NoobishStyleSheet.GetValue t.FontColors cid state Color.White

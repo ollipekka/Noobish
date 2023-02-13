@@ -54,7 +54,7 @@ type NoobishLayoutElement = {
     FillHorizontal: bool
 
     TextAlignment: NoobishTextAlign
-    Text: string[]
+    Text: string
     TextWrap: bool
     Texture: option<NoobishTexture>
     Color: Color
@@ -287,6 +287,9 @@ let onOpenKeyboard cb = OnOpenKeyboard cb
 // Components
 let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
 let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
+let h1 attributes = { ThemeId = "H1"; Children = []; Attributes = attributes }
+let h2 attributes = { ThemeId = "H2"; Children = []; Attributes = attributes }
+let h3 attributes = { ThemeId = "H3"; Children = []; Attributes = attributes }
 let textBox attributes = { ThemeId = "TextBox"; Children = []; Attributes = attributes @ [KeyTypedEnabled] }
 let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlign.TopLeft :: attributes }
 let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
@@ -400,6 +403,7 @@ let windowWithGrid cols rows children attributes =
 module Logic =
     open Noobish
     open Noobish.Internal
+    open Microsoft.Xna.Framework.Content
 
     let splitLines (measureString: string -> int * int) width (text: string) =
 
@@ -455,7 +459,7 @@ module Logic =
             Children = c.Children |> Array.map(fun child -> child.Id)
         }
 
-    let private createNoobishLayoutElement (styleSheet: NoobishStyleSheet) (measureText: string -> string -> int*int) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentId: string) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
+    let private createNoobishLayoutElement (styleSheet: NoobishStyleSheet) (content: ContentManager) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentId: string) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
 
         let cid = $"%s{parentPath}/%s{themeId}-(%g{startX},%g{startY})"
         let cstate = "default"
@@ -688,27 +692,29 @@ module Logic =
 
 
 
-        let color = styleSheet.GetColor cid cstate
-        let textFont = styleSheet.GetFont cid cstate
-
         let maxWidth = parentWidth * float32 colspan
 
         model |> Option.iter (fun model' ->
             match model' with
             | Slider (_s) ->
                 minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
-                minHeight <- minHeight + styleSheet.GetHeight "Slider" "default"
+                minHeight <- minHeight + styleSheet.GetHeight themeId "default"
             | Combobox (_c) -> ()
             | Textbox (_t) -> ()
         )
 
-
-        let mutable textLines = ""
         if not (String.IsNullOrWhiteSpace text) then
             let paddedWidth = maxWidth - marginLeft - marginRight - paddingLeft - paddingRight
-            textLines <- if textWrap then splitLines (measureText textFont) paddedWidth text else text
 
-            let (contentWidth, contentHeight) = measureText textFont textLines
+            let fontId = styleSheet.GetFont themeId "default"
+            let font = content.Load<NoobishFont> fontId
+            let fontSize = int(float32 (styleSheet.GetFontSize themeId "default"))
+
+            let struct (contentWidth, contentHeight) =
+                if textWrap then
+                    NoobishFont.measureMultiLineText font fontSize paddedWidth text
+                else
+                    NoobishFont.measureSingleLineText font fontSize text
 
             minWidth <- float32 contentWidth
             minHeight <- float32 contentHeight
@@ -725,7 +731,7 @@ module Logic =
 
 
         let path = sprintf "%s/%s" parentPath themeId
-        let text = if String.IsNullOrWhiteSpace textLines then [||] else textLines.Split '\n'
+        //let text = if String.IsNullOrWhiteSpace textLines then [||] else textLines.Split '\n'
 
         {
             Id = cid
@@ -821,7 +827,7 @@ module Logic =
                 | _ -> false)
 
     let rec private layoutElement
-        (measureText: string -> string -> int*int)
+        (content: ContentManager)
         (styleSheet: NoobishStyleSheet)
         (settings: NoobishSettings)
         (mutateState: string -> ComponentMessage -> unit)
@@ -834,7 +840,7 @@ module Logic =
         (parentHeight: float32)
         (c: NoobishElement): NoobishLayoutElement  =
 
-        let parentComponent = createNoobishLayoutElement styleSheet measureText settings mutateState zIndex parentId parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
+        let parentComponent = createNoobishLayoutElement styleSheet content settings mutateState zIndex parentId parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -873,7 +879,7 @@ module Logic =
 
 
                 let path = sprintf "%s:%i" parentComponent.Path i
-                let childComponent = layoutElement measureText styleSheet settings mutateState zIndex parentComponent.Id path childStartX childStartY childWidth childHeight child
+                let childComponent = layoutElement content styleSheet settings mutateState zIndex parentComponent.Id path childStartX childStartY childWidth childHeight child
 
                 newChildren.Add(childComponent)
 
@@ -930,7 +936,7 @@ module Logic =
                 let childStartX = floor (parentBounds.X + (float32 col) * (colWidth))
                 let childStartY = floor (parentBounds.Y + (float32 row) * (rowHeight))
                 let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
-                let childComponent = layoutElement measureText styleSheet settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY colWidth rowHeight child
+                let childComponent = layoutElement content styleSheet settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY colWidth rowHeight child
 
                 newChildren.Add({
                     childComponent with
@@ -954,7 +960,7 @@ module Logic =
             if c.Children.Length <> 1 then failwith "Can only pop open one at a time."
 
             let path = sprintf "%s:overlay" parentComponent.Path
-            let childComponent = layoutElement measureText styleSheet settings mutateState  (zIndex + 1) parentComponent.Id path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
+            let childComponent = layoutElement content styleSheet settings mutateState  (zIndex + 1) parentComponent.Id path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
 
             {parentComponent with Children = [|childComponent|]}
         | NoobishLayout.Absolute ->
@@ -968,7 +974,7 @@ module Logic =
                 let childHeight = parentBounds.Height
 
                 let path = sprintf "%s:absolute:%i" parentComponent.Path i
-                let childComponent = layoutElement measureText styleSheet settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight c.Children.[i]
+                let childComponent = layoutElement content styleSheet settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight c.Children.[i]
                 newChildren.Add({ childComponent with StartX = childComponent.StartX; StartY = childComponent.StartY })
 
             {parentComponent with Children = newChildren.ToArray()}
@@ -976,12 +982,12 @@ module Logic =
             parentComponent
 
 
-    let layout (measureText: string -> string -> int*int) (styleSheet: NoobishStyleSheet) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (layer: int) (width: float32) (height: float32) (elements: list<NoobishElement>) =
+    let layout (content: ContentManager) (styleSheet: NoobishStyleSheet) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (layer: int) (width: float32) (height: float32) (elements: list<NoobishElement>) =
 
         let path = sprintf "layer-%i" layer
         elements
             |> List.map(fun c ->
-                layoutElement measureText styleSheet settings mutateState (layer * 128) "" path 0.0f 0.0f width height c
+                layoutElement content styleSheet settings mutateState (layer * 64) "" path 0.0f 0.0f width height c
             ) |> List.toArray
 
 

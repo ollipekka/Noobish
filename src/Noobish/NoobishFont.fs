@@ -56,33 +56,108 @@ module NoobishGlyph =
 
         struct((right - left) * scale, (top - bottom) * scale)
 
-
 type NoobishFont = {
     Atlas: NoobishFontAtlas
     Metrics: NoobishFontMetrics
     Glyphs: IReadOnlyDictionary<int64, NoobishGlyph>
     Kerning: IReadOnlyDictionary<int64, IReadOnlyDictionary<int64, float32>>
     Texture: Texture2D
-}
+} with
+    member s.GetGlyph (c: char) =
+        s.Glyphs.[int64 c]
+
+    member s.HasGlyph (c: char) =
+        s.Glyphs.ContainsKey (int64 c)
 
 module NoobishFont =
 
-    let measureText (font: NoobishFont) (size: float32) (text: string) =
+
+    let measureLeadingWhiteSpace (font: NoobishFont) (size: float32) (text: string) (startPos: int) =
+        let mutable newLinePos = -1
+        let mutable nonWhiteSpaceFound = false
+        let mutable i = startPos
         let mutable width = 0f
+        while i < text.Length - 1 && not nonWhiteSpaceFound do
+            let c = text.[i]
+            if c = '\n' then
+                newLinePos <- i
+                i <- i + 1
+                nonWhiteSpaceFound <- true
+            elif c <> ' ' then
+                nonWhiteSpaceFound <- true
+            else
+                let glyph = font.GetGlyph c
+                let struct(a, xOffset, yOffset, gw, gh) = NoobishGlyph.getGlyphMetricsInPx size glyph
+
+                width <- width + a + xOffset
+                i <- i + 1
+        struct(width, newLinePos, startPos - i)
+
+    let measureNextWord (font:NoobishFont) (size: int) (text: string) (startPos: int) =
+        let size = float32 size
+        let mutable wordFound = false
+        let mutable width = 0f
+        let mutable i = startPos
+
+        while i < text.Length - 1 && not wordFound do
+            let c = text.[i]
+            if c = ' ' || c = '\n' then
+                wordFound <- true
+            else
+                let g = font.Glyphs.[int64 c]
+                let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size g
+                width <- width + advance + xOffset * size
+                i <- i + 1
+
+        struct(width, i - startPos)
+
+    let measureSingleLineText (font: NoobishFont) (size: int) (text: string) =
+        let size = float32 size * 4f / 3f
+        let mutable width = 0.0f
         let mutable height = font.Metrics.LineHeight * size
-
         for c in text do
-            let glyph = font.Glyphs.[int64 c]
-            let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
+            if c = '\n' then
+                ()
+            else
+                let g = font.GetGlyph c
+                width <- width + g.Advance * size
+        struct(width, height)
 
-            width <- width + advance + xOffset
+    let measureMultiLineText (font: NoobishFont) (size: int) (maxWidth: float32) (text: string) =
+        let size = float32 size * 4f / 3f
+        let mutable width = 10f
+        let mutable height = font.Metrics.LineHeight * size
+        (*
+        let mutable x = 0f
+        let mutable y = 0f
+
+        let mutable i = 0
+
+        while i < text.Length - 1 do
+
+            let struct(wsWidth, wsLineEndPos, wsCount) = measureLeadingWhiteSpace font size text i
+
+            if wsLineEndPos > -1 then
+                x <- 0f
+                y <- y + font.Metrics.LineHeight * size
+                i <- i + wsCount
+            else
+                let struct(wordWidth, wordCount) = measureNextWord font size text (i + wsCount)
+
+                i <- i + wsCount + wordCount
+                if maxWidth > 0f && x + wsWidth + wordWidth > maxWidth then
+                    x <- 0f
+                    y <- y + font.Metrics.LineHeight * size
+                    width <- maxWidth
+                else
+                    x <- x + wordWidth
+        *)
         struct(width, height)
 
 type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
     let mutable vertexCount = 0
     let vertices = Array.create batchSize (VertexPositionTexture())
-    let indices = Array.create (batchSize * 6) (int16 0)
 
 
     let addVertex (v:Vector3) (t: Vector2) =
@@ -98,11 +173,8 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
     member val Projection =
         let vp = graphics.Viewport
-        #if PSM || DIRECTX
-        Matrix.CreateOrthographicOffCenter(0.0f, float32 vp.Width, float32 vp.Height, 0.0f, -1.0f, 0.0f)
-        #else
-        Matrix.CreateOrthographicOffCenter(0.0f, float32 vp.Width, float32 vp.Height, 0.0f, 0.0f, 1.0f)
-        #endif
+        Matrix.CreateOrthographicOffCenter(0.0f, float32 vp.Width, float32 vp.Height, 0.0f, 0.0f, -1.0f)
+
 
     member s.Flush () =
         if vertexCount > 0 then
@@ -113,9 +185,8 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
             vertexCount <- 0
 
-    member s.DrawGlyph (font: NoobishFont) (center: Vector2) (halfSize: Vector2) (glyph: NoobishGlyph) =
-
-        if vertexCount + 4 > vertices.Length then
+    member s.DrawGlyph (font: NoobishFont) (center: Vector2) (halfSize: Vector2) (layer: float32) (glyph: NoobishGlyph) =
+        if vertexCount + 6 > vertices.Length then
             s.Flush()
 
         let halfWidth = halfSize.X
@@ -132,8 +203,6 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         let t4 = Vector2(u2, v2)
         let p4 = center + Vector2(halfWidth, halfHeight)
 
-        let layer = 0f
-
         if(vertexCount > 0) then
             addVertex (Vector3(p1.X, p1.Y, layer)) (Vector2(u2, v2))
 
@@ -148,7 +217,7 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
 
 
-    member s.Draw (font: NoobishFont) (sizeInPt: int) (position: Vector2) (color: Color) (text:string) =
+    member s.Draw (font: NoobishFont) (sizeInPt: int) (position: Vector2) (layer: float32) (color: Color) (text:string) =
 
         let size = float32 sizeInPt * 4f / 3f / float32 font.Metrics.EmSize // Size in PX
 
@@ -164,20 +233,22 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         effect.CurrentTechnique <- if sizeInPt > 10 then effect.Techniques["LargeText"] else effect.Techniques["SmallText"]
 
         let mutable nextPosX = position.X
+
         for c in text do
-            let glyph = font.Glyphs.[int64(c)]
+            if font.HasGlyph c then
+                let glyph = font.GetGlyph c
 
-            let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
+                let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
 
-            let x = nextPosX + xOffset
-            let y = position.Y + (size - glyphHeight) - yOffset
+                let x = nextPosX + xOffset
+                let y = position.Y + (size - glyphHeight) - yOffset
 
-            let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
-            let position = Vector2(x, y) + glyphHalfSize
+                let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
+                let position = Vector2(x, y) + glyphHalfSize
 
-            s.DrawGlyph font position glyphHalfSize glyph
+                s.DrawGlyph font position glyphHalfSize layer glyph
 
-            nextPosX <- x + advance
+                nextPosX <- x + advance
 
         s.Flush()
 

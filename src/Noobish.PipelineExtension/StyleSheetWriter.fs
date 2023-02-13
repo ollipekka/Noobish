@@ -19,6 +19,16 @@ type StyleSheetWriter () =
                 writer.Write state
                 writer.Write v
 
+    let writeInt32Arrays (writer: ContentWriter) (s: (string*(string*int32)[])[]) =
+        writer.Write s.Length
+        for (name, byState) in s do
+            writer.Write name
+            writer.Write byState.Length
+
+            for (state, v) in byState do
+                writer.Write state
+                writer.Write v
+
     let writeColors (writer: ContentWriter) (s: (string*(string*string)[])[]) =
         writer.Write s.Length
         for (name, byState) in s do
@@ -75,11 +85,11 @@ type StyleSheetWriter () =
     override s.Write(writer: ContentWriter, input: StyleSheetContent) =
         writer.Write input.Name
         writer.Write input.TextureAtlas
-        writer.Write input.Font
         writeFloat32Arrays writer input.Widths
         writeFloat32Arrays writer input.Heights
 
         writeStringArrays writer input.Fonts
+        writeInt32Arrays writer input.FontSizes
         writeColors writer input.FontColors
 
         writeColors writer input.Colors

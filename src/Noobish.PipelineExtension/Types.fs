@@ -130,6 +130,7 @@ type StyleJson = {
     width: int
     height: int
     font: string
+    fontSize: int
     fontColor: string
     color: string
     padding: int[]
@@ -140,12 +141,12 @@ type StyleJson = {
 
 type StyleSheetContent = {
     Name: string
-    Font: string
     TextureAtlas: string
 
     Widths: (string*(string*float32)[])[]
     Heights: (string*(string*float32)[])[]
     Fonts: (string*(string*string)[])[]
+    FontSizes: (string*(string*int)[])[]
     FontColors: (string*(string*string)[])[]
     Colors: (string*(string*string)[])[]
     Drawables: (string*(string*string[][])[])[]
