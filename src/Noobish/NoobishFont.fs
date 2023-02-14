@@ -4,6 +4,7 @@ open System.Collections.Generic
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework
 
+
 type NoobishFontAtlas = {
     FontType: string
     DistanceRange: float32
@@ -62,12 +63,7 @@ type NoobishFont = {
     Glyphs: IReadOnlyDictionary<int64, NoobishGlyph>
     Kerning: IReadOnlyDictionary<int64, IReadOnlyDictionary<int64, float32>>
     Texture: Texture2D
-} with
-    member s.GetGlyph (c: char) =
-        s.Glyphs.[int64 c]
-
-    member s.HasGlyph (c: char) =
-        s.Glyphs.ContainsKey (int64 c)
+}
 
 module NoobishFont =
 
@@ -86,14 +82,16 @@ module NoobishFont =
             elif c <> ' ' then
                 nonWhiteSpaceFound <- true
             else
-                let glyph = font.GetGlyph c
-                let struct(a, xOffset, yOffset, gw, gh) = NoobishGlyph.getGlyphMetricsInPx size glyph
+                let (success, g) = font.Glyphs.TryGetValue (int64 c)
 
-                width <- width + a + xOffset
+                if success then 
+                    let struct(a, xOffset, yOffset, gw, gh) = NoobishGlyph.getGlyphMetricsInPx size g
+                    width <- width + a + xOffset
+
                 i <- i + 1
-        struct(width, newLinePos, startPos - i)
+        struct(width, newLinePos, i - startPos)
 
-    let measureNextWord (font:NoobishFont) (size: int) (text: string) (startPos: int) =
+    let measureNextWord (font:NoobishFont) (size: float32) (text: string) (startPos: int) =
         let size = float32 size
         let mutable wordFound = false
         let mutable width = 0f
@@ -119,15 +117,15 @@ module NoobishFont =
             if c = '\n' then
                 ()
             else
-                let g = font.GetGlyph c
-                width <- width + g.Advance * size
+                let (success, g) = font.Glyphs.TryGetValue (int64 c)
+                if success then 
+                    width <- width + g.Advance * size
         struct(width, height)
 
     let measureMultiLineText (font: NoobishFont) (size: int) (maxWidth: float32) (text: string) =
         let size = float32 size * 4f / 3f
-        let mutable width = 10f
-        let mutable height = font.Metrics.LineHeight * size
-        (*
+        let lineHeight = font.Metrics.LineHeight * size
+        
         let mutable x = 0f
         let mutable y = 0f
 
@@ -139,20 +137,26 @@ module NoobishFont =
 
             if wsLineEndPos > -1 then
                 x <- 0f
-                y <- y + font.Metrics.LineHeight * size
+                y <- y + lineHeight
                 i <- i + wsCount
             else
                 let struct(wordWidth, wordCount) = measureNextWord font size text (i + wsCount)
 
                 i <- i + wsCount + wordCount
-                if maxWidth > 0f && x + wsWidth + wordWidth > maxWidth then
+                // Start of the line, ignore whitespace.
+                if x < System.Single.Epsilon && wsWidth > 0f then
                     x <- 0f
-                    y <- y + font.Metrics.LineHeight * size
-                    width <- maxWidth
+                    y <- y + lineHeight
+                // End of the line.
+                elif x + wsWidth + wordWidth > maxWidth then
+                    x <- 0f
+                    y <- y + lineHeight
+                // Start of the line with no whitespace
+                // Middle of the line.
                 else
-                    x <- x + wordWidth
-        *)
-        struct(width, height)
+                    x <- x + wsWidth + wordWidth
+        
+        struct(maxWidth, y)
 
 type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
@@ -217,7 +221,43 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
 
 
-    member s.Draw (font: NoobishFont) (sizeInPt: int) (position: Vector2) (layer: float32) (color: Color) (text:string) =
+    member s.DrawSingleLine (font: NoobishFont) (size: int) (position: Vector2) (layer: float32) (color: Color) (text:string) =
+
+        let size = float32 size * 4f / 3f / float32 font.Metrics.EmSize // Size in PX
+
+
+        let wvp = s.World * s.View * s.Projection
+        effect.Parameters["WorldViewProjection"].SetValue(wvp)
+        effect.Parameters["GlyphTexture"].SetValue(font.Texture)
+        effect.Parameters["PxRange"].SetValue(2f)
+
+        let atlasSize = Vector2(float32 font.Texture.Width, float32 font.Texture.Height)
+        effect.Parameters["TextureSize"].SetValue(atlasSize)
+        effect.Parameters["ForegroundColor"].SetValue(color.ToVector4())
+        effect.CurrentTechnique <- if size > 10.0f then effect.Techniques["LargeText"] else effect.Techniques["SmallText"]
+
+        let mutable nextPosX = position.X
+
+        for c in text do
+            let (success, glyph) = font.Glyphs.TryGetValue (int64 c)
+
+            if success then 
+
+                let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
+
+                let x = nextPosX + xOffset
+                let y = position.Y + (size - glyphHeight) - yOffset
+
+                let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
+                let position = Vector2(x, y) + glyphHalfSize
+
+                s.DrawGlyph font position glyphHalfSize layer glyph
+
+                nextPosX <- x + advance
+
+        s.Flush()
+
+    member s.DrawMultiLine (font: NoobishFont) (sizeInPt: int) (maxWidth: float32) (position: Vector2) (layer: float32) (color: Color) (text:string) =
 
         let size = float32 sizeInPt * 4f / 3f / float32 font.Metrics.EmSize // Size in PX
 
@@ -235,9 +275,9 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         let mutable nextPosX = position.X
 
         for c in text do
-            if font.HasGlyph c then
-                let glyph = font.GetGlyph c
+            let (success, glyph) = font.Glyphs.TryGetValue (int64 c)
 
+            if success then 
                 let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
 
                 let x = nextPosX + xOffset
@@ -251,7 +291,6 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
                 nextPosX <- x + advance
 
         s.Flush()
-
 
     interface System.IDisposable with
         member s.Dispose() =

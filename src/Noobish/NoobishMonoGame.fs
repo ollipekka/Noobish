@@ -325,7 +325,10 @@ module NoobishMonoGame =
 
 
             let textColor = styleSheet.GetFontColor c.ThemeId state
-            textBatch.Draw font fontSize (Vector2(floor textX, floor (startY + textY))) layer textColor line
+            if c.TextWrap then 
+                textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(floor textX, floor (startY + textY))) layer textColor line
+            else 
+                textBatch.DrawSingleLine font fontSize (Vector2(floor textX, floor (startY + textY)))  layer textColor line
             startY <- startY + float32 font.Metrics.LineHeight * float32 fontSize
 
     let private drawScrollBars
@@ -665,7 +668,7 @@ module NoobishMonoGame =
 
         spriteBatch.Begin()
         drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 0.0f 0.0f (float32 areaWidth + 10.0f) (float32 areaHeight + 10.0f)
-        textBatch.Draw font 32  (Vector2(float32 textX + 5.0f, float32 textY + 5.0f)) 1f Color.White fpsText
+        textBatch.DrawSingleLine font 32  (Vector2(float32 textX + 5.0f, float32 textY + 5.0f)) 1f Color.White fpsText
         spriteBatch.End()
         if time - ui.FPSTime >= fpsTimer then
             ui.FPS <- ui.FPSCounter
