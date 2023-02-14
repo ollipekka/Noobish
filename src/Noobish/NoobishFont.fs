@@ -84,7 +84,7 @@ module NoobishFont =
             else
                 let (success, g) = font.Glyphs.TryGetValue (int64 c)
 
-                if success then 
+                if success then
                     let struct(a, xOffset, yOffset, gw, gh) = NoobishGlyph.getGlyphMetricsInPx size g
                     width <- width + a + xOffset
 
@@ -118,14 +118,14 @@ module NoobishFont =
                 ()
             else
                 let (success, g) = font.Glyphs.TryGetValue (int64 c)
-                if success then 
+                if success then
                     width <- width + g.Advance * size
         struct(width, height)
 
     let measureMultiLineText (font: NoobishFont) (size: int) (maxWidth: float32) (text: string) =
         let size = float32 size * 4f / 3f
         let lineHeight = font.Metrics.LineHeight * size
-        
+
         let mutable x = 0f
         let mutable y = 0f
 
@@ -155,7 +155,7 @@ module NoobishFont =
                 // Middle of the line.
                 else
                     x <- x + wsWidth + wordWidth
-        
+
         struct(maxWidth, y)
 
 type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
@@ -241,7 +241,7 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         for c in text do
             let (success, glyph) = font.Glyphs.TryGetValue (int64 c)
 
-            if success then 
+            if success then
 
                 let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
 
@@ -272,23 +272,53 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         effect.Parameters["ForegroundColor"].SetValue(color.ToVector4())
         effect.CurrentTechnique <- if sizeInPt > 10 then effect.Techniques["LargeText"] else effect.Techniques["SmallText"]
 
-        let mutable nextPosX = position.X
+        let mutable nextPosX = 0f
+        let mutable nextPosY = 0f
 
-        for c in text do
-            let (success, glyph) = font.Glyphs.TryGetValue (int64 c)
 
-            if success then 
-                let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
+        let mutable i = 0
+        while i < text.Length - 1 do
 
-                let x = nextPosX + xOffset
-                let y = position.Y + (size - glyphHeight) - yOffset
 
-                let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
-                let position = Vector2(x, y) + glyphHalfSize
+            let struct(wsWidth, wsNewLinePos, wsCount) = NoobishFont.measureLeadingWhiteSpace font size text i
 
-                s.DrawGlyph font position glyphHalfSize layer glyph
+            if wsNewLinePos <> -1 then
+                nextPosX <- 0.0f
+                nextPosY <- nextPosY + font.Metrics.LineHeight * size
+                i <- i + wsCount
+            else
+                let struct(wordWidth, wordCount) = NoobishFont.measureNextWord font size text (i + wsCount)
 
-                nextPosX <- x + advance
+                if nextPosX + wsWidth + wordWidth > maxWidth then
+                    nextPosX <- 0.0f
+                    nextPosY <- nextPosY + font.Metrics.LineHeight * size
+                else
+
+                    let startPos, endPos =
+                        if nextPosX < System.Single.Epsilon && wsCount > 0 then
+                            i + wsCount, i + wsCount + wordCount
+                        else
+                            i, i + wsCount + wordCount
+
+                    for j = startPos to endPos do
+
+                        let (success, glyph) = font.Glyphs.TryGetValue (int64 text.[j])
+
+                        if success then
+
+                            let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
+
+                            let x = position.X + nextPosX + xOffset
+                            let y = position.Y + nextPosY + (size - glyphHeight) - yOffset
+
+                            let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
+                            let position = Vector2(x, y) + glyphHalfSize
+
+                            s.DrawGlyph font position glyphHalfSize layer glyph
+
+                            nextPosX <- nextPosX + advance
+
+                    i <- endPos
 
         s.Flush()
 
