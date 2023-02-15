@@ -67,6 +67,9 @@ type NoobishFont = {
 
 module NoobishFont =
 
+    let truncate (size: int) (value:string) = 
+        let size = min value.Length size 
+        value.Substring(0, size)
 
     let measureLeadingWhiteSpace (font: NoobishFont) (size: float32) (text: string) (startPos: int) =
         let mutable newLinePos = -1
@@ -127,7 +130,7 @@ module NoobishFont =
         let lineHeight = font.Metrics.LineHeight * size
 
         let mutable x = 0f
-        let mutable y = 0f
+        let mutable lineCount = 1
 
         let mutable i = 0
 
@@ -137,26 +140,29 @@ module NoobishFont =
 
             if wsLineEndPos > -1 then
                 x <- 0f
-                y <- y + lineHeight
+                lineCount <- lineCount + 1
                 i <- i + wsCount
             else
                 let struct(wordWidth, wordCount) = measureNextWord font size text (i + wsCount)
 
-                i <- i + wsCount + wordCount
                 // Start of the line, ignore whitespace.
                 if x < System.Single.Epsilon && wsWidth > 0f then
-                    x <- 0f
-                    y <- y + lineHeight
+                    i <- i + wsCount
                 // End of the line.
                 elif x + wsWidth + wordWidth > maxWidth then
                     x <- 0f
-                    y <- y + lineHeight
+                    lineCount <- lineCount + 1
                 // Start of the line with no whitespace
                 // Middle of the line.
                 else
                     x <- x + wsWidth + wordWidth
+                    i <- i + wsCount + wordCount
 
-        struct(maxWidth, y)
+        //printfn "%s" (text |> truncate 15)
+
+        let height = float32 lineCount * lineHeight
+        //printfn "%g, %g" maxWidth height
+        struct(maxWidth, height)
 
 type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
@@ -210,12 +216,10 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         if(vertexCount > 0) then
             addVertex (Vector3(p1.X, p1.Y, layer)) (Vector2(u2, v2))
 
-
         addVertex (Vector3(p1.X, p1.Y, layer)) t1
         addVertex (Vector3(p2.X, p2.Y, layer)) t2
         addVertex (Vector3(p3.X, p3.Y, layer)) t3
         addVertex (Vector3(p4.X, p4.Y, layer)) t4
-
 
         addDegenerate()
 
@@ -266,7 +270,6 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
         let size = float32 sizeInPt * 4f / 3f / float32 font.Metrics.EmSize // Size in PX
 
-
         let wvp = s.World * s.View * s.Projection
         effect.Parameters["WorldViewProjection"].SetValue(wvp)
         effect.Parameters["GlyphTexture"].SetValue(font.Texture)
@@ -280,11 +283,8 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         let mutable nextPosX = 0f
         let mutable nextPosY = 0f
 
-
         let mutable i = 0
         while i < text.Length - 1 do
-
-
             let struct(wsWidth, wsNewLinePos, wsCount) = NoobishFont.measureLeadingWhiteSpace font size text i
 
             if wsNewLinePos <> -1 then
@@ -300,16 +300,11 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
                 else
 
                     // Handle the case of leading whitespace by skipping whitespace at the start of line.
-                    let struct(wsCount, wsWidth) =
+                    let struct(startPos, endPos, wsWidth) =
                         if nextPosX < System.Single.Epsilon && wsCount > 0 then
-                            struct(wsCount, 0f)
+                            struct(i + wsCount, i + wsCount + wordCount, 0f)
                         else
-                            struct(0, wsWidth)
-
-                    let startPos = i + wsCount
-                    let endPos = i + wsCount + wordCount
-                    let renderedText = text.Substring(startPos, (endPos-startPos))
-                    printfn "rendering: %s" renderedText
+                            struct(i, i + wsCount + wordCount, wsWidth)
 
                     let nextPos = position + Vector2(nextPosX, nextPosY)
                     s.DrawSubstring font size nextPos layer color text startPos endPos
@@ -319,6 +314,11 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
                     i <- endPos
 
         s.Flush()
+
+        
+
+        //printfn "%s" (text |> NoobishFont.truncate 15)
+        //printfn "%g, %g" nextPosX nextPosY
 
     interface System.IDisposable with
         member s.Dispose() =

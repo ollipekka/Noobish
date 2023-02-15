@@ -293,7 +293,11 @@ module NoobishMonoGame =
         for line in textLines do
 
 
-            let struct(textSizeX, textSizeY) = NoobishFont.measureSingleLineText font fontSize line
+            let struct(textSizeX, textSizeY) = 
+                if c.TextWrap then 
+                    NoobishFont.measureMultiLineText font fontSize bounds.Width line
+                else 
+                    NoobishFont.measureSingleLineText font fontSize line
 
 
             let leftX () = bounds.X + scrollX
@@ -322,7 +326,6 @@ module NoobishMonoGame =
                 | NoobishTextAlign.BottomLeft -> leftX(), bottomY()
                 | NoobishTextAlign.BottomCenter -> centerX(), bottomY()
                 | NoobishTextAlign.BottomRight -> rightX(), bottomY()
-
 
             let textColor = styleSheet.GetFontColor c.ThemeId state
             if c.TextWrap then 
