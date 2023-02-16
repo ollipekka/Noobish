@@ -262,7 +262,6 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         effect.Parameters["TextureSize"].SetValue(atlasSize)
         effect.Parameters["ForegroundColor"].SetValue(color.ToVector4())
         effect.CurrentTechnique <- if size > 10.0f then effect.Techniques["LargeText"] else effect.Techniques["SmallText"]
-        effect.CurrentTechnique <- effect.Techniques["SmallText"]
 
 
         s.DrawSubstring font size position layer color text 0 (text.Length - 1)
@@ -283,7 +282,6 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         effect.Parameters["ForegroundColor"].SetValue(color.ToVector4())
         effect.CurrentTechnique <- if size > 10.0f then effect.Techniques["LargeText"] else effect.Techniques["SmallText"]
 
-        effect.CurrentTechnique <- effect.Techniques["SmallText"]
 
         let mutable nextPosX = 0f
         let mutable nextPosY = 0f

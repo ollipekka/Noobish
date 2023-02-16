@@ -514,7 +514,7 @@ type DemoGame () as game =
 
     override this.Draw (gameTime) =
         base.Draw(gameTime)
-        this.GraphicsDevice.Clear(Color.DimGray)
+        this.GraphicsDevice.Clear(Color.Black)
         NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
         ()
 
