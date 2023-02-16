@@ -293,10 +293,10 @@ module NoobishMonoGame =
         for line in textLines do
 
 
-            let struct(textSizeX, textSizeY) = 
-                if c.TextWrap then 
+            let struct(textSizeX, textSizeY) =
+                if c.TextWrap then
                     NoobishFont.measureMultiLineText font fontSize bounds.Width line
-                else 
+                else
                     NoobishFont.measureSingleLineText font fontSize line
 
 
@@ -328,9 +328,9 @@ module NoobishMonoGame =
                 | NoobishTextAlign.BottomRight -> rightX(), bottomY()
 
             let textColor = styleSheet.GetFontColor c.ThemeId state
-            if c.TextWrap then 
+            if c.TextWrap then
                 textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(floor textX, floor (startY + textY))) layer textColor line
-            else 
+            else
                 textBatch.DrawSingleLine font fontSize (Vector2(floor textX, floor (startY + textY)))  layer textColor line
             startY <- startY + float32 font.Metrics.LineHeight * float32 fontSize
 

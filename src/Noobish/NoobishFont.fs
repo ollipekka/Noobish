@@ -67,8 +67,8 @@ type NoobishFont = {
 
 module NoobishFont =
 
-    let truncate (size: int) (value:string) = 
-        let size = min value.Length size 
+    let truncate (size: int) (value:string) =
+        let size = min value.Length size
         value.Substring(0, size)
 
     let measureLeadingWhiteSpace (font: NoobishFont) (size: float32) (text: string) (startPos: int) =
@@ -169,7 +169,6 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
     let mutable vertexCount = 0
     let vertices = Array.create batchSize (VertexPositionTexture())
 
-
     let addVertex (v:Vector3) (t: Vector2) =
         vertices.[vertexCount] <- VertexPositionTexture(v, t)
         vertexCount <- vertexCount + 1
@@ -189,6 +188,9 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
     member s.Flush () =
         if vertexCount > 0 then
 
+            graphics.SamplerStates.[0] <- SamplerState.LinearClamp
+            graphics.BlendState <- BlendState.AlphaBlend;
+            graphics.DepthStencilState <- DepthStencilState.None;
             for pass in effect.CurrentTechnique.Passes do
                 pass.Apply()
                 graphics.DrawUserPrimitives(PrimitiveType.TriangleStrip, vertices, 0, vertexCount - 2)
@@ -254,12 +256,13 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         let wvp = s.World * s.View * s.Projection
         effect.Parameters["WorldViewProjection"].SetValue(wvp)
         effect.Parameters["GlyphTexture"].SetValue(font.Texture)
-        effect.Parameters["PxRange"].SetValue(2f)
+        effect.Parameters["PxRange"].SetValue(float32 font.Atlas.DistanceRange)
 
         let atlasSize = Vector2(float32 font.Texture.Width, float32 font.Texture.Height)
         effect.Parameters["TextureSize"].SetValue(atlasSize)
         effect.Parameters["ForegroundColor"].SetValue(color.ToVector4())
         effect.CurrentTechnique <- if size > 10.0f then effect.Techniques["LargeText"] else effect.Techniques["SmallText"]
+        effect.CurrentTechnique <- effect.Techniques["SmallText"]
 
 
         s.DrawSubstring font size position layer color text 0 (text.Length - 1)
@@ -273,12 +276,14 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         let wvp = s.World * s.View * s.Projection
         effect.Parameters["WorldViewProjection"].SetValue(wvp)
         effect.Parameters["GlyphTexture"].SetValue(font.Texture)
-        effect.Parameters["PxRange"].SetValue(2f)
+        effect.Parameters["PxRange"].SetValue(float32 font.Atlas.DistanceRange)
 
         let atlasSize = Vector2(float32 font.Texture.Width, float32 font.Texture.Height)
         effect.Parameters["TextureSize"].SetValue(atlasSize)
         effect.Parameters["ForegroundColor"].SetValue(color.ToVector4())
-        effect.CurrentTechnique <- if sizeInPt > 10 then effect.Techniques["LargeText"] else effect.Techniques["SmallText"]
+        effect.CurrentTechnique <- if size > 10.0f then effect.Techniques["LargeText"] else effect.Techniques["SmallText"]
+
+        effect.CurrentTechnique <- effect.Techniques["SmallText"]
 
         let mutable nextPosX = 0f
         let mutable nextPosY = 0f
@@ -315,7 +320,7 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
         s.Flush()
 
-        
+
 
         //printfn "%s" (text |> NoobishFont.truncate 15)
         //printfn "%g, %g" nextPosX nextPosY

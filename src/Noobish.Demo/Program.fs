@@ -329,7 +329,8 @@ let createGraphicsDevice (game: Game) =
     graphics.PreferredBackBufferWidth <- 1280
     graphics.PreferredBackBufferHeight <- 720
     #endif
-    graphics.PreferMultiSampling <- true
+    graphics.SynchronizeWithVerticalRetrace <- false
+    //graphics.PreferMultiSampling <- true
     graphics.PreferHalfPixelOffset <- true
     graphics.SupportedOrientations <-
         DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
@@ -513,7 +514,7 @@ type DemoGame () as game =
 
     override this.Draw (gameTime) =
         base.Draw(gameTime)
-        this.GraphicsDevice.Clear(Color.Black)
+        this.GraphicsDevice.Clear(Color.DimGray)
         NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
         ()
 

@@ -3,7 +3,7 @@
     "Styles": {
         "Default": {
             "default": {
-                "font": "Times",
+                "font": "Arial",
                 "fontSize": 16,
                 "fontColor": "4b692fff",
                 "padding": [5, 5, 5 ,5],

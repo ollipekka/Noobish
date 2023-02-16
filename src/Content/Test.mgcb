@@ -26,7 +26,6 @@
 /processor:MSDFFontProcessor
 /build:Times.json
 
-
 #begin TimesAtlas.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -38,6 +37,24 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:TimesAtlas.png
+
+
+#begin Arial.json
+/importer:MSDFFontImporter
+/processor:MSDFFontProcessor
+/build:Arial.json
+
+#begin ArialAtlas.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:ArialAtlas.png
 
 #begin Dark/Dark.json
 /importer:StyleSheetImporter
