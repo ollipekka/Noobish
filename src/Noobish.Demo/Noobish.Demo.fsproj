@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Noobish\Noobish.fsproj" />
-    <ProjectReference Include="..\Noobish.Demo.Content\Noobish.Demo.Content.fsproj" />
+    <!--<ProjectReference Include="..\Noobish.Demo.Content\Noobish.Demo.Content.fsproj" />-->
   </ItemGroup>
 
 </Project>

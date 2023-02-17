@@ -21,9 +21,9 @@ open Noobish
 
 
 type NoobishUI = {
-    MeasureText: string -> string -> int*int
     Width: int
     Height: int
+    Content: ContentManager
     Settings: NoobishSettings
     Components: Dictionary<string, NoobishLayoutElement>
     State: NoobishState
@@ -127,15 +127,12 @@ module NoobishMonoGame =
     let create (content: ContentManager) (styleSheetId: string) width height (settings: NoobishSettings) =
 
         let styleSheet = content.Load<NoobishStyleSheet> styleSheetId
-        let measureText (font: string) (text: string) =
-            let font = content.Load<SpriteFont> font
-            let size = font.MeasureString text
-            int (ceil (size.X)), int (ceil (size.Y))
+
 
         {
-            MeasureText = measureText
             Width = width
             Height = height
+            Content = content
             StyleSheet = styleSheet
             Settings = settings
             Components = Dictionary()
@@ -148,10 +145,6 @@ module NoobishMonoGame =
             FPSCounter = 0
             FPSTime = TimeSpan.Zero
         }
-
-    let overrideMeasureText measureText ui = {
-        ui with MeasureText = measureText
-    }
 
     let overrideDebug d ui = {
         ui with Debug = d
@@ -177,7 +170,7 @@ module NoobishMonoGame =
             SpriteEffects.None,
             1.0f)
 
-    let private drawDrawable (textureAtlas: TextureAtlas) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (color: Color) (drawables: NoobishDrawable[]) =
+    let private drawDrawable (textureAtlas: TextureAtlas) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (layer: float32) (color: Color) (drawables: NoobishDrawable[]) =
         for drawable in drawables do
             match drawable with
             | NoobishDrawable.Texture _ -> failwith "Texture not supported for cursor."
@@ -193,7 +186,7 @@ module NoobishMonoGame =
                     0f,
                     Vector2.One,
                     SpriteEffects.None,
-                    0f )
+                    layer )
             | NoobishDrawable.NinePatchWithColor(tid, color) ->
                 let texture = textureAtlas.[tid]
 
@@ -206,7 +199,7 @@ module NoobishMonoGame =
                     0f,
                     Vector2.One,
                     SpriteEffects.None,
-                    0f )
+                    layer)
 
     let private drawBackground (styleSheet: NoobishStyleSheet) (state: NoobishState)  (textureAtlas: TextureAtlas) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (time: TimeSpan) scrollX scrollY =
         let cs = state.ElementsById.[c.Id]
@@ -248,9 +241,10 @@ module NoobishMonoGame =
         let drawables = styleSheet.GetDrawables c.ThemeId cstate
 
         let position = Vector2(float32 rect.X, float32 rect.Y)
-        let size = Vector2( float32 rect.Width, float32 rect.Height)
+        let size = Vector2( float32 rect.Width - 1f, float32 rect.Height - 1f)
 
-        drawDrawable textureAtlas spriteBatch position size color drawables
+        let layer = 1f - (float32 c.ZIndex / 255f)
+        drawDrawable textureAtlas spriteBatch position size layer color drawables
 
     let private debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
         let borderSize = 2f
@@ -266,7 +260,7 @@ module NoobishMonoGame =
         drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( bounds.Y + bounds.Height - borderSize) widthWithoutBorders borderSize
 
 
-    let private drawText (styleSheet: NoobishStyleSheet) (content: ContentManager) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (cs: NoobishLayoutElementState) scrollX scrollY =
+    let private drawText (styleSheet: NoobishStyleSheet) (content: ContentManager) (textBatch: TextBatch) (c: NoobishLayoutElement) (cs: NoobishLayoutElementState) scrollX scrollY =
         let mutable startY = 0.0f
 
         let textLines =
@@ -280,9 +274,9 @@ module NoobishMonoGame =
                         None
                 | _ -> None)
             |> Option.flatten
-            |> Option.defaultValue c.Text
+            |> Option.defaultValue [|c.Text|]
 
-
+        let layer = 1f - float32 (c.ZIndex + 32) / 255.0f
         let state =
             if cs.CanFocus && cs.Focused then "focused"
             elif not c.Enabled then "disabled"
@@ -290,15 +284,21 @@ module NoobishMonoGame =
             else "default"
 
         let fontId = styleSheet.GetFont c.ThemeId state
-        let font = content.Load<SpriteFont> fontId
+        let font = content.Load<NoobishFont> fontId
+
+
+        let fontSize = (styleSheet.GetFontSize c.ThemeId state)
 
         let bounds = c.Content
         for line in textLines do
 
 
-            let size = font.MeasureString (line)
+            let struct(textSizeX, textSizeY) =
+                if c.TextWrap then
+                    NoobishFont.measureMultiLineText font fontSize bounds.Width line
+                else
+                    NoobishFont.measureSingleLineText font fontSize line
 
-            let textSizeX, textSizeY = size.X, size.Y
 
             let leftX () = bounds.X + scrollX
             let rightX () = bounds.X + bounds.Width - textSizeX
@@ -327,10 +327,12 @@ module NoobishMonoGame =
                 | NoobishTextAlign.BottomCenter -> centerX(), bottomY()
                 | NoobishTextAlign.BottomRight -> rightX(), bottomY()
 
-
             let textColor = styleSheet.GetFontColor c.ThemeId state
-            spriteBatch.DrawString(font, line, Vector2(floor textX, floor (startY + textY)), textColor, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f)
-            startY <- startY + float32 font.LineSpacing
+            if c.TextWrap then
+                textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(floor textX, floor (startY + textY))) layer textColor line
+            else
+                textBatch.DrawSingleLine font fontSize (Vector2(floor textX, floor (startY + textY)))  layer textColor line
+            startY <- startY + float32 font.Metrics.LineHeight * float32 fontSize
 
     let private drawScrollBars
         (styleSheet: NoobishStyleSheet)
@@ -361,13 +363,15 @@ module NoobishMonoGame =
             let x = bounds.X + bounds.Width - scrollBarWidth
             let color = Color.Multiply(scrollBarColor, progress)
 
-            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + 4f))(Vector2(scrollBarWidth, bounds.Height - 8f)) color scrollbarDrawable
+            let layer = 1f - float32 c.ZIndex / 255.0f
+
+            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + 4f))(Vector2(scrollBarWidth, bounds.Height - 8f)) layer color scrollbarDrawable
 
             let pinPosition =  - ( cs.ScrollY / c.OverflowHeight) * bounds.Height
             let pinHeight = ( c.Height / c.OverflowHeight) * bounds.Height
             let color = Color.Multiply(scrollbarPinColor, progress)
 
-            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + pinPosition + 4f))(Vector2(scrollBarWidth, pinHeight - 8f)) color scrollbarPinDrawable
+            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + pinPosition + 4f))(Vector2(scrollBarWidth, pinHeight - 8f)) layer color scrollbarPinDrawable
 
     let private drawSlider
         (styleSheet: NoobishStyleSheet)
@@ -379,6 +383,7 @@ module NoobishMonoGame =
         _scrollX
         _scrollY =
 
+        let layer = 1f - float32 c.ZIndex / 255f
         let pinWidth = 25.0f
         let pinHeight = styleSheet.GetHeight "SliderPin" "default"
         if pinHeight < 1f then failwith "SliderPin:default height is 0"
@@ -396,7 +401,7 @@ module NoobishMonoGame =
         let color = styleSheet.GetColor "Slider" "default"
 
         let barDrawables = styleSheet.GetDrawables "Slider" "default"
-        drawDrawable textureAtlas spriteBatch barPosition barSize color barDrawables
+        drawDrawable textureAtlas spriteBatch barPosition barSize layer color barDrawables
 
         // Pin
         let relativePosition = (slider.Value - slider.Min) / (slider.Max - slider.Min)
@@ -408,7 +413,7 @@ module NoobishMonoGame =
         let color = styleSheet.GetColor "SliderPin" "default"
 
         let pinDrawables = styleSheet.GetDrawables "SliderPin" "default"
-        drawDrawable textureAtlas spriteBatch pinPosition pinSize color pinDrawables
+        drawDrawable textureAtlas spriteBatch pinPosition pinSize layer color pinDrawables
 
     let blinkInterval = TimeSpan.FromSeconds 1.2
 
@@ -422,6 +427,7 @@ module NoobishMonoGame =
         (textbox: TextboxModel)
         (time: TimeSpan) =
 
+        let layer = 1f - float32 (c.ZIndex + 32) / 255f
         let bounds = c.Content
         let cursorIndex = textbox.Cursor
 
@@ -432,8 +438,9 @@ module NoobishMonoGame =
                 ""
 
         let fontId = styleSheet.GetFont c.ThemeId "default"
-        let font = content.Load<SpriteFont>  fontId
-        let size = font.MeasureString textUpToCursor
+        let font = content.Load<NoobishFont>  fontId
+        let fontSize = styleSheet.GetFontSize c.ThemeId "default"
+        let struct(textWidth, textHeight) = NoobishFont.measureSingleLineText font fontSize textUpToCursor
 
         let timeFocused = (time - cs.FocusedTime)
         let blinkProgress = MathF.Pow(float32 (timeFocused.TotalSeconds % blinkInterval.TotalSeconds), 5f)
@@ -444,14 +451,16 @@ module NoobishMonoGame =
 
         let drawables = styleSheet.GetDrawables "Cursor" "default"
 
-        let position = Vector2(float32 bounds.X + size.X, float32 bounds.Y)
+        let position = Vector2(float32 bounds.X + textWidth, float32 bounds.Y)
 
         let cursorWidth = styleSheet.GetWidth "Cursor" "default"
         if cursorWidth = 0f then failwith "Cursor:defaul width is 0"
-        let size = Vector2(cursorWidth, float32 font.LineSpacing)
-        drawDrawable textureAtlas spriteBatch position size color drawables
+        let size = Vector2(cursorWidth, textHeight)
+        drawDrawable textureAtlas spriteBatch position size layer color drawables
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
+        let layer = 1f - float32 c.ZIndex / 255f
+
         match t.Texture with
         | NoobishTextureId.Basic(textureId) ->
             let texture = content.Load<Texture2D> textureId
@@ -464,7 +473,7 @@ module NoobishMonoGame =
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = toRadians t.Rotation
             let textureColor = if c.Enabled then t.TextureColor else t.TextureColorDisabled
-            spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
+            spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, layer)
 
 
         | NoobishTextureId.Atlas(aid, tid) ->
@@ -480,7 +489,7 @@ module NoobishMonoGame =
             let rotation = toRadians t.Rotation
             let textureColor = if c.Enabled then t.TextureColor else t.TextureColorDisabled
 
-            spriteBatch.Draw(texture.Atlas, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, 0.0f)
+            spriteBatch.Draw(texture.Atlas, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, layer)
 
         | NoobishTextureId.NinePatch (aid, tid) ->
 
@@ -511,6 +520,7 @@ module NoobishMonoGame =
         (settings: NoobishSettings)
         (graphics: GraphicsDevice)
         (spriteBatch: SpriteBatch)
+        (textBatch: TextBatch)
         (debug: bool)
         (time: TimeSpan)
         (c: NoobishLayoutElement)
@@ -535,8 +545,8 @@ module NoobishMonoGame =
             createRectangle
                 sourceStartX
                 sourceStartY
-                ((min sourceWidth (float32 parentRectangle.Width)) + 1f)
-                ((min sourceHeight (float32 parentRectangle.Height)) + 1f)
+                ((min sourceWidth (float32 parentRectangle.Width)))
+                ((min sourceHeight (float32 parentRectangle.Height)))
 
 
         let oldScissorRect = graphics.ScissorRectangle
@@ -564,7 +574,7 @@ module NoobishMonoGame =
         | Some (texture) ->
             drawImage content settings spriteBatch c texture totalScrollX totalScrollY
         | None -> ()
-        drawText styleSheet content spriteBatch c cs totalScrollX totalScrollY
+
         drawScrollBars styleSheet state textureAtlas spriteBatch c time totalScrollX totalScrollY
 
         if debug then
@@ -588,6 +598,7 @@ module NoobishMonoGame =
                 debugDrawBorders spriteBatch pixel (Color.Multiply(Color.Red, 0.5f)) r
 
         spriteBatch.End()
+        drawText styleSheet content textBatch c cs totalScrollX totalScrollY
 
         (*
             Viewport is the visible area. Nothing is rendered outside.
@@ -613,7 +624,7 @@ module NoobishMonoGame =
                             (min sourceWidth (float32 parentBounds.Width))
                             (min sourceHeight (float32 parentBounds.Height))
 
-                    drawComponent styleSheet state content settings graphics spriteBatch debug time child totalScrollX totalScrollY viewport
+                    drawComponent styleSheet state content settings graphics spriteBatch textBatch debug time child totalScrollX totalScrollY viewport
 
         | NoobishLayout.Grid(_cols, _rows) ->
             for c in c.Children do
@@ -626,13 +637,13 @@ module NoobishMonoGame =
                             bounds.Y
                             bounds.Width
                             bounds.Height
-                    drawComponent styleSheet state content settings graphics spriteBatch debug time c totalScrollX totalScrollY viewport
+                    drawComponent styleSheet state content settings graphics spriteBatch textBatch debug time c totalScrollX totalScrollY viewport
         | NoobishLayout.Absolute | NoobishLayout.OverlaySource ->
             let viewport = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
             for child in c.Children do
                 let cs = state.[child.Id]
                 if cs.Visible then
-                    drawComponent styleSheet state content settings graphics spriteBatch debug time child totalScrollX totalScrollY viewport
+                    drawComponent styleSheet state content settings graphics spriteBatch textBatch debug time child totalScrollX totalScrollY viewport
         | NoobishLayout.None -> ()
 
 
@@ -641,31 +652,33 @@ module NoobishMonoGame =
 
     let private fpsTimer = TimeSpan.FromSeconds(0.1)
 
-    let private drawFps (content: ContentManager) (spriteBatch: SpriteBatch) (ui: NoobishUI) (time:TimeSpan) =
+    let private drawFps (content: ContentManager) (spriteBatch: SpriteBatch) (textBatch: TextBatch) (ui: NoobishUI) (time:TimeSpan) =
 
         let pixel = content.Load<Texture2D> ui.Settings.Pixel
         ui.FPSCounter <- ui.FPSCounter + 1
 
-        let font = content.Load<SpriteFont> ui.Settings.FontSettings.Normal
-        spriteBatch.Begin(samplerState = SamplerState.PointClamp)
 
-        let (areaWidth, areaHeight) = ui.MeasureText ui.Settings.FontSettings.Normal "255"
+        let fontId = ui.StyleSheet.GetFont "Default" "default"
+        let font = content.Load<NoobishFont> fontId
+        let struct(areaWidth, areaHeight) = NoobishFont.measureSingleLineText font 32 "255"
 
         let fpsText = (sprintf "%i" (ui.FPS * 10))
-        let (fpsWidth, fpsHeight) = ui.MeasureText ui.Settings.FontSettings.Normal fpsText
+        let struct(fpsWidth, fpsHeight) = NoobishFont.measureSingleLineText font 32 fpsText
         let textX = areaWidth - fpsWidth
         let textY = areaHeight - fpsHeight
 
-        drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 0.0f 0.0f (float32 areaWidth + 10.0f) (float32 areaHeight + 10.0f)
-        spriteBatch.DrawString (font, fpsText, Vector2(float32 textX + 5.0f, float32 textY + 5.0f), Color.White)
-        spriteBatch.End()
 
+
+        spriteBatch.Begin()
+        drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 0.0f 0.0f (float32 areaWidth + 10.0f) (float32 areaHeight + 10.0f)
+        textBatch.DrawSingleLine font 32  (Vector2(float32 textX + 5.0f, float32 textY + 5.0f)) 1f Color.White fpsText
+        spriteBatch.End()
         if time - ui.FPSTime >= fpsTimer then
             ui.FPS <- ui.FPSCounter
             ui.FPSCounter <- 0
             ui.FPSTime <- time
 
-    let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (ui: NoobishUI)  (time: TimeSpan) =
+    let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (textBatch: TextBatch) (ui: NoobishUI)  (time: TimeSpan) =
 
         let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
 
@@ -673,11 +686,11 @@ module NoobishMonoGame =
             layer |> Array.iter(fun e ->
                 let es = ui.State.[e.Id]
                 if es.Visible then
-                    drawComponent ui.StyleSheet ui.State content ui.Settings graphics spriteBatch ui.Debug time e 0.0f 0.0f source
+                    drawComponent ui.StyleSheet ui.State content ui.Settings graphics spriteBatch textBatch ui.Debug time e 0.0f 0.0f source
             )
 
         if ui.Debug || ui.FPSEnabled then
-            drawFps content spriteBatch ui time
+            drawFps content spriteBatch textBatch ui time
 
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
 
@@ -712,7 +725,7 @@ module NoobishMonoGame =
 
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
             for layer in ui.Layers do
-                Noobish.Input.scroll ui.Version ui.State.TempElements layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
+                Noobish.Input.scroll ui.Version ui.State.TempElements layer (float32 mousePosition.X) (float32 mousePosition.Y) 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
     let updateKeyboard (ui: NoobishUI)  (previous: KeyboardState) (current: KeyboardState) (_gameTime: GameTime) =
         ui.State.TempElements.Clear()
@@ -815,7 +828,7 @@ module Program =
 
             ui.Version <- Guid.NewGuid()
 
-            ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.MeasureText ui.StyleSheet ui.Settings ui.State.Update (i + 1) width height components) |> List.toArray
+            ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.Content ui.StyleSheet ui.Settings ui.State.Update (i + 1) width height components) |> List.toArray
 
 
             ui.Components.Clear()

@@ -8,6 +8,7 @@ open SixLabors.ImageSharp.Processing
 open Microsoft.Xna.Framework.Content.Pipeline
 open Microsoft.Xna.Framework.Content.Pipeline.Graphics
 open System.Collections.Generic
+open Microsoft.Xna.Framework.Graphics
 
 type TextureAtlasItem =
 | Texture
@@ -129,6 +130,7 @@ type StyleJson = {
     width: int
     height: int
     font: string
+    fontSize: int
     fontColor: string
     color: string
     padding: int[]
@@ -139,15 +141,64 @@ type StyleJson = {
 
 type StyleSheetContent = {
     Name: string
-    Font: string
     TextureAtlas: string
 
     Widths: (string*(string*float32)[])[]
     Heights: (string*(string*float32)[])[]
     Fonts: (string*(string*string)[])[]
+    FontSizes: (string*(string*int)[])[]
     FontColors: (string*(string*string)[])[]
     Colors: (string*(string*string)[])[]
     Drawables: (string*(string*string[][])[])[]
     Paddings: (string*(string*(int*int*int*int))[])[]
     Margins: (string*(string*(int*int*int*int))[])[]
+}
+
+
+type MSDFAtlas = {
+    ``type``: string
+    distanceRange: float32
+    size: float32
+    width: int
+    height: int
+    yOrigin: string
+
+}
+
+type MSDFMetrics = {
+    emSize: int
+    lineHeight: float32
+    ascender: float32
+    descender: float32
+    underlineY: float32
+    underlineThickness: float32
+}
+
+type MSDFBounds = {
+    top:float32
+    right:float32
+    bottom: float32
+    left: float32
+}
+
+type MSDFGlyph = {
+    unicode: int64
+    advance: float32
+    planeBounds: MSDFBounds
+    atlasBounds: MSDFBounds
+}
+
+type MSDFKerning = {
+    unicode1: int64
+    unicode2: int64
+    advance: float32
+}
+
+
+type MSDFFont = {
+    atlas: MSDFAtlas
+    metrics: MSDFMetrics
+    glyphs: MSDFGlyph[]
+    kerning: MSDFKerning[]
+    texture: ExternalReference<TextureContent>
 }

@@ -1,19 +1,18 @@
 {
-    "TextureAtlas": "Content/Light/LightAtlas.json",
-    "Font": "Content/AnonymousPro16",
+    "TextureAtlas": "Light/LightAtlas.json",
     "Styles": {
         "Default": {
             "default": {
-                "padding": [5, 5, 5 ,5],
-                "margin": [4, 4, 4, 4],
+                "font": "Arial",
+                "fontSize": 16,
                 "fontColor": "4b692fff",
-                "color": "cbdbfcff"
+                "padding": [5, 5, 5 ,5],
+                "margin": [4, 4, 4, 4]
             },
             "disabled": {
                 "padding": [5, 5, 5 ,5],
                 "margin": [4, 4, 4, 4],
-                "fontColor": "4b692fff",
-                "color": "306082ff"
+                "fontColor": "3f3f74ff"
             }
         },
         "Panel": {
@@ -33,14 +32,13 @@
                 ]
             },
             "toggled": {
-                "color": "4b692fff",
                 "drawables": [
                     ["button-toggled.9"]
                 ]
             },
             "disabled": {
                 "drawables": [
-                    ["button-toggled.9"]
+                    ["button-disabled.9"]
                 ]
             }
         },
@@ -49,6 +47,21 @@
                 "drawables": [
                     ["button-default.9"]
                 ]
+            }
+        },
+        "H1": {
+            "default": {
+                "fontSize": 26
+            }
+        },
+        "H2": {
+            "default": {
+                "fontSize": 20
+            }
+        },
+        "H3": {
+            "default": {
+                "fontSize": 16
             }
         },
         "TextBox": {
@@ -99,6 +112,12 @@
                 "width": 8,
                 "color": "5f6b80ff",
                 "drawables": [ ["scrollbar.9"] ]
+            }
+        },
+        "Scroll": {
+            "default": {
+                "margin": [0,0,0,0],
+                "padding": [0,0,0,0]
             }
         }
     }

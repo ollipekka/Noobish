@@ -21,13 +21,6 @@ type StyleSheetReader () =
         let a = v &&& 255;
         Color(r, g, b, a)
 
-
-    let toReadOnlyDictionary (dictionary: Dictionary<string, Dictionary<string, 'T>>) =
-        dictionary
-            |> Seq.map(fun kvp -> KeyValuePair(kvp.Key, kvp.Value :> IReadOnlyDictionary<string, 'T>))
-            |> Dictionary
-            :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>
-
     let readFloat32Arrays (reader: ContentReader)  =
 
         let dict = Dictionary<string, Dictionary<string, float32>>()
@@ -42,6 +35,24 @@ type StyleSheetReader () =
             for j = 0 to count2 - 1 do
                 let state = reader.ReadString()
                 let v = reader.ReadSingle()
+                dict2.[state] <- v
+
+        toReadOnlyDictionary dict
+
+    let readInt32Arrays (reader: ContentReader)  =
+
+        let dict = Dictionary<string, Dictionary<string, int32>>()
+        let count = reader.ReadInt32()
+
+        for i = 0 to count - 1 do
+            let name = reader.ReadString()
+            let count2 = reader.ReadInt32()
+
+            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+
+            for j = 0 to count2 - 1 do
+                let state = reader.ReadString()
+                let v = reader.ReadInt32()
                 dict2.[state] <- v
 
         toReadOnlyDictionary dict
@@ -144,10 +155,10 @@ type StyleSheetReader () =
         {
             Name = reader.ReadString()
             TextureAtlasId = reader.ReadString()
-            Font = reader.ReadString()
             Widths = readFloat32Arrays reader
             Heights = readFloat32Arrays reader
             Fonts = readStringArrays reader
+            FontSizes = readInt32Arrays reader
             FontColors = readColorArrays reader
             Colors = readColorArrays reader
             Drawables = readDrawables reader

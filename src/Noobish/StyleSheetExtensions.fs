@@ -45,7 +45,6 @@ type SpriteBatch with
         | TextureType.NinePatch(top, right, bottom, left) ->
             let sourceRect = texture.SourceRectangle
 
-
             let topf = float32 top
             let rightf = float32 right
             let bottomf = float32 bottom

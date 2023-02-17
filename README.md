@@ -2,9 +2,9 @@
 
 ## Introduction
 
-Noobish is an element tree suitable for F# Elmish applications. Current reference implementation is for MonoGame, but in theory other implementations could exist. Noobish supports multiple components and it can be extended with custom components (up to a point). Noobish is built with mobile devices in mind.
+Noobish is an experimental element tree / ui library for MonoGame written with F#. Noobish supports multiple basic components and supports limited customization. Noobish can be used with mobile devices.
 
-Since Noobish is designed for Elmish, the whole element tree is rebuilt on each *'view'* call. Noobish persists state of elements between renders to keep scroll position.
+Since Noobish is designed for Elmish, the whole element tree is rebuilt on each *'view'* call. Noobish persists state of elements between view cycles to keep scroll position.
 
 ## Supported components
 
@@ -49,13 +49,11 @@ In your content pipeline, add reference to
 
 ## Project Layout
 
-* *Noobish:* the element tree and layout modules.
-* *Noobish.Types* provides the types to use NinePatch, StyleSheet and TextureAtlas content.
-* *Noobish.Test:* unit tests for the element tree and layout modules.
-* *Noobish.Demo:* Executable MonoGame related kitchen sink and demo.
-* *Noobish.TextureAtlas.PipelineExtension:* MonoGame related processort that packs textures and turns them into .xnb file.
-* *Noobish.TextureAtlas.PipelineExtension:* MonoGame related test processort with test content.
-
+* *Noobish:* The library project consumed by the user.
+* *Noobish.Test:* The tests of the library.
+* *Noobish.Demo:* Executable demo.
+* *Noobish.Demo.Content:* Content project for the Noobish.Demo.
+* *Noobish.PipelineExtension:* MonoGame Content Pipeline Extension that creates TextureAtlases and StyleSheet.
 
 ## ToDo
 

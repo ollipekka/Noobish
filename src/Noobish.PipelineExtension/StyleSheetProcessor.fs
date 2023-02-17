@@ -12,10 +12,10 @@ open Microsoft.Xna.Framework.Content.Pipeline.Processors
 
 [<ContentProcessor(DisplayName = "Style Sheet Procesor")>]
 type StyleSheetProcessor () =
-    inherit ContentProcessor<string*string*Dictionary<string, Dictionary<string, StyleJson>>, StyleSheetContent>()
+    inherit ContentProcessor<string*Dictionary<string, Dictionary<string, StyleJson>>, StyleSheetContent>()
 
 
-    override s.Process((textureAtlasId:string, fontId: string, styles: Dictionary<string, Dictionary<string, StyleJson>>), context: ContentProcessorContext) =
+    override s.Process((textureAtlasId:string, styles: Dictionary<string, Dictionary<string, StyleJson>>), context: ContentProcessorContext) =
 
 
 
@@ -23,6 +23,7 @@ type StyleSheetProcessor () =
         let heights = Dictionary<string, Dictionary<string, float32>>()
 
         let fonts = Dictionary<string, Dictionary<string, string>>()
+        let fontSizes = Dictionary<string, Dictionary<string, int32>>()
         let fontColors = Dictionary<string, Dictionary<string, string>>()
         let colors = Dictionary<string, Dictionary<string, string>>()
         let drawables = Dictionary<string, Dictionary<string, string[][]>>()
@@ -46,6 +47,10 @@ type StyleSheetProcessor () =
                 | font ->
                     let fontByComponent = fonts.GetOrAdd name (fun () -> Dictionary())
                     fontByComponent.[stateId] <- font
+
+                if style.fontSize > 0 then
+                    let fontSizesByComponent = fontSizes.GetOrAdd name (fun () -> Dictionary())
+                    fontSizesByComponent.[stateId] <- style.fontSize
 
                 match style.fontColor with
                 | null -> ()
@@ -84,11 +89,11 @@ type StyleSheetProcessor () =
 
         {
             Name = Path.GetFileNameWithoutExtension context.OutputFilename
-            Font = fontId
             TextureAtlas = textureAtlasId.Replace(".json", "")
             Widths = toArray widths
             Heights = toArray heights
             Fonts = toArray fonts
+            FontSizes = toArray fontSizes
             FontColors = toArray fontColors
             Colors = toArray colors
             Drawables = toArray drawables
