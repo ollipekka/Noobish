@@ -290,7 +290,7 @@ let label attributes = { ThemeId = "Label"; Children = []; Attributes = attribut
 let h1 attributes = { ThemeId = "H1"; Children = []; Attributes = attributes }
 let h2 attributes = { ThemeId = "H2"; Children = []; Attributes = attributes }
 let h3 attributes = { ThemeId = "H3"; Children = []; Attributes = attributes }
-let textBox attributes = { ThemeId = "TextBox"; Children = []; Attributes = attributes @ [KeyTypedEnabled] }
+let textBox attributes = { ThemeId = "TextBox"; Children = []; Attributes = textAlign NoobishTextAlign.TopLeft :: KeyTypedEnabled :: attributes }
 let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlign.TopLeft :: attributes }
 let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
 let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
@@ -473,9 +473,6 @@ module Logic =
         let mutable toggled = false
         let mutable zIndex = zIndex
         let mutable overlay = false
-
-
-        let mutable cursorWidth = 2f
 
         let mutable textAlign = NoobishTextAlign.Left
         let mutable text = ""
@@ -882,7 +879,7 @@ module Logic =
 
                 newChildren.Add(childComponent)
 
-                let childEndX = (offsetX + childComponent.OuterWidth) // ceil fixes
+                let childEndX = (offsetX + childComponent.OuterWidth)
                 if childComponent.IsBlock || (childEndX + parentComponent.PaddingHorizontal) >= parentBounds.Width then
                     offsetX <- 0.0f
                     offsetY <- offsetY + childComponent.OuterHeight
@@ -932,8 +929,8 @@ module Logic =
             let cellUsed = Array2D.create cols rows false
 
             for child in c.Children do
-                let childStartX = floor (parentBounds.X + (float32 col) * (colWidth))
-                let childStartY = floor (parentBounds.Y + (float32 row) * (rowHeight))
+                let childStartX = (parentBounds.X + (float32 col) * (colWidth))
+                let childStartY = (parentBounds.Y + (float32 row) * (rowHeight))
                 let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
                 let childComponent = layoutElement content styleSheet settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY colWidth rowHeight child
 

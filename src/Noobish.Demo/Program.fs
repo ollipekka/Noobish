@@ -328,7 +328,7 @@ let createGraphicsDevice (game: Game) =
     #endif
     //graphics.SynchronizeWithVerticalRetrace <- false
     graphics.PreferMultiSampling <- true
-    graphics.PreferHalfPixelOffset <- true
+    graphics.PreferHalfPixelOffset <- false
     graphics.SupportedOrientations <-
         DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
     graphics.ApplyChanges()

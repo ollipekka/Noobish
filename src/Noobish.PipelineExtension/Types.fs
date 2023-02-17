@@ -79,10 +79,24 @@ module NinePatch =
         let left = findLeftSlice image
 
         // Remove the metadata border.
-        image.Mutate(fun img -> img.Crop(Rectangle(1, 1, image.Width - 2, image.Height - 2)) |> ignore)
+        //image.Mutate(fun img -> img.Crop(Rectangle(1, 1, image.Width - 2, image.Height - 2)) |> ignore)
 
+        // Copy top edge.
+        for x = 0 to image.Width - 1 do
+            image.[x, 0] <- image.[x, 1]
 
-        // Subtract 1 from all sides because of the metadata row / col.
+        // Copy bottom edge.
+        for x = 0 to image.Width - 1 do
+            image.[x, image.Height - 1] <- image.[x, image.Height - 2]
+
+        // Copy left edge.
+        for y = 0 to image.Height - 1 do
+            image.[0, y] <- image.[1, y]
+
+        // Copy left edge.
+        for y = 0 to image.Height - 1 do
+            image.[image.Width - 1, y] <- image.[image.Width - 2, y]
+
         (name, NinePatch (top - 1, right - 1, bottom - 1, left - 1), image)
 
 
