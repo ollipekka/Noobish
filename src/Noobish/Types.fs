@@ -33,7 +33,6 @@ type NoobishMouseButtonId =
 
 
 type NoobishSettings = {
-    Scale: float32
     Pixel: string
 }
 

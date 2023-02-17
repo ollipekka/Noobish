@@ -464,9 +464,8 @@ module Logic =
         let cid = $"%s{parentPath}/%s{themeId}-(%g{startX},%g{startY})"
         let cstate = "default"
 
-        let scale (v: int) = float32 v * settings.Scale
-        let scaleTuple (left, right, top, bottom) =
-            (scale left, scale right, scale top, scale bottom)
+        let toFloat (left, right, top, bottom) =
+            (float32 left, float32 right, float32 top, float32 bottom)
 
         let mutable name = ""
         let mutable enabled = true
@@ -481,8 +480,8 @@ module Logic =
         let mutable textAlign = NoobishTextAlign.Left
         let mutable text = ""
         let mutable textWrap = false
-        let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = scaleTuple (styleSheet.GetPadding themeId cstate)
-        let mutable marginLeft, marginRight, marginTop, marginBottom = scaleTuple (styleSheet.GetMargin themeId cstate)
+        let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = toFloat (styleSheet.GetPadding themeId cstate)
+        let mutable marginLeft, marginRight, marginTop, marginBottom = toFloat (styleSheet.GetMargin themeId cstate)
 
         let mutable fillHorizontal = false
         let mutable fillVertical = false
@@ -528,34 +527,34 @@ module Logic =
             | Name v ->
                 name <- v
             | Padding (left, right, top, bottom) ->
-                paddingLeft <- scale left
-                paddingRight <- scale right
-                paddingTop <- scale top
-                paddingBottom <- scale bottom
+                paddingLeft <- float32 left
+                paddingRight <- float32 right
+                paddingTop <- float32 top
+                paddingBottom <- float32 bottom
             | PaddingLeft left ->
-                paddingLeft <- scale left
+                paddingLeft <- float32 left
             | PaddingRight right ->
-                paddingRight <- scale right
+                paddingRight <- float32 right
             | PaddingTop top ->
-                paddingTop <- scale top
+                paddingTop <- float32 top
             | PaddingBottom bottom ->
-                paddingBottom <- scale bottom
+                paddingBottom <- float32 bottom
             | Margin (left, right, top, bottom) ->
-                marginLeft <- scale left
-                marginRight <- scale right
-                marginTop <- scale top
-                marginBottom <- scale bottom
+                marginLeft <- float32 left
+                marginRight <- float32 right
+                marginTop <- float32 top
+                marginBottom <- float32 bottom
             | MarginLeft left ->
-                marginLeft <- scale left
+                marginLeft <- float32 left
             | MarginRight right ->
-                marginLeft <- scale right
+                marginLeft <- float32 right
             | MarginTop top ->
-                marginTop <- scale top
+                marginTop <- float32 top
             | MarginBottom bottom ->
-                marginBottom <- scale bottom
+                marginBottom <- float32 bottom
             | MinSize (width, height) ->
-                minWidth <- scale width
-                minHeight <- scale height
+                minWidth <- float32 width
+                minHeight <- float32 height
             // Text
             | Text(value) -> text <- value
             | TextAlign (value) -> textAlign <- value
@@ -668,8 +667,8 @@ module Logic =
                 fillHorizontal <- true
                 fillVertical <- true
             | RelativePosition (x, y) ->
-                relativeX <- scale x
-                relativeY <- scale y
+                relativeX <- float32 x
+                relativeY <- float32 y
             | KeyboardShortcut k ->
                 keyboardShortcut <- k
                 consumedKeys.Add k

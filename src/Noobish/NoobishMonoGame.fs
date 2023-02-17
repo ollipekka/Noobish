@@ -241,7 +241,7 @@ module NoobishMonoGame =
         let drawables = styleSheet.GetDrawables c.ThemeId cstate
 
         let position = Vector2(float32 rect.X, float32 rect.Y)
-        let size = Vector2( float32 rect.Width, float32 rect.Height)
+        let size = Vector2( float32 rect.Width - 1f, float32 rect.Height - 1f)
 
         let layer = 1f - (float32 c.ZIndex / 255f)
         drawDrawable textureAtlas spriteBatch position size layer color drawables
@@ -545,8 +545,8 @@ module NoobishMonoGame =
             createRectangle
                 sourceStartX
                 sourceStartY
-                ((min sourceWidth (float32 parentRectangle.Width)) + 1f)
-                ((min sourceHeight (float32 parentRectangle.Height)) + 1f)
+                ((min sourceWidth (float32 parentRectangle.Width)))
+                ((min sourceHeight (float32 parentRectangle.Height)))
 
 
         let oldScissorRect = graphics.ScissorRectangle
@@ -725,7 +725,7 @@ module NoobishMonoGame =
 
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
             for layer in ui.Layers do
-                Noobish.Input.scroll ui.Version ui.State.TempElements layer (float32 mousePosition.X) (float32 mousePosition.Y) ui.Settings.Scale gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
+                Noobish.Input.scroll ui.Version ui.State.TempElements layer (float32 mousePosition.X) (float32 mousePosition.Y) 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
     let updateKeyboard (ui: NoobishUI)  (previous: KeyboardState) (current: KeyboardState) (_gameTime: GameTime) =
         ui.State.TempElements.Clear()

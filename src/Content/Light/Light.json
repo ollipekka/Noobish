@@ -49,6 +49,21 @@
                 ]
             }
         },
+        "H1": {
+            "default": {
+                "fontSize": 26
+            }
+        },
+        "H2": {
+            "default": {
+                "fontSize": 20
+            }
+        },
+        "H3": {
+            "default": {
+                "fontSize": 16
+            }
+        },
         "TextBox": {
             "default": {
                 "drawables": [
@@ -97,6 +112,12 @@
                 "width": 8,
                 "color": "5f6b80ff",
                 "drawables": [ ["scrollbar.9"] ]
+            }
+        },
+        "Scroll": {
+            "default": {
+                "margin": [0,0,0,0],
+                "padding": [0,0,0,0]
             }
         }
     }

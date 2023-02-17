@@ -89,12 +89,10 @@ module Text =
                         paragraph [text loremIpsum2; textTopCenter; rowspan 1; ]
                         scroll
                             [
-                                paragraph [text loremIpsum2; textTopCenter;
-                                name "FailedParagraph2";]
+                                paragraph [text loremIpsum2; textTopCenter;]
                             ]
                             [
                                 rowspan 1
-                                name "FailedScroll2";
                             ]
                         scroll
                             [
@@ -115,10 +113,9 @@ module Text =
                     [
                         div
                             [
-                                label [text "Font size 22"; block]
-                                label [text "Regular"; block]
-                                label [text "Bold"; block]
-                                label [text "Italic"; block]
+                                h1 [text "Header 1"; block]
+                                h2 [text "Header 2"; block]
+                                h3 [text "Header 3"; block]
                             ]
                             [
 
@@ -329,8 +326,8 @@ let createGraphicsDevice (game: Game) =
     graphics.PreferredBackBufferWidth <- 1280
     graphics.PreferredBackBufferHeight <- 720
     #endif
-    graphics.SynchronizeWithVerticalRetrace <- false
-    //graphics.PreferMultiSampling <- true
+    //graphics.SynchronizeWithVerticalRetrace <- false
+    graphics.PreferMultiSampling <- true
     graphics.PreferHalfPixelOffset <- true
     graphics.SupportedOrientations <-
         DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
@@ -369,7 +366,6 @@ type DemoGame () as game =
         )
 
         let settings: NoobishSettings = {
-            Scale = 1f
             Pixel = "Pixel"
         }
 
