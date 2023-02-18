@@ -54,6 +54,9 @@ type TextureAtlasProcessor () =
             context.AddDependency f
 
         let textures = TexturePacker.createTextures files
+
+        if textures.Length = 0 then failwith "No textures in the atlas."
+
         let (regions, atlasWidth, atlasHeight) = TexturePacker.createRegions s.MaxAtlasWidth s.MaxAtlasHeight padding s.ResizeToPowerOfTwo textures
 
         let image = TexturePacker.createImage textures regions padding atlasWidth atlasHeight

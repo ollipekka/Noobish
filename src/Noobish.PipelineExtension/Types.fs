@@ -128,11 +128,18 @@ module TextureAtlasJson =
 
     let getFiles (path: string) (config: TextureAtlasJson) =
         let matcher = Matcher()
-        for path in config.Include do
-            matcher.AddInclude path |> ignore
 
-        for path in config.Exclude do
-            matcher.AddExclude path |> ignore
+        match config.Include with
+        | null -> failwith "Include element is mandatory."
+        | includePaths ->
+            for path in includePaths do
+                matcher.AddInclude path |> ignore
+
+        match config.Exclude with
+        | null -> ()
+        | excludePaths ->
+            for path in excludePaths do
+                matcher.AddExclude path |> ignore
 
         matcher.Execute(new DirectoryInfoWrapper(new DirectoryInfo(path))).Files |> Seq.map (fun f -> sprintf "%s/%s" path f.Path) |> Seq.toArray
 
