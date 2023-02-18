@@ -241,7 +241,7 @@ module NoobishMonoGame =
         let drawables = styleSheet.GetDrawables c.ThemeId cstate
 
         let position = Vector2(float32 rect.X, float32 rect.Y)
-        let size = Vector2( float32 rect.Width - 1f, float32 rect.Height - 1f)
+        let size = Vector2( float32 rect.Width - 2f, float32 rect.Height - 2f)
 
         let layer = 1f - (float32 c.ZIndex / 255f)
         drawDrawable textureAtlas spriteBatch position size layer color drawables
@@ -263,18 +263,18 @@ module NoobishMonoGame =
     let private drawText (styleSheet: NoobishStyleSheet) (content: ContentManager) (textBatch: TextBatch) (c: NoobishLayoutElement) (cs: NoobishLayoutElementState) scrollX scrollY =
         let mutable startY = 0.0f
 
-        let textLines =
+        let text =
             cs.Model
             |> Option.map(
                 function
                 | Textbox model' ->
                     if not (String.IsNullOrEmpty model'.Text) then
-                        Some([|model'.Text|])
+                        Some(model'.Text)
                     else
                         None
                 | _ -> None)
             |> Option.flatten
-            |> Option.defaultValue [|c.Text|]
+            |> Option.defaultValue c.Text
 
         let layer = 1f - float32 (c.ZIndex + 32) / 255.0f
         let state =
@@ -290,49 +290,49 @@ module NoobishMonoGame =
         let fontSize = (styleSheet.GetFontSize c.ThemeId state)
 
         let bounds = c.Content
-        for line in textLines do
 
 
-            let struct(textSizeX, textSizeY) =
-                if c.TextWrap then
-                    NoobishFont.measureMultiLineText font fontSize bounds.Width line
-                else
-                    NoobishFont.measureSingleLineText font fontSize line
-
-
-            let leftX () = bounds.X + scrollX
-            let rightX () = bounds.X + bounds.Width - textSizeX
-
-            let topY () =
-                bounds.Y + scrollY
-
-            let bottomY () =
-                bounds.Y + scrollY + bounds.Height - textSizeY
-
-            let centerX () =
-                bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
-
-            let centerY () =
-                bounds.Y + scrollY + bounds.Height / 2.0f - textSizeY / 2.0f
-
-            let textX, textY =
-                match c.TextAlignment with
-                | NoobishTextAlign.TopLeft -> leftX(), topY()
-                | NoobishTextAlign.TopCenter -> centerX(), topY()
-                | NoobishTextAlign.TopRight -> rightX(), topY()
-                | NoobishTextAlign.Left -> leftX(), centerY()
-                | NoobishTextAlign.Center -> centerX(), centerY()
-                | NoobishTextAlign.Right -> rightX(), centerY()
-                | NoobishTextAlign.BottomLeft -> leftX(), bottomY()
-                | NoobishTextAlign.BottomCenter -> centerX(), bottomY()
-                | NoobishTextAlign.BottomRight -> rightX(), bottomY()
-
-            let textColor = styleSheet.GetFontColor c.ThemeId state
+        let struct(textSizeX, textSizeY) =
             if c.TextWrap then
-                textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(floor textX, floor (startY + textY))) layer textColor line
+                NoobishFont.measureMultiLineText font fontSize bounds.Width text
             else
-                textBatch.DrawSingleLine font fontSize (Vector2(floor textX, floor (startY + textY)))  layer textColor line
-            startY <- startY + float32 font.Metrics.LineHeight * float32 fontSize
+                NoobishFont.measureSingleLineText font fontSize text
+
+
+        let leftX () = bounds.X + scrollX
+        let rightX () = bounds.X + bounds.Width - textSizeX
+
+        let topY () =
+            bounds.Y + scrollY
+
+        let bottomY () =
+            bounds.Y + scrollY + bounds.Height - textSizeY
+
+        let centerX () =
+            bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
+
+        let centerY () =
+            bounds.Y + scrollY + bounds.Height / 2.0f - textSizeY / 2.0f
+
+        let textX, textY =
+            match c.TextAlignment with
+            | NoobishTextAlign.TopLeft -> leftX(), topY()
+            | NoobishTextAlign.TopCenter -> centerX(), topY()
+            | NoobishTextAlign.TopRight -> rightX(), topY()
+            | NoobishTextAlign.Left -> leftX(), centerY()
+            | NoobishTextAlign.Center -> centerX(), centerY()
+            | NoobishTextAlign.Right -> rightX(), centerY()
+            | NoobishTextAlign.BottomLeft -> leftX(), bottomY()
+            | NoobishTextAlign.BottomCenter -> centerX(), bottomY()
+            | NoobishTextAlign.BottomRight -> rightX(), bottomY()
+
+        let textColor = styleSheet.GetFontColor c.ThemeId state
+        if c.TextWrap then
+            textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textX, (startY + textY))) layer textColor text
+        else
+            textBatch.DrawSingleLine font fontSize (Vector2(textX, (startY + textY)))  layer textColor text
+
+        startY <- startY + float32 font.Metrics.LineHeight * float32 fontSize
 
     let private drawScrollBars
         (styleSheet: NoobishStyleSheet)
@@ -440,6 +440,7 @@ module NoobishMonoGame =
         let fontId = styleSheet.GetFont c.ThemeId "default"
         let font = content.Load<NoobishFont>  fontId
         let fontSize = styleSheet.GetFontSize c.ThemeId "default"
+        let fontSizef = float32 (styleSheet.GetFontSize c.ThemeId "default")
         let struct(textWidth, textHeight) = NoobishFont.measureSingleLineText font fontSize textUpToCursor
 
         let timeFocused = (time - cs.FocusedTime)
@@ -448,10 +449,9 @@ module NoobishMonoGame =
         let cursorColor = styleSheet.GetColor "Cursor" "default"
         let color = Color.Lerp(cursorColor, Color.Transparent, float32 blinkProgress)
 
-
         let drawables = styleSheet.GetDrawables "Cursor" "default"
 
-        let position = Vector2(float32 bounds.X + textWidth, float32 bounds.Y)
+        let position = Vector2(float32 bounds.X + textWidth, float32 bounds.Y + font.Metrics.Descender * fontSizef)
 
         let cursorWidth = styleSheet.GetWidth "Cursor" "default"
         if cursorWidth = 0f then failwith "Cursor:defaul width is 0"
@@ -570,6 +570,7 @@ module NoobishMonoGame =
                     drawCursor styleSheet content textureAtlas spriteBatch c cs t time
         | None ->
             drawBackground styleSheet state textureAtlas spriteBatch c time totalScrollX totalScrollY
+
         match c.Texture with
         | Some (texture) ->
             drawImage content settings spriteBatch c texture totalScrollX totalScrollY

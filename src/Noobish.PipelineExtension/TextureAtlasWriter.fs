@@ -26,11 +26,12 @@ type TextureAtlasWriter () =
             | Texture ->
                 writer.Write("Texture")
 
+            let padding = input.Padding
             let region = input.Regions.[name]
-            writer.Write (region.X + input.Padding)
-            writer.Write (region.Y + input.Padding)
-            writer.Write (region.Width - 2 * input.Padding)
-            writer.Write (region.Height - 2 * input.Padding)
+            writer.Write (region.X + padding + 1)
+            writer.Write (region.Y + padding + 1)
+            writer.Write (region.Width - 2 * padding - 2)
+            writer.Write (region.Height - 2 * padding- 2)
 
 
     override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.PipelineExtension.TextureAtlasReader, Noobish"

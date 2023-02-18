@@ -162,6 +162,6 @@ type StyleSheetReader () =
             FontColors = readColorArrays reader
             Colors = readColorArrays reader
             Drawables = readDrawables reader
-            Paddings = readIntTuple4Array reader
             Margins = readIntTuple4Array reader
+            Paddings = readIntTuple4Array reader
         }

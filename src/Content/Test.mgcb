@@ -64,7 +64,7 @@
 #begin Dark/DarkAtlas.json
 /importer:TextureAtlasImporter
 /processor:TextureAtlasProcessor
-/processorParam:Padding=2
+/processorParam:Padding=1
 /processorParam:ColorKeyColor=0,0,0,255
 /processorParam:IsColorKeyEnabled=True
 /processorParam:GenerateMipmaps=False
@@ -81,7 +81,7 @@
 #begin Light/LightAtlas.json
 /importer:TextureAtlasImporter
 /processor:TextureAtlasProcessor
-/processorParam:Padding=2
+/processorParam:Padding=1
 /processorParam:ColorKeyColor=0,0,0,255
 /processorParam:IsColorKeyEnabled=True
 /processorParam:GenerateMipmaps=False

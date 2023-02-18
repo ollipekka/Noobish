@@ -49,15 +49,14 @@ type TextureAtlasProcessor () =
 
 
     override s.Process((_path: string, name: string, files: string[]), context: ContentProcessorContext) =
-
-
+        let padding = s.Padding
         for f in files do
             context.AddDependency f
 
         let textures = TexturePacker.createTextures files
-        let (regions, atlasWidth, atlasHeight) = TexturePacker.createRegions s.MaxAtlasWidth s.MaxAtlasHeight s.Padding s.ResizeToPowerOfTwo textures
+        let (regions, atlasWidth, atlasHeight) = TexturePacker.createRegions s.MaxAtlasWidth s.MaxAtlasHeight padding s.ResizeToPowerOfTwo textures
 
-        let image = TexturePacker.createImage textures regions s.Padding atlasWidth atlasHeight
+        let image = TexturePacker.createImage textures regions padding atlasWidth atlasHeight
 
         let atlasTextureFileName = Path.Combine(context.OutputDirectory, (sprintf "%sTexture.png" name))
         let stream = File.OpenWrite(atlasTextureFileName)
@@ -66,4 +65,4 @@ type TextureAtlasProcessor () =
 
         context.AddOutputFile(atlasTextureFileName)
 
-        {Name = name; Padding = s.Padding; Textures = textures; Regions = regions; Texture = s.BuildTexture (sprintf "%sTexture" name) atlasTextureFileName context}
+        {Name = name; Padding = padding; Textures = textures; Regions = regions; Texture = s.BuildTexture (sprintf "%sTexture" name) atlasTextureFileName context}
