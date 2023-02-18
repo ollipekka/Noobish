@@ -1,7 +1,7 @@
 namespace System.Collections.Generic
 
 [<AutoOpen>]
-module DictionaryExtensions =
+module internal DictionaryExtensions =
     type System.Collections.Generic.Dictionary<'TKey, 'TValue> with
 
         member d.GetOrAdd (key: 'TKey) (init: unit -> 'TValue) =
