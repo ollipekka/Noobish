@@ -7,7 +7,7 @@ open Noobish.TextureAtlas
 
 type SpriteBatch with
     member spriteBatch.DrawAtlasTexture (
-            texture: Texture,
+            texture: NoobishTexture,
             position: Vector2,
             color: Color,
             rotation: float32,
@@ -16,7 +16,7 @@ type SpriteBatch with
             layerDepth: float32) =
 
         match texture.TextureType with
-        | TextureType.Texture ->
+        | NoobishTextureType.Texture ->
             spriteBatch.Draw(
                 texture.Atlas,
                 position,
@@ -27,10 +27,10 @@ type SpriteBatch with
                 scale,
                 effect,
                 layerDepth)
-        | TextureType.NinePatch(_) -> failwith "This is for drawing textures."
+        | NoobishTextureType.NinePatch(_) -> failwith "This is for drawing textures."
 
     member spriteBatch.DrawAtlasNinePatch (
-            texture: Texture,
+            texture: NoobishTexture,
             position: Vector2,
             width: float32,
             height: float32,
@@ -41,8 +41,8 @@ type SpriteBatch with
             layerDepth: float32) =
 
         match texture.TextureType with
-        | TextureType.Texture -> failwith "This is meant for ninepatch"
-        | TextureType.NinePatch(top, right, bottom, left) ->
+        | NoobishTextureType.Texture -> failwith "This is meant for ninepatch"
+        | NoobishTextureType.NinePatch(top, right, bottom, left) ->
             let sourceRect = texture.SourceRectangle
 
             let topf = float32 top

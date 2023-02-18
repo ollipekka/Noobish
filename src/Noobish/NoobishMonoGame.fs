@@ -170,7 +170,7 @@ module NoobishMonoGame =
             SpriteEffects.None,
             1.0f)
 
-    let private drawDrawable (textureAtlas: TextureAtlas) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (layer: float32) (color: Color) (drawables: NoobishDrawable[]) =
+    let private drawDrawable (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (layer: float32) (color: Color) (drawables: NoobishDrawable[]) =
         for drawable in drawables do
             match drawable with
             | NoobishDrawable.Texture _ -> failwith "Texture not supported for cursor."
@@ -201,7 +201,7 @@ module NoobishMonoGame =
                     SpriteEffects.None,
                     layer)
 
-    let private drawBackground (styleSheet: NoobishStyleSheet) (state: NoobishState)  (textureAtlas: TextureAtlas) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (time: TimeSpan) scrollX scrollY =
+    let private drawBackground (styleSheet: NoobishStyleSheet) (state: NoobishState)  (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (time: TimeSpan) scrollX scrollY =
         let cs = state.ElementsById.[c.Id]
 
         let cstate =
@@ -337,7 +337,7 @@ module NoobishMonoGame =
     let private drawScrollBars
         (styleSheet: NoobishStyleSheet)
         (state: NoobishState)
-        (textureAtlas: TextureAtlas)
+        (textureAtlas: NoobishTextureAtlas)
         (spriteBatch: SpriteBatch)
         (c: NoobishLayoutElement)
         time
@@ -375,7 +375,7 @@ module NoobishMonoGame =
 
     let private drawSlider
         (styleSheet: NoobishStyleSheet)
-        (textureAtlas: TextureAtlas)
+        (textureAtlas: NoobishTextureAtlas)
         (spriteBatch: SpriteBatch)
         (c: NoobishLayoutElement)
         (slider: SliderModel)
@@ -420,7 +420,7 @@ module NoobishMonoGame =
     let private drawCursor
         (styleSheet: NoobishStyleSheet)
         (content: ContentManager)
-        (textureAtlas: TextureAtlas)
+        (textureAtlas: NoobishTextureAtlas)
         (spriteBatch: SpriteBatch)
         (c: NoobishLayoutElement)
         (cs: NoobishLayoutElementState)
@@ -478,7 +478,7 @@ module NoobishMonoGame =
 
         | NoobishTextureId.Atlas(aid, tid) ->
 
-            let atlas = content.Load<TextureAtlas> aid
+            let atlas = content.Load<NoobishTextureAtlas> aid
             let texture = atlas.[tid]
 
             let textureEffect = getTextureEfffect t.TextureEffect
@@ -493,7 +493,7 @@ module NoobishMonoGame =
 
         | NoobishTextureId.NinePatch (aid, tid) ->
 
-            let atlas = content.Load<TextureAtlas> aid
+            let atlas = content.Load<NoobishTextureAtlas> aid
             let texture = atlas.[tid]
 
             let textureEffect = getTextureEfffect t.TextureEffect
@@ -557,7 +557,7 @@ module NoobishMonoGame =
         spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
 
-        let textureAtlas = content.Load<TextureAtlas> (styleSheet.TextureAtlasId)
+        let textureAtlas = content.Load<NoobishTextureAtlas> (styleSheet.TextureAtlasId)
         match cs.Model with
         | Some(model) ->
             match model with

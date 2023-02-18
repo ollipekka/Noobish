@@ -8,15 +8,15 @@ open Microsoft.Xna.Framework.Graphics;
 open Noobish.TextureAtlas
 
 type TextureAtlasReader () =
-    inherit ContentTypeReader<TextureAtlas>()
+    inherit ContentTypeReader<NoobishTextureAtlas>()
 
-    override s.Read(reader: ContentReader, input: TextureAtlas) =
+    override s.Read(reader: ContentReader, input: NoobishTextureAtlas) =
 
         let name = reader.ReadString()
         let atlasTexture = reader.ReadExternalReference<Texture2D>()
         let count = reader.ReadInt32()
 
-        let textures = System.Collections.Generic.Dictionary<string, Texture>()
+        let textures = System.Collections.Generic.Dictionary<string, NoobishTexture>()
 
         for i = 0 to count - 1 do
             let textureName = reader.ReadString()
@@ -27,9 +27,9 @@ type TextureAtlasReader () =
                     let right = reader.ReadInt32()
                     let bottom = reader.ReadInt32()
                     let left = reader.ReadInt32()
-                    TextureType.NinePatch(top, right, bottom, left)
+                    NoobishTextureType.NinePatch(top, right, bottom, left)
                 else
-                    TextureType.Texture
+                    NoobishTextureType.Texture
 
             let x = reader.ReadInt32()
             let y = reader.ReadInt32()
