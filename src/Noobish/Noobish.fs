@@ -32,8 +32,7 @@ type NoobishTextureEffect =
     type NoobishTexture = {
         Texture: NoobishTextureId
         TextureEffect: NoobishTextureEffect
-        TextureColor: Color
-        TextureColorDisabled: Color
+        Color: Color
         TextureSize: NoobishTextureSize
         Rotation: int
     }
@@ -53,7 +52,7 @@ type NoobishLayoutElement = {
     FillVertical: bool
     FillHorizontal: bool
 
-    TextAlignment: NoobishTextAlign
+    TextAlignment: NoobishTextAlignment
     Text: string
     TextWrap: bool
     Texture: option<NoobishTexture>
@@ -155,6 +154,8 @@ type NoobishAttribute =
     | PaddingTop of int
     | PaddingBottom of int
 
+    | ColorOverride of Color
+
     | Margin of left: int * right: int * top: int * bottom: int
     | MarginLeft of int
     | MarginRight of int
@@ -164,7 +165,7 @@ type NoobishAttribute =
     | Overlay
 
     | Text of string
-    | TextAlign of NoobishTextAlign
+    | TextAlign of NoobishTextAlignment
     | TextWrap
 
     | SliderRange of min:float32 * max:float32
@@ -213,16 +214,31 @@ let name v = Name v
 let text value = Text(value)
 
 let textAlign v = TextAlign (v)
-let textTopLeft = TextAlign NoobishTextAlign.TopLeft
-let textTopCenter = TextAlign NoobishTextAlign.TopCenter
-let textTopRight = TextAlign NoobishTextAlign.TopRight
-let textLeft = TextAlign NoobishTextAlign.Left
-let textCenter = TextAlign NoobishTextAlign.Center
-let textRight = TextAlign NoobishTextAlign.Right
-let textBottomLeft = TextAlign NoobishTextAlign.BottomRight
-let textBottomCenter = TextAlign NoobishTextAlign.BottomCenter
-let textBottomRight = TextAlign NoobishTextAlign.BottomRight
+let textTopLeft = TextAlign NoobishTextAlignment.TopLeft
+let textTopCenter = TextAlign NoobishTextAlignment.TopCenter
+let textTopRight = TextAlign NoobishTextAlignment.TopRight
+let textLeft = TextAlign NoobishTextAlignment.Left
+let textCenter = TextAlign NoobishTextAlignment.Center
+let textRight = TextAlign NoobishTextAlignment.Right
+let textBottomLeft = TextAlign NoobishTextAlignment.BottomLeft
+let textBottomCenter = TextAlign NoobishTextAlignment.BottomCenter
+let textBottomRight = TextAlign NoobishTextAlignment.BottomRight
 let textWrap = TextWrap
+
+
+
+let color (c: string) =
+    let v =
+        if c.StartsWith "#" then
+            int(c.Replace("#", "0x"))
+        else
+            int(c.Insert(0, "0x"))
+    let r = (v >>> 24) &&& 255;
+    let g = (v >>> 16) &&& 255;
+    let b = (v >>> 8) &&& 255;
+    let a = v &&& 255;
+
+    ColorOverride (Color(r, g, b, a))
 
 let sliderRange min max = SliderRange(min, max)
 let sliderValue v = SliderValue v
@@ -290,8 +306,8 @@ let label attributes = { ThemeId = "Label"; Children = []; Attributes = attribut
 let h1 attributes = { ThemeId = "H1"; Children = []; Attributes = attributes }
 let h2 attributes = { ThemeId = "H2"; Children = []; Attributes = attributes }
 let h3 attributes = { ThemeId = "H3"; Children = []; Attributes = attributes }
-let textBox attributes = { ThemeId = "TextBox"; Children = []; Attributes = textAlign NoobishTextAlign.TopLeft :: KeyTypedEnabled :: attributes }
-let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlign.TopLeft :: attributes }
+let textBox attributes = { ThemeId = "TextBox"; Children = []; Attributes = textAlign NoobishTextAlignment.TopLeft :: KeyTypedEnabled :: attributes }
+let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlignment.TopLeft :: attributes }
 let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
 let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
 let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
@@ -474,7 +490,7 @@ module Logic =
         let mutable zIndex = zIndex
         let mutable overlay = false
 
-        let mutable textAlign = NoobishTextAlign.Left
+        let mutable textAlign = styleSheet.GetTextAlignment themeId cstate
         let mutable text = ""
         let mutable textWrap = false
         let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = toFloat (styleSheet.GetPadding themeId cstate)
@@ -495,9 +511,10 @@ module Logic =
 
         let mutable onChange: string -> unit = ignore
 
+        let mutable color = styleSheet.GetColor cid cstate
+
         let mutable texture = NoobishTextureId.None
         let mutable textureEffect = NoobishTextureEffect.None
-        let mutable textureColor = styleSheet.GetColor cid cstate
         let mutable textureSize = NoobishTextureSize.BestFitMax
         let mutable textureRotation = 0
 
@@ -549,6 +566,9 @@ module Logic =
                 marginTop <- float32 top
             | MarginBottom bottom ->
                 marginBottom <- float32 bottom
+
+            | ColorOverride c ->
+                color <- c
             | MinSize (width, height) ->
                 minWidth <- float32 width
                 minHeight <- float32 height
@@ -758,8 +778,7 @@ module Logic =
                         {
                             Texture = texture
                             TextureEffect = textureEffect
-                            TextureColor = textureColor
-                            TextureColorDisabled = Color.DimGray
+                            Color = color
                             TextureSize = textureSize
                             Rotation = textureRotation
                         }

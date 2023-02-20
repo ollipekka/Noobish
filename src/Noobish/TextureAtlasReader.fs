@@ -36,7 +36,7 @@ type TextureAtlasReader () =
             let w = reader.ReadInt32()
             let h = reader.ReadInt32()
             let region = Rectangle(x, y, w, h)
-            textures.[textureName] <- {Name = name; TextureType = textureType; SourceRectangle = region; Atlas = atlasTexture}
+            textures.[textureName] <- {Name = textureName; TextureType = textureType; SourceRectangle = region; Atlas = atlasTexture}
 
 
         {Name = name; Textures = textures}

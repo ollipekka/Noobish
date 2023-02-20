@@ -8,13 +8,6 @@ type NoobishLayout =
 | Absolute
 | None
 
-
-[<RequireQualifiedAccess>]
-type NoobishTextAlign =
-| TopLeft | TopCenter | TopRight
-| Left  | Center | Right
-| BottomLeft | BottomCenter | BottomRight
-
 [<RequireQualifiedAccess>]
 type NoobishTextureSize = Stretch | BestFitMax | BestFitMin | Original
 

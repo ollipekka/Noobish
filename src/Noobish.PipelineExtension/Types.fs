@@ -14,6 +14,34 @@ type TextureAtlasItem =
 | Texture
 | NinePatch of top:int*right:int*bottom:int*left:int
 
+module Texture =
+    let padEdges (image: Image<Rgba32>) =
+            // Copy top edge.
+        for x = 0 to image.Width - 1 do
+            image.[x, 0] <- image.[x, 1]
+
+        // Copy bottom edge.
+        for x = 0 to image.Width - 1 do
+            image.[x, image.Height - 1] <- image.[x, image.Height - 2]
+
+        // Copy left edge.
+        for y = 0 to image.Height - 1 do
+            image.[0, y] <- image.[1, y]
+
+        // Copy left edge.
+        for y = 0 to image.Height - 1 do
+            image.[image.Width - 1, y] <- image.[image.Width - 2, y]
+
+    let createData (fileName: string) =
+        let image = Image.Load<Rgba32> fileName
+        image.Mutate(
+            fun i ->
+                let resizeOptions = ResizeOptions(Mode = ResizeMode.BoxPad, Position = AnchorPositionMode.Center, Size = Size(image.Width + 2, image.Height + 2))
+                i.Resize(resizeOptions) |> ignore
+            )
+        padEdges image
+        Path.GetFileNameWithoutExtension fileName, Texture, image
+
 module NinePatch =
 
     let fileExtension = ".9.png"
@@ -81,21 +109,7 @@ module NinePatch =
         // Remove the metadata border.
         //image.Mutate(fun img -> img.Crop(Rectangle(1, 1, image.Width - 2, image.Height - 2)) |> ignore)
 
-        // Copy top edge.
-        for x = 0 to image.Width - 1 do
-            image.[x, 0] <- image.[x, 1]
-
-        // Copy bottom edge.
-        for x = 0 to image.Width - 1 do
-            image.[x, image.Height - 1] <- image.[x, image.Height - 2]
-
-        // Copy left edge.
-        for y = 0 to image.Height - 1 do
-            image.[0, y] <- image.[1, y]
-
-        // Copy left edge.
-        for y = 0 to image.Height - 1 do
-            image.[image.Width - 1, y] <- image.[image.Width - 2, y]
+        Texture.padEdges image
 
         (name, NinePatch (top - 1, right - 1, bottom - 1, left - 1), image)
 
@@ -151,6 +165,7 @@ type StyleJson = {
     width: int
     height: int
     font: string
+    textAlign: string
     fontSize: int
     fontColor: string
     color: string
@@ -171,6 +186,7 @@ type StyleSheetContent = {
     FontColors: (string*(string*string)[])[]
     Colors: (string*(string*string)[])[]
     Drawables: (string*(string*string[][])[])[]
+    TextAlignments: (string*(string*string)[])[]
     Paddings: (string*(string*(int*int*int*int))[])[]
     Margins: (string*(string*(int*int*int*int))[])[]
 }
@@ -214,7 +230,6 @@ type MSDFKerning = {
     unicode2: int64
     advance: float32
 }
-
 
 type MSDFFont = {
     atlas: MSDFAtlas

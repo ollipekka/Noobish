@@ -20,7 +20,6 @@
     <ProjectReference Include="..\Noobish.PipelineExtension\Noobish.PipelineExtension.fsproj" />
   </ItemGroup>
 
-
   <Target Name="Hack" DependsOnTargets="ResolveReferences" AfterTargets="ResolveReferences" BeforeTargets="CollectContentReferences">
     <Message Text="HACK HACK HACK" />
   </Target>

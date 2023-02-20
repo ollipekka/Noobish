@@ -240,8 +240,8 @@ module NoobishMonoGame =
         let rect = c.ContentWithPadding
         let drawables = styleSheet.GetDrawables c.ThemeId cstate
 
-        let position = Vector2(float32 rect.X, float32 rect.Y)
-        let size = Vector2( float32 rect.Width - 2f, float32 rect.Height - 2f)
+        let position = Vector2(float32 (rect.X + scrollX), float32 (rect.Y + scrollY))
+        let size = Vector2( float32 rect.Width, float32 rect.Height)
 
         let layer = 1f - (float32 c.ZIndex / 255f)
         drawDrawable textureAtlas spriteBatch position size layer color drawables
@@ -261,7 +261,6 @@ module NoobishMonoGame =
 
 
     let private drawText (styleSheet: NoobishStyleSheet) (content: ContentManager) (textBatch: TextBatch) (c: NoobishLayoutElement) (cs: NoobishLayoutElementState) scrollX scrollY =
-        let mutable startY = 0.0f
 
         let text =
             cs.Model
@@ -316,23 +315,22 @@ module NoobishMonoGame =
 
         let textX, textY =
             match c.TextAlignment with
-            | NoobishTextAlign.TopLeft -> leftX(), topY()
-            | NoobishTextAlign.TopCenter -> centerX(), topY()
-            | NoobishTextAlign.TopRight -> rightX(), topY()
-            | NoobishTextAlign.Left -> leftX(), centerY()
-            | NoobishTextAlign.Center -> centerX(), centerY()
-            | NoobishTextAlign.Right -> rightX(), centerY()
-            | NoobishTextAlign.BottomLeft -> leftX(), bottomY()
-            | NoobishTextAlign.BottomCenter -> centerX(), bottomY()
-            | NoobishTextAlign.BottomRight -> rightX(), bottomY()
+            | NoobishTextAlignment.TopLeft -> leftX(), topY()
+            | NoobishTextAlignment.TopCenter -> centerX(), topY()
+            | NoobishTextAlignment.TopRight -> rightX(), topY()
+            | NoobishTextAlignment.Left -> leftX(), centerY()
+            | NoobishTextAlignment.Center -> centerX(), centerY()
+            | NoobishTextAlignment.Right -> rightX(), centerY()
+            | NoobishTextAlignment.BottomLeft -> leftX(), bottomY()
+            | NoobishTextAlignment.BottomCenter -> centerX(), bottomY()
+            | NoobishTextAlignment.BottomRight -> rightX(), bottomY()
 
         let textColor = styleSheet.GetFontColor c.ThemeId state
         if c.TextWrap then
-            textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textX, (startY + textY))) layer textColor text
+            textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textX, (textY))) layer textColor text
         else
-            textBatch.DrawSingleLine font fontSize (Vector2(textX, (startY + textY)))  layer textColor text
+            textBatch.DrawSingleLine font fontSize (Vector2(textX, (textY))) layer textColor text
 
-        startY <- startY + float32 font.Metrics.LineHeight * float32 fontSize
 
     let private drawScrollBars
         (styleSheet: NoobishStyleSheet)
@@ -472,7 +470,7 @@ module NoobishMonoGame =
 
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = toRadians t.Rotation
-            let textureColor = if c.Enabled then t.TextureColor else t.TextureColorDisabled
+            let textureColor = t.Color
             spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, layer)
 
 
@@ -487,7 +485,7 @@ module NoobishMonoGame =
 
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = toRadians t.Rotation
-            let textureColor = if c.Enabled then t.TextureColor else t.TextureColorDisabled
+            let textureColor = t.Color
 
             spriteBatch.Draw(texture.Atlas, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, layer)
 
@@ -499,7 +497,7 @@ module NoobishMonoGame =
             let textureEffect = getTextureEfffect t.TextureEffect
             let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
             let rect = c.ContentWithPadding
-            let textureColor = if c.Enabled then t.TextureColor else t.TextureColorDisabled
+            let textureColor = t.Color
             spriteBatch.DrawAtlasNinePatch(
                 texture,
                 Vector2(float32 rect.X, float32 rect.Y),
@@ -545,8 +543,8 @@ module NoobishMonoGame =
             createRectangle
                 sourceStartX
                 sourceStartY
-                ((min sourceWidth (float32 parentRectangle.Width)))
-                ((min sourceHeight (float32 parentRectangle.Height)))
+                ((min sourceWidth (float32 parentRectangle.Width)) + 2f)
+                ((min sourceHeight (float32 parentRectangle.Height)) + 2f)
 
 
         let oldScissorRect = graphics.ScissorRectangle
@@ -579,7 +577,7 @@ module NoobishMonoGame =
         drawScrollBars styleSheet state textureAtlas spriteBatch c time totalScrollX totalScrollY
 
         if debug then
-            let childRect = c.Content
+            let bounds = c.Content
 
             let debugColor =
                 if c.ThemeId = "Scroll" then Color.Multiply(Color.Red, 0.1f)
@@ -589,7 +587,7 @@ module NoobishMonoGame =
 
             let pixel = content.Load<Texture2D> settings.Pixel
 
-            drawRectangle spriteBatch pixel debugColor (childRect.X + totalScrollX) (childRect.Y + totalScrollY) (childRect.Width) (childRect.Height)
+            drawRectangle spriteBatch pixel debugColor (bounds.X + totalScrollX) (bounds.Y + totalScrollY) (bounds.Width) (bounds.Height)
             if c.ThemeId = "Scroll" || c.ThemeId = "Slider" then
                 let r = {
                     X = float32 outerRectangle.X
@@ -598,7 +596,46 @@ module NoobishMonoGame =
                     Height = float32 outerRectangle.Height}
                 debugDrawBorders spriteBatch pixel (Color.Multiply(Color.Red, 0.5f)) r
 
+
+            if c.Text <> "" then
+
+                let fontId = styleSheet.GetFont c.ThemeId "default"
+                let font = content.Load<NoobishFont>  fontId
+                let fontSize = styleSheet.GetFontSize c.ThemeId "default"
+                let struct(textSizeX, textSizeY) = NoobishFont.measureSingleLineText font fontSize c.Text
+
+                let leftX () = bounds.X
+                let rightX () = bounds.X + bounds.Width - textSizeX
+
+                let topY () =
+                    bounds.Y + parentScrollY
+
+                let bottomY () =
+                    bounds.Y + parentScrollY + bounds.Height - textSizeY
+
+                let centerX () =
+                    bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
+
+                let centerY () =
+                    bounds.Y + parentScrollY + bounds.Height / 2.0f - textSizeY / 2.0f
+
+                let textStartX, textStartY =
+                    match c.TextAlignment with
+                    | NoobishTextAlignment.TopLeft -> leftX(), topY()
+                    | NoobishTextAlignment.TopCenter -> centerX(), topY()
+                    | NoobishTextAlignment.TopRight -> rightX(), topY()
+                    | NoobishTextAlignment.Left -> leftX(), centerY()
+                    | NoobishTextAlignment.Center -> centerX(), centerY()
+                    | NoobishTextAlignment.Right -> rightX(), centerY()
+                    | NoobishTextAlignment.BottomLeft -> leftX(), bottomY()
+                    | NoobishTextAlignment.BottomCenter -> centerX(), bottomY()
+                    | NoobishTextAlignment.BottomRight -> rightX(), bottomY()
+                //let descender = font.Metrics.Descender * (float32 fontSize * 4f / 3f)
+                let descender = 0f
+                drawRectangle spriteBatch pixel Color.Purple (textStartX) (textStartY + descender) (textSizeX) (textSizeY)
+
         spriteBatch.End()
+
         drawText styleSheet content textBatch c cs totalScrollX totalScrollY
 
         (*
@@ -672,8 +709,10 @@ module NoobishMonoGame =
 
         spriteBatch.Begin()
         drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 0.0f 0.0f (float32 areaWidth + 10.0f) (float32 areaHeight + 10.0f)
-        textBatch.DrawSingleLine font 32  (Vector2(float32 textX + 5.0f, float32 textY + 5.0f)) 1f Color.White fpsText
         spriteBatch.End()
+
+        textBatch.DrawSingleLine font 32  (Vector2(float32 textX + 5.0f, float32 textY + 5.0f)) 1f Color.White fpsText
+
         if time - ui.FPSTime >= fpsTimer then
             ui.FPS <- ui.FPSCounter
             ui.FPSCounter <- 0
@@ -766,8 +805,8 @@ module NoobishMonoGame =
                     | NoobishKeyId.Space -> Keys.Space
                     | NoobishKeyId.None -> failwith "None can't be here."
 
-                let c = ui.Components.[kvp.Key]
-                if kvp.Value.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
+                let (exists, c) = ui.Components.TryGetValue kvp.Key
+                if exists && kvp.Value.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
                     c.OnClickInternal c
 
         ui.State.TempElements.Clear()

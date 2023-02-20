@@ -5,6 +5,13 @@ open System.Collections.Generic
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
+
+[<RequireQualifiedAccess>]
+type NoobishTextAlignment =
+| TopLeft | TopCenter | TopRight
+| Left  | Center | Right
+| BottomLeft | BottomCenter | BottomRight
+
 [<RequireQualifiedAccess>]
 type NoobishDrawable=
 | NinePatch of string
@@ -36,9 +43,9 @@ type NoobishStyleSheet = {
     Fonts: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>
     FontSizes: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>
     FontColors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, Color>>
+    TextAlignments: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishTextAlignment>>
     Drawables: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishDrawable[]>>
-
-    } with
+} with
 
     static member private GetDefault (d: IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>) (themeId: string) (state: string) (fallback: 'T): 'T =
         let (success, defaultDict) = d.TryGetValue(themeId)
@@ -85,6 +92,9 @@ type NoobishStyleSheet = {
 
     member t.GetMargin (cid: string) (state: string) =
         NoobishStyleSheet.GetValue t.Margins cid state (0, 0, 0, 0)
+
+    member t.GetTextAlignment (cid: string) (state: string) =
+        NoobishStyleSheet.GetValue t.TextAlignments cid state NoobishTextAlignment.TopLeft
 
     member t.GetDrawables (cid: string) (state: string) =
         NoobishStyleSheet.GetValue t.Drawables cid state [||]

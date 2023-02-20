@@ -15,16 +15,13 @@
     <Compile Include="TextureAtlasWriter.fs" />
     <Compile Include="TextureAtlasImporter.fs" />
 
-
     <Compile Include="StyleSheetProcessor.fs" />
     <Compile Include="StyleSheetWriter.fs" />
     <Compile Include="StyleSheetImporter.fs" />
 
-
     <Compile Include="MSDFFontProcessor.fs" />
     <Compile Include="MSDFFontWriter.fs" />
     <Compile Include="MSDFFontImporter.fs" />
-
   </ItemGroup>
 
   <ItemGroup>

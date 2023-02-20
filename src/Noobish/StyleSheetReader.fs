@@ -128,6 +128,35 @@ type StyleSheetReader () =
 
         toReadOnlyDictionary dict
 
+    let readTextAlignments (reader: ContentReader)  =
+
+        let dict = Dictionary<string, Dictionary<string, NoobishTextAlignment>>()
+        let count = reader.ReadInt32()
+
+        for i = 0 to count - 1 do
+            let name = reader.ReadString()
+            let count2 = reader.ReadInt32()
+
+            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+
+            for j = 0 to count2 - 1 do
+                let state = reader.ReadString()
+                let v = reader.ReadString()
+
+                dict2.[state] <-
+                    match v with
+                    | "TopLeft" | "topLeft" | "top_left" -> NoobishTextAlignment.TopLeft
+                    | "TopCenter" | "topCenter" | "top_center" -> NoobishTextAlignment.TopCenter
+                    | "TopRight" | "topRight" | "top_right" -> NoobishTextAlignment.TopRight
+                    | "Left" | "left" -> NoobishTextAlignment.Left
+                    | "Center" | "center" -> NoobishTextAlignment.Center
+                    | "Right" | "right" -> NoobishTextAlignment.Right
+                    | "BottomLeft" | "bottomLeft" | "bottom_left" -> NoobishTextAlignment.BottomLeft
+                    | "BottomCenter" | "bottomCenter" | "bottom_center" -> NoobishTextAlignment.BottomCenter
+                    | "BottomRight" | "bottomRight" | "bottom_right" -> NoobishTextAlignment.BottomRight
+                    | _ -> failwith "Cannot parse text alignment"
+
+        toReadOnlyDictionary dict
 
     let readIntTuple4Array (reader: ContentReader)  =
 
@@ -162,6 +191,7 @@ type StyleSheetReader () =
             FontColors = readColorArrays reader
             Colors = readColorArrays reader
             Drawables = readDrawables reader
+            TextAlignments = readTextAlignments reader
             Margins = readIntTuple4Array reader
             Paddings = readIntTuple4Array reader
         }

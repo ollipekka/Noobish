@@ -13,7 +13,7 @@ type TextureAtlasWriter () =
         writer.WriteExternalReference input.Texture
         writer.Write input.Textures.Length
 
-        for (name, textureType, image) in input.Textures do
+        for (name, textureType, _image) in input.Textures do
 
             writer.Write name
             match textureType with

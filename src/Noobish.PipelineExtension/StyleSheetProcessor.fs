@@ -27,6 +27,7 @@ type StyleSheetProcessor () =
         let fontColors = Dictionary<string, Dictionary<string, string>>()
         let colors = Dictionary<string, Dictionary<string, string>>()
         let drawables = Dictionary<string, Dictionary<string, string[][]>>()
+        let textAligns = Dictionary<string, Dictionary<string, string>>()
         let paddings = Dictionary<string, Dictionary<string, (int*int*int*int)>>()
         let margins = Dictionary<string, Dictionary<string, (int*int*int*int)>>()
 
@@ -69,11 +70,18 @@ type StyleSheetProcessor () =
                 | m ->
                     let marginsByComponent = margins.GetOrAdd name (fun () -> Dictionary())
                     marginsByComponent.[stateId] <- (m.[0], m.[1], m.[2], m.[3])
+
                 match style.drawables with
                 | null -> ()
                 | d ->
                     let drawablesByComponent = drawables.GetOrAdd name (fun () -> Dictionary())
                     drawablesByComponent.[stateId] <- d
+
+                match style.textAlign with
+                | null -> ()
+                | t ->
+                    let textAlignsByComponent = textAligns.GetOrAdd name (fun () -> Dictionary())
+                    textAlignsByComponent.[stateId] <- t
 
                 if style.width > 0 then
                     let widthsByComponent = widths.GetOrAdd name (fun () -> Dictionary())
@@ -97,6 +105,7 @@ type StyleSheetProcessor () =
             FontColors = toArray fontColors
             Colors = toArray colors
             Drawables = toArray drawables
+            TextAlignments = toArray textAligns
             Paddings = toArray paddings
             Margins = toArray margins
         }

@@ -115,7 +115,6 @@ module NoobishFont =
     let measureSingleLineText (font: NoobishFont) (size: int) (text: string) =
         let size = float32 size * 4f / 3f
         let mutable width = 0.0f
-        let mutable height = font.Metrics.LineHeight * size
         for c in text do
             if c = '\n' then
                 ()
@@ -123,7 +122,8 @@ module NoobishFont =
                 let (success, g) = font.Glyphs.TryGetValue (int64 c)
                 if success then
                     width <- width + g.Advance * size
-        struct(width, height)
+
+        struct(width, font.Metrics.LineHeight * size)
 
     let measureMultiLineText (font: NoobishFont) (size: int) (maxWidth: float32) (text: string) =
         let size = float32 size * 4f / 3f
@@ -238,7 +238,7 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
                 let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
 
                 let x = nextPosX + xOffset
-                let y = position.Y + (size - glyphHeight) - yOffset
+                let y = position.Y + (size * font.Metrics.LineHeight - glyphHeight) - yOffset
 
                 let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
                 let position = Vector2(x, y) + glyphHalfSize

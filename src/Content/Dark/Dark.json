@@ -44,6 +44,8 @@
         },
         "Button": {
             "default": {
+                "padding": [10, 10, 10, 10],
+                "textAlign": "center",
                 "drawables": [
                     ["button-default.9"]
                 ]

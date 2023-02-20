@@ -285,6 +285,19 @@ module Buttons =
                     ]
                 panel
                     [
+                        scroll
+                            [
+                                button [text "Button 1"; fillHorizontal]
+                                button [text "Button 2"; fillHorizontal]
+                                button [text "Button 3"; fillHorizontal]
+                                button [text "Button 4"; fillHorizontal]
+                                button [text "Button 5"; fillHorizontal]
+                                button [text "Button 6"; fillHorizontal]
+                                button [text "Button 7"; fillHorizontal]
+                            ]
+                            [
+
+                            ]
                     ]
                     [
 

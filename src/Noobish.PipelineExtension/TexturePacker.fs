@@ -21,7 +21,7 @@ module TexturePacker =
                     if isNinePatch fileName then
                         NinePatch.createData fileName
                     else
-                        Path.GetFileNameWithoutExtension fileName, Texture, (Image.Load<Rgba32> fileName)
+                        Texture.createData fileName
 
                 let name =
                     if name.StartsWith "./" then
@@ -59,8 +59,6 @@ module TexturePacker =
                 intersectionIndex <- i
 
         intersectionIndex
-
-
 
     let findTexturePosition (textures: (string*TextureAtlasItem*Image<Rgba32>)[]) (placement: IReadOnlyDictionary<string, Rectangle>) (padding: int) (textureWidth: int) (index: int) =
             let mutable x = 0

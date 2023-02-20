@@ -96,6 +96,8 @@ type StyleSheetWriter () =
 
         writeDrawables writer input.Drawables
 
+        writeStringArrays writer input.TextAlignments
+
         writeIntTuple4Array writer input.Margins
         writeIntTuple4Array writer input.Paddings
 
