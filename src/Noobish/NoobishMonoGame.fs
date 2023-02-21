@@ -291,45 +291,14 @@ module NoobishMonoGame =
         let bounds = c.Content
 
 
-        let struct(textSizeX, textSizeY) =
-            if c.TextWrap then
-                NoobishFont.measureMultiLineText font fontSize bounds.Width text
-            else
-                NoobishFont.measureSingleLineText font fontSize text
-
-
-        let leftX () = bounds.X + scrollX
-        let rightX () = bounds.X + bounds.Width - textSizeX
-
-        let topY () =
-            bounds.Y + scrollY
-
-        let bottomY () =
-            bounds.Y + scrollY + bounds.Height - textSizeY
-
-        let centerX () =
-            bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
-
-        let centerY () =
-            bounds.Y + scrollY + bounds.Height / 2.0f - textSizeY / 2.0f
-
-        let textX, textY =
-            match c.TextAlignment with
-            | NoobishTextAlignment.TopLeft -> leftX(), topY()
-            | NoobishTextAlignment.TopCenter -> centerX(), topY()
-            | NoobishTextAlignment.TopRight -> rightX(), topY()
-            | NoobishTextAlignment.Left -> leftX(), centerY()
-            | NoobishTextAlignment.Center -> centerX(), centerY()
-            | NoobishTextAlignment.Right -> rightX(), centerY()
-            | NoobishTextAlignment.BottomLeft -> leftX(), bottomY()
-            | NoobishTextAlignment.BottomCenter -> centerX(), bottomY()
-            | NoobishTextAlignment.BottomRight -> rightX(), bottomY()
+        let textBounds =
+                NoobishFont.calculateBounds font fontSize c.TextWrap bounds scrollX scrollY c.TextAlignment text
 
         let textColor = styleSheet.GetFontColor c.ThemeId state
         if c.TextWrap then
-            textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textX, (textY))) layer textColor text
+            textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textBounds.X, (textBounds.Y))) layer textColor text
         else
-            textBatch.DrawSingleLine font fontSize (Vector2(textX, (textY))) layer textColor text
+            textBatch.DrawSingleLine font fontSize (Vector2(textBounds.X, (textBounds.Y))) layer textColor text
 
 
     let private drawScrollBars
@@ -424,7 +393,8 @@ module NoobishMonoGame =
         (cs: NoobishLayoutElementState)
         (textbox: TextboxModel)
         (time: TimeSpan) =
-
+        let scrollX = 0f
+        let scrollY = 0f
         let layer = 1f - float32 (c.ZIndex + 32) / 255f
         let bounds = c.Content
         let cursorIndex = textbox.Cursor
@@ -439,7 +409,14 @@ module NoobishMonoGame =
         let font = content.Load<NoobishFont>  fontId
         let fontSize = styleSheet.GetFontSize c.ThemeId "default"
         let fontSizef = float32 (styleSheet.GetFontSize c.ThemeId "default")
-        let struct(textWidth, textHeight) = NoobishFont.measureSingleLineText font fontSize textUpToCursor
+
+        let bounds = c.Content
+
+
+
+
+        let textBounds = NoobishFont.calculateBounds font fontSize c.TextWrap bounds scrollX scrollY c.TextAlignment textUpToCursor
+
 
         let timeFocused = (time - cs.FocusedTime)
         let blinkProgress = MathF.Pow(float32 (timeFocused.TotalSeconds % blinkInterval.TotalSeconds), 5f)
@@ -449,11 +426,11 @@ module NoobishMonoGame =
 
         let drawables = styleSheet.GetDrawables "Cursor" "default"
 
-        let position = Vector2(float32 bounds.X + textWidth, float32 bounds.Y + font.Metrics.Descender * fontSizef)
+        let position = Vector2(bounds.X + textBounds.Width, bounds.Y)
 
         let cursorWidth = styleSheet.GetWidth "Cursor" "default"
         if cursorWidth = 0f then failwith "Cursor:defaul width is 0"
-        let size = Vector2(cursorWidth, textHeight)
+        let size = Vector2(cursorWidth, bounds.Height)
         drawDrawable textureAtlas spriteBatch position size layer color drawables
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
@@ -602,37 +579,11 @@ module NoobishMonoGame =
                 let fontId = styleSheet.GetFont c.ThemeId "default"
                 let font = content.Load<NoobishFont>  fontId
                 let fontSize = styleSheet.GetFontSize c.ThemeId "default"
-                let struct(textSizeX, textSizeY) = NoobishFont.measureSingleLineText font fontSize c.Text
 
-                let leftX () = bounds.X
-                let rightX () = bounds.X + bounds.Width - textSizeX
 
-                let topY () =
-                    bounds.Y + parentScrollY
+                let textBounds = NoobishFont.calculateBounds font fontSize c.TextWrap bounds parentScrollX parentScrollY c.TextAlignment c.Text
 
-                let bottomY () =
-                    bounds.Y + parentScrollY + bounds.Height - textSizeY
-
-                let centerX () =
-                    bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
-
-                let centerY () =
-                    bounds.Y + parentScrollY + bounds.Height / 2.0f - textSizeY / 2.0f
-
-                let textStartX, textStartY =
-                    match c.TextAlignment with
-                    | NoobishTextAlignment.TopLeft -> leftX(), topY()
-                    | NoobishTextAlignment.TopCenter -> centerX(), topY()
-                    | NoobishTextAlignment.TopRight -> rightX(), topY()
-                    | NoobishTextAlignment.Left -> leftX(), centerY()
-                    | NoobishTextAlignment.Center -> centerX(), centerY()
-                    | NoobishTextAlignment.Right -> rightX(), centerY()
-                    | NoobishTextAlignment.BottomLeft -> leftX(), bottomY()
-                    | NoobishTextAlignment.BottomCenter -> centerX(), bottomY()
-                    | NoobishTextAlignment.BottomRight -> rightX(), bottomY()
-                //let descender = font.Metrics.Descender * (float32 fontSize * 4f / 3f)
-                let descender = 0f
-                drawRectangle spriteBatch pixel Color.Purple (textStartX) (textStartY + descender) (textSizeX) (textSizeY)
+                drawRectangle spriteBatch pixel Color.Purple (textBounds.X) (textBounds.Y) (textBounds.Width) (textBounds.Height)
 
         spriteBatch.End()
 

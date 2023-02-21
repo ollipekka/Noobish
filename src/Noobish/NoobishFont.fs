@@ -1,8 +1,11 @@
 namespace Noobish
 
 open System.Collections.Generic
+
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework
+
+open Noobish.Internal
 
 
 type NoobishFontAtlas = {
@@ -66,6 +69,7 @@ type NoobishFont = {
 }
 
 module NoobishFont =
+    open Noobish.Styles
 
     let truncate (size: int) (value:string) =
         let size = min value.Length size
@@ -125,6 +129,7 @@ module NoobishFont =
 
         struct(width, font.Metrics.LineHeight * size)
 
+
     let measureMultiLineText (font: NoobishFont) (size: int) (maxWidth: float32) (text: string) =
         let size = float32 size * 4f / 3f
         let lineHeight = font.Metrics.LineHeight * size
@@ -158,11 +163,38 @@ module NoobishFont =
                     x <- x + wsWidth + wordWidth
                     i <- i + wsCount + wordCount
 
-        //printfn "%s" (text |> truncate 15)
-
         let height = float32 lineCount * lineHeight
-        //printfn "%g, %g" maxWidth height
         struct(maxWidth, height)
+
+
+    let  calculateBounds (font: NoobishFont) (fontSize: int) (wrap: bool) (bounds: NoobishRectangle) (scrollX: float32) (scrollY: float32) (textAlign: NoobishTextAlignment) (text: string) = 
+
+        let struct(textSizeX, textSizeY) = 
+            if wrap then 
+                measureMultiLineText font fontSize bounds.Width text
+            else 
+                measureSingleLineText font fontSize text
+
+        let inline leftX () = bounds.X
+        let inline rightX () = bounds.X + bounds.Width - textSizeX
+        let inline topY () = bounds.Y
+        let inline bottomY () = bounds.Y + bounds.Height - textSizeY
+        let inline centerX () = bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
+        let inline centerY () = bounds.Y  + bounds.Height / 2.0f - textSizeY / 2.0f
+
+        let struct(textStartX, textStartY) =
+            match textAlign with
+            | NoobishTextAlignment.TopLeft -> struct(leftX(), topY())
+            | NoobishTextAlignment.TopCenter -> struct(centerX(), topY())
+            | NoobishTextAlignment.TopRight -> struct(rightX(), topY())
+            | NoobishTextAlignment.Left -> struct(leftX(), centerY())
+            | NoobishTextAlignment.Center -> struct(centerX(), centerY())
+            | NoobishTextAlignment.Right -> struct(rightX(), centerY())
+            | NoobishTextAlignment.BottomLeft -> struct(leftX(), bottomY())
+            | NoobishTextAlignment.BottomCenter -> struct(centerX(), bottomY())
+            | NoobishTextAlignment.BottomRight -> struct(rightX(), bottomY())
+
+        {X = (textStartX + scrollX); Y = (textStartY + scrollY); Width = textSizeX; Height = textSizeY}
 
 type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
