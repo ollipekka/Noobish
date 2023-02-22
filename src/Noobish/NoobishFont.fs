@@ -60,6 +60,28 @@ module NoobishGlyph =
 
         struct((right - left) * scale, (top - bottom) * scale)
 
+[<Struct>]
+type NoobishTextSegment = {
+    Start: int
+    End: int
+    Text: string
+}
+
+module NoobishTextSegment =
+    let until (until: int) (text: string) =
+        {
+            Start = 0
+            End = until
+            Text = text
+        }
+
+    let all (text: string) =
+        {
+            Start = 0
+            End = text.Length - 1
+            Text = text
+        }
+
 type NoobishFont = {
     Atlas: NoobishFontAtlas
     Metrics: NoobishFontMetrics
@@ -116,21 +138,35 @@ module NoobishFont =
 
         struct(width, i - startPos)
 
-    let measureSingleLineText (font: NoobishFont) (size: int) (text: string) =
+    let measureSingleLineSegment (font: NoobishFont) (size: int) (startIndex: int) (endIndex: int) (text: string) =
+
         let size = float32 size * 4f / 3f
-        let mutable width = 0.0f
-        for c in text do
-            if c = '\n' then
-                ()
+
+        let width =
+            if endIndex - startIndex > 0 then
+                let mutable width = 0.0f
+                let mutable i = startIndex
+                while i <= endIndex do
+                    let c = text.[i]
+                    if c = '\n' then
+                        ()
+                    else
+                        let (success, g) = font.Glyphs.TryGetValue (int64 c)
+                        if success then
+                            width <- width + g.Advance * size
+
+                    i <- i + 1
+                width
             else
-                let (success, g) = font.Glyphs.TryGetValue (int64 c)
-                if success then
-                    width <- width + g.Advance * size
+                0f
 
         struct(width, font.Metrics.LineHeight * size)
 
 
-    let measureMultiLineText (font: NoobishFont) (size: int) (maxWidth: float32) (text: string) =
+    let measureSingleLine (font: NoobishFont) (size: int) (text: string) =
+        measureSingleLineSegment font size 0 (text.Length - 1) text
+
+    let measureMultiLine (font: NoobishFont) (size: int) (maxWidth: float32) (text: string) =
         let size = float32 size * 4f / 3f
         let lineHeight = font.Metrics.LineHeight * size
 
@@ -163,17 +199,62 @@ module NoobishFont =
                     x <- x + wsWidth + wordWidth
                     i <- i + wsCount + wordCount
 
+
         let height = float32 lineCount * lineHeight
         struct(maxWidth, height)
 
 
-    let  calculateBounds (font: NoobishFont) (fontSize: int) (wrap: bool) (bounds: NoobishRectangle) (scrollX: float32) (scrollY: float32) (textAlign: NoobishTextAlignment) (text: string) = 
+    let calculateSegmentBounds
+        (font: NoobishFont)
+        (fontSize: int)
+        (bounds: NoobishRectangle)
+        (scrollX: float32)
+        (scrollY: float32)
+        (textAlign: NoobishTextAlignment)
+        (startIndex: int)
+        (endIndex: int)
+        (text: string) =
 
-        let struct(textSizeX, textSizeY) = 
-            if wrap then 
-                measureMultiLineText font fontSize bounds.Width text
-            else 
-                measureSingleLineText font fontSize text
+
+        let struct(textSizeX, textSizeY) =
+                measureSingleLineSegment font fontSize startIndex endIndex text
+
+        let inline leftX () = bounds.X
+        let inline rightX () = bounds.X + bounds.Width - textSizeX
+        let inline topY () = bounds.Y
+        let inline bottomY () = bounds.Y + bounds.Height - textSizeY
+        let inline centerX () = bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
+        let inline centerY () = bounds.Y  + bounds.Height / 2.0f - textSizeY / 2.0f
+
+        let struct(textStartX, textStartY) =
+            match textAlign with
+            | NoobishTextAlignment.TopLeft -> struct(leftX(), topY())
+            | NoobishTextAlignment.TopCenter -> struct(centerX(), topY())
+            | NoobishTextAlignment.TopRight -> struct(rightX(), topY())
+            | NoobishTextAlignment.Left -> struct(leftX(), centerY())
+            | NoobishTextAlignment.Center -> struct(centerX(), centerY())
+            | NoobishTextAlignment.Right -> struct(rightX(), centerY())
+            | NoobishTextAlignment.BottomLeft -> struct(leftX(), bottomY())
+            | NoobishTextAlignment.BottomCenter -> struct(centerX(), bottomY())
+            | NoobishTextAlignment.BottomRight -> struct(rightX(), bottomY())
+
+        {X = (textStartX + scrollX); Y = (textStartY + scrollY); Width = textSizeX; Height = textSizeY}
+
+    let calculateBounds
+        (font: NoobishFont)
+        (fontSize: int)
+        (wrap: bool)
+        (bounds: NoobishRectangle)
+        (scrollX: float32)
+        (scrollY: float32)
+        (textAlign: NoobishTextAlignment)
+        (text: string) =
+
+        let struct(textSizeX, textSizeY) =
+            if wrap then
+                measureMultiLine font fontSize bounds.Width text
+            else
+                measureSingleLine font fontSize text
 
         let inline leftX () = bounds.X
         let inline rightX () = bounds.X + bounds.Width - textSizeX

@@ -144,6 +144,10 @@ type NoobishLayoutElement = {
         not (x < startX || x > endX || y < startY || y > endY)
 
 
+module ZIndex =
+    let calculate (v: int) =
+        let v = clamp v 0 255
+        1f - (float32 v / 255f)
 
 type NoobishAttribute =
 
@@ -385,7 +389,7 @@ let combobox children attributes =
         {c' with Attributes = onClick :: c'.Attributes}
     )
 
-    let dropdown = panel children' [ hidden; ZIndex(10 * 255); Overlay; Margin(0,0,0,0);]
+    let dropdown = panel children' [ hidden; ZIndex(255); Overlay; Margin(0,0,0,0);]
 
     let onClickInternal: NoobishAttribute = OnClickInternal(fun dispatch c ->
         for child in c.Children do
@@ -728,9 +732,9 @@ module Logic =
 
             let struct (contentWidth, contentHeight) =
                 if textWrap then
-                    NoobishFont.measureMultiLineText font fontSize paddedWidth text
+                    NoobishFont.measureMultiLine font fontSize paddedWidth text
                 else
-                    NoobishFont.measureSingleLineText font fontSize text
+                    NoobishFont.measureSingleLine font fontSize text
 
             minWidth <- float32 contentWidth
             minHeight <- float32 contentHeight

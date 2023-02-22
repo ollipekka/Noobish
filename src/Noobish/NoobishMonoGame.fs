@@ -268,7 +268,9 @@ module NoobishMonoGame =
                 function
                 | Textbox model' ->
                     if not (String.IsNullOrEmpty model'.Text) then
-                        Some(model'.Text)
+                        Some model'.Text
+                    elif cs.Focused then
+                        Some ""
                     else
                         None
                 | _ -> None)
@@ -396,26 +398,16 @@ module NoobishMonoGame =
         let scrollX = 0f
         let scrollY = 0f
         let layer = 1f - float32 (c.ZIndex + 32) / 255f
-        let bounds = c.Content
         let cursorIndex = textbox.Cursor
 
-        let textUpToCursor =
-            if textbox.Text.Length > 0 then
-                textbox.Text.Substring(0, cursorIndex)
-            else
-                ""
 
         let fontId = styleSheet.GetFont c.ThemeId "default"
         let font = content.Load<NoobishFont>  fontId
         let fontSize = styleSheet.GetFontSize c.ThemeId "default"
-        let fontSizef = float32 (styleSheet.GetFontSize c.ThemeId "default")
 
         let bounds = c.Content
 
-
-
-
-        let textBounds = NoobishFont.calculateBounds font fontSize c.TextWrap bounds scrollX scrollY c.TextAlignment textUpToCursor
+        let textBounds = NoobishFont.calculateSegmentBounds font fontSize bounds scrollX scrollY c.TextAlignment 0 (cursorIndex - 1) textbox.Text
 
 
         let timeFocused = (time - cs.FocusedTime)
@@ -649,10 +641,10 @@ module NoobishMonoGame =
 
         let fontId = ui.StyleSheet.GetFont "Default" "default"
         let font = content.Load<NoobishFont> fontId
-        let struct(areaWidth, areaHeight) = NoobishFont.measureSingleLineText font 32 "255"
+        let struct(areaWidth, areaHeight) = NoobishFont.measureSingleLine font 32 "255"
 
         let fpsText = (sprintf "%i" (ui.FPS * 10))
-        let struct(fpsWidth, fpsHeight) = NoobishFont.measureSingleLineText font 32 fpsText
+        let struct(fpsWidth, fpsHeight) = NoobishFont.measureSingleLine font 32 fpsText
         let textX = areaWidth - fpsWidth
         let textY = areaHeight - fpsHeight
 
