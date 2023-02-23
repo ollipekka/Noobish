@@ -47,15 +47,21 @@ type MSDFFontReader () =
 
         struct(top, right, bottom, left)
 
-    let readGlyph (reader:ContentReader)  =
+    let readGlyph (reader:ContentReader) (kerning: Dictionary<int64, Dictionary<int64, float32>>)  =
         let unicode = reader.ReadInt64()
         let advance = reader.ReadSingle()
         let atlasBounds = readBounds (reader)
         let planeBounds = readBounds (reader)
+        let kerning = 
+            let success, result =
+                kerning.TryGetValue unicode
+        
+            if success then
+                result 
+            else 
+                Dictionary()
 
-        {Unicode = unicode; Advance = advance; AtlasBounds = atlasBounds; PlaneBounds = planeBounds}
-
-
+        {Unicode = unicode; Advance = advance; AtlasBounds = atlasBounds; PlaneBounds = planeBounds; Kerning = kerning }
 
     let readKerning (reader:ContentReader) =
         let unicode1 = reader.ReadInt64()
@@ -69,13 +75,6 @@ type MSDFFontReader () =
         let atlas = readAtlas reader
         let metrics = readMetrics reader
 
-        let glyphCount = reader.ReadInt32()
-        let glyphs = Dictionary<int64, NoobishGlyph>()
-        for i = 0 to glyphCount - 1 do
-            let g = readGlyph reader
-            glyphs.[g.Unicode] <- g
-
-
         let kerning = Dictionary<int64, Dictionary<int64, float32>>()
         let kerningCount = reader.ReadInt32()
         for i = 0 to kerningCount - 1 do
@@ -83,5 +82,11 @@ type MSDFFontReader () =
 
             let glyphKerning = kerning.GetOrAdd u1 (fun _ -> Dictionary())
             glyphKerning.[u2] <- advance
+
+        let glyphCount = reader.ReadInt32()
+        let glyphs = Dictionary<int64, NoobishGlyph>()
+        for i = 0 to glyphCount - 1 do
+            let g = readGlyph reader kerning
+            glyphs.[g.Unicode] <- g
 
         {Atlas = atlas; Metrics = metrics; Glyphs = glyphs; Kerning = toReadOnlyDictionary kerning; Texture = texture}

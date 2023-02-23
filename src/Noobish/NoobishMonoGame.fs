@@ -407,7 +407,7 @@ module NoobishMonoGame =
 
         let bounds = c.Content
 
-        let textBounds = NoobishFont.calculateSegmentBounds font fontSize bounds scrollX scrollY c.TextAlignment 0 (cursorIndex - 1) textbox.Text
+        let textBounds = NoobishFont.calculateCursorPosition font fontSize c.TextWrap bounds scrollX scrollY c.TextAlignment (cursorIndex) textbox.Text
 
 
         let timeFocused = (time - cs.FocusedTime)

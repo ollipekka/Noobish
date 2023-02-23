@@ -31,6 +31,7 @@ type NoobishGlyph = {
     Advance: float32
     AtlasBounds: struct(float32*float32*float32*float32)
     PlaneBounds: struct(float32*float32*float32*float32)
+    Kerning: IReadOnlyDictionary<int64, float32>
 }
 
 module NoobishGlyph =
@@ -138,33 +139,25 @@ module NoobishFont =
 
         struct(width, i - startPos)
 
-    let measureSingleLineSegment (font: NoobishFont) (size: int) (startIndex: int) (endIndex: int) (text: string) =
+    let measureSingleLineSegment (font: NoobishFont) (size: int) (startIndex: int) (count: int) (text: string) =
 
         let size = float32 size * 4f / 3f
 
-        let width =
-            if endIndex - startIndex > 0 then
-                let mutable width = 0.0f
-                let mutable i = startIndex
-                while i <= endIndex do
-                    let c = text.[i]
-                    if c = '\n' then
-                        ()
-                    else
-                        let (success, g) = font.Glyphs.TryGetValue (int64 c)
-                        if success then
-                            width <- width + g.Advance * size
-
-                    i <- i + 1
-                width
+        let mutable width = 0.0f
+        for i = 0 to count - 1 do
+            let c = text.[startIndex + i]
+            if c = '\n' then
+                ()
             else
-                0f
+                let (success, g) = font.Glyphs.TryGetValue (int64 c)
+                if success then
+                    width <- width + g.Advance * size
 
         struct(width, font.Metrics.LineHeight * size)
 
 
     let measureSingleLine (font: NoobishFont) (size: int) (text: string) =
-        measureSingleLineSegment font size 0 (text.Length - 1) text
+        measureSingleLineSegment font size 0 (text.Length) text
 
     let measureMultiLine (font: NoobishFont) (size: int) (maxWidth: float32) (text: string) =
         let size = float32 size * 4f / 3f
@@ -204,20 +197,23 @@ module NoobishFont =
         struct(maxWidth, height)
 
 
-    let calculateSegmentBounds
+    let calculateCursorPosition
         (font: NoobishFont)
         (fontSize: int)
+        (wrap: bool)
         (bounds: NoobishRectangle)
         (scrollX: float32)
         (scrollY: float32)
         (textAlign: NoobishTextAlignment)
-        (startIndex: int)
-        (endIndex: int)
+        (cursorPosition: int)
         (text: string) =
 
 
         let struct(textSizeX, textSizeY) =
-                measureSingleLineSegment font fontSize startIndex endIndex text
+            if wrap then 
+                failwith "Multiline text not supported yet."
+            else 
+                measureSingleLineSegment font fontSize 0 cursorPosition text
 
         let inline leftX () = bounds.X
         let inline rightX () = bounds.X + bounds.Width - textSizeX
@@ -350,6 +346,13 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
                 let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
 
+                let kern = 
+                    if i + 1 < endPos then
+                        glyph.Kerning.GetValueOrDefault (int64 text.[i + 1], 0f)
+                    else 
+                        0f
+
+
                 let x = nextPosX + xOffset
                 let y = position.Y + (size * font.Metrics.LineHeight - glyphHeight) - yOffset
 
@@ -358,7 +361,7 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
                 s.DrawGlyph font position glyphHalfSize layer glyph
 
-                nextPosX <- nextPosX + advance
+                nextPosX <- nextPosX + advance + kern * size
 
 
     member s.DrawSingleLine (font: NoobishFont) (size: int) (position: Vector2) (layer: float32) (color: Color) (text:string) =

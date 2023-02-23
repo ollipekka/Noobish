@@ -61,12 +61,14 @@ type MSDFFontWriter () =
       writeAtlas writer input.atlas
       writeMetrics writer input.metrics
 
-      writer.Write(input.glyphs.Length)
-      for g in input.glyphs do
-         writeGlyph writer g
       writer.Write(input.kerning.Length)
       for k in input.kerning do
          writeKerning writer k
+
+      writer.Write(input.glyphs.Length)
+      for g in input.glyphs do
+         writeGlyph writer g
+
 
 
 
