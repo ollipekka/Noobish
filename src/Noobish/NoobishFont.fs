@@ -27,11 +27,11 @@ type NoobishFontMetrics = {
 }
 
 type NoobishGlyph = {
-    Unicode: int64
+    Unicode: char
     Advance: float32
     AtlasBounds: struct(float32*float32*float32*float32)
     PlaneBounds: struct(float32*float32*float32*float32)
-    Kerning: IReadOnlyDictionary<int64, float32>
+    Kerning: IReadOnlyDictionary<char, float32>
 }
 
 module NoobishGlyph =
@@ -54,6 +54,9 @@ module NoobishGlyph =
         let height = (top - bottom) * size
 
         struct(advance, xOffset, yOffset, width, height)
+
+    let getKern (g: NoobishGlyph) (c: char) =
+        g.Kerning.GetValueOrDefault c
 
 
     let getSize (scale: float32) (glyph: NoobishGlyph) =
@@ -86,8 +89,8 @@ module NoobishTextSegment =
 type NoobishFont = {
     Atlas: NoobishFontAtlas
     Metrics: NoobishFontMetrics
-    Glyphs: IReadOnlyDictionary<int64, NoobishGlyph>
-    Kerning: IReadOnlyDictionary<int64, IReadOnlyDictionary<int64, float32>>
+    Glyphs: IReadOnlyDictionary<char, NoobishGlyph>
+    Kerning: IReadOnlyDictionary<char, IReadOnlyDictionary<char, float32>>
     Texture: Texture2D
 }
 
@@ -112,7 +115,7 @@ module NoobishFont =
             elif c <> ' ' then
                 nonWhiteSpaceFound <- true
             else
-                let (success, g) = font.Glyphs.TryGetValue (int64 c)
+                let (success, g) = font.Glyphs.TryGetValue c
 
                 if success then
                     let struct(a, xOffset, yOffset, gw, gh) = NoobishGlyph.getGlyphMetricsInPx size g
@@ -132,8 +135,17 @@ module NoobishFont =
             if c = ' ' || c = '\n' then
                 wordFound <- true
             else
-                let (success, g) = font.Glyphs.TryGetValue (int64 c)
+                let (success, g) = font.Glyphs.TryGetValue c
                 if success then
+
+                    (*
+                    let kern =
+                        if i + 1 < text.Length - 1 then
+                            g.Kerning.GetValueOrDefault (text.[i + 1], 0f)
+                        else
+                            0f
+                    *)
+
                     width <- width + g.Advance * size
                 i <- i + 1
 
@@ -149,8 +161,17 @@ module NoobishFont =
             if c = '\n' then
                 ()
             else
-                let (success, g) = font.Glyphs.TryGetValue (int64 c)
+                let (success, g) = font.Glyphs.TryGetValue c
                 if success then
+
+                    (*
+                    let kern =
+                        if i + 1 < count - 1 then
+                            g.Kerning.GetValueOrDefault (text.[i + 1], 0f)
+                        else
+                            0f
+                    *)
+
                     width <- width + g.Advance * size
 
         struct(width, font.Metrics.LineHeight * size)
@@ -210,9 +231,9 @@ module NoobishFont =
 
 
         let struct(textSizeX, textSizeY) =
-            if wrap then 
+            if wrap then
                 failwith "Multiline text not supported yet."
-            else 
+            else
                 measureSingleLineSegment font fontSize 0 cursorPosition text
 
         let inline leftX () = bounds.X
@@ -340,18 +361,17 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
         for i = startPos to endPos do
             let c = text.[i]
-            let (success, glyph) = font.Glyphs.TryGetValue (int64 c)
+            let (success, glyph) = font.Glyphs.TryGetValue c
 
             if success then
 
                 let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
 
-                let kern = 
+                let kern =
                     if i + 1 < endPos then
-                        glyph.Kerning.GetValueOrDefault (int64 text.[i + 1], 0f)
-                    else 
+                        glyph.Kerning.GetValueOrDefault (text.[i + 1], 0f) * size
+                    else
                         0f
-
 
                 let x = nextPosX + xOffset
                 let y = position.Y + (size * font.Metrics.LineHeight - glyphHeight) - yOffset
@@ -361,7 +381,7 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
 
                 s.DrawGlyph font position glyphHalfSize layer glyph
 
-                nextPosX <- nextPosX + advance + kern * size
+                nextPosX <- nextPosX + advance + kern
 
 
     member s.DrawSingleLine (font: NoobishFont) (size: int) (position: Vector2) (layer: float32) (color: Color) (text:string) =

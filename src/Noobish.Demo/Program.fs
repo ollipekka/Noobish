@@ -153,7 +153,7 @@ module Containers =
                 panel
                     [
                         div [
-                                header [text "Hello"; ];
+                                h2 [text "Hello"; ];
                                 hr []
                             ] [fillHorizontal];
                         button [ text "Continue"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; enabled false];

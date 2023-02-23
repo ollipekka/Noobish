@@ -47,25 +47,25 @@ type MSDFFontReader () =
 
         struct(top, right, bottom, left)
 
-    let readGlyph (reader:ContentReader) (kerning: Dictionary<int64, Dictionary<int64, float32>>)  =
-        let unicode = reader.ReadInt64()
+    let readGlyph (reader:ContentReader) (kerning: Dictionary<char, Dictionary<char, float32>>)  =
+        let unicode = char (reader.ReadInt64())
         let advance = reader.ReadSingle()
         let atlasBounds = readBounds (reader)
         let planeBounds = readBounds (reader)
-        let kerning = 
+        let kerning =
             let success, result =
                 kerning.TryGetValue unicode
-        
+
             if success then
-                result 
-            else 
+                result
+            else
                 Dictionary()
 
         {Unicode = unicode; Advance = advance; AtlasBounds = atlasBounds; PlaneBounds = planeBounds; Kerning = kerning }
 
     let readKerning (reader:ContentReader) =
-        let unicode1 = reader.ReadInt64()
-        let unicode2 = reader.ReadInt64()
+        let unicode1 = char (reader.ReadInt64())
+        let unicode2 = char (reader.ReadInt64())
         let advance = reader.ReadSingle()
         struct(unicode1, unicode2, advance)
 
@@ -75,17 +75,17 @@ type MSDFFontReader () =
         let atlas = readAtlas reader
         let metrics = readMetrics reader
 
-        let kerning = Dictionary<int64, Dictionary<int64, float32>>()
+        let kerning = Dictionary<char, Dictionary<char, float32>>()
         let kerningCount = reader.ReadInt32()
-        for i = 0 to kerningCount - 1 do
+        for _i = 0 to kerningCount - 1 do
             let struct(u1, u2, advance) = readKerning reader
 
             let glyphKerning = kerning.GetOrAdd u1 (fun _ -> Dictionary())
             glyphKerning.[u2] <- advance
 
         let glyphCount = reader.ReadInt32()
-        let glyphs = Dictionary<int64, NoobishGlyph>()
-        for i = 0 to glyphCount - 1 do
+        let glyphs = Dictionary<char, NoobishGlyph>()
+        for _i = 0 to glyphCount - 1 do
             let g = readGlyph reader kerning
             glyphs.[g.Unicode] <- g
 

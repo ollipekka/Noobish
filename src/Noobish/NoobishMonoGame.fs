@@ -449,14 +449,13 @@ module NoobishMonoGame =
             let texture = atlas.[tid]
 
             let textureEffect = getTextureEfffect t.TextureEffect
-            let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
             let rect = calculateBounds t.TextureSize c.ContentWithPadding texture.Width texture.Height scrollX scrollY
 
-            let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
+            let origin = Vector2(float32 texture.Width / 2.0f, float32 texture.Height / 2.0f)
             let rotation = toRadians t.Rotation
             let textureColor = t.Color
 
-            spriteBatch.Draw(texture.Atlas, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, layer)
+            spriteBatch.Draw(texture.Atlas, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), texture.SourceRectangle, textureColor, rotation, origin, textureEffect, layer)
 
         | NoobishTextureId.NinePatch (aid, tid) ->
 
