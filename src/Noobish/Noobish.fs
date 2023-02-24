@@ -361,7 +361,7 @@ let slider attributes =
             | Textbox _ -> m
 
         dispatch c.Id (ChangeModel changeModel)
-    {ThemeId = "Slider"; Children = []; Attributes = attributes @ [sliderRange 0.0f 100.0f; (OnPressInternal handlePress)]}
+    {ThemeId = "Slider"; Children = []; Attributes = [(OnPressInternal handlePress)] @ attributes}
 
 
 let combobox children attributes =
@@ -497,8 +497,8 @@ module Logic =
         let mutable textAlign = styleSheet.GetTextAlignment themeId cstate
         let mutable text = ""
         let mutable textWrap = false
-        let mutable paddingLeft, paddingRight, paddingTop, paddingBottom = toFloat (styleSheet.GetPadding themeId cstate)
-        let mutable marginLeft, marginRight, marginTop, marginBottom = toFloat (styleSheet.GetMargin themeId cstate)
+        let mutable paddingTop, paddingRight, paddingBottom, paddingLeft = toFloat (styleSheet.GetPadding themeId cstate)
+        let mutable marginTop, marginRight, marginBottom, marginLeft = toFloat (styleSheet.GetMargin themeId cstate)
 
         let mutable fillHorizontal = false
         let mutable fillVertical = false
@@ -544,7 +544,7 @@ module Logic =
             match a with
             | Name v ->
                 name <- v
-            | Padding (left, right, top, bottom) ->
+            | Padding (top, right, bottom, left) ->
                 paddingLeft <- float32 left
                 paddingRight <- float32 right
                 paddingTop <- float32 top
@@ -557,7 +557,7 @@ module Logic =
                 paddingTop <- float32 top
             | PaddingBottom bottom ->
                 paddingBottom <- float32 bottom
-            | Margin (left, right, top, bottom) ->
+            | Margin (top, right, bottom, left) ->
                 marginLeft <- float32 left
                 marginRight <- float32 right
                 marginTop <- float32 top
@@ -718,7 +718,9 @@ module Logic =
             match model' with
             | Slider (_s) ->
                 minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
-                minHeight <- minHeight + styleSheet.GetHeight themeId "default"
+                let pinHeight = styleSheet.GetHeight "SliderPin" "default"
+                let barHeight = styleSheet.GetHeight "Slider" "default" 
+                minHeight <- minHeight + max pinHeight barHeight
             | Combobox (_c) -> ()
             | Textbox (_t) -> ()
         )

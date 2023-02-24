@@ -349,8 +349,8 @@ module NoobishMonoGame =
         (c: NoobishLayoutElement)
         (slider: SliderModel)
         (_time: TimeSpan)
-        _scrollX
-        _scrollY =
+        scrollX
+        scrollY =
 
         let layer = 1f - float32 c.ZIndex / 255f
         let pinWidth = 25.0f
@@ -361,11 +361,13 @@ module NoobishMonoGame =
 
         if barHeight < 1f then failwith "Slider:default height is 0"
 
+
         // Bar
         let bounds = c.Content
+        let barStartY = bounds.Y + bounds.Height / 2f - barHeight / 2f + scrollY
         let barPosition = Vector2(
             bounds.X + pinWidth / 2.0f,
-            bounds.Y)
+            barStartY)
         let barSize = Vector2(bounds.Width - pinWidth, barHeight)
         let color = styleSheet.GetColor "Slider" "default"
 
@@ -377,7 +379,7 @@ module NoobishMonoGame =
 
         let pinPosition = Vector2(
             bounds.X + (barSize.X * relativePosition) - (pinWidth / 2.0f) + (pinWidth / 2.0f),
-            bounds.Y + barHeight / 2f - pinHeight / 2f)
+            barStartY + barHeight / 2f - pinHeight / 2f)
         let pinSize = Vector2(pinWidth, pinHeight)
         let color = styleSheet.GetColor "SliderPin" "default"
 
@@ -394,9 +396,9 @@ module NoobishMonoGame =
         (c: NoobishLayoutElement)
         (cs: NoobishLayoutElementState)
         (textbox: TextboxModel)
-        (time: TimeSpan) =
-        let scrollX = 0f
-        let scrollY = 0f
+        (time: TimeSpan) 
+        (scrollX: float32) 
+        (scrollY: float32) =
         let layer = 1f - float32 (c.ZIndex + 32) / 255f
         let cursorIndex = textbox.Cursor
 
@@ -418,7 +420,7 @@ module NoobishMonoGame =
 
         let drawables = styleSheet.GetDrawables "Cursor" "default"
 
-        let position = Vector2(bounds.X + textBounds.Width, bounds.Y)
+        let position = Vector2(bounds.X + textBounds.Width + scrollX, bounds.Y + scrollY)
 
         let cursorWidth = styleSheet.GetWidth "Cursor" "default"
         if cursorWidth = 0f then failwith "Cursor:defaul width is 0"
@@ -527,13 +529,13 @@ module NoobishMonoGame =
         match cs.Model with
         | Some(model) ->
             match model with
-            | Slider (s) -> drawSlider styleSheet textureAtlas spriteBatch c s time totalScrollX totalScrollX
+            | Slider (s) -> drawSlider styleSheet textureAtlas spriteBatch c s time totalScrollX totalScrollY
             | Combobox (_c) ->
                 drawBackground styleSheet state textureAtlas spriteBatch c time totalScrollX totalScrollY
             | Textbox (t) ->
                 drawBackground styleSheet state textureAtlas spriteBatch c time totalScrollX totalScrollY
                 if cs.Focused then
-                    drawCursor styleSheet content textureAtlas spriteBatch c cs t time
+                    drawCursor styleSheet content textureAtlas spriteBatch c cs t time totalScrollX totalScrollY
         | None ->
             drawBackground styleSheet state textureAtlas spriteBatch c time totalScrollX totalScrollY
 
@@ -592,15 +594,15 @@ module NoobishMonoGame =
 
                     let viewport =
                         let bounds = child.ContentWithPadding
-                        let startX = bounds.X + totalScrollX
-                        let startY = bounds.Y + totalScrollY
+                        let startX = bounds.X
+                        let startY = bounds.Y
                         let sourceStartX = max startX (float32 parentBounds.X)
                         let sourceStartY = max startY (float32 parentBounds.Y)
                         let sourceWidth = min bounds.Width (float32 parentBounds.Right - startX)
                         let sourceHeight = min bounds.Height (float32 parentBounds.Bottom - startY)
                         createRectangle
-                            sourceStartX
-                            sourceStartY
+                            (sourceStartX + totalScrollX)
+                            (sourceStartY + totalScrollY)
                             (min sourceWidth (float32 parentBounds.Width))
                             (min sourceHeight (float32 parentBounds.Height))
 
@@ -613,8 +615,8 @@ module NoobishMonoGame =
                     let viewport =
                         let bounds = c.ContentWithPadding
                         createRectangle
-                            bounds.X
-                            bounds.Y
+                            (bounds.X + totalScrollX)
+                            (bounds.Y + totalScrollY)
                             bounds.Width
                             bounds.Height
                     drawComponent styleSheet state content settings graphics spriteBatch textBatch debug time c totalScrollX totalScrollY viewport
