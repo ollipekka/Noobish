@@ -456,10 +456,6 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
         s.Flush()
 
 
-
-        //printfn "%s" (text |> NoobishFont.truncate 15)
-        //printfn "%g, %g" nextPosX nextPosY
-
     interface System.IDisposable with
         member s.Dispose() =
             effect.Dispose()

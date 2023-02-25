@@ -28,7 +28,6 @@ type MSDFFontProcessor () =
 
     member s.BuildTexture (name: string) (sourcePath: string) (context: ContentProcessorContext) =
 
-        printfn "%s %s" name sourcePath
         let parameters = new OpaqueDataDictionary()
 
         parameters.Add( "ColorKeyColor", s.ColorKeyColor )

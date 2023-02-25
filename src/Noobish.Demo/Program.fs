@@ -313,17 +313,86 @@ module Buttons =
 module Slider =
     let view model dispatch =
 
+        let option children =
+            div
+                children
+                [
+                    fillHorizontal
+                    block
+                ]
+
+        let content =
+            [
+                option
+                    [
+                        label [ text "OPTION 1"; fillHorizontal; ];
+                        slider [ sliderRange 0.0f 100.0f; sliderStep 1.0f; fillHorizontal; ];
+                    ];
+                option
+                    [
+                        label [ text "OPTION 2"; fillHorizontal; ];
+                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+
+                    ];
+                 option
+                    [
+                        label [ text "OPTION 3"; fillHorizontal; ];
+                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+
+                    ];
+                option
+                    [
+                        label [ text "OPTION 4"; fillHorizontal; ];
+                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+
+                    ];
+                option
+                    [
+                        label [ text "OPTION 5"; fillHorizontal; ];
+                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+
+                    ];
+                option
+                    [
+                        label [ text "OPTION 6"; fillHorizontal; ];
+                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+                    ];
+                option
+                    [
+                        label [ text "OPTION 7"; fillHorizontal; ];
+                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+
+                    ];
+                option
+                    [
+                        label [ text "OPTION 8"; fillHorizontal; ];
+                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+
+                    ];
+            ]
+
         [
             grid 2 2
                 [
                 panel
                     [
-                        label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
+                        //label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
+                        //slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
+                        //slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
+                        //slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
                     ]
                     []
+                panel
+                    [
+                    scroll
+                        content
+                        [
+                            fill
+                        ]
+                    ]
+
+                    []
+
                 ]
                 [
 
