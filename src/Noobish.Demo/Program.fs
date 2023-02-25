@@ -24,6 +24,7 @@ type DemoMessage =
     | ShowButtons
     | ShowText
     | ShowSliders
+    | ShowGithub
     | SliderValueChanged of float32
     | ChangePadding of int
     | ChangeMargin of int
@@ -34,7 +35,7 @@ type DemoMessage =
 
 type StyleMode = LightMode | DarkMode
 
-type ViewState = | Containers | Buttons | Text | Slider
+type ViewState = | Containers | Buttons | Text | Slider | Github
 
 type DemoModel =
     {
@@ -376,10 +377,10 @@ module Slider =
                 [
                 panel
                     [
-                        //label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
-                        //slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
-                        //slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
-                        //slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
+                        label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
+                        slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
                     ]
                     []
                 panel
@@ -398,6 +399,31 @@ module Slider =
 
                 ]
 
+        ]
+
+
+
+
+module Github =
+    let view model dispatch =
+        [
+            grid 10 8
+                [
+                    space [colspan 10; rowspan 2]
+                    space [colspan 2; rowspan 4]
+                    panel
+                        [
+
+                        ]
+                        [
+                            colspan 6; rowspan 4;
+                        ]
+                    space [colspan 2; rowspan 4]
+                    space [colspan 10; rowspan 2]
+                ]
+                [
+
+                ]
         ]
 
 
@@ -467,6 +493,8 @@ type DemoGame () as game =
                 {model with State = Text}, Cmd.none
             | ShowSliders ->
                 {model with State = Slider}, Cmd.none
+            | ShowGithub ->
+                {model with State = Github}, Cmd.none
             | SliderValueChanged v ->
                 {model with SliderAValue = v}, Cmd.none
             | ComboboxValueChanged v ->
@@ -493,6 +521,7 @@ type DemoGame () as game =
                     button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
                     button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
                     button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; ]
+                    button [text "Github"; onClick (fun () -> dispatch ShowGithub); fillHorizontal; toggled (model.State = Github); padding model.Padding; margin model.Margin; ]
                 ]
 
             let title, content  =
@@ -501,6 +530,7 @@ type DemoGame () as game =
                 | Containers -> "Containers", Containers.view model dispatch
                 | Text -> "Labels", Text.view dispatch
                 | Slider -> "Slider", Slider.view model dispatch
+                | Github -> "Github", Github.view model dispatch
 
             [
                 [

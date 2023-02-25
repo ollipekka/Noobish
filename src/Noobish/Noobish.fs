@@ -307,9 +307,9 @@ let onOpenKeyboard cb = OnOpenKeyboard cb
 // Components
 let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
 let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
-let h1 attributes = { ThemeId = "H1"; Children = []; Attributes = attributes }
-let h2 attributes = { ThemeId = "H2"; Children = []; Attributes = attributes }
-let h3 attributes = { ThemeId = "H3"; Children = []; Attributes = attributes }
+let h1 attributes = { ThemeId = "Header1"; Children = []; Attributes = block :: attributes }
+let h2 attributes = { ThemeId = "Header2"; Children = []; Attributes = block :: attributes }
+let h3 attributes = { ThemeId = "Header3"; Children = []; Attributes = block :: attributes }
 let textBox attributes = { ThemeId = "TextBox"; Children = []; Attributes = textAlign NoobishTextAlignment.TopLeft :: KeyTypedEnabled :: attributes }
 let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlignment.TopLeft :: attributes }
 let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
@@ -719,7 +719,7 @@ module Logic =
             | Slider (_s) ->
                 minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
                 let pinHeight = styleSheet.GetHeight "SliderPin" "default"
-                let barHeight = styleSheet.GetHeight "Slider" "default" 
+                let barHeight = styleSheet.GetHeight "Slider" "default"
                 minHeight <- minHeight + max pinHeight barHeight
             | Combobox (_c) -> ()
             | Textbox (_t) -> ()

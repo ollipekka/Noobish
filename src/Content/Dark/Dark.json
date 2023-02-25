@@ -17,19 +17,26 @@
                 "color": "524b24ff"
             }
         },
-        "H1": {
+        "Header1": {
             "default": {
                 "fontSize": 26
             }
         },
-        "H2": {
+        "Header2": {
             "default": {
                 "fontSize": 20
             }
         },
-        "H3": {
+        "Header3": {
             "default": {
                 "fontSize": 16
+            }
+        },
+        "HorizontalRule": {
+            "default": {
+                "drawables": [
+                    ["hr-default.9"]
+                ]
             }
         },
         "Panel": {
