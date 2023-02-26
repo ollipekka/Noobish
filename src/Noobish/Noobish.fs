@@ -872,10 +872,6 @@ module Logic =
             let childHeight = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
             childHeight
 
-        let calculateOverflowHeight () =
-            let childHeight = newChildren |> Seq.fold (fun acc c -> acc + c.OverflowHeight) 0.0f
-            childHeight
-
         let calculateChildWidth () =
             if Seq.isEmpty newChildren then
                 0.0f
@@ -918,14 +914,14 @@ module Logic =
                     let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
                     clamp childWidth 0f availableWidth
 
+            let overflowHeight = calculateChildHeight()
             let height =
                 if parentComponent.FillVertical then
                     availableHeight + parentComponent.PaddingVertical + parentComponent.MarginVertical
                 else
-                    let childHeight = calculateChildHeight() + parentComponent.PaddingVertical + parentComponent.MarginVertical
+                    let childHeight = overflowHeight + parentComponent.PaddingVertical + parentComponent.MarginVertical
                     clamp childHeight 0f availableHeight
 
-            let overflowHeight = calculateOverflowHeight()
             let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.ContentWidth
 
             {parentComponent with
