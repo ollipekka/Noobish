@@ -10,13 +10,14 @@ Since Noobish is designed for Elmish, the whole element tree is rebuilt on each 
 
 ## Supported components
 
-* **Header** represents a header text.
+* **h1**, **h2**, **h3** represent headers of varying sizes.
 * **Label** is the basic visualization of short single-line text.
 * **Paragraph** supports multiline text.
 * **Scroll** enables scrolling of overflowing content.
 * **TextBox** allows user to type text.
 * **Button** let's user to click on a thing.
 * **Combobox** provides a selection dropdown.
+* **Checkbox** provides a toggleable selection with a text.
 * **Horizontal rule** looks nice under a header.
 * **Panel** let's you organize components.
 * **Grid** provides grid-based layouts

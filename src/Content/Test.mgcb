@@ -38,7 +38,6 @@
 /processorParam:TextureFormat=Color
 /build:TimesAtlas.png
 
-
 #begin Arial.json
 /importer:MSDFFontImporter
 /processor:MSDFFontProcessor
@@ -55,6 +54,40 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:ArialAtlas.png
+
+#begin Metropolis-SemiBold.json
+/importer:MSDFFontImporter
+/processor:MSDFFontProcessor
+/build:Metropolis-SemiBold.json
+
+#begin Metropolis-SemiBoldAtlas.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Metropolis-SemiBoldAtlas.png
+
+#begin Metropolis-Regular.json
+/importer:MSDFFontImporter
+/processor:MSDFFontProcessor
+/build:Metropolis-Regular.json
+
+#begin Metropolis-RegularAtlas.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Metropolis-RegularAtlas.png
 
 #begin Dark/Dark.json
 /importer:StyleSheetImporter

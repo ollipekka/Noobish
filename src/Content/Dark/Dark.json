@@ -3,7 +3,7 @@
     "Styles": {
         "Default": {
             "default": {
-                "font": "Times",
+                "font": "Metropolis-Regular",
                 "fontSize": 14,
                 "fontColor": "bbbbbbFF",
                 "padding": [5, 5, 5, 5],

@@ -336,7 +336,7 @@ let label attributes = { ThemeId = "Label"; Children = []; Attributes = attribut
 let h1 attributes = { ThemeId = "Header1"; Children = []; Attributes = block :: attributes }
 let h2 attributes = { ThemeId = "Header2"; Children = []; Attributes = block :: attributes }
 let h3 attributes = { ThemeId = "Header3"; Children = []; Attributes = block :: attributes }
-let textBox attributes = { ThemeId = "TextBox"; Children = []; Attributes = textAlign NoobishTextAlignment.TopLeft :: KeyTypedEnabled :: attributes }
+let textbox attributes = { ThemeId = "TextBox"; Children = []; Attributes = textAlign NoobishTextAlignment.TopLeft :: KeyTypedEnabled :: attributes }
 let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlignment.TopLeft :: attributes }
 let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
 let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }

@@ -265,7 +265,7 @@ module Buttons =
                                 onChange (fun v -> dispatch (ComboboxValueChanged v))
                                 block;
                             ]
-                        textBox [
+                        textbox [
                             text "Please insert coin"
                             //onOpenKeyboard (fun setText -> setText "opened")
                         ]
@@ -423,11 +423,10 @@ module Github =
                                     label [text "Coolness:"; colspan 1; rowspan 1]
                                     slider [sliderValue 80f; fillHorizontal; colspan 5; rowspan 1]
                                     label [text "Features:"; colspan 1; rowspan 1; textLeft]
-                                    textBox [ text "extendable, functional, net6.0 and cross-platform"; textLeft; colspan 5; rowspan 1]
+                                    textbox [ text "extendable, functional, net6.0 and cross-platform"; textLeft; colspan 5; rowspan 1]
                                     button [text "Report a bug"; colspan 2]
                                     button [text "Contribute"; colspan 2]
                                     button [text "Fork"; colspan 2]
-
                                 ]
                                 [
 
