@@ -386,7 +386,6 @@ module NoobishMonoGame =
         let pinDrawables = styleSheet.GetDrawables "SliderPin" "default"
         drawDrawable textureAtlas spriteBatch pinPosition pinSize layer color pinDrawables
 
-    let blinkInterval = TimeSpan.FromSeconds 1.2
 
     let private drawCursor
         (styleSheet: NoobishStyleSheet)
@@ -413,7 +412,7 @@ module NoobishMonoGame =
 
 
         let timeFocused = (time - cs.FocusedTime)
-        let blinkProgress = MathF.Pow(float32 (timeFocused.TotalSeconds % blinkInterval.TotalSeconds), 5f)
+        let blinkProgress = Cursor.blink timeFocused
 
         let cursorColor = styleSheet.GetColor "Cursor" "default"
         let color = Color.Lerp(cursorColor, Color.Transparent, float32 blinkProgress)
