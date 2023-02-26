@@ -304,6 +304,32 @@ let keyboardShortcut k = KeyboardShortcut k
 
 let onOpenKeyboard cb = OnOpenKeyboard cb
 
+let private getText (attributes: list<NoobishAttribute>) =
+    let mutable text = ""
+    let mutable i = 0
+    while i < attributes.Length - 1 do
+        let a = attributes.[i]
+        match a with
+        | Text (text') ->
+            text <- text'
+            i <- attributes.Length
+        | _ -> ()
+        i <- i + 1
+    text
+
+let private isToggled (attributes: list<NoobishAttribute>) =
+    let mutable toggled = false
+    let mutable i = 0
+    while i < attributes.Length - 1 do
+        let a = attributes.[i]
+        match a with
+        | Toggled (t) ->
+            toggled <- t
+            i <- attributes.Length
+        | _ -> ()
+        i <- i + 1
+    toggled
+
 // Components
 let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
 let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
@@ -374,12 +400,7 @@ let combobox children attributes =
 
 
     let children' = children |> List.map(fun c' ->
-        let mutable text = ""
-        for a in c'.Attributes do
-            match a with
-            | Text (text') ->
-                text <- text'
-            | _ -> ()
+        let text = getText attributes
 
         let onClick = OnClickInternal (
             fun dispatch c ->
@@ -397,6 +418,27 @@ let combobox children attributes =
     )
 
     {ThemeId = "Combobox"; Children = [dropdown]; Attributes = Layout(NoobishLayout.OverlaySource) :: onClickInternal :: attributes}
+
+let checkbox attributes =
+    let labelText = getText attributes
+    let isChecked = (isToggled attributes)
+    let check = { ThemeId = "CheckBox"; Children = []; Attributes = [toggled isChecked;] }
+
+    let attributes =
+        attributes
+            |> List.filter(
+                function
+                | Text(_) -> false
+                | Toggled(_) -> false
+                | _ -> true
+            )
+    div
+        [
+            check; label [fillVertical; text labelText; textAlign NoobishTextAlignment.Left]
+        ]
+        (fill :: attributes)
+
+
 
 let largeWindowWithGrid cols rows children attributes =
     grid 16 9

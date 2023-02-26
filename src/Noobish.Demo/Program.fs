@@ -413,6 +413,25 @@ module Github =
                     space [colspan 2; rowspan 4]
                     panel
                         [
+                            h2 [text "Welcome to Noobish"; textCenter]
+                            hr []
+                            grid 6 4
+                                [
+                                    checkbox [text "FSharp"; toggled true; colspan 2; rowspan 1]
+                                    checkbox [text "MonoGame"; toggled true; colspan 2; rowspan 1]
+                                    checkbox [text "Elmish"; toggled true; colspan 2; rowspan 1]
+                                    label [text "Coolness:"; colspan 1; rowspan 1]
+                                    slider [sliderValue 80f; fillHorizontal; colspan 5; rowspan 1]
+                                    label [text "Features:"; colspan 1; rowspan 1; textLeft]
+                                    textBox [ text "extendable, functional, net6.0 and cross-platform"; textLeft; colspan 5; rowspan 1]
+                                    button [text "Report a bug"; colspan 2]
+                                    button [text "Contribute"; colspan 2]
+                                    button [text "Fork"; colspan 2]
+
+                                ]
+                                [
+
+                                ]
 
                         ]
                         [

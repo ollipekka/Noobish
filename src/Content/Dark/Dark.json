@@ -77,6 +77,20 @@
                 ]
             }
         },
+        "CheckBox": {
+            "default": {
+                "padding": [12, 12, 12, 12],
+                "drawables": [
+                    ["checkbox-default.9"]
+                ]
+            },
+            "toggled": {
+                "drawables": [
+                    ["checkbox-default.9"],
+                    ["checkbox-toggled.9", "df7126aa"]
+                ]
+            }
+        },
         "TextBox": {
             "default": {
                 "drawables": [

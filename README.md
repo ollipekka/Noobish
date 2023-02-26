@@ -2,6 +2,8 @@
 
 ## Introduction
 
+![Noobish](screenshots/hello.png "Hello Noobish!")
+
 Noobish is an experimental element tree / ui library for MonoGame written with F#. Noobish supports multiple basic components and supports limited customization. Noobish can be used with mobile devices.
 
 Since Noobish is designed for Elmish, the whole element tree is rebuilt on each *'view'* call. Noobish persists state of elements between view cycles to keep scroll position.
