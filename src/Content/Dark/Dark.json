@@ -6,13 +6,11 @@
                 "font": "Metropolis-Regular",
                 "fontSize": 12,
                 "fontColor": "bbbbbbFF",
-                "padding": [5, 5, 5, 5],
+                "padding": [4, 4, 4, 4],
                 "margin": [4, 4, 4, 4],
                 "color": "39404dff"
             },
             "disabled": {
-                "padding": [5, 5, 5 ,5],
-                "margin": [4, 4, 4, 4],
                 "fontColor": "806d5fff",
                 "color": "524b24ff"
             }

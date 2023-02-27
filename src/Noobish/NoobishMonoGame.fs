@@ -177,28 +177,18 @@ module NoobishMonoGame =
             | NoobishDrawable.NinePatch(tid) ->
                 let texture = textureAtlas.[tid]
 
-                spriteBatch.DrawAtlasNinePatch(
+                spriteBatch.DrawAtlasNinePatch2(
                     texture,
-                    position,
-                    size.X,
-                    size.Y,
+                    Rectangle(int position.X, int position.Y, int size.X, int size.Y),
                     color,
-                    0f,
-                    Vector2.One,
-                    SpriteEffects.None,
-                    layer )
+                    layer)
             | NoobishDrawable.NinePatchWithColor(tid, color) ->
                 let texture = textureAtlas.[tid]
 
-                spriteBatch.DrawAtlasNinePatch(
+                spriteBatch.DrawAtlasNinePatch2(
                     texture,
-                    position,
-                    size.X,
-                    size.Y,
+                    Rectangle(int position.X, int position.Y, int size.X, int size.Y),
                     color,
-                    0f,
-                    Vector2.One,
-                    SpriteEffects.None,
                     layer)
 
     let private drawBackground (styleSheet: NoobishStyleSheet) (state: NoobishState)  (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (time: TimeSpan) scrollX scrollY =
@@ -467,15 +457,11 @@ module NoobishMonoGame =
             let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
             let rect = c.ContentWithPadding
             let textureColor = t.Color
-            spriteBatch.DrawAtlasNinePatch(
+
+            spriteBatch.DrawAtlasNinePatch2(
                 texture,
-                Vector2(float32 rect.X, float32 rect.Y),
-                float32 rect.Width,
-                float32 rect.Height,
+                Rectangle(int rect.X, int rect.Y, int rect.Width, int rect.Height),
                 textureColor,
-                0f,
-                Vector2.One,
-                textureEffect,
                 0f )
 
         | NoobishTextureId.None -> failwith "Can't have empty texture at this point."

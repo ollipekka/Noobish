@@ -420,7 +420,7 @@ module Github =
                                     checkbox [text "FSharp"; toggled true; colspan 2; rowspan 1]
                                     checkbox [text "MonoGame"; toggled true; colspan 2; rowspan 1]
                                     checkbox [text "Elmish"; toggled true; colspan 2; rowspan 1]
-                                    label [text "Coolness:"; colspan 1; rowspan 1]
+                                    label [text "Coolness:"; colspan 1; rowspan 1; textLeft]
                                     slider [sliderValue 80f; fillHorizontal; colspan 5; rowspan 1]
                                     label [text "Features:"; colspan 1; rowspan 1; textLeft]
                                     textbox [ text "extendable, functional, net6.0 and cross-platform"; textLeft; colspan 5; rowspan 1]
