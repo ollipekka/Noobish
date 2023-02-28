@@ -4,23 +4,23 @@
 
 ![Noobish](screenshots/hello.png "Hello Noobish!")
 
-Noobish is an experimental element tree / ui library for MonoGame written with F#. Noobish supports multiple basic components and supports limited customization. Noobish can be used with mobile devices.
+Noobish is an experimental element tree / ui library for MonoGame written with F#. Noobish supports multiple basic components and limited customization through themes and custom components. Noobish uses non-complex (one stretch) Nine Patches for component images. Noobish can be used with mobile devices.
 
-Since Noobish is designed for Elmish, the whole element tree is rebuilt on each *'view'* call. Noobish persists state of elements between view cycles to keep scroll position.
+Since Noobish is designed for Elmish, the element tree is rebuilt on each *'view'* call. Noobish persists state of elements between view cycles to keep state stuch as scroll position.
 
 ## Supported components
 
 * **h1**, **h2**, **h3** represent headers of varying sizes.
 * **label** is the basic visualization of short single-line text.
-* **p** displays wrapped multiline text.
+* **p** renders wrapped multiline text.
 * **scroll** enables scrolling of the overflowing content.
-* **textbox** captures user input.
-* **button** provides something to click on.
-* **Combobox** allows selecting a dropdown.
+* **textbox** captures user key input.
+* **button** provides something for the users to click on.
+* **Combobox** allows selecting a value from a dropdown.
 * **Checkbox** is a toggleable selection with a text.
 * **hr** is a nice line to divide content.
-* **div/panel** composes a simple layout.
-* **grid** composes a complex layout.
+* **div** and **panel** provide a simple block layout.
+* **grid** creates a complex layout.
 
 ## Attributes
 
@@ -28,7 +28,7 @@ Since Noobish is designed for Elmish, the whole element tree is rebuilt on each 
 
 ## Markup
 
-Noobish views are built as code with a DSL that creates the views as NoobishElements.
+Noobish views are built as code with a DSL. Each view is a list of NoobishElements.
 
 ```fsharp
 
@@ -90,13 +90,9 @@ Noobish style sheets are json files. The styles cascade towards *'default'*.
 
 ## Scaling
 
-Noobish does not support scaling due to issues with texture bleeding and nine patches. The recommended approach is to render to a rendertarget and scale that render target.
+Noobish does not support scaling due to issues with texture bleeding and nine patches. The recommended approach is to render to an offscreen buffer (MonoGame RenderTarget) and scale it to desired scale.
 
-## Limitations
-
-Noobish tracks identity of a component by its location. Noobish can't handle layouts where components disappear from the layout between view calls.
-
-## Getting started
+## Project setup
 
 From your main project, add reference to Noobish.dll.
 
@@ -118,7 +114,15 @@ Fonts are generated using msdf-atlas-gen.
 * *Noobish.Demo.Content:* Content project for the Noobish.Demo.
 * *Noobish.PipelineExtension:* MonoGame Content Pipeline Extension that creates TextureAtlases and StyleSheet.
 
+
+## Limitations
+
+Noobish tracks identity of a component by its location. Noobish doesn't handle properly layouts where components disappear from the layout between view calls.
+
 ## ToDo
 
-* Memoize support
-* API stabilization
+* Memoize support.
+* API stabilization.
+* Study utilizing generic models in components.
+  * combobox<SwordSelectionmodel>
+  * list<ListItem>
