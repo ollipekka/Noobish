@@ -29,6 +29,7 @@ type DemoMessage =
     | ChangePadding of int
     | ChangeMargin of int
     | ComboboxValueChanged of string
+    | FeaturesChanged of string
     | ToggleDebug
     | ToggleDarkMode
     | ToggleLightMode
@@ -46,11 +47,12 @@ type DemoModel =
         Margin: int
         ComboboxValue: string
         SliderAValue: float32
+        FeatureText: string
     }
 
 module Text =
 
-    let view _dispatch =
+    let view model _dispatch =
 
         [
             grid 2 2
@@ -97,7 +99,7 @@ module Text =
                             ]
                         scroll
                             [
-                                paragraph [text "Could scroll, but won't."]
+                                paragraph [text $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}"]
 
                             ]
                             [
@@ -423,7 +425,7 @@ module Github =
                                     label [text "Coolness:"; colspan 1; rowspan 1; textLeft]
                                     slider [sliderValue 80f; fillHorizontal; colspan 5; rowspan 1]
                                     label [text "Features:"; colspan 1; rowspan 1; textLeft]
-                                    textbox [ text "extendable, functional, net6.0 and cross-platform"; textLeft; colspan 5; rowspan 1]
+                                    textbox [ text model.FeatureText; onChange (fun v -> dispatch (FeaturesChanged v)); textLeft; colspan 5; rowspan 1]
                                     button [text "Report a bug"; colspan 2]
                                     button [text "Contribute"; colspan 2]
                                     button [text "Fork"; colspan 2]
@@ -499,7 +501,7 @@ type DemoGame () as game =
             |> NoobishMonoGame.overrideDebug false
 
         let init () =
-            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -521,6 +523,8 @@ type DemoGame () as game =
                 {model with Padding = padding}, Cmd.none
             | ChangeMargin margin ->
                 {model with Margin = margin}, Cmd.none
+            | FeaturesChanged s ->
+                {model with FeatureText = s}, Cmd.none
             | ToggleDebug ->
                 model.UI.Debug <- (not model.UI.Debug)
                 model, Cmd.none
@@ -546,7 +550,7 @@ type DemoGame () as game =
                 match model.State with
                 | Buttons -> "Buttons", Buttons.view model dispatch
                 | Containers -> "Containers", Containers.view model dispatch
-                | Text -> "Labels", Text.view dispatch
+                | Text -> "Labels", Text.view model dispatch
                 | Slider -> "Slider", Slider.view model dispatch
                 | Github -> "Github", Github.view model dispatch
 

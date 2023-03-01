@@ -277,20 +277,18 @@ module NoobishMonoGame =
         let fontId = styleSheet.GetFont c.ThemeId state
         let font = content.Load<NoobishFont> fontId
 
-
         let fontSize = (styleSheet.GetFontSize c.ThemeId state)
 
         let bounds = c.Content
-
 
         let textBounds =
                 NoobishFont.calculateBounds font fontSize c.TextWrap bounds scrollX scrollY c.TextAlignment text
 
         let textColor = styleSheet.GetFontColor c.ThemeId state
         if c.TextWrap then
-            textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textBounds.X, (textBounds.Y))) layer textColor text
+            textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textBounds.X, textBounds.Y)) layer textColor text
         else
-            textBatch.DrawSingleLine font fontSize (Vector2(textBounds.X, (textBounds.Y))) layer textColor text
+            textBatch.DrawSingleLine font fontSize (Vector2(textBounds.X, textBounds.Y)) layer textColor text
 
 
     let private drawScrollBars
@@ -324,13 +322,13 @@ module NoobishMonoGame =
 
             let layer = 1f - float32 c.ZIndex / 255.0f
 
-            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + 4f))(Vector2(scrollBarWidth, bounds.Height - 8f)) layer color scrollbarDrawable
+            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + 4f)) (Vector2(scrollBarWidth, bounds.Height - 8f)) layer color scrollbarDrawable
 
             let pinPosition =  - ( cs.ScrollY / c.OverflowHeight) * bounds.Height
             let pinHeight = ( c.Height / c.OverflowHeight) * bounds.Height
             let color = Color.Multiply(scrollbarPinColor, progress)
 
-            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + pinPosition + 4f))(Vector2(scrollBarWidth, pinHeight - 8f)) layer color scrollbarPinDrawable
+            drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + pinPosition + 4f)) (Vector2(scrollBarWidth, pinHeight - 8f)) layer color scrollbarPinDrawable
 
     let private drawSlider
         (styleSheet: NoobishStyleSheet)
@@ -398,7 +396,7 @@ module NoobishMonoGame =
 
         let bounds = c.Content
 
-        let textBounds = NoobishFont.calculateCursorPosition font fontSize c.TextWrap bounds scrollX scrollY c.TextAlignment (cursorIndex) textbox.Text
+        let textBounds = NoobishFont.calculateCursorPosition font fontSize c.TextWrap bounds scrollX scrollY c.TextAlignment cursorIndex textbox.Text
 
 
         let timeFocused = (time - cs.FocusedTime)
@@ -408,12 +406,11 @@ module NoobishMonoGame =
         let color = Color.Lerp(cursorColor, Color.Transparent, float32 blinkProgress)
 
         let drawables = styleSheet.GetDrawables "Cursor" "default"
-
-        let position = Vector2(bounds.X + textBounds.Width + scrollX, bounds.Y + scrollY)
+        let position = Vector2(bounds.X + textBounds.Width, textBounds.Y)
 
         let cursorWidth = styleSheet.GetWidth "Cursor" "default"
         if cursorWidth = 0f then failwith "Cursor:defaul width is 0"
-        let size = Vector2(cursorWidth, bounds.Height)
+        let size = Vector2(cursorWidth, textBounds.Height)
         drawDrawable textureAtlas spriteBatch position size layer color drawables
 
     let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
@@ -422,7 +419,6 @@ module NoobishMonoGame =
         match t.Texture with
         | NoobishTextureId.Basic(textureId) ->
             let texture = content.Load<Texture2D> textureId
-
 
             let textureEffect = getTextureEfffect t.TextureEffect
             let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
@@ -574,9 +570,6 @@ module NoobishMonoGame =
             for child in c.Children do
                 let cs = state.[child.Id]
                 if cs.Visible then
-
-
-
                     let viewport =
                         let bounds = child.ContentWithPadding
                         let startX = bounds.X + totalScrollX
@@ -592,7 +585,6 @@ module NoobishMonoGame =
                             (min sourceHeight (float32 outerRectangle.Height))
 
                     drawComponent styleSheet state content settings graphics spriteBatch textBatch debug time child totalScrollX totalScrollY viewport
-
         | NoobishLayout.Grid(_cols, _rows) ->
             for c in c.Children do
                 let cs = state.[c.Id]
@@ -634,13 +626,11 @@ module NoobishMonoGame =
         let textX = areaWidth - fpsWidth
         let textY = areaHeight - fpsHeight
 
-
-
         spriteBatch.Begin()
         drawRectangle spriteBatch pixel (Color.Multiply(Color.DarkRed, 0.5f)) 0.0f 0.0f (float32 areaWidth + 10.0f) (float32 areaHeight + 10.0f)
         spriteBatch.End()
 
-        textBatch.DrawSingleLine font 32  (Vector2(float32 textX + 5.0f, float32 textY + 5.0f)) 1f Color.White fpsText
+        textBatch.DrawSingleLine font 32 (Vector2(float32 textX + 5.0f, float32 textY + 5.0f)) 1f Color.White fpsText
 
         if time - ui.FPSTime >= fpsTimer then
             ui.FPS <- ui.FPSCounter
@@ -680,7 +670,7 @@ module NoobishMonoGame =
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
                 ui.State.SetFocus "" TimeSpan.Zero
-                handled <- Noobish.Input.click ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                handled <- Noobish.Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
@@ -773,7 +763,7 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Noobish.Input.click ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- Noobish.Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
                     i <- i - 1
             | _ -> ()
 

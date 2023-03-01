@@ -229,8 +229,6 @@ let textBottomCenter = TextAlign NoobishTextAlignment.BottomCenter
 let textBottomRight = TextAlign NoobishTextAlignment.BottomRight
 let textWrap = TextWrap
 
-
-
 let color (c: string) =
     let v =
         if c.StartsWith "#" then
@@ -340,11 +338,9 @@ let textbox attributes = { ThemeId = "TextBox"; Children = []; Attributes = text
 let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlignment.TopLeft :: attributes }
 let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
 let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
-let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes}
-
+let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes }
 let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; block] }
-
-let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: attributes}
+let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: attributes }
 
 
 let scroll children attributes =
@@ -619,7 +615,17 @@ module Logic =
                 minWidth <- float32 width
                 minHeight <- float32 height
             // Text
-            | Text(value) -> text <- value
+            | Text(value) ->
+                text <- value
+
+                model <- model |> Option.map(
+                    fun model' ->
+                        match model' with
+                        | Textbox(model'') ->
+                            Textbox({model'' with Text = value; Cursor = value.Length})
+                        | _ -> model'
+                )
+
             | TextAlign (value) -> textAlign <- value
             | TextWrap -> textWrap <- true
             // Slider
@@ -713,7 +719,7 @@ module Logic =
                 // Scroll needs to fill the whole area.
                 fillHorizontal <- true
                 fillVertical <- true
-            |ScrollHorizontal ->
+            | ScrollHorizontal ->
                 scrollHorizontal <- true
             | ScrollVertical ->
                 scrollVertical <- true

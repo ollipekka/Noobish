@@ -4,6 +4,8 @@ open System
 open System.Collections.Generic
 
 open Noobish.Internal
+open Noobish.Styles
+open Microsoft.Xna.Framework.Content
 
 let rec press
     (version: Guid)
@@ -20,7 +22,8 @@ let rec press
     while not handled && i < elements.Length do
         let c = elements.[i]
         let cs = state.ElementsById.[c.Id]
-        if cs.Version = version && c.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
+        if cs.Version <> version then failwith "Version mismatch!"
+        if c.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
                 if c.Children.Length > 0 then
                     press version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
@@ -41,7 +44,9 @@ let rec press
 
 let rec click
     (version: Guid)
+    (content: ContentManager)
     (state: NoobishState)
+    (styles: NoobishStyleSheet)
     (elements: NoobishLayoutElement[])
     (time: TimeSpan)
     (positionX: float32)
@@ -54,12 +59,15 @@ let rec click
 
     while not handled && i < elements.Length do
         let c = elements.[i]
+        if c.ThemeId = "TextBox" then
+            printfn "wtf!"
         let cs = state.ElementsById.[c.Id]
-        if cs.Version = version && c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
+        if cs.Version <> version then failwith "Version mismatch!"
+        if c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then
-                    click version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
+                    click version content state styles c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
                 else
                     false
             if not handledByChild then
@@ -69,6 +77,23 @@ let rec click
 
                 if cs.CanFocus && not cs.Focused then
                     state.SetFocus cs.Id time
+
+                    cs.Model
+                        |> Option.map(fun m ->
+                            match m with
+                            | Textbox (m') ->
+                                let bounds = c.Content
+
+                                let fontId = styles.GetFont c.ThemeId "default"
+                                let font = content.Load<NoobishFont> fontId
+                                let fontSize = styles.GetFontSize c.ThemeId "default"
+                                let cursorIndex = NoobishFont.calculateCursorIndex font fontSize false bounds scrollX scrollY c.TextAlignment positionX positionY m'.Text
+                                Textbox {m' with Cursor = cursorIndex }
+                            | _ -> m
+                        ) |> Option.iter (fun m ->
+                            state.Update c.Id (ChangeModel (fun _ -> m))
+                        )
+
                 else
                     c.OnClickInternal c
 
@@ -85,28 +110,34 @@ let rec keyTyped
     (version: Guid)
     (state: NoobishState)
     (elements: NoobishLayoutElement[])
-    (typed: char) =
+    (typed: char): bool =
 
     let mutable handled = false
-    state.FocusedElementId
-        |> Option.iter(fun focusedElementId ->
-            let cs = state.ElementsById.[focusedElementId]
+    let mutable i = 0
 
-            if cs.Model.IsNone then failwith "Element is not a text box."
+    let focusedElementId = state.FocusedElementId |> Option.defaultValue ""
 
-            let model' = cs.Model |> Option.map (
+    while not handled && i < elements.Length do
+        let e = elements.[i]
+        let es = state.ElementsById.[e.Id]
+
+        if es.Version <> version then failwith "Version mismatch!"
+        if e.Id = focusedElementId then
+            let model'' = es.Model |> Option.map (
                 fun model' ->
-
-
                     match model' with
                     | Textbox model'' ->
-
                         let (text, cursor) =
                             if int typed = 8 then // backspace
                                 if model''.Text.Length > 0 && model''.Cursor > 0 then
                                     model''.Text.Remove(model''.Cursor - 1, 1), model''.Cursor - 1
                                 else
                                     "", 0
+                            elif int typed = 13 then
+                                let c = elements |> Array.find(fun e -> e.Id = es.Id)
+                                state.SetFocus "" TimeSpan.Zero
+                                c.OnChange model''.Text
+                                model''.Text, 0
                             elif int typed = 127 then // deleted
                                 if model''.Text.Length > 0 && model''.Cursor < model''.Text.Length - 1 then
                                     model''.Text.Remove(model''.Cursor, 1), model''.Cursor
@@ -114,16 +145,19 @@ let rec keyTyped
                                     "", 0
                             else
                                 model''.Text.Insert(model''.Cursor, typed.ToString()), model''.Cursor + 1
-
                         Textbox {model'' with Text = text; Cursor = cursor}
-                    | _ -> failwith "Element is not a text box."
+                    | _ -> model'
             )
-
-            state.ElementsById.[focusedElementId] <- {cs with Model = model'}
+            model'' |> Option.iter (fun m ->
+                state.Update focusedElementId (ChangeModel (fun _ -> m))
+            )
             handled <- true
-        )
+        else
+            handled <- keyTyped version state e.Children typed
 
+        i <- i + 1
     handled
+
 let rec scroll
     (version: Guid)
     (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
@@ -140,7 +174,8 @@ let rec scroll
     let mutable handled = false;
     for c in elements do
         let cs = state.[c.Id]
-        if cs.Version = version && c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
+        if cs.Version <> version then failwith "Version mismatch!"
+        if c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then

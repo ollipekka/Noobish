@@ -58,7 +58,6 @@ module NoobishGlyph =
     let getKern (g: NoobishGlyph) (c: char) =
         g.Kerning.GetValueOrDefault c
 
-
     let getSize (scale: float32) (glyph: NoobishGlyph) =
         let struct(top, right, bottom, left) = glyph.AtlasBounds
 
@@ -163,15 +162,6 @@ module NoobishFont =
             else
                 let (success, g) = font.Glyphs.TryGetValue c
                 if success then
-
-                    (*
-                    let kern =
-                        if i + 1 < count - 1 then
-                            g.Kerning.GetValueOrDefault (text.[i + 1], 0f)
-                        else
-                            0f
-                    *)
-
                     width <- width + g.Advance * size
 
         struct(width, font.Metrics.LineHeight * size)
@@ -229,12 +219,14 @@ module NoobishFont =
         (cursorPosition: int)
         (text: string) =
 
-
-        let struct(textSizeX, textSizeY) =
+        let size = float32 fontSize * 4f / 3f
+        let struct(textSizeX, _) =
             if wrap then
                 failwith "Multiline text not supported yet."
             else
                 measureSingleLineSegment font fontSize 0 cursorPosition text
+
+        let textSizeY = size * font.Metrics.LineHeight
 
         let inline leftX () = bounds.X
         let inline rightX () = bounds.X + bounds.Width - textSizeX
@@ -256,6 +248,58 @@ module NoobishFont =
             | NoobishTextAlignment.BottomRight -> struct(rightX(), bottomY())
 
         {X = (textStartX + scrollX); Y = (textStartY + scrollY); Width = textSizeX; Height = textSizeY}
+
+
+
+    let calculateCursorIndex
+        (font: NoobishFont)
+        (fontSize: int)
+        (wrap: bool)
+        (bounds: NoobishRectangle)
+        (scrollX: float32)
+        (scrollY: float32)
+        (textAlign: NoobishTextAlignment)
+        (relativeX: float32)
+        (relativeY: float32)
+        (text: string) =
+        if wrap then failwith "Not supported."
+        let struct(textSizeX, _) =
+                measureSingleLineSegment font fontSize 0 text.Length text
+
+        let size = float32 fontSize * 4f / 3f
+        let textSizeY = size * font.Metrics.LineHeight
+
+        let inline leftX () = bounds.X
+        let inline rightX () = bounds.X + bounds.Width - textSizeX
+        let inline topY () = bounds.Y
+        let inline bottomY () = bounds.Y + bounds.Height - textSizeY
+        let inline centerX () = bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
+        let inline centerY () = bounds.Y  + bounds.Height / 2.0f - textSizeY / 2.0f
+
+        let struct(textStartX, _textStartY) =
+            match textAlign with
+            | NoobishTextAlignment.TopLeft -> struct(leftX(), topY())
+            | NoobishTextAlignment.TopCenter -> struct(centerX(), topY())
+            | NoobishTextAlignment.TopRight -> struct(rightX(), topY())
+            | NoobishTextAlignment.Left -> struct(leftX(), centerY())
+            | NoobishTextAlignment.Center -> struct(centerX(), centerY())
+            | NoobishTextAlignment.Right -> struct(rightX(), centerY())
+            | NoobishTextAlignment.BottomLeft -> struct(leftX(), bottomY())
+            | NoobishTextAlignment.BottomCenter -> struct(centerX(), bottomY())
+            | NoobishTextAlignment.BottomRight -> struct(rightX(), bottomY())
+
+        let mutable width = textStartX
+        let mutable i = 0
+        while i < text.Length && width < relativeX do
+            let c = text.[i]
+            if c = '\n' then
+                ()
+            else
+                let (success, g) = font.Glyphs.TryGetValue c
+                if success then
+                    width <- width + g.Advance * size
+            i <- i + 1
+        i
 
     let calculateBounds
         (font: NoobishFont)

@@ -16,8 +16,8 @@ Since Noobish is designed for Elmish, the element tree is rebuilt on each *'view
 * **scroll** enables scrolling of the overflowing content.
 * **textbox** captures user key input.
 * **button** provides something for the users to click on.
-* **Combobox** allows selecting a value from a dropdown.
-* **Checkbox** is a toggleable selection with a text.
+* **combobox** allows selecting a value from a dropdown.
+* **checkbox** is a toggleable selection with a text.
 * **hr** is a nice line to divide content.
 * **div** and **panel** provide a simple block layout.
 * **grid** creates a complex layout.
@@ -114,7 +114,6 @@ Fonts are generated using msdf-atlas-gen.
 * *Noobish.Demo.Content:* Content project for the Noobish.Demo.
 * *Noobish.PipelineExtension:* MonoGame Content Pipeline Extension that creates TextureAtlases and StyleSheet.
 
-
 ## Limitations
 
 Noobish tracks identity of a component by its location. Noobish doesn't handle properly layouts where components disappear from the layout between view calls.
@@ -124,5 +123,5 @@ Noobish tracks identity of a component by its location. Noobish doesn't handle p
 * Memoize support.
 * API stabilization.
 * Study utilizing generic models in components.
-  * combobox<SwordSelectionmodel>
-  * list<ListItem>
+  * ```combobox<SwordSelectionModel>```
+  * ```list<ListItem>```

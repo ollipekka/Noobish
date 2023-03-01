@@ -113,6 +113,7 @@ module Internal =
     type NoobishId = | NoobishId of string
 
     type NoobishState () =
+
         member val ElementsById = Dictionary<string, NoobishLayoutElementState>()
         member val TempElements = Dictionary<string, NoobishLayoutElementState>()
         member val FocusedElementId: Option<string> = None with get, set
@@ -156,16 +157,6 @@ module Internal =
                 let cs = s.ElementsById.[id]
                 cs.Focused <- true
                 cs.FocusedTime <- time
-
-                cs.Model <-
-                    cs.Model
-                    |> Option.map(
-                        fun model' ->
-                            match model' with
-                            | Textbox (model'') -> Textbox {model'' with Text = ""; Cursor = 0}
-                            | _ -> model'
-                    )
-
 
                 let setText (text: string) =
                     let model =
