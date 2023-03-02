@@ -1,5 +1,5 @@
 namespace Noobish
-    
+
 
 open Microsoft.Xna.Framework
 
@@ -191,9 +191,21 @@ type NoobishState () =
                     s.UpdateState {cs with Model = Some(model') })
 
 
-    member s.Unfocus () = 
+    member s.Unfocus () =
         s.FocusedElementId |> Option.iter (
             fun id ->
+
+                let c = s.ElementsById.[id]
+                let cs = s.ElementStateById.[id]
+
+                cs.Model
+                    |> Option.iter (fun m ->
+                        match m with
+                        | Textbox m' ->
+                            c.OnChange m'.Text
+                        | _ -> ()
+                    )
+
                 let cs = s.ElementStateById.[id]
                 cs.Focused <- false
                 cs.FocusedTime <- TimeSpan.Zero

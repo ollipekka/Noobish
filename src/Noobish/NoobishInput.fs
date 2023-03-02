@@ -59,8 +59,6 @@ let rec click
 
     while not handled && i < elements.Length do
         let c = elements.[i]
-        if c.ThemeId = "TextBox" then
-            printfn "wtf!"
         let cs = state.ElementStateById.[c.Id]
         if cs.Version <> version then failwith "Version mismatch!"
         if c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
@@ -134,9 +132,7 @@ let rec keyTyped
                                 else
                                     "", 0
                             elif int typed = 13 then
-                                let c = elements |> Array.find(fun e -> e.Id = es.Id)
                                 state.Unfocus()
-                                c.OnChange model''.Text
                                 model''.Text, 0
                             elif int typed = 127 then // deleted
                                 if model''.Text.Length > 0 && model''.Cursor < model''.Text.Length - 1 then

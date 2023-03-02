@@ -120,6 +120,10 @@ Noobish tracks identity of a component by its location. Noobish doesn't handle p
 
 ## ToDo
 
+
+* Textbox:
+  * double click to clear and focus.
+  * Three places for Text: Element, ElementState Model, Element Model.
 * Memoize support.
 * API stabilization.
 * Study utilizing generic models in components.
