@@ -9,7 +9,26 @@ type NoobishLayout =
 | None
 
 [<RequireQualifiedAccess>]
-type NoobishTextureSize = Stretch | BestFitMax | BestFitMin | Original
+type NoobishTextureId =
+    | None
+    | NinePatch of atlasId: string * ninePatchId: string
+    | Basic of string
+    | Atlas of atlasId: string * textureId: string
+
+[<RequireQualifiedAccess>]
+type NoobishTextureEffect =
+    | None
+    | FlipHorizontally
+    | FlipVertically
+
+[<RequireQualifiedAccess>]
+type NoobishImageSize = Stretch | BestFitMax | BestFitMin | Original
+
+[<RequireQualifiedAccess>]
+type NoobishTextAlignment =
+| TopLeft | TopCenter | TopRight
+| Left  | Center | Right
+| BottomLeft | BottomCenter | BottomRight
 
 [<RequireQualifiedAccess>]
 type NoobishKeyId =
@@ -33,6 +52,7 @@ module Internal =
 
     open System
     open System.Collections.Generic
+    open Microsoft.Xna.Framework
 
     [<Struct>]
     type NoobishRectangle = {
@@ -79,107 +99,6 @@ module Internal =
         | ChangeModel of (NoobishComponentModel -> NoobishComponentModel)
 
     type ComponentChangeDispatch = (ComponentMessage -> unit)
-
-    type NoobishLayoutElementState = {
-        Id: string
-        ParentId: string
-        mutable Focused: bool
-        mutable Toggled: bool
-        mutable Visible: bool
-
-        mutable FocusedTime: TimeSpan
-        mutable PressedTime: TimeSpan
-        mutable ScrolledTime: TimeSpan
-
-        mutable ScrollX: float32
-        mutable ScrollY: float32
-
-        mutable Model: option<NoobishComponentModel>
-
-        Version: Guid
-        KeyboardShortcut: NoobishKeyId
-
-
-        Children: string[]
-    } with
-        member s.CanFocus with get() =
-            match s.Model with
-            | Some(model') ->
-                match model' with
-                | Textbox (_) -> true
-                | _ -> false
-            | None -> false
-
-    type NoobishId = | NoobishId of string
-
-    type NoobishState () =
-
-        member val ElementsById = Dictionary<string, NoobishLayoutElementState>()
-        member val TempElements = Dictionary<string, NoobishLayoutElementState>()
-        member val FocusedElementId: Option<string> = None with get, set
-
-        member private s.UpdateState (state: NoobishLayoutElementState) =
-            s.ElementsById.[state.Id] <- state
-
-        member s.Item
-            with get (tid: string) = s.ElementsById.[tid]
-
-        member s.Update (cid: string) (message:ComponentMessage) =
-            let (success, cs) = s.ElementsById.TryGetValue(cid)
-            if success then
-                match message with
-                | Show ->
-                    cs.Visible <- true
-                | Hide ->
-                    cs.Visible <- false
-                | ToggleVisibility ->
-                    cs.Visible <- not cs.Visible
-                | SetScrollX (v) ->
-                    cs.ScrollX <- v
-                | SetScrollY(v) ->
-                    cs.ScrollY <- v
-                | ChangeModel(cb) ->
-                    cs.Model |> Option.iter (fun model ->
-                        let model' = cb model
-                        let cs: NoobishLayoutElementState = s.ElementsById.[cid]
-                        s.UpdateState {cs with Model = Some(model') })
-
-        member s.SetFocus (id: string) (time: TimeSpan)=
-            s.FocusedElementId |> Option.iter (
-                fun id ->
-                    let cs = s.ElementsById.[id]
-                    cs.Focused <- false
-                    cs.FocusedTime <- TimeSpan.Zero
-            )
-            if id <> "" then
-
-                s.FocusedElementId <- Some(id)
-                let cs = s.ElementsById.[id]
-                cs.Focused <- true
-                cs.FocusedTime <- time
-
-                let setText (text: string) =
-                    let model =
-                        cs.Model
-                        |> Option.map(
-                            fun model' ->
-                                match model' with
-                                | Textbox (model'') -> Textbox {model'' with Text = text}
-                                | _ -> failwith "Not a textbox"
-                        )
-
-                    cs.Model <- model
-
-                // Send open keyboard event.
-                cs.Model |> Option.iter (
-                    function
-                    | Textbox (model') ->
-                        model'.OnOpenKeyboard(setText)
-                    | _ -> ()
-                )
-            else
-                s.FocusedElementId <- None
-
 
     let pi = float32 System.Math.PI
     let clamp n minVal maxVal = max (min n maxVal) minVal

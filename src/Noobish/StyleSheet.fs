@@ -1,16 +1,13 @@
 namespace Noobish.Styles
 
+open Noobish
 
 open System.Collections.Generic
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
 
-[<RequireQualifiedAccess>]
-type NoobishTextAlignment =
-| TopLeft | TopCenter | TopRight
-| Left  | Center | Right
-| BottomLeft | BottomCenter | BottomRight
+
 
 [<RequireQualifiedAccess>]
 type NoobishDrawable=

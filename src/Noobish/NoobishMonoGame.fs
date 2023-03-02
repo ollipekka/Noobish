@@ -25,7 +25,6 @@ type NoobishUI = {
     Height: int
     Content: ContentManager
     Settings: NoobishSettings
-    Components: Dictionary<string, NoobishLayoutElement>
     State: NoobishState
     mutable StyleSheet: NoobishStyleSheet
     mutable Debug: bool
@@ -75,16 +74,16 @@ module NoobishMonoGame =
     let private createRectangle (x: float32) (y:float32) (width: float32) (height: float32) =
         Rectangle (int (x), int (y), int (width), int (height))
 
-    let private calculateBounds (textureSize: NoobishTextureSize) (bounds: NoobishRectangle) (textureWidth: int) (textureHeight: int) (scrollX: float32) (scrollY: float32) =
-        match textureSize with
-        | NoobishTextureSize.Stretch ->
+    let private calculateBounds (imageSize: NoobishImageSize) (bounds: NoobishRectangle) (textureWidth: int) (textureHeight: int) (scrollX: float32) (scrollY: float32) =
+        match imageSize with
+        | NoobishImageSize.Stretch ->
             createRectangle
                 (bounds.X + scrollX)
                 (bounds.Y + scrollY)
                 bounds.Width
                 bounds.Height
 
-        | NoobishTextureSize.BestFitMax ->
+        | NoobishImageSize.BestFitMax ->
             let ratio = max (bounds.Width / float32 textureWidth) (bounds.Height / float32 textureHeight)
             let width = ratio * float32 textureWidth
             let height = ratio * float32 textureHeight
@@ -96,7 +95,7 @@ module NoobishMonoGame =
                 width
                 height
 
-        | NoobishTextureSize.BestFitMin ->
+        | NoobishImageSize.BestFitMin ->
             let ratio = min (bounds.Width / float32 textureWidth) (bounds.Height / float32 textureHeight)
             let width = ratio * float32 textureWidth
             let height = ratio * float32 textureHeight
@@ -108,7 +107,7 @@ module NoobishMonoGame =
                 width
                 height
 
-        | NoobishTextureSize.Original ->
+        | NoobishImageSize.Original ->
             createRectangle
                 (bounds.X + scrollX)
                 (bounds.Y + scrollY)
@@ -135,7 +134,6 @@ module NoobishMonoGame =
             Content = content
             StyleSheet = styleSheet
             Settings = settings
-            Components = Dictionary()
             State = NoobishState()
             Debug = false
             Version = Guid.NewGuid()
@@ -192,7 +190,7 @@ module NoobishMonoGame =
                     layer)
 
     let private drawBackground (styleSheet: NoobishStyleSheet) (state: NoobishState)  (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (time: TimeSpan) scrollX scrollY =
-        let cs = state.ElementsById.[c.Id]
+        let cs = state.ElementStateById.[c.Id]
 
         let cstate =
             if cs.CanFocus && cs.Focused then
@@ -413,7 +411,7 @@ module NoobishMonoGame =
         let size = Vector2(cursorWidth, textBounds.Height)
         drawDrawable textureAtlas spriteBatch position size layer color drawables
 
-    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishTexture) (scrollX: float32) (scrollY: float32) =
+    let private drawImage (content: ContentManager) (_settings: NoobishSettings) (spriteBatch: SpriteBatch) (c: NoobishLayoutElement) (t:NoobishImage) (scrollX: float32) (scrollY: float32) =
         let layer = 1f - float32 c.ZIndex / 255f
 
         match t.Texture with
@@ -422,7 +420,7 @@ module NoobishMonoGame =
 
             let textureEffect = getTextureEfffect t.TextureEffect
             let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
-            let rect = calculateBounds t.TextureSize c.ContentWithPadding texture.Width texture.Height scrollX scrollY
+            let rect = calculateBounds t.ImageSize c.ContentWithPadding texture.Width texture.Height scrollX scrollY
 
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = toRadians t.Rotation
@@ -436,7 +434,7 @@ module NoobishMonoGame =
             let texture = atlas.[tid]
 
             let textureEffect = getTextureEfffect t.TextureEffect
-            let rect = calculateBounds t.TextureSize c.ContentWithPadding texture.Width texture.Height scrollX scrollY
+            let rect = calculateBounds t.ImageSize c.ContentWithPadding texture.Width texture.Height scrollX scrollY
 
             let origin = Vector2(float32 texture.Width / 2.0f, float32 texture.Height / 2.0f)
             let rotation = toRadians t.Rotation
@@ -519,9 +517,9 @@ module NoobishMonoGame =
         | None ->
             drawBackground styleSheet state textureAtlas spriteBatch c time totalScrollX totalScrollY
 
-        match c.Texture with
-        | Some (texture) ->
-            drawImage content settings spriteBatch c texture totalScrollX totalScrollY
+        match c.Image with
+        | Some (image) ->
+            drawImage content settings spriteBatch c image totalScrollX totalScrollY
         | None -> ()
 
         drawScrollBars styleSheet state textureAtlas spriteBatch c time totalScrollX totalScrollY
@@ -654,7 +652,7 @@ module NoobishMonoGame =
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
 
         ui.State.TempElements.Clear()
-        for kvp in ui.State.ElementsById do
+        for kvp in ui.State.ElementStateById do
             ui.State.TempElements.Add(kvp.Key, kvp.Value)
 
         let mousePosition = curState.Position
@@ -666,10 +664,11 @@ module NoobishMonoGame =
                 handled <- Noobish.Input.press ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
+        
+            ui.State.Unfocus()
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                ui.State.SetFocus "" TimeSpan.Zero
                 handled <- Noobish.Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
 
@@ -698,7 +697,7 @@ module NoobishMonoGame =
                 else
                     0
 
-            let cs = ui.State.ElementsById.[ui.State.FocusedElementId.Value]
+            let cs = ui.State.ElementStateById.[ui.State.FocusedElementId.Value]
             let model' =
                 cs.Model
                 |> Option.map(fun model' ->
@@ -708,10 +707,10 @@ module NoobishMonoGame =
                         Textbox({model'' with Cursor = cursorPos})
                     | _ -> model'
                 )
-            ui.State.ElementsById.[ui.State.FocusedElementId.Value] <- {cs with Model = model'}
+            ui.State.ElementStateById.[ui.State.FocusedElementId.Value] <- {cs with Model = model'}
 
 
-        for kvp in ui.State.ElementsById do
+        for kvp in ui.State.ElementStateById do
             ui.State.TempElements.Add(kvp.Key, kvp.Value)
 
         for kvp in ui.State.TempElements do
@@ -724,7 +723,7 @@ module NoobishMonoGame =
                     | NoobishKeyId.Space -> Keys.Space
                     | NoobishKeyId.None -> failwith "None can't be here."
 
-                let (exists, c) = ui.Components.TryGetValue kvp.Key
+                let (exists, c) = ui.State.ElementsById.TryGetValue kvp.Key
                 if exists && kvp.Value.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
                     c.OnClickInternal c
 
@@ -732,7 +731,7 @@ module NoobishMonoGame =
 
     let keyTyped (ui: NoobishUI) (char: char) =
         ui.State.TempElements.Clear()
-        for kvp in ui.State.ElementsById do
+        for kvp in ui.State.ElementStateById do
             ui.State.TempElements.Add(kvp.Key, kvp.Value)
         let mutable i = 0
         let mutable handled = false
@@ -745,7 +744,7 @@ module NoobishMonoGame =
 
     let updateMobile (ui: NoobishUI) (_prevState: TouchCollection) (curState: TouchCollection) (gameTime: GameTime) =
 
-        for kvp in ui.State.ElementsById do
+        for kvp in ui.State.ElementStateById do
             ui.State.TempElements.Add(kvp.Key, kvp.Value)
 
         for touch in curState  do
@@ -790,24 +789,23 @@ module Program =
             ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.Content ui.StyleSheet ui.Settings ui.State.Update (i + 1) width height components) |> List.toArray
 
 
-            ui.Components.Clear()
+            ui.State.ElementsById.Clear()
 
             let overlays = ResizeArray<NoobishLayoutElement>()
 
             for layer in ui.Layers do
                 for e in layer do
-                    getElements ui.Components overlays e
+                    getElements ui.State.ElementsById overlays e
 
             ui.Layers <- Array.concat [ui.Layers; [| overlays.ToArray() |]]
 
-            for kvp in ui.Components do
-                let (success, value) = ui.State.ElementsById.TryGetValue kvp.Key
+            for kvp in ui.State.ElementsById do
+                let (success, value) = ui.State.ElementStateById.TryGetValue kvp.Key
 
                 if success then
-                    ui.State.ElementsById.[kvp.Key] <- { value with Version = ui.Version; Model = kvp.Value.Model; Toggled = kvp.Value.Toggled }
+                    ui.State.ElementStateById.[kvp.Key] <- { value with Version = ui.Version; Model = kvp.Value.Model; Toggled = kvp.Value.Toggled }
                 else
-                    ui.State.ElementsById.[kvp.Key] <- Logic.createNoobishLayoutElementState ui.Version kvp.Value
-
+                    ui.State.ElementStateById.[kvp.Key] <- Logic.createNoobishLayoutElementState ui.Version kvp.Value
 
         program
             |> Program.withSetState setState

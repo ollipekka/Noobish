@@ -21,7 +21,7 @@ let rec press
 
     while not handled && i < elements.Length do
         let c = elements.[i]
-        let cs = state.ElementsById.[c.Id]
+        let cs = state.ElementStateById.[c.Id]
         if cs.Version <> version then failwith "Version mismatch!"
         if c.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
@@ -30,7 +30,7 @@ let rec press
                 else
                     false
             if not handledByChild then
-                let cs = state.ElementsById.[c.Id]
+                let cs = state.ElementStateById.[c.Id]
                 cs.PressedTime <- time
                 handled <- true
 
@@ -61,7 +61,7 @@ let rec click
         let c = elements.[i]
         if c.ThemeId = "TextBox" then
             printfn "wtf!"
-        let cs = state.ElementsById.[c.Id]
+        let cs = state.ElementStateById.[c.Id]
         if cs.Version <> version then failwith "Version mismatch!"
         if c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
@@ -119,7 +119,7 @@ let rec keyTyped
 
     while not handled && i < elements.Length do
         let e = elements.[i]
-        let es = state.ElementsById.[e.Id]
+        let es = state.ElementStateById.[e.Id]
 
         if es.Version <> version then failwith "Version mismatch!"
         if e.Id = focusedElementId then
@@ -135,7 +135,7 @@ let rec keyTyped
                                     "", 0
                             elif int typed = 13 then
                                 let c = elements |> Array.find(fun e -> e.Id = es.Id)
-                                state.SetFocus "" TimeSpan.Zero
+                                state.Unfocus()
                                 c.OnChange model''.Text
                                 model''.Text, 0
                             elif int typed = 127 then // deleted
