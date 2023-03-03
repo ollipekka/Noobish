@@ -664,13 +664,8 @@ module NoobishMonoGame =
                 handled <- Noobish.Input.press ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
-        
-            ui.State.Unfocus()
-            let mutable handled = false
-            let mutable i = ui.Layers.Length - 1
-            while not handled && i >= 0 do
-                handled <- Noobish.Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
-                i <- i - 1
+            let handled = Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+            printfn "handle"
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
         if scrollWheelValue <> 0 then
@@ -762,7 +757,7 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Noobish.Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- Noobish.Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
                     i <- i - 1
             | _ -> ()
 
@@ -786,7 +781,7 @@ module Program =
 
             ui.Version <- Guid.NewGuid()
 
-            ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.Content ui.StyleSheet ui.Settings ui.State.Update (i + 1) width height components) |> List.toArray
+            ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.Content ui.StyleSheet ui.Settings ui.State (i + 1) width height components) |> List.toArray
 
 
             ui.State.ElementsById.Clear()

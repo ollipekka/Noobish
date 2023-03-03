@@ -391,7 +391,7 @@ module Logic =
             Children = c.Children |> Array.map(fun child -> child.Id)
         }
 
-    let private createNoobishLayoutElement (styleSheet: NoobishStyleSheet) (content: ContentManager) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (zIndex: int) (parentId: string) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
+    let private createNoobishLayoutElement (styleSheet: NoobishStyleSheet) (content: ContentManager) (settings: NoobishSettings) (state: NoobishState) (zIndex: int) (parentId: string) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
 
         let cid = $"%s{parentPath}/%s{themeId}-(%g{startX},%g{startY})"
         let cstate = "default"
@@ -731,11 +731,11 @@ module Logic =
             MarginBottom = marginBottom
 
             OnClickInternal = (fun c ->
-                onClickInternal(mutateState) c
+                onClickInternal(state.QueueEvent) c
                 onClick())
 
             OnPressInternal = (fun mousePos c ->
-                onPressInternal (mutateState) mousePos c
+                onPressInternal (state.QueueEvent) mousePos c
                 onPress mousePos )
 
             OnChange = onChange
@@ -773,7 +773,7 @@ module Logic =
         (content: ContentManager)
         (styleSheet: NoobishStyleSheet)
         (settings: NoobishSettings)
-        (mutateState: string -> ComponentMessage -> unit)
+        (state: NoobishState)
         (zIndex: int)
         (parentId: string)
         (parentPath: string)
@@ -783,7 +783,7 @@ module Logic =
         (parentHeight: float32)
         (c: NoobishElement): NoobishLayoutElement  =
 
-        let parentComponent = createNoobishLayoutElement styleSheet content settings mutateState zIndex parentId parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
+        let parentComponent = createNoobishLayoutElement styleSheet content settings state zIndex parentId parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -818,7 +818,7 @@ module Logic =
 
 
                 let path = sprintf "%s:%i" parentComponent.Path i
-                let childComponent = layoutElement content styleSheet settings mutateState zIndex parentComponent.Id path childStartX childStartY childWidth childHeight child
+                let childComponent = layoutElement content styleSheet settings state zIndex parentComponent.Id path childStartX childStartY childWidth childHeight child
 
                 newChildren.Add(childComponent)
 
@@ -875,7 +875,7 @@ module Logic =
                 let childStartX = (parentBounds.X + (float32 col) * (colWidth))
                 let childStartY = (parentBounds.Y + (float32 row) * (rowHeight))
                 let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
-                let childComponent = layoutElement content styleSheet settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY colWidth rowHeight child
+                let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path childStartX childStartY colWidth rowHeight child
 
                 newChildren.Add({
                     childComponent with
@@ -899,7 +899,7 @@ module Logic =
             if c.Children.Length <> 1 then failwith "Can only pop open one at a time."
 
             let path = sprintf "%s:overlay" parentComponent.Path
-            let childComponent = layoutElement content styleSheet settings mutateState  (zIndex + 1) parentComponent.Id path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
+            let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
 
             {parentComponent with Children = [|childComponent|]}
         | NoobishLayout.Absolute ->
@@ -913,7 +913,7 @@ module Logic =
                 let childHeight = parentBounds.Height
 
                 let path = sprintf "%s:absolute:%i" parentComponent.Path i
-                let childComponent = layoutElement content styleSheet settings mutateState (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight c.Children.[i]
+                let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight c.Children.[i]
                 newChildren.Add({ childComponent with StartX = childComponent.StartX; StartY = childComponent.StartY })
 
             {parentComponent with Children = newChildren.ToArray()}
@@ -921,12 +921,12 @@ module Logic =
             parentComponent
 
 
-    let layout (content: ContentManager) (styleSheet: NoobishStyleSheet) (settings: NoobishSettings) (mutateState: string -> ComponentMessage -> unit) (layer: int) (width: float32) (height: float32) (elements: list<NoobishElement>) =
+    let layout (content: ContentManager) (styleSheet: NoobishStyleSheet) (settings: NoobishSettings) (state: NoobishState) (layer: int) (width: float32) (height: float32) (elements: list<NoobishElement>) =
 
         let path = sprintf "layer-%i" layer
         elements
             |> List.map(fun c ->
-                layoutElement content styleSheet settings mutateState (layer * 64) "" path 0.0f 0.0f width height c
+                layoutElement content styleSheet settings state (layer * 64) "" path 0.0f 0.0f width height c
             ) |> List.toArray
 
 

@@ -97,6 +97,7 @@ module Internal =
         | SetScrollX of float32
         | SetScrollY of float32
         | ChangeModel of (NoobishComponentModel -> NoobishComponentModel)
+        | InvokeAction of (unit -> unit)
 
     type ComponentChangeDispatch = (ComponentMessage -> unit)
 

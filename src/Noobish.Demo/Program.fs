@@ -638,7 +638,7 @@ type DemoGame () as game =
         NoobishMonoGame.updateMouse nui previousMouseState mouseState gameTime
         NoobishMonoGame.updateKeyboard nui previousKeyboardState keyboardState gameTime
         #endif
-
+        nui.State.ProcessEvents()
 
 
 

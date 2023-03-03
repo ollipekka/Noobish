@@ -158,11 +158,14 @@ type NoobishLayoutElementState = {
 
 type NoobishId = | NoobishId of string
 
+
 type NoobishState () =
     member val ElementsById = Dictionary<string, NoobishLayoutElement>()
     member val ElementStateById = Dictionary<string, NoobishLayoutElementState>()
     member val TempElements = Dictionary<string, NoobishLayoutElementState>()
     member val FocusedElementId: Option<string> = None with get, set
+
+    member val Events = ResizeArray<struct(string*ComponentMessage)>()
 
     member private s.UpdateState (state: NoobishLayoutElementState) =
         s.ElementStateById.[state.Id] <- state
@@ -170,26 +173,33 @@ type NoobishState () =
     member s.Item
         with get (tid: string) = s.ElementStateById.[tid]
 
-    member s.Update (cid: string) (message:ComponentMessage) =
-        let (success, cs) = s.ElementStateById.TryGetValue(cid)
-        if success then
-            match message with
-            | Show ->
-                cs.Visible <- true
-            | Hide ->
-                cs.Visible <- false
-            | ToggleVisibility ->
-                cs.Visible <- not cs.Visible
-            | SetScrollX (v) ->
-                cs.ScrollX <- v
-            | SetScrollY(v) ->
-                cs.ScrollY <- v
-            | ChangeModel(cb) ->
-                cs.Model |> Option.iter (fun model ->
-                    let model' = cb model
-                    let cs: NoobishLayoutElementState = s.ElementStateById.[cid]
-                    s.UpdateState {cs with Model = Some(model') })
+    member s.QueueEvent (cid: string) (message:ComponentMessage) =
+        s.Events.Add(struct(cid, message))
 
+    member s.ProcessEvents() =
+        for struct(cid, message) in s.Events do
+            let (success, cs) = s.ElementStateById.TryGetValue(cid)
+            if success then
+                match message with
+                | Show ->
+                    cs.Visible <- true
+                | Hide ->
+                    cs.Visible <- false
+                | ToggleVisibility ->
+                    cs.Visible <- not cs.Visible
+                | SetScrollX (v) ->
+                    cs.ScrollX <- v
+                | SetScrollY(v) ->
+                    cs.ScrollY <- v
+                | ChangeModel(cb) ->
+                    cs.Model |> Option.iter (fun model ->
+                        let model' = cb model
+                        let cs: NoobishLayoutElementState = s.ElementStateById.[cid]
+                        s.UpdateState {cs with Model = Some(model') })
+                | InvokeAction (action) ->
+                    action()
+
+        s.Events.Clear()
 
     member s.Unfocus () =
         s.FocusedElementId |> Option.iter (
@@ -202,7 +212,7 @@ type NoobishState () =
                     |> Option.iter (fun m ->
                         match m with
                         | Textbox m' ->
-                            c.OnChange m'.Text
+                            s.QueueEvent id (InvokeAction (fun _ ->  c.OnChange m'.Text))
                         | _ -> ()
                     )
 
@@ -212,7 +222,8 @@ type NoobishState () =
         )
         s.FocusedElementId <- None
 
-    member s.SetFocus (id: string) (time: TimeSpan)=
+
+    member s.SetFocus (id: string) (time: TimeSpan) =
         s.Unfocus()
 
         s.FocusedElementId <- Some(id)

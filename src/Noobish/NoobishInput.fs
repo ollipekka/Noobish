@@ -42,7 +42,8 @@ let rec press
         i <- i + 1
     handled
 
-let rec click
+
+let rec clickWithCount
     (version: Guid)
     (content: ContentManager)
     (state: NoobishState)
@@ -52,7 +53,8 @@ let rec click
     (positionX: float32)
     (positionY: float32)
     (scrollX: float32)
-    (scrollY: float32) =
+    (scrollY: float32)
+    (clickCount: int) =
 
     let mutable handled = false
     let mutable i = 0
@@ -65,7 +67,7 @@ let rec click
 
             let handledByChild =
                 if c.Children.Length > 0 then
-                    click version content state styles c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
+                    clickWithCount version content state styles c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY) clickCount
                 else
                     false
             if not handledByChild then
@@ -85,11 +87,17 @@ let rec click
                                 let fontId = styles.GetFont c.ThemeId "default"
                                 let font = content.Load<NoobishFont> fontId
                                 let fontSize = styles.GetFontSize c.ThemeId "default"
-                                let cursorIndex = NoobishFont.calculateCursorIndex font fontSize false bounds scrollX scrollY c.TextAlignment positionX positionY m'.Text
-                                Textbox {m' with Cursor = cursorIndex }
+                                let text =
+                                    if clickCount = 2 then
+                                        ""
+                                    else
+                                        m'.Text
+                                let cursorIndex =
+                                    NoobishFont.calculateCursorIndex font fontSize false bounds scrollX scrollY c.TextAlignment positionX positionY text
+                                Textbox {m' with Text = text; Cursor = cursorIndex }
                             | _ -> m
                         ) |> Option.iter (fun m ->
-                            state.Update c.Id (ChangeModel (fun _ -> m))
+                            state.QueueEvent c.Id (ChangeModel (fun _ -> m))
                         )
 
                 else
@@ -99,10 +107,47 @@ let rec click
             else
                 handled <- true
 
-
-
         i <- i + 1
     handled
+
+let clickInterval = TimeSpan.FromMilliseconds 200.0
+let clickLayers () =
+
+    let mutable clickCount = 0
+    let mutable lastClick = TimeSpan.Zero
+
+    let clickLayersInternal
+        (version: Guid)
+        (content: ContentManager)
+        (state: NoobishState)
+        (styles: NoobishStyleSheet)
+        (layers: NoobishLayoutElement[][])
+        (time: TimeSpan)
+        (positionX: float32)
+        (positionY: float32)
+        (scrollX: float32)
+        (scrollY: float32): bool =
+
+        if time - lastClick < clickInterval then
+            clickCount <- clickCount + 1
+
+        else
+            clickCount <- 1
+
+        state.Unfocus()
+        let mutable handled = false
+        let mutable i = layers.Length - 1
+
+
+        lastClick <- time
+        printfn "Click count %i" clickCount
+        while not handled && i >= 0 do
+            handled <- clickWithCount version content state styles layers.[i] time positionX positionY scrollX scrollY clickCount
+            i <- i - 1
+        handled
+    clickLayersInternal
+
+let click: Guid -> ContentManager -> NoobishState -> NoobishStyleSheet -> NoobishLayoutElement[][] -> TimeSpan -> float32 -> float32 -> float32 -> float32 -> bool = clickLayers()
 
 let rec keyTyped
     (version: Guid)
@@ -145,7 +190,7 @@ let rec keyTyped
                     | _ -> model'
             )
             model'' |> Option.iter (fun m ->
-                state.Update focusedElementId (ChangeModel (fun _ -> m))
+                state.QueueEvent focusedElementId (ChangeModel (fun _ -> m))
             )
             handled <- true
         else
