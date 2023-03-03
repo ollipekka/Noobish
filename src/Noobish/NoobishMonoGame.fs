@@ -720,7 +720,7 @@ module NoobishMonoGame =
 
                 let (exists, c) = ui.State.ElementsById.TryGetValue kvp.Key
                 if exists && kvp.Value.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
-                    c.OnClickInternal c
+                    ui.State.QueueEvent c.Id (InvokeClick c)
 
         ui.State.TempElements.Clear()
 

@@ -6,6 +6,7 @@ open System.Collections.Generic
 open Noobish.Internal
 open Noobish.Styles
 open Microsoft.Xna.Framework.Content
+open Microsoft.Xna.Framework
 
 let rec press
     (version: Guid)
@@ -34,7 +35,7 @@ let rec press
                 cs.PressedTime <- time
                 handled <- true
 
-                c.OnPressInternal (struct(int positionX, int positionY)) c
+                state.QueueEvent c.Id (InvokePress((Vector2(positionX,positionY), c)))
 
             else
                 handled <- true
@@ -101,7 +102,7 @@ let rec clickWithCount
                         )
 
                 else
-                    c.OnClickInternal c
+                    state.QueueEvent c.Id (InvokeClick c)
 
                 handled <- true
             else

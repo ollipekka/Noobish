@@ -57,8 +57,8 @@ type NoobishAttribute =
 
     | OnClick of (unit -> unit)
     | OnClickInternal of ((string -> ComponentMessage -> unit) -> NoobishLayoutElement -> unit)
-    | OnPress of (struct(int*int) -> unit)
-    | OnPressInternal of ((string -> ComponentMessage -> unit) -> struct(int*int) -> NoobishLayoutElement -> unit)
+    | OnPress of (Vector2 -> unit)
+    | OnPressInternal of (NoobishState -> (string -> ComponentMessage -> unit) -> Vector2 -> NoobishLayoutElement -> unit)
     | OnChange of (string -> unit)
     | Toggled of bool
     | Block
@@ -240,18 +240,16 @@ let window children attributes =
 let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
 
 let slider attributes =
-    let handlePress (dispatch) (struct(x: int, y: int)) (c: NoobishLayoutElement) =
-        let positionX = float32 x
-        let _positionY = float32 y
+    let handlePress (state: NoobishState) (dispatch) (position: Vector2) (c: NoobishLayoutElement) =
 
         let changeModel m =
             match m with
             | Slider s' ->
                 let bounds = c.Content
-                let relative = (positionX - bounds.X) / (bounds.Width)
+                let relative = (position.X - bounds.X) / (bounds.Width)
                 let newValue = s'.Min + (relative * s'.Max - s'.Min)
                 let steppedNewValue = truncate(newValue / s'.Step) * s'.Step
-                s'.OnValueChanged (clamp steppedNewValue s'.Min s'.Max)
+                state.QueueEvent c.Id (InvokeValueChange (clamp steppedNewValue s'.Min s'.Max))
                 Slider{s' with Value = steppedNewValue}
             | Combobox _ -> m
             | Textbox _ -> m
@@ -422,8 +420,8 @@ module Logic =
         let mutable consumedKeys = ResizeArray<NoobishKeyId>()
         let mutable keyTypedEnabled = false
 
-        let mutable onPress: struct(int*int) -> unit = ignore
-        let mutable onPressInternal: (string -> ComponentMessage -> unit) -> (struct(int*int)) -> NoobishLayoutElement -> unit = (fun _ _ _ -> ())
+        let mutable onPress: Vector2 -> unit = ignore
+        let mutable onPressInternal: NoobishState -> (string -> ComponentMessage -> unit) -> Vector2 -> NoobishLayoutElement -> unit = (fun _ _ _ _ -> ())
 
         let mutable onChange: string -> unit = ignore
 
@@ -735,7 +733,7 @@ module Logic =
                 onClick())
 
             OnPressInternal = (fun mousePos c ->
-                onPressInternal (state.QueueEvent) mousePos c
+                onPressInternal state (state.QueueEvent) mousePos c
                 onPress mousePos )
 
             OnChange = onChange

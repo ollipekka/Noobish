@@ -12,6 +12,8 @@ open Noobish.Internal
 open System
 open System.Collections.Generic
 
+
+
 type NoobishImage = {
     Texture: NoobishTextureId
     TextureEffect: NoobishTextureEffect
@@ -70,7 +72,7 @@ type NoobishLayoutElement = {
     ConsumedKeys: NoobishKeyId[]
     KeyTypedEnabled: bool
     OnClickInternal: NoobishLayoutElement -> unit
-    OnPressInternal: struct(int*int) -> NoobishLayoutElement -> unit
+    OnPressInternal: Vector2 -> NoobishLayoutElement -> unit
     OnChange: string -> unit
 
     Layout: NoobishLayout
@@ -159,13 +161,25 @@ type NoobishLayoutElementState = {
 type NoobishId = | NoobishId of string
 
 
+type ComponentMessage =
+    | Show
+    | Hide
+    | ToggleVisibility
+    | SetScrollX of float32
+    | SetScrollY of float32
+    | ChangeModel of (NoobishComponentModel -> NoobishComponentModel)
+    | InvokeAction of (unit -> unit)
+    | InvokeClick of NoobishLayoutElement
+    | InvokePress of Vector2 * NoobishLayoutElement
+    | InvokeValueChange of float32
+
 type NoobishState () =
     member val ElementsById = Dictionary<string, NoobishLayoutElement>()
     member val ElementStateById = Dictionary<string, NoobishLayoutElementState>()
     member val TempElements = Dictionary<string, NoobishLayoutElementState>()
     member val FocusedElementId: Option<string> = None with get, set
 
-    member val Events = ResizeArray<struct(string*ComponentMessage)>()
+    member val Events = Queue<struct(string*ComponentMessage)>()
 
     member private s.UpdateState (state: NoobishLayoutElementState) =
         s.ElementStateById.[state.Id] <- state
@@ -174,10 +188,12 @@ type NoobishState () =
         with get (tid: string) = s.ElementStateById.[tid]
 
     member s.QueueEvent (cid: string) (message:ComponentMessage) =
-        s.Events.Add(struct(cid, message))
+        s.Events.Enqueue(struct(cid, message))
 
     member s.ProcessEvents() =
-        for struct(cid, message) in s.Events do
+
+        while s.Events.Count > 0 do
+            let struct(cid, message) = s.Events.Dequeue()
             let (success, cs) = s.ElementStateById.TryGetValue(cid)
             if success then
                 match message with
@@ -198,6 +214,18 @@ type NoobishState () =
                         s.UpdateState {cs with Model = Some(model') })
                 | InvokeAction (action) ->
                     action()
+                | InvokeClick (c) ->
+                    c.OnClickInternal c
+                | InvokePress (v, c) ->
+                    c.OnPressInternal v c
+                | InvokeValueChange (v) ->
+                    let c = s.ElementsById[cid]
+                    c.Model
+                        |> Option.iter (fun m ->
+                            match m with
+                            | Slider(m') -> m'.OnValueChanged v
+                            | _ -> ()
+                        )
 
         s.Events.Clear()
 

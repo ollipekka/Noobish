@@ -90,17 +90,6 @@ module Internal =
         | Combobox of ComboboxModel
         | Textbox of TextboxModel
 
-    type ComponentMessage =
-        | Show
-        | Hide
-        | ToggleVisibility
-        | SetScrollX of float32
-        | SetScrollY of float32
-        | ChangeModel of (NoobishComponentModel -> NoobishComponentModel)
-        | InvokeAction of (unit -> unit)
-
-    type ComponentChangeDispatch = (ComponentMessage -> unit)
-
     let pi = float32 System.Math.PI
     let clamp n minVal maxVal = max (min n maxVal) minVal
     let inline toDegrees angle = (float32 angle) * 180.0f / pi
