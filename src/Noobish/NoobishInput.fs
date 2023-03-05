@@ -141,7 +141,6 @@ let clickLayers () =
 
 
         lastClick <- time
-        printfn "Click count %i" clickCount
         while not handled && i >= 0 do
             handled <- clickWithCount version content state styles layers.[i] time positionX positionY scrollX scrollY clickCount
             i <- i - 1

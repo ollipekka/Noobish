@@ -662,8 +662,8 @@ module NoobishMonoGame =
                 handled <- Noobish.Input.press ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
-            let handled = Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
-            printfn "handle"
+            Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                |> ignore
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
         if scrollWheelValue <> 0 then
