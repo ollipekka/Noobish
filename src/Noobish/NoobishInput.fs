@@ -202,7 +202,7 @@ let rec keyTyped
 
 let rec scroll
     (version: Guid)
-    (state: IReadOnlyDictionary<string, NoobishLayoutElementState>)
+    (state: NoobishState)
     (elements: NoobishLayoutElement[])
     (positionX: float32)
     (positionY: float32)

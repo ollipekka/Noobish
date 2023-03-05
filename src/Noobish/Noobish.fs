@@ -368,26 +368,7 @@ module Logic =
 
         String.Join("\n", resultLines)
 
-    let createNoobishLayoutElementState (version: Guid) (c: NoobishLayoutElement) =
-        {
-            Id = c.Id
-            ParentId = c.ParentId
-            Visible = c.Visible
-            Focused = false
-            Toggled = false
-            FocusedTime = TimeSpan.FromDays(-1)
-            PressedTime = TimeSpan.FromDays(-1)
-            ScrolledTime = TimeSpan.FromDays(-1)
 
-            ScrollX = 0.0f
-            ScrollY = 0.0f
-
-            KeyboardShortcut = c.KeyboardShortcut
-            Version = version
-            Model = c.Model
-
-            Children = c.Children |> Array.map(fun child -> child.Id)
-        }
 
     let private createNoobishLayoutElement (styleSheet: NoobishStyleSheet) (content: ContentManager) (settings: NoobishSettings) (state: NoobishState) (zIndex: int) (parentId: string) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
 

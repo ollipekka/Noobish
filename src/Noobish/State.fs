@@ -174,18 +174,51 @@ type ComponentMessage =
     | InvokeValueChange of float32
 
 type NoobishState () =
-    member val ElementsById = Dictionary<string, NoobishLayoutElement>()
-    member val ElementStateById = Dictionary<string, NoobishLayoutElementState>()
-    member val TempElements = Dictionary<string, NoobishLayoutElementState>()
+
+    let elementsById = Dictionary<string, NoobishLayoutElement>()
+    let elementStateById = Dictionary<string, NoobishLayoutElementState>()
+    member val ElementsById = (elementsById :> IReadOnlyDictionary<string, NoobishLayoutElement>)
+    member val ElementStateById = (elementStateById :> IReadOnlyDictionary<string, NoobishLayoutElementState>)
     member val FocusedElementId: Option<string> = None with get, set
 
     member val Events = Queue<struct(string*ComponentMessage)>()
 
-    member private s.UpdateState (state: NoobishLayoutElementState) =
-        s.ElementStateById.[state.Id] <- state
-
     member s.Item
         with get (tid: string) = s.ElementStateById.[tid]
+
+    member s.Populate (version: Guid) (elements: Dictionary<string, NoobishLayoutElement>) =
+
+        elementsById.Clear()
+        for kvp in elements do
+            let e = kvp.Value
+            elementsById.[kvp.Key] <- e
+
+            let (success, es) = elementStateById.TryGetValue kvp.Key
+
+            if success then
+                elementStateById.[kvp.Key] <- { es with Version = version; Model = e.Model; Toggled = e.Toggled }
+            else
+                elementStateById.[kvp.Key] <-
+                    {
+                        Id = e.Id
+                        ParentId = e.ParentId
+                        Visible = e.Visible
+                        Focused = false
+                        Toggled = false
+                        FocusedTime = TimeSpan.FromDays(-1)
+                        PressedTime = TimeSpan.FromDays(-1)
+                        ScrolledTime = TimeSpan.FromDays(-1)
+
+                        ScrollX = 0.0f
+                        ScrollY = 0.0f
+
+                        KeyboardShortcut = e.KeyboardShortcut
+                        Version = version
+                        Model = e.Model
+
+                        Children = kvp.Value.Children |> Array.map(fun child -> child.Id)
+                    }
+
 
     member s.QueueEvent (cid: string) (message:ComponentMessage) =
         s.Events.Enqueue(struct(cid, message))
@@ -210,8 +243,9 @@ type NoobishState () =
                 | ChangeModel(cb) ->
                     cs.Model |> Option.iter (fun model ->
                         let model' = cb model
-                        let cs: NoobishLayoutElementState = s.ElementStateById.[cid]
-                        s.UpdateState {cs with Model = Some(model') })
+                        let cs: NoobishLayoutElementState = elementStateById.[cid]
+                        elementStateById.[cid] <- {cs with Model = Some(model') }
+                    )
                 | InvokeAction (action) ->
                     action()
                 | InvokeClick (c) ->

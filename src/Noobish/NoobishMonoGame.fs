@@ -26,6 +26,7 @@ type NoobishUI = {
     Content: ContentManager
     Settings: NoobishSettings
     State: NoobishState
+    Elements: Dictionary<string, NoobishLayoutElement>
     mutable StyleSheet: NoobishStyleSheet
     mutable Debug: bool
     mutable Version: Guid
@@ -135,6 +136,7 @@ module NoobishMonoGame =
             StyleSheet = styleSheet
             Settings = settings
             State = NoobishState()
+            Elements = Dictionary()
             Debug = false
             Version = Guid.NewGuid()
             Layers = [||]
@@ -651,10 +653,6 @@ module NoobishMonoGame =
 
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
 
-        ui.State.TempElements.Clear()
-        for kvp in ui.State.ElementStateById do
-            ui.State.TempElements.Add(kvp.Key, kvp.Value)
-
         let mousePosition = curState.Position
 
         if curState.LeftButton = ButtonState.Pressed then
@@ -678,10 +676,9 @@ module NoobishMonoGame =
 
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
             for layer in ui.Layers do
-                Noobish.Input.scroll ui.Version ui.State.TempElements layer (float32 mousePosition.X) (float32 mousePosition.Y) 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
+                Noobish.Input.scroll ui.Version ui.State layer (float32 mousePosition.X) (float32 mousePosition.Y) 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
     let updateKeyboard (ui: NoobishUI)  (previous: KeyboardState) (current: KeyboardState) (_gameTime: GameTime) =
-        ui.State.TempElements.Clear()
 
         if ui.State.FocusedElementId.IsSome then
             let cursorDelta =
@@ -692,23 +689,23 @@ module NoobishMonoGame =
                 else
                     0
 
-            let cs = ui.State.ElementStateById.[ui.State.FocusedElementId.Value]
-            let model' =
+
+            if cursorDelta <> 0 then
+                let cs = ui.State.ElementStateById.[ui.State.FocusedElementId.Value]
+
                 cs.Model
-                |> Option.map(fun model' ->
-                    match model' with
-                    | Textbox (model'') ->
-                        let cursorPos = clamp (model''.Cursor + cursorDelta) 0 model''.Text.Length
-                        Textbox({model'' with Cursor = cursorPos})
-                    | _ -> model'
-                )
-            ui.State.ElementStateById.[ui.State.FocusedElementId.Value] <- {cs with Model = model'}
+                    |> Option.map(fun model' ->
+                        match model' with
+                        | Textbox (model'') ->
+                            let cursorPos = clamp (model''.Cursor + cursorDelta) 0 model''.Text.Length
+                            Textbox({model'' with Cursor = cursorPos})
+                        | _ -> model')
+                    |> Option.iter (fun m' ->
+                        ui.State.QueueEvent cs.Id (ChangeModel (fun _ -> m'))
+                    )
 
-
-        for kvp in ui.State.ElementStateById do
-            ui.State.TempElements.Add(kvp.Key, kvp.Value)
-
-        for kvp in ui.State.TempElements do
+        for kvp in ui.State.ElementsById do
+            let c = kvp.Value
             let noobishKey = kvp.Value.KeyboardShortcut
             if noobishKey <> NoobishKeyId.None then
                 let key =
@@ -718,16 +715,11 @@ module NoobishMonoGame =
                     | NoobishKeyId.Space -> Keys.Space
                     | NoobishKeyId.None -> failwith "None can't be here."
 
-                let (exists, c) = ui.State.ElementsById.TryGetValue kvp.Key
-                if exists && kvp.Value.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
+                let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
+                if exists && cs.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
                     ui.State.QueueEvent c.Id (InvokeClick c)
 
-        ui.State.TempElements.Clear()
-
     let keyTyped (ui: NoobishUI) (char: char) =
-        ui.State.TempElements.Clear()
-        for kvp in ui.State.ElementStateById do
-            ui.State.TempElements.Add(kvp.Key, kvp.Value)
         let mutable i = 0
         let mutable handled = false
 
@@ -735,12 +727,8 @@ module NoobishMonoGame =
             handled <- Noobish.Input.keyTyped ui.Version ui.State ui.Layers.[i] char
             i <- i - 1
 
-        ui.State.TempElements.Clear()
 
     let updateMobile (ui: NoobishUI) (_prevState: TouchCollection) (curState: TouchCollection) (gameTime: GameTime) =
-
-        for kvp in ui.State.ElementStateById do
-            ui.State.TempElements.Add(kvp.Key, kvp.Value)
 
         for touch in curState  do
             match touch.State with
@@ -760,8 +748,6 @@ module NoobishMonoGame =
                     handled <- Noobish.Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
                     i <- i - 1
             | _ -> ()
-
-        ui.State.TempElements.Clear()
 
 module Program =
     let rec private getElements (elements: Dictionary<string, NoobishLayoutElement>) (overlays: ResizeArray<NoobishLayoutElement>) (e: NoobishLayoutElement) =
@@ -784,23 +770,19 @@ module Program =
             ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.Content ui.StyleSheet ui.Settings ui.State (i + 1) width height components) |> List.toArray
 
 
-            ui.State.ElementsById.Clear()
+            ui.Elements.Clear()
 
             let overlays = ResizeArray<NoobishLayoutElement>()
 
             for layer in ui.Layers do
                 for e in layer do
-                    getElements ui.State.ElementsById overlays e
+                    getElements ui.Elements overlays e
+
 
             ui.Layers <- Array.concat [ui.Layers; [| overlays.ToArray() |]]
 
-            for kvp in ui.State.ElementsById do
-                let (success, value) = ui.State.ElementStateById.TryGetValue kvp.Key
+            ui.State.Populate ui.Version ui.Elements
 
-                if success then
-                    ui.State.ElementStateById.[kvp.Key] <- { value with Version = ui.Version; Model = kvp.Value.Model; Toggled = kvp.Value.Toggled }
-                else
-                    ui.State.ElementStateById.[kvp.Key] <- Logic.createNoobishLayoutElementState ui.Version kvp.Value
 
         program
             |> Program.withSetState setState
