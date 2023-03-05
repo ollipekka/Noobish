@@ -98,7 +98,7 @@ let rec clickWithCount
                                 Textbox {m' with Text = text; Cursor = cursorIndex }
                             | _ -> m
                         ) |> Option.iter (fun m ->
-                            state.QueueEvent c.Id (ChangeModel (fun _ -> m))
+                            state.QueueEvent c.Id (ChangeModel m)
                         )
 
                 else
@@ -190,7 +190,7 @@ let rec keyTyped
                     | _ -> model'
             )
             model'' |> Option.iter (fun m ->
-                state.QueueEvent focusedElementId (ChangeModel (fun _ -> m))
+                state.QueueEvent focusedElementId (ChangeModel m)
             )
             handled <- true
         else

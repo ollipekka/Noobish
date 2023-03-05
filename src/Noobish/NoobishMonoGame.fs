@@ -701,7 +701,7 @@ module NoobishMonoGame =
                             Textbox({model'' with Cursor = cursorPos})
                         | _ -> model')
                     |> Option.iter (fun m' ->
-                        ui.State.QueueEvent cs.Id (ChangeModel (fun _ -> m'))
+                        ui.State.QueueEvent cs.Id (ChangeModel m')
                     )
 
         for kvp in ui.State.ElementsById do

@@ -167,7 +167,7 @@ type ComponentMessage =
     | ToggleVisibility
     | SetScrollX of float32
     | SetScrollY of float32
-    | ChangeModel of (NoobishComponentModel -> NoobishComponentModel)
+    | ChangeModel of NoobishComponentModel
     | InvokeAction of (unit -> unit)
     | InvokeClick of NoobishLayoutElement
     | InvokePress of Vector2 * NoobishLayoutElement
@@ -240,12 +240,9 @@ type NoobishState () =
                     cs.ScrollX <- v
                 | SetScrollY(v) ->
                     cs.ScrollY <- v
-                | ChangeModel(cb) ->
-                    cs.Model |> Option.iter (fun model ->
-                        let model' = cb model
-                        let cs: NoobishLayoutElementState = elementStateById.[cid]
-                        elementStateById.[cid] <- {cs with Model = Some(model') }
-                    )
+                | ChangeModel(m') ->
+                    let es: NoobishLayoutElementState = elementStateById.[cid]
+                    elementStateById.[cid] <- {es with Model = Some(m') }
                 | InvokeAction (action) ->
                     action()
                 | InvokeClick (c) ->

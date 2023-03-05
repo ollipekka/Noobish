@@ -242,19 +242,24 @@ let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attr
 let slider attributes =
     let handlePress (state: NoobishState) (dispatch) (position: Vector2) (c: NoobishLayoutElement) =
 
-        let changeModel m =
-            match m with
-            | Slider s' ->
-                let bounds = c.Content
-                let relative = (position.X - bounds.X) / (bounds.Width)
-                let newValue = s'.Min + (relative * s'.Max - s'.Min)
-                let steppedNewValue = truncate(newValue / s'.Step) * s'.Step
-                state.QueueEvent c.Id (InvokeValueChange (clamp steppedNewValue s'.Min s'.Max))
-                Slider{s' with Value = steppedNewValue}
-            | Combobox _ -> m
-            | Textbox _ -> m
+        let cs = state.ElementStateById.[c.Id]
 
-        dispatch c.Id (ChangeModel changeModel)
+        cs.Model
+            |> Option.map(
+                fun m ->
+                    match m with
+                    | Slider s' ->
+                        let bounds = c.Content
+                        let relative = (position.X - bounds.X) / (bounds.Width)
+                        let newValue = s'.Min + (relative * s'.Max - s'.Min)
+                        let steppedNewValue = truncate(newValue / s'.Step) * s'.Step
+                        state.QueueEvent c.Id (InvokeValueChange (clamp steppedNewValue s'.Min s'.Max))
+                        Slider{s' with Value = steppedNewValue}
+                    | Combobox _ -> m
+                    | Textbox _ -> m)
+            |> Option.iter (fun m ->
+                dispatch c.Id (ChangeModel m)
+            )
     {ThemeId = "Slider"; Children = []; Attributes = [(OnPressInternal handlePress)] @ attributes}
 
 
