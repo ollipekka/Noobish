@@ -90,6 +90,26 @@ module Internal =
         | Combobox of ComboboxModel
         | Textbox of TextboxModel
 
+    module NoobishComponentModel =
+        let isTextbox (m: option<NoobishComponentModel>) =
+            m |> Option.exists(
+                function
+                | Textbox (_) -> true
+                | _ -> false
+            )
+        let isSlider (m: option<NoobishComponentModel>) =
+            m |> Option.exists(
+                function
+                | Slider (_) -> true
+                | _ -> false
+            )
+
+        let isCombobox (m: option<NoobishComponentModel>) =
+            m |> Option.exists(
+                function
+                | Combobox (_) -> true
+                | _ -> false
+            )
     let pi = float32 System.Math.PI
     let clamp n minVal maxVal = max (min n maxVal) minVal
     let inline toDegrees angle = (float32 angle) * 180.0f / pi

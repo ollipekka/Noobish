@@ -209,7 +209,7 @@ module Containers =
                             ]
                             [
                                 fill
-                                text model.ComboboxValue; onChange (fun v -> dispatch (ComboboxValueChanged v))
+                                text model.ComboboxValue; onTextChange (fun v -> dispatch (ComboboxValueChanged v))
                             ]
                     ]
                     [
@@ -264,7 +264,7 @@ module Buttons =
                             ]
                             [
                                 text model.ComboboxValue;
-                                onChange (fun v -> dispatch (ComboboxValueChanged v))
+                                onTextChange (fun v -> dispatch (ComboboxValueChanged v))
                                 block;
                             ]
                         textbox [
@@ -425,7 +425,7 @@ module Github =
                                     label [text "Coolness:"; colspan 1; rowspan 1; textLeft]
                                     slider [sliderValue 80f; fillHorizontal; colspan 5; rowspan 1]
                                     label [text "Features:"; colspan 1; rowspan 1; textLeft]
-                                    textbox [ text model.FeatureText; onChange (fun v -> dispatch (FeaturesChanged v)); textLeft; colspan 5; rowspan 1]
+                                    textbox [ text model.FeatureText; onTextChange (fun v -> dispatch (FeaturesChanged v)); textLeft; colspan 5; rowspan 1]
                                     button [text "Report a bug"; colspan 2]
                                     button [text "Contribute"; colspan 2]
                                     button [text "Fork"; colspan 2]

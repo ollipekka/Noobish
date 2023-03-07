@@ -717,7 +717,7 @@ module NoobishMonoGame =
 
                 let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
                 if exists && cs.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
-                    ui.State.QueueEvent c.Id (InvokeClick c)
+                    ui.State.QueueEvent c.Id (InvokeClick)
 
     let keyTyped (ui: NoobishUI) (char: char) =
         let mutable i = 0

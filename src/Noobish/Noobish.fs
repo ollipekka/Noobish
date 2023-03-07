@@ -10,13 +10,6 @@ open Noobish
 open Noobish.Styles
 open Noobish.Internal
 
-(*
-    This file contains the user-facing interface. User should be able to take
-    the library into use with a single import aside from where its set up.
-*)
-
-
-
 
 module ZIndex =
     let calculate (v: int) =
@@ -56,10 +49,10 @@ type NoobishAttribute =
     | FillVertical
 
     | OnClick of (unit -> unit)
-    | OnClickInternal of ((string -> ComponentMessage -> unit) -> NoobishLayoutElement -> unit)
+    | OnClickInternal of (NoobishState -> NoobishLayoutElement -> unit)
     | OnPress of (Vector2 -> unit)
-    | OnPressInternal of (NoobishState -> (string -> ComponentMessage -> unit) -> Vector2 -> NoobishLayoutElement -> unit)
-    | OnChange of (string -> unit)
+    | OnPressInternal of (NoobishState -> Vector2 -> NoobishLayoutElement -> unit)
+    | OnTextChange of (string -> unit)
     | Toggled of bool
     | Block
     | MinSize of width: int * height: int
@@ -145,7 +138,7 @@ let marginBottom bm = MarginBottom bm
 let margin value = Margin(value, value, value, value)
 let block = Block
 let onClick action = OnClick(action)
-let onChange action = OnChange(action)
+let onTextChange action = OnTextChange(action)
 let onPress action = OnPress(action)
 let toggled value = Toggled (value)
 
@@ -240,7 +233,7 @@ let window children attributes =
 let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
 
 let slider attributes =
-    let handlePress (state: NoobishState) (dispatch) (position: Vector2) (c: NoobishLayoutElement) =
+    let handlePress (state: NoobishState) (position: Vector2) (c: NoobishLayoutElement) =
 
         let cs = state.ElementStateById.[c.Id]
 
@@ -253,41 +246,30 @@ let slider attributes =
                         let relative = (position.X - bounds.X) / (bounds.Width)
                         let newValue = s'.Min + (relative * s'.Max - s'.Min)
                         let steppedNewValue = truncate(newValue / s'.Step) * s'.Step
-                        state.QueueEvent c.Id (InvokeValueChange (clamp steppedNewValue s'.Min s'.Max))
-                        Slider{s' with Value = steppedNewValue}
-                    | Combobox _ -> m
-                    | Textbox _ -> m)
-            |> Option.iter (fun m ->
-                dispatch c.Id (ChangeModel m)
+                        clamp steppedNewValue s'.Min s'.Max
+                    | _ -> failwith "Not a slider")
+            |> Option.iter (fun v ->
+                state.QueueEvent c.Id (ChangeSliderValue v)
             )
     {ThemeId = "Slider"; Children = []; Attributes = [(OnPressInternal handlePress)] @ attributes}
 
 
 let combobox children attributes =
-    let mutable onChange: string -> unit = ignore
-    for a in attributes do
-        match a with
-        | OnChange (onChange') ->
-            onChange <- onChange'
-        | _ -> ()
-
-
     let children' = children |> List.map(fun c' ->
-        let text = getText attributes
-
         let onClick = OnClickInternal (
-            fun dispatch c ->
-                dispatch c.ParentId Hide
-                onChange (text)
+            fun state c ->
+                let cp = state.[c.ParentId]
+                state.QueueEvent c.ParentId Hide
+                state.QueueEvent cp.ParentId (InvokeTextChange c.Text)
             )
         {c' with Attributes = onClick :: c'.Attributes}
     )
 
     let dropdown = panel children' [ hidden; ZIndex(255); Overlay; Margin(0,0,0,0);]
 
-    let onClickInternal: NoobishAttribute = OnClickInternal(fun dispatch c ->
+    let onClickInternal: NoobishAttribute = OnClickInternal(fun state c ->
         for child in c.Children do
-            dispatch child.Id ToggleVisibility
+            state.QueueEvent child.Id ToggleVisibility
     )
 
     {ThemeId = "Combobox"; Children = [dropdown]; Attributes = Layout(NoobishLayout.OverlaySource) :: onClickInternal :: attributes}
@@ -401,15 +383,15 @@ module Logic =
 
         let mutable isBlock = false
         let mutable onClick: unit -> unit = ignore
-        let mutable onClickInternal: (string -> ComponentMessage -> unit) -> NoobishLayoutElement -> unit = (fun _ _ -> ())
+        let mutable onClickInternal: NoobishState -> NoobishLayoutElement -> unit = (fun _ _ -> ())
         let mutable consumedButtons = ResizeArray<NoobishMouseButtonId>()
         let mutable consumedKeys = ResizeArray<NoobishKeyId>()
         let mutable keyTypedEnabled = false
 
         let mutable onPress: Vector2 -> unit = ignore
-        let mutable onPressInternal: NoobishState -> (string -> ComponentMessage -> unit) -> Vector2 -> NoobishLayoutElement -> unit = (fun _ _ _ _ -> ())
+        let mutable onPressInternal: NoobishState -> Vector2 -> NoobishLayoutElement -> unit = (fun _ _ _ -> ())
 
-        let mutable onChange: string -> unit = ignore
+        let mutable onTextChange: string -> unit = ignore
 
         let mutable color = styleSheet.GetColor cid cstate
 
@@ -544,8 +526,8 @@ module Logic =
             | OnPressInternal(v) ->
                 onPressInternal <- v
                 consumedButtons.Add (NoobishMouseButtonId.Left)
-            | OnChange(v) ->
-                onChange <- v
+            | OnTextChange(v) ->
+                onTextChange <- v
                 consumedButtons.Add (NoobishMouseButtonId.Left)
             | Toggled(value) ->
                 toggled <- value
@@ -715,14 +697,14 @@ module Logic =
             MarginBottom = marginBottom
 
             OnClickInternal = (fun c ->
-                onClickInternal(state.QueueEvent) c
+                onClickInternal state c
                 onClick())
 
             OnPressInternal = (fun mousePos c ->
-                onPressInternal state (state.QueueEvent) mousePos c
+                onPressInternal state mousePos c
                 onPress mousePos )
 
-            OnChange = onChange
+            OnTextChange = onTextChange
             ConsumedMouseButtons = consumedButtons |> Seq.distinct |> Seq.toArray
             ConsumedKeys = consumedKeys |> Seq.distinct |> Seq.toArray
 

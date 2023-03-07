@@ -73,7 +73,7 @@ type NoobishLayoutElement = {
     KeyTypedEnabled: bool
     OnClickInternal: NoobishLayoutElement -> unit
     OnPressInternal: Vector2 -> NoobishLayoutElement -> unit
-    OnChange: string -> unit
+    OnTextChange: string -> unit
 
     Layout: NoobishLayout
     ColSpan: int
@@ -168,10 +168,12 @@ type ComponentMessage =
     | SetScrollX of float32
     | SetScrollY of float32
     | ChangeModel of NoobishComponentModel
+    | ChangeSliderValue of float32
     | InvokeAction of (unit -> unit)
-    | InvokeClick of NoobishLayoutElement
-    | InvokePress of Vector2 * NoobishLayoutElement
-    | InvokeValueChange of float32
+    | InvokeTextChange of string
+    | InvokeClick
+    | InvokePress of Vector2
+    | InvokeSliderValueChange of float32
 
 type NoobishState () =
 
@@ -227,8 +229,9 @@ type NoobishState () =
 
         while s.Events.Count > 0 do
             let struct(cid, message) = s.Events.Dequeue()
-            let (success, cs) = s.ElementStateById.TryGetValue(cid)
-            if success then
+            let (success, c) = s.ElementsById.TryGetValue cid
+            let (successState, cs) = s.ElementStateById.TryGetValue cid
+            if success && successState then
                 match message with
                 | Show ->
                     cs.Visible <- true
@@ -241,15 +244,30 @@ type NoobishState () =
                 | SetScrollY(v) ->
                     cs.ScrollY <- v
                 | ChangeModel(m') ->
-                    let es: NoobishLayoutElementState = elementStateById.[cid]
+                    let es = elementStateById.[cid]
                     elementStateById.[cid] <- {es with Model = Some(m') }
+                | ChangeSliderValue(v) ->
+
+                    let e = elementsById.[cid]
+                    let es = elementStateById.[cid]
+
+                    let m = es.Model|> Option.map(
+                            function
+                            | Slider(s) ->
+                                Slider {s with Value = v}
+                            | _ -> failwith "Not a slider.")
+                    elementStateById.[cid] <- {es with Model = m}
+
+                    s.QueueEvent cid (InvokeSliderValueChange v)
                 | InvokeAction (action) ->
                     action()
-                | InvokeClick (c) ->
+                | InvokeClick  ->
                     c.OnClickInternal c
-                | InvokePress (v, c) ->
+                | InvokePress v ->
                     c.OnPressInternal v c
-                | InvokeValueChange (v) ->
+                | InvokeTextChange t ->
+                    c.OnTextChange t
+                | InvokeSliderValueChange v ->
                     let c = s.ElementsById[cid]
                     c.Model
                         |> Option.iter (fun m ->
@@ -271,7 +289,7 @@ type NoobishState () =
                     |> Option.iter (fun m ->
                         match m with
                         | Textbox m' ->
-                            s.QueueEvent id (InvokeAction (fun _ ->  c.OnChange m'.Text))
+                            s.QueueEvent id (InvokeTextChange m'.Text)
                         | _ -> ()
                     )
 

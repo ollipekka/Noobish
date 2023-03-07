@@ -35,7 +35,7 @@ let rec press
                 cs.PressedTime <- time
                 handled <- true
 
-                state.QueueEvent c.Id (InvokePress((Vector2(positionX,positionY), c)))
+                state.QueueEvent c.Id (InvokePress(Vector2(positionX,positionY)))
 
             else
                 handled <- true
@@ -102,7 +102,7 @@ let rec clickWithCount
                         )
 
                 else
-                    state.QueueEvent c.Id (InvokeClick c)
+                    state.QueueEvent c.Id InvokeClick
 
                 handled <- true
             else
