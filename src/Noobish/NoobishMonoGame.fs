@@ -29,7 +29,6 @@ type NoobishUI = {
     Elements: Dictionary<string, NoobishLayoutElement>
     mutable StyleSheet: NoobishStyleSheet
     mutable Debug: bool
-    mutable Version: Guid
     mutable FPSEnabled: bool
     mutable FPS: int
     mutable FPSCounter: int
@@ -138,7 +137,6 @@ module NoobishMonoGame =
             State = NoobishState()
             Elements = Dictionary()
             Debug = false
-            Version = Guid.NewGuid()
             Layers = [||]
             FPSEnabled = false
             FPS = 0
@@ -659,10 +657,10 @@ module NoobishMonoGame =
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                handled <- Noobish.Input.press ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                handled <- Noobish.Input.press ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 i <- i - 1
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
-            Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+            Input.click ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
                 |> ignore
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
@@ -676,7 +674,7 @@ module NoobishMonoGame =
 
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
             for layer in ui.Layers do
-                Noobish.Input.scroll ui.Version ui.State layer (float32 mousePosition.X) (float32 mousePosition.Y) 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
+                Noobish.Input.scroll ui.State layer (float32 mousePosition.X) (float32 mousePosition.Y) 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
     let updateKeyboard (ui: NoobishUI)  (previous: KeyboardState) (current: KeyboardState) (_gameTime: GameTime) =
 
@@ -716,7 +714,7 @@ module NoobishMonoGame =
                     | NoobishKeyId.None -> failwith "None can't be here."
 
                 let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
-                if exists && cs.Version = ui.Version && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
+                if exists && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
                     ui.State.QueueEvent c.Id (InvokeClick)
 
     let keyTyped (ui: NoobishUI) (char: char) =
@@ -724,7 +722,7 @@ module NoobishMonoGame =
         let mutable handled = false
 
         while not handled && i >= 0 do
-            handled <- Noobish.Input.keyTyped ui.Version ui.State ui.Layers.[i] char
+            handled <- Noobish.Input.keyTyped ui.State ui.Layers.[i] char
             i <- i - 1
 
 
@@ -737,7 +735,7 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Noobish.Input.press ui.Version ui.State ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- Noobish.Input.press ui.State ui.Layers.[i] gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
 
                     i <- i - 1
             | TouchLocationState.Released ->
@@ -745,7 +743,7 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Noobish.Input.click ui.Version ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- Noobish.Input.click ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
                     i <- i - 1
             | _ -> ()
 
@@ -765,7 +763,6 @@ module Program =
             let width = (float32 ui.Width)
             let height = (float32 ui.Height)
 
-            ui.Version <- Guid.NewGuid()
 
             ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.Content ui.StyleSheet ui.Settings ui.State (i + 1) width height components) |> List.toArray
 
@@ -781,7 +778,7 @@ module Program =
 
             ui.Layers <- Array.concat [ui.Layers; [| overlays.ToArray() |]]
 
-            ui.State.Populate ui.Version ui.Elements
+            ui.State.Populate ui.Elements
 
 
         program

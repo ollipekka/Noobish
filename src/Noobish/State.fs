@@ -144,7 +144,6 @@ type NoobishLayoutElementState = {
 
     mutable Model: option<NoobishComponentModel>
 
-    Version: Guid
     KeyboardShortcut: NoobishKeyId
 
 
@@ -188,7 +187,7 @@ type NoobishState () =
     member s.Item
         with get (tid: string) = s.ElementStateById.[tid]
 
-    member s.Populate (version: Guid) (elements: Dictionary<string, NoobishLayoutElement>) =
+    member s.Populate (elements: Dictionary<string, NoobishLayoutElement>) =
 
         elementsById.Clear()
         for kvp in elements do
@@ -198,7 +197,7 @@ type NoobishState () =
             let (success, es) = elementStateById.TryGetValue kvp.Key
 
             if success then
-                elementStateById.[kvp.Key] <- { es with Version = version; Model = e.Model; Toggled = e.Toggled }
+                elementStateById.[kvp.Key] <- { es with Model = e.Model; Toggled = e.Toggled }
             else
                 elementStateById.[kvp.Key] <-
                     {
@@ -215,7 +214,6 @@ type NoobishState () =
                         ScrollY = 0.0f
 
                         KeyboardShortcut = e.KeyboardShortcut
-                        Version = version
                         Model = e.Model
 
                         Children = kvp.Value.Children |> Array.map(fun child -> child.Id)

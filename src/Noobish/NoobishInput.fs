@@ -9,7 +9,6 @@ open Microsoft.Xna.Framework.Content
 open Microsoft.Xna.Framework
 
 let rec press
-    (version: Guid)
     (state: NoobishState)
     (elements: NoobishLayoutElement[])
     (time: TimeSpan)
@@ -23,11 +22,10 @@ let rec press
     while not handled && i < elements.Length do
         let c = elements.[i]
         let cs = state.ElementStateById.[c.Id]
-        if cs.Version <> version then failwith "Version mismatch!"
         if c.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
                 if c.Children.Length > 0 then
-                    press version state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
+                    press state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
                 else
                     false
             if not handledByChild then
@@ -45,7 +43,6 @@ let rec press
 
 
 let rec clickWithCount
-    (version: Guid)
     (content: ContentManager)
     (state: NoobishState)
     (styles: NoobishStyleSheet)
@@ -63,12 +60,11 @@ let rec clickWithCount
     while not handled && i < elements.Length do
         let c = elements.[i]
         let cs = state.ElementStateById.[c.Id]
-        if cs.Version <> version then failwith "Version mismatch!"
         if c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then
-                    clickWithCount version content state styles c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY) clickCount
+                    clickWithCount content state styles c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY) clickCount
                 else
                     false
             if not handledByChild then
@@ -118,7 +114,6 @@ let clickLayers () =
     let mutable lastClick = TimeSpan.Zero
 
     let clickLayersInternal
-        (version: Guid)
         (content: ContentManager)
         (state: NoobishState)
         (styles: NoobishStyleSheet)
@@ -142,15 +137,14 @@ let clickLayers () =
 
         lastClick <- time
         while not handled && i >= 0 do
-            handled <- clickWithCount version content state styles layers.[i] time positionX positionY scrollX scrollY clickCount
+            handled <- clickWithCount content state styles layers.[i] time positionX positionY scrollX scrollY clickCount
             i <- i - 1
         handled
     clickLayersInternal
 
-let click: Guid -> ContentManager -> NoobishState -> NoobishStyleSheet -> NoobishLayoutElement[][] -> TimeSpan -> float32 -> float32 -> float32 -> float32 -> bool = clickLayers()
+let click: ContentManager -> NoobishState -> NoobishStyleSheet -> NoobishLayoutElement[][] -> TimeSpan -> float32 -> float32 -> float32 -> float32 -> bool = clickLayers()
 
 let rec keyTyped
-    (version: Guid)
     (state: NoobishState)
     (elements: NoobishLayoutElement[])
     (typed: char): bool =
@@ -164,7 +158,6 @@ let rec keyTyped
         let e = elements.[i]
         let es = state.ElementStateById.[e.Id]
 
-        if es.Version <> version then failwith "Version mismatch!"
         if e.Id = focusedElementId then
             let model'' = es.Model |> Option.map (
                 fun model' ->
@@ -194,13 +187,12 @@ let rec keyTyped
             )
             handled <- true
         else
-            handled <- keyTyped version state e.Children typed
+            handled <- keyTyped state e.Children typed
 
         i <- i + 1
     handled
 
 let rec scroll
-    (version: Guid)
     (state: NoobishState)
     (elements: NoobishLayoutElement[])
     (positionX: float32)
@@ -215,12 +207,11 @@ let rec scroll
     let mutable handled = false;
     for c in elements do
         let cs = state.[c.Id]
-        if cs.Version <> version then failwith "Version mismatch!"
         if c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then
-                    scroll version state c.Children positionX positionY scale time scrollX scrollY
+                    scroll state c.Children positionX positionY scale time scrollX scrollY
                 else
                     false
 
