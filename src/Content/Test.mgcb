@@ -134,3 +134,8 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Pixel.png
+
+#begin Localization/TestBundle-en.json
+/importer:LocalizationBundleImporter
+/processor:LocalizationBundleProcessor
+/build:Localization/TestBundle-en.json

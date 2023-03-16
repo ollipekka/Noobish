@@ -128,28 +128,22 @@ type TextureAtlasJson = {
     Exclude: string[]
 }
 
-module TextureAtlasJson =
+module Glob =
     open Newtonsoft.Json
     open System.IO
     open Microsoft.Extensions.FileSystemGlobbing
     open Microsoft.Extensions.FileSystemGlobbing.Abstractions
 
-    let fromJsonFile (fileName: string) =
-        use fileStream = File.OpenText(fileName)
-        use jsonReader = new JsonTextReader(fileStream)
-        let serializer = new JsonSerializer()
-        serializer.Deserialize<TextureAtlasJson>(jsonReader)
-
-    let getFiles (path: string) (config: TextureAtlasJson) =
+    let getFiles (path: string) (included: string[]) (excluded: string[]) =
         let matcher = Matcher()
 
-        match config.Include with
+        match included with
         | null -> failwith "Include element is mandatory."
         | includePaths ->
             for path in includePaths do
                 matcher.AddInclude path |> ignore
 
-        match config.Exclude with
+        match excluded with
         | null -> ()
         | excludePaths ->
             for path in excludePaths do

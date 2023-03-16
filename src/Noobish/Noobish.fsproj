@@ -10,6 +10,8 @@
     <Compile Include="DictionaryExtensions.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Cursor.fs" />
+    <Compile Include="Localization.fs" />
+    <Compile Include="LocalizationBundleReader.fs" />
     <Compile Include="TextureAtlas.fs" />
     <Compile Include="TextureAtlasReader.fs" />
     <Compile Include="StyleSheet.fs" />

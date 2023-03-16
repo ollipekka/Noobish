@@ -4,20 +4,27 @@ open System.IO
 
 open Microsoft.Xna.Framework.Content.Pipeline
 
+open System.IO
+
+open Newtonsoft.Json
+
 [<ContentImporter( fileExtension=".json", DefaultProcessor = "TextureAtlasProcessor", DisplayName = "Texture Atlas Importer" )>]
 type TextureAtlasImporter () =
     inherit ContentImporter<string*string*string[]>()
 
-    override s.Import(filePath: string, context: ContentImporterContext) =
+    override s.Import(fileName: string, context: ContentImporterContext) =
 
-        if not (File.Exists filePath) then failwith $"Missing file %s{filePath}."
+        if not (File.Exists fileName) then failwith $"Missing file %s{fileName}."
 
-        let input = TextureAtlasJson.fromJsonFile filePath
+        use fileStream = File.OpenText(fileName)
+        use jsonReader = new JsonTextReader(fileStream)
+        let serializer = new JsonSerializer()
+        let input = serializer.Deserialize<TextureAtlasJson>(jsonReader)
 
-        let inputFilePath = Path.GetDirectoryName filePath
+        let inputFilePath = Path.GetDirectoryName fileName
 
 
-        let textureFileNames = TextureAtlasJson.getFiles inputFilePath input
+        let textureFileNames = Glob.getFiles inputFilePath input.Include input.Exclude
 
         inputFilePath, input.Name, textureFileNames
 

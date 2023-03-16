@@ -9,6 +9,7 @@ open Microsoft.Xna.Framework
 open Noobish
 open Noobish.Styles
 open Noobish.Internal
+open Noobish.Localization
 
 
 module ZIndex =
@@ -36,6 +37,7 @@ type NoobishAttribute =
     | Overlay
 
     | Text of string
+    | LocalizedText of bundleId: string * localizationKey: string
     | TextAlign of NoobishTextAlignment
     | TextWrap
 
@@ -83,6 +85,7 @@ type NoobishElement = {
 // Attributes
 let name v = Name v
 let text value = Text(value)
+let localizedText value = LocalizedText value
 
 let textAlign v = TextAlign (v)
 let textTopLeft = TextAlign NoobishTextAlignment.TopLeft
@@ -398,6 +401,7 @@ module Logic =
         let mutable texture = NoobishTextureId.None
         let mutable textureEffect = NoobishTextureEffect.None
         let mutable imageSize = NoobishImageSize.BestFitMax
+        let mutable imageColor = Color.White
         let mutable textureRotation = 0
 
         let mutable scrollHorizontal = false
@@ -458,13 +462,17 @@ module Logic =
             | Text(value) ->
                 text <- value
 
-                model <- model |> Option.map(
-                    fun model' ->
-                        match model' with
-                        | Textbox(model'') ->
-                            Textbox({model'' with Text = value; Cursor = value.Length})
-                        | _ -> model'
-                )
+
+            | LocalizedText(bundleId, keyId) ->
+                let localBundleId = $"{bundleId}-{settings.Locale}"
+                let bundle = content.Load<NoobishLocalizationBundle> localBundleId
+                let success, localizedText = bundle.Localizations.TryGetValue keyId
+
+                if success then
+                    text <- localizedText
+                else
+                    text <- $"*%s{text}*"
+
 
             | TextAlign (value) -> textAlign <- value
             | TextWrap -> textWrap <- true
@@ -613,6 +621,15 @@ module Logic =
             | Textbox (_t) -> ()
         )
 
+        if not (String.IsNullOrWhiteSpace(text)) then
+            model <- model |> Option.map(
+                fun model' ->
+                    match model' with
+                    | Textbox(model'') ->
+                        Textbox({model'' with Text = text; Cursor = text.Length})
+                    | _ -> model'
+            )
+
         if not (String.IsNullOrWhiteSpace text) then
             let paddedWidth = maxWidth - marginLeft - marginRight - paddingLeft - paddingRight
 
@@ -672,7 +689,7 @@ module Logic =
                         {
                             Texture = texture
                             TextureEffect = textureEffect
-                            Color = color
+                            Color = imageColor
                             ImageSize = imageSize
                             Rotation = textureRotation
                         }

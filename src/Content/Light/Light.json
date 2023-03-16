@@ -27,6 +27,7 @@
         },
         "Button": {
             "default": {
+                "textAlign": "left",
                 "drawables": [
                     ["button-default.9"]
                 ]

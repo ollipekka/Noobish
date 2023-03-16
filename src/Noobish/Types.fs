@@ -46,6 +46,7 @@ type NoobishMouseButtonId =
 
 type NoobishSettings = {
     Pixel: string
+    Locale: string
 }
 
 module Internal =

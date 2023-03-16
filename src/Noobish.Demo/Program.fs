@@ -495,6 +495,7 @@ type DemoGame () as game =
 
         let settings: NoobishSettings = {
             Pixel = "Pixel"
+            Locale = "en"
         }
 
         nui <- NoobishMonoGame.create game.Content "Dark/Dark" width height settings
@@ -564,7 +565,7 @@ type DemoGame () as game =
                                     h1 [text title; fill; colspan 6];
                                     button
                                         [
-                                            text "Dark";
+                                            localizedText ("Localization/TestBundle", "Dark");
                                             toggled (model.StyleMode = DarkMode);
                                             fill;
                                             onClick (fun () -> dispatch ToggleDarkMode)
@@ -572,7 +573,7 @@ type DemoGame () as game =
                                         ]
                                     button
                                         [
-                                            text "Light";
+                                            localizedText ("Localization/TestBundle", "Light");
                                             toggled (model.StyleMode = LightMode);
                                             fill;
                                             onClick (fun () -> dispatch ToggleLightMode)

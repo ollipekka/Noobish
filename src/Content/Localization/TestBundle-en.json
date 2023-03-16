@@ -1,0 +1,9 @@
+{
+    "Name": "TestBundle-en",
+    "Include": [
+        "*.json"
+    ],
+    "Exclude":[
+        "*Bundle*"
+    ]
+}

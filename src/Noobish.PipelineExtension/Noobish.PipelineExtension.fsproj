@@ -11,6 +11,12 @@
     <Compile Include="Types.fs" />
     <Compile Include="DictionaryExtensions.fs" />
     <Compile Include="TexturePacker.fs" />
+
+
+    <Compile Include="LocalizationBundleProcessor.fs" />
+    <Compile Include="LocalizationBundleWriter.fs" />
+    <Compile Include="LocalizationBundleImporter.fs" />
+
     <Compile Include="TextureAtlasProcessor.fs" />
     <Compile Include="TextureAtlasWriter.fs" />
     <Compile Include="TextureAtlasImporter.fs" />
