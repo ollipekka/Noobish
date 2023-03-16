@@ -496,10 +496,10 @@ type DemoGame () as game =
         let settings: NoobishSettings = {
             Pixel = "Pixel"
             Locale = "en"
+            Debug = false
         }
 
         nui <- NoobishMonoGame.create game.Content "Dark/Dark" width height settings
-            |> NoobishMonoGame.overrideDebug false
 
         let init () =
             { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."}, Cmd.ofMsg (ShowButtons)
@@ -527,7 +527,7 @@ type DemoGame () as game =
             | FeaturesChanged s ->
                 {model with FeatureText = s}, Cmd.none
             | ToggleDebug ->
-                model.UI.Debug <- (not model.UI.Debug)
+                model.UI.Settings.Debug <- (not model.UI.Settings.Debug)
                 model, Cmd.none
             | ToggleLightMode ->
                 nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Light/Light"
@@ -582,7 +582,7 @@ type DemoGame () as game =
                                     button
                                         [
                                             text "Debug";
-                                            toggled model.UI.Debug;
+                                            toggled model.UI.Settings.Debug;
                                             fill;
                                             onClick (fun () -> dispatch ToggleDebug)
                                             colspan 2

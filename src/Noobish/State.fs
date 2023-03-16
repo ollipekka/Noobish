@@ -5,8 +5,6 @@ open Microsoft.Xna.Framework
 
 open Noobish
 
-open Noobish.TextureAtlas
-open Noobish.Styles
 open Noobish.Internal
 
 open System
@@ -158,7 +156,6 @@ type NoobishLayoutElementState = {
         | None -> false
 
 type NoobishId = | NoobishId of string
-
 
 type ComponentMessage =
     | Show

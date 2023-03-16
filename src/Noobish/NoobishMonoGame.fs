@@ -28,7 +28,6 @@ type NoobishUI = {
     State: NoobishState
     Elements: Dictionary<string, NoobishLayoutElement>
     mutable StyleSheet: NoobishStyleSheet
-    mutable Debug: bool
     mutable FPSEnabled: bool
     mutable FPS: int
     mutable FPSCounter: int
@@ -136,7 +135,6 @@ module NoobishMonoGame =
             Settings = settings
             State = NoobishState()
             Elements = Dictionary()
-            Debug = false
             Layers = [||]
             FPSEnabled = false
             FPS = 0
@@ -643,10 +641,10 @@ module NoobishMonoGame =
             layer |> Array.iter(fun e ->
                 let es = ui.State.[e.Id]
                 if es.Visible then
-                    drawComponent ui.StyleSheet ui.State content ui.Settings graphics spriteBatch textBatch ui.Debug time e 0.0f 0.0f source
+                    drawComponent ui.StyleSheet ui.State content ui.Settings graphics spriteBatch textBatch ui.Settings.Debug time e 0.0f 0.0f source
             )
 
-        if ui.Debug || ui.FPSEnabled then
+        if ui.Settings.Debug || ui.FPSEnabled then
             drawFps content spriteBatch textBatch ui time
 
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =

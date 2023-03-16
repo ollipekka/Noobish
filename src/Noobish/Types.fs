@@ -46,14 +46,11 @@ type NoobishMouseButtonId =
 
 type NoobishSettings = {
     Pixel: string
-    Locale: string
+    mutable Locale: string
+    mutable Debug: bool
 }
 
 module Internal =
-
-    open System
-    open System.Collections.Generic
-    open Microsoft.Xna.Framework
 
     [<Struct>]
     type NoobishRectangle = {
