@@ -10,7 +10,49 @@ open Noobish.Internal
 open System
 open System.Collections.Generic
 
+[<Flags>]
+[<RequireQualifiedAccess>]
+type NoobishElementState =
+| Empty    =  0
+| Selected =  1
+| Toggled  =  2
+| Hovered  =  4
+| Pressed  =  8
+| Disabled = 16
+| Hidden   = 32
+| Focused  = 64
 
+module NoobishElementState =
+
+    let hide s =
+        s ||| NoobishElementState.Hidden
+
+    let show s =
+        s &&& ~~~NoobishElementState.Hidden
+
+    let focus s =
+        s ||| NoobishElementState.Focused
+
+    let unfocus s =
+        s &&& ~~~NoobishElementState.Focused
+
+    let select s =
+        s ||| NoobishElementState.Selected
+
+    let unselect s =
+        s &&& ~~~NoobishElementState.Selected
+
+    let enable s =
+        s &&& ~~~NoobishElementState.Selected
+
+    let disable s =
+        s ||| NoobishElementState.Disabled
+
+    let toggle s =
+        s |||  NoobishElementState.Toggled
+
+    let untoggle s =
+        s &&& ~~~NoobishElementState.Toggled
 
 type NoobishImage = {
     Texture: NoobishTextureId
@@ -25,9 +67,6 @@ type NoobishLayoutElement = {
     ParentId: string
     Path: string
     ThemeId: string
-    Enabled: bool
-    Visible: bool
-    Toggled: bool
     ZIndex: int
     Overlay: bool
 
@@ -84,7 +123,6 @@ type NoobishLayoutElement = {
     member l.PaddingVertical with get() = l.PaddingTop + l.PaddingBottom
     member l.PaddingHorizontal with get() = l.PaddingRight+ l.PaddingLeft
 
-    member l.Hidden with get() = not l.Visible
     member l.ContentStartX with get() = l.X + l.PaddingLeft + l.MarginLeft
     member l.ContentStartY with get() = l.Y + l.PaddingTop + l.MarginTop
     member l.ContentWidth with get() = l.OuterWidth - l.MarginHorizontal - l.PaddingHorizontal
@@ -129,9 +167,8 @@ type NoobishLayoutElement = {
 type NoobishLayoutElementState = {
     Id: string
     ParentId: string
-    mutable Focused: bool
-    mutable Toggled: bool
-    mutable Visible: bool
+
+    State: NoobishElementState
 
     mutable FocusedTime: TimeSpan
     mutable PressedTime: TimeSpan
@@ -147,6 +184,12 @@ type NoobishLayoutElementState = {
 
     Children: string[]
 } with
+    member s.Disabled with get() = s.State.HasFlag NoobishElementState.Disabled
+    member s.Enabled with get() = not s.Disabled
+    member s.Focused with get() = (s.State.HasFlag NoobishElementState.Focused)
+    member s.Visible with get() = not (s.State.HasFlag NoobishElementState.Hidden)
+    member s.Toggled with get() = (s.State.HasFlag NoobishElementState.Toggled)
+    member s.Pressed with get() = (s.State.HasFlag NoobishElementState.Pressed)
     member s.CanFocus with get() =
         match s.Model with
         | Some(model') ->
@@ -184,41 +227,33 @@ type NoobishState () =
     member s.Item
         with get (tid: string) = s.ElementStateById.[tid]
 
-    member s.Populate (elements: Dictionary<string, NoobishLayoutElement>) =
-
-        elementsById.Clear()
-        for kvp in elements do
-            let e = kvp.Value
-            elementsById.[kvp.Key] <- e
-
-            let (success, es) = elementStateById.TryGetValue kvp.Key
-
-            if success then
-                elementStateById.[kvp.Key] <- { es with Model = e.Model; Toggled = e.Toggled }
-            else
-                elementStateById.[kvp.Key] <-
-                    {
-                        Id = e.Id
-                        ParentId = e.ParentId
-                        Visible = e.Visible
-                        Focused = false
-                        Toggled = false
-                        FocusedTime = TimeSpan.FromDays(-1)
-                        PressedTime = TimeSpan.FromDays(-1)
-                        ScrolledTime = TimeSpan.FromDays(-1)
-
-                        ScrollX = 0.0f
-                        ScrollY = 0.0f
-
-                        KeyboardShortcut = e.KeyboardShortcut
-                        Model = e.Model
-
-                        Children = kvp.Value.Children |> Array.map(fun child -> child.Id)
-                    }
-
-
     member s.QueueEvent (cid: string) (message:ComponentMessage) =
         s.Events.Enqueue(struct(cid, message))
+
+    member s.UpdateState (e: NoobishLayoutElement) (state: NoobishElementState)  =
+        elementsById.[e.Id] <- e
+
+        let success, es = s.ElementStateById.TryGetValue e.Id
+        if success then
+            elementStateById.[e.Id] <- { es with Model = e.Model; State = state }
+        else
+            elementStateById.[e.Id] <-
+                {
+                    Id = e.Id
+                    ParentId = e.ParentId
+                    State  = state
+                    FocusedTime = TimeSpan.FromDays(-1)
+                    PressedTime = TimeSpan.FromDays(-1)
+                    ScrolledTime = TimeSpan.FromDays(-1)
+
+                    ScrollX = 0.0f
+                    ScrollY = 0.0f
+
+                    KeyboardShortcut = e.KeyboardShortcut
+                    Model = e.Model
+
+                    Children = e.Children |> Array.map(fun child -> child.Id)
+                }
 
     member s.ProcessEvents() =
 
@@ -229,11 +264,21 @@ type NoobishState () =
             if success && successState then
                 match message with
                 | Show ->
-                    cs.Visible <- true
+                    let es = elementStateById.[cid]
+                    elementStateById.[cid] <- {es with State = es.State &&& ~~~NoobishElementState.Hidden }
                 | Hide ->
-                    cs.Visible <- false
+                    let es = elementStateById.[cid]
+                    elementStateById.[cid] <- {es with State = es.State &&& NoobishElementState.Hidden }
                 | ToggleVisibility ->
-                    cs.Visible <- not cs.Visible
+
+                    let es = elementStateById.[cid]
+                    let state =
+                        if (es.State.HasFlag NoobishElementState.Hidden) then
+                            (es.State &&& ~~~NoobishElementState.Hidden)
+                        else
+                            (es.State &&& NoobishElementState.Hidden)
+
+                    elementStateById.[cid] <- {es with State = state}
                 | SetScrollX (v) ->
                     cs.ScrollX <- v
                 | SetScrollY(v) ->
@@ -289,8 +334,9 @@ type NoobishState () =
                     )
 
                 let cs = s.ElementStateById.[id]
-                cs.Focused <- false
                 cs.FocusedTime <- TimeSpan.Zero
+
+                elementStateById.[id] <- {cs with State = NoobishElementState.unfocus cs.State; FocusedTime = TimeSpan.Zero}
         )
         s.FocusedElementId <- None
 
@@ -300,8 +346,6 @@ type NoobishState () =
 
         s.FocusedElementId <- Some(id)
         let cs = s.ElementStateById.[id]
-        cs.Focused <- true
-        cs.FocusedTime <- time
 
         let setText (text: string) =
             let model =
@@ -322,3 +366,5 @@ type NoobishState () =
                 model'.OnOpenKeyboard(setText)
             | _ -> ()
         )
+
+        elementStateById.[id] <- {cs with State = NoobishElementState.focus cs.State; FocusedTime = time}

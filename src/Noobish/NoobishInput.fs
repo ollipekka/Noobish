@@ -22,7 +22,7 @@ let rec press
     while not handled && i < elements.Length do
         let c = elements.[i]
         let cs = state.ElementStateById.[c.Id]
-        if c.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
+        if cs.Enabled && cs.Visible && (not cs.Toggled) && c.Contains positionX positionY scrollX scrollY  then
             let handledByChild =
                 if c.Children.Length > 0 then
                     press state c.Children time positionX positionY (scrollX + cs.ScrollX) (scrollY + cs.ScrollY)
@@ -60,7 +60,7 @@ let rec clickWithCount
     while not handled && i < elements.Length do
         let c = elements.[i]
         let cs = state.ElementStateById.[c.Id]
-        if c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
+        if cs.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then
@@ -207,7 +207,7 @@ let rec scroll
     let mutable handled = false;
     for c in elements do
         let cs = state.[c.Id]
-        if c.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
+        if cs.Enabled && cs.Visible && c.Contains positionX positionY scrollX scrollY then
 
             let handledByChild =
                 if c.Children.Length > 0 then

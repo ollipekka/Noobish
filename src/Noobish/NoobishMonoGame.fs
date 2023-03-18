@@ -193,9 +193,9 @@ module NoobishMonoGame =
         let cstate =
             if cs.CanFocus && cs.Focused then
                 "focused"
-            elif not c.Enabled then
+            elif not cs.Enabled then
                 "disabled"
-            elif c.Toggled then
+            elif cs.Toggled then
                 "toggled"
             else
                 "default"
@@ -203,9 +203,9 @@ module NoobishMonoGame =
         let color =
             if cs.CanFocus && cs.Focused then
                 styleSheet.GetColor c.ThemeId "focused"
-            elif not c.Enabled then
+            elif not cs.Enabled then
                 styleSheet.GetColor c.ThemeId "disabled"
-            elif c.Toggled then
+            elif cs.Toggled then
                 styleSheet.GetColor c.ThemeId "toggled"
             else
                 if cs.Visible then
@@ -266,7 +266,7 @@ module NoobishMonoGame =
         let layer = 1f - float32 (c.ZIndex + 32) / 255.0f
         let state =
             if cs.CanFocus && cs.Focused then "focused"
-            elif not c.Enabled then "disabled"
+            elif cs.Disabled then "disabled"
             elif cs.Toggled then "toggled"
             else "default"
 
@@ -712,7 +712,7 @@ module NoobishMonoGame =
                     | NoobishKeyId.None -> failwith "None can't be here."
 
                 let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
-                if exists && c.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
+                if exists && cs.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
                     ui.State.QueueEvent c.Id (InvokeClick)
 
     let keyTyped (ui: NoobishUI) (char: char) =
@@ -775,8 +775,6 @@ module Program =
 
 
             ui.Layers <- Array.concat [ui.Layers; [| overlays.ToArray() |]]
-
-            ui.State.Populate ui.Elements
 
 
         program

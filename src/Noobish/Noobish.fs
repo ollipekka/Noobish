@@ -17,6 +17,8 @@ module ZIndex =
         let v = clamp v 0 255
         1f - (float32 v / 255f)
 
+
+
 type NoobishAttribute =
 
     | Name of string
@@ -55,11 +57,12 @@ type NoobishAttribute =
     | OnPress of (Vector2 -> unit)
     | OnPressInternal of (NoobishState -> Vector2 -> NoobishLayoutElement -> unit)
     | OnTextChange of (string -> unit)
-    | Toggled of bool
-    | Block
-    | MinSize of width: int * height: int
     | Visible of bool
     | Enabled of bool
+    | Toggled of bool
+    | Selected of bool
+    | Block
+    | MinSize of width: int * height: int
     | Texture of NoobishTextureId
     | TextureEffect of NoobishTextureEffect
     | ImageSize of NoobishImageSize
@@ -144,6 +147,7 @@ let onClick action = OnClick(action)
 let onTextChange action = OnTextChange(action)
 let onPress action = OnPress(action)
 let toggled value = Toggled (value)
+let selected value = Selected (value)
 
 let fill = Fill
 let fillHorizontal = FillHorizontal
@@ -369,9 +373,7 @@ module Logic =
             (float32 left, float32 right, float32 top, float32 bottom)
 
         let mutable name = ""
-        let mutable enabled = true
-        let mutable visible = true
-        let mutable toggled = false
+        let mutable elementState = NoobishElementState.Empty
         let mutable zIndex = zIndex
         let mutable overlay = false
 
@@ -537,8 +539,19 @@ module Logic =
             | OnTextChange(v) ->
                 onTextChange <- v
                 consumedButtons.Add (NoobishMouseButtonId.Left)
+
+            | Enabled (value) ->
+                if (not value) && not (elementState.HasFlag(NoobishElementState.Disabled)) then
+                    elementState <- NoobishElementState.disable elementState
+            | Visible (value) ->
+                if (not value) && not (elementState.HasFlag(NoobishElementState.Hidden)) then
+                    elementState <- NoobishElementState.hide elementState
             | Toggled(value) ->
-                toggled <- value
+                if value && not (elementState.HasFlag(NoobishElementState.Toggled)) then
+                    elementState <- NoobishElementState.toggle elementState
+            | Selected(value) ->
+                if value && not (elementState.HasFlag(NoobishElementState.Selected)) then
+                    elementState <- NoobishElementState.select elementState
             | ZIndex(value) ->
                 zIndex <- value
             | Overlay ->
@@ -551,8 +564,6 @@ module Logic =
             | FillVertical ->
                 fillVertical <- true
             | Block -> isBlock <- true
-            | Enabled (v) -> enabled <- v
-            | Visible (v) -> visible <- v
             | Texture (t) ->
                 texture <- t
             | TextureEffect (t) ->
@@ -660,14 +671,11 @@ module Logic =
         let path = sprintf "%s/%s" parentPath themeId
         //let text = if String.IsNullOrWhiteSpace textLines then [||] else textLines.Split '\n'
 
-        {
+        elementState, {
             Id = cid
             ParentId = parentId
             Path = path
             ThemeId = themeId
-            Enabled = enabled
-            Visible = visible
-            Toggled = toggled
             ZIndex = zIndex
             Overlay = overlay
 
@@ -752,6 +760,8 @@ module Logic =
                     | _ -> false
                 | _ -> false)
 
+
+
     let rec private layoutElement
         (content: ContentManager)
         (styleSheet: NoobishStyleSheet)
@@ -766,7 +776,8 @@ module Logic =
         (parentHeight: float32)
         (c: NoobishElement): NoobishLayoutElement  =
 
-        let parentComponent = createNoobishLayoutElement styleSheet content settings state zIndex parentId parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
+        let parentComponentState, parentComponent = createNoobishLayoutElement styleSheet content settings state zIndex parentId parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
+
 
         let mutable offsetX = 0.0f
         let mutable offsetY = 0.0f
@@ -783,126 +794,127 @@ module Logic =
             else
                 newChildren |> Seq.map (fun c -> c.OuterWidth) |> Seq.max
 
-        match parentComponent.Layout with
-        | NoobishLayout.Default ->
+        let parentComponent =
+            match parentComponent.Layout with
+            | NoobishLayout.Default ->
 
-            // In this layout, actual parent component height might be zero at this point. We don't know. Use available height.
-            let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.MarginHorizontal - parentComponent.PaddingHorizontal
-            let availableHeight = (parentHeight * float32 parentComponent.RowSpan) - parentComponent.MarginVertical - parentComponent.PaddingVertical
+                // In this layout, actual parent component height might be zero at this point. We don't know. Use available height.
+                let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.MarginHorizontal - parentComponent.PaddingHorizontal
+                let availableHeight = (parentHeight * float32 parentComponent.RowSpan) - parentComponent.MarginVertical - parentComponent.PaddingVertical
 
-            let parentBounds = parentComponent.Content
-            for i = 0 to c.Children.Length - 1 do
-                let child = c.Children.[i]
-                let childStartX = parentBounds.X + offsetX
-                let childStartY = parentBounds.Y + offsetY
-                let childWidth = if parentComponent.ScrollHorizontal then availableWidth else availableWidth - offsetX
-                let childHeight = if parentComponent.ScrollVertical then availableHeight else availableHeight - offsetY
+                let parentBounds = parentComponent.Content
+                for i = 0 to c.Children.Length - 1 do
+                    let child = c.Children.[i]
+                    let childStartX = parentBounds.X + offsetX
+                    let childStartY = parentBounds.Y + offsetY
+                    let childWidth = if parentComponent.ScrollHorizontal then availableWidth else availableWidth - offsetX
+                    let childHeight = if parentComponent.ScrollVertical then availableHeight else availableHeight - offsetY
 
 
 
-                let path = sprintf "%s:%i" parentComponent.Path i
-                let childComponent = layoutElement content styleSheet settings state zIndex parentComponent.Id path childStartX childStartY childWidth childHeight child
+                    let path = sprintf "%s:%i" parentComponent.Path i
+                    let childComponent = layoutElement content styleSheet settings state zIndex parentComponent.Id path childStartX childStartY childWidth childHeight child
 
-                newChildren.Add(childComponent)
+                    newChildren.Add(childComponent)
 
-                let childEndX = (offsetX + childComponent.OuterWidth)
-                if childComponent.IsBlock || (childEndX + parentComponent.PaddingHorizontal) >= parentBounds.Width then
-                    offsetX <- 0.0f
-                    offsetY <- offsetY + childComponent.OuterHeight
-                else
-                    offsetX <- childEndX
+                    let childEndX = (offsetX + childComponent.OuterWidth)
+                    if childComponent.IsBlock || (childEndX + parentComponent.PaddingHorizontal) >= parentBounds.Width then
+                        offsetX <- 0.0f
+                        offsetY <- offsetY + childComponent.OuterHeight
+                    else
+                        offsetX <- childEndX
 
-            let width =
-                if parentComponent.FillHorizontal then
-                    availableWidth + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
-                else
-                    let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
-                    clamp childWidth 0f availableWidth
+                let width =
+                    if parentComponent.FillHorizontal then
+                        availableWidth + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
+                    else
+                        let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
+                        clamp childWidth 0f availableWidth
 
-            let overflowHeight = calculateChildHeight()
-            let height =
-                if parentComponent.FillVertical then
-                    availableHeight + parentComponent.PaddingVertical + parentComponent.MarginVertical
-                else
-                    let childHeight = overflowHeight + parentComponent.PaddingVertical + parentComponent.MarginVertical
-                    clamp childHeight 0f availableHeight
+                let overflowHeight = calculateChildHeight()
+                let height =
+                    if parentComponent.FillVertical then
+                        availableHeight + parentComponent.PaddingVertical + parentComponent.MarginVertical
+                    else
+                        let childHeight = overflowHeight + parentComponent.PaddingVertical + parentComponent.MarginVertical
+                        clamp childHeight 0f availableHeight
 
-            let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.ContentWidth
+                let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.ContentWidth
 
-            {parentComponent with
-                OuterWidth = width
-                OuterHeight = height
-                OverflowWidth = overflowWidth
-                OverflowHeight = overflowHeight
-                Children = newChildren.ToArray()}
-        | NoobishLayout.Grid (cols, rows) ->
+                {parentComponent with
+                    OuterWidth = width
+                    OuterHeight = height
+                    OverflowWidth = overflowWidth
+                    OverflowHeight = overflowHeight
+                    Children = newChildren.ToArray()}
+            | NoobishLayout.Grid (cols, rows) ->
 
-            let parentBounds = parentComponent.Content
-            let colWidth = parentBounds.Width / float32 cols
-            let rowHeight = parentBounds.Height / float32 rows
-            let mutable col = 0
-            let mutable row = 0
+                let parentBounds = parentComponent.Content
+                let colWidth = parentBounds.Width / float32 cols
+                let rowHeight = parentBounds.Height / float32 rows
+                let mutable col = 0
+                let mutable row = 0
 
-            let bump colspan rowspan =
-                col <- col + colspan
+                let bump colspan rowspan =
+                    col <- col + colspan
 
-                if (col >= cols) then
-                    col <- 0
-                    row <- row + rowspan
+                    if (col >= cols) then
+                        col <- 0
+                        row <- row + rowspan
 
-            let notFinished () = row < rows
 
-            let cellUsed = Array2D.create cols rows false
+                let cellUsed = Array2D.create cols rows false
 
-            for child in c.Children do
-                let childStartX = (parentBounds.X + (float32 col) * (colWidth))
-                let childStartY = (parentBounds.Y + (float32 row) * (rowHeight))
-                let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
-                let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path childStartX childStartY colWidth rowHeight child
+                for child in c.Children do
+                    let childStartX = (parentBounds.X + (float32 col) * (colWidth))
+                    let childStartY = (parentBounds.Y + (float32 row) * (rowHeight))
+                    let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
+                    let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path childStartX childStartY colWidth rowHeight child
 
-                newChildren.Add({
-                    childComponent with
-                        OuterWidth = (colWidth * float32 childComponent.ColSpan)
-                        OuterHeight = (rowHeight * float32 childComponent.RowSpan)
-                        })
+                    newChildren.Add({
+                        childComponent with
+                            OuterWidth = (colWidth * float32 childComponent.ColSpan)
+                            OuterHeight = (rowHeight * float32 childComponent.RowSpan)
+                            })
 
-                for c = col to col + childComponent.ColSpan - 1 do
-                    for r = row to row + childComponent.RowSpan - 1 do
-                        cellUsed.[c, r] <- true
+                    for c = col to col + childComponent.ColSpan - 1 do
+                        for r = row to row + childComponent.RowSpan - 1 do
+                            cellUsed.[c, r] <- true
 
-                while notFinished() && cellUsed.[col, row] do
-                    bump childComponent.ColSpan childComponent.RowSpan
+                    while row < rows && cellUsed.[col, row] do
+                        bump childComponent.ColSpan childComponent.RowSpan
 
-            {parentComponent with
-                Children = newChildren.ToArray()
-                OverflowWidth = parentComponent.ContentWidth
-                OverflowHeight = parentComponent.ContentHeight}
-        | NoobishLayout.OverlaySource ->
+                {parentComponent with
+                    Children = newChildren.ToArray()
+                    OverflowWidth = parentComponent.ContentWidth
+                    OverflowHeight = parentComponent.ContentHeight}
+            | NoobishLayout.OverlaySource ->
 
-            if c.Children.Length <> 1 then failwith "Can only pop open one at a time."
+                if c.Children.Length <> 1 then failwith "Can only pop open one at a time."
 
-            let path = sprintf "%s:overlay" parentComponent.Path
-            let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
+                let path = sprintf "%s:overlay" parentComponent.Path
+                let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
 
-            {parentComponent with Children = [|childComponent|]}
-        | NoobishLayout.Absolute ->
-            let parentBounds = parentComponent.Content
+                {parentComponent with Children = [|childComponent|]}
+            | NoobishLayout.Absolute ->
+                let parentBounds = parentComponent.Content
 
-            for i = 0 to c.Children.Length - 1 do
-                let childStartX = parentBounds.X + parentBounds.Width / 2.0f
-                let childStartY = parentBounds.Y + parentBounds.Height / 2.0f
+                for i = 0 to c.Children.Length - 1 do
+                    let childStartX = parentBounds.X + parentBounds.Width / 2.0f
+                    let childStartY = parentBounds.Y + parentBounds.Height / 2.0f
 
-                let childWidth = parentBounds.Width
-                let childHeight = parentBounds.Height
+                    let childWidth = parentBounds.Width
+                    let childHeight = parentBounds.Height
 
-                let path = sprintf "%s:absolute:%i" parentComponent.Path i
-                let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight c.Children.[i]
-                newChildren.Add({ childComponent with StartX = childComponent.StartX; StartY = childComponent.StartY })
+                    let path = sprintf "%s:absolute:%i" parentComponent.Path i
+                    let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight c.Children.[i]
+                    newChildren.Add({ childComponent with StartX = childComponent.StartX; StartY = childComponent.StartY })
 
-            {parentComponent with Children = newChildren.ToArray()}
-        | NoobishLayout.None ->
-            parentComponent
-
+                {parentComponent with Children = newChildren.ToArray()}
+            | NoobishLayout.None ->
+                parentComponent
+        state.UpdateState parentComponent parentComponentState
+        parentComponent
 
     let layout (content: ContentManager) (styleSheet: NoobishStyleSheet) (settings: NoobishSettings) (state: NoobishState) (layer: int) (width: float32) (height: float32) (elements: list<NoobishElement>) =
 
