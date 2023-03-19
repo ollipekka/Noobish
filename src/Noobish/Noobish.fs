@@ -57,6 +57,7 @@ type NoobishAttribute =
     | OnPress of (Vector2 -> unit)
     | OnPressInternal of (NoobishState -> Vector2 -> NoobishLayoutElement -> unit)
     | OnTextChange of (string -> unit)
+    | OnCheckboxValueChange of (bool -> unit)
     | Visible of bool
     | Enabled of bool
     | Toggled of bool
@@ -145,6 +146,7 @@ let margin value = Margin(value, value, value, value)
 let block = Block
 let onClick action = OnClick(action)
 let onTextChange action = OnTextChange(action)
+let onCheckBoxValueChange action = OnCheckboxValueChange(action)
 let onPress action = OnPress(action)
 let toggled value = Toggled (value)
 let selected value = Selected (value)
@@ -284,7 +286,22 @@ let combobox children attributes =
 let checkbox attributes =
     let labelText = getText attributes
     let isChecked = (isToggled attributes)
-    let check = { ThemeId = "CheckBox"; Children = []; Attributes = [toggled isChecked;] }
+
+    let onClickInternal = OnClickInternal(fun state e ->
+
+        state.QueueEvent e.Id Toggle
+        state.QueueEvent e.Id (InvokeCheckBoxValueChange)
+    )
+
+    let onCheckBoxValueChange =
+        attributes
+            |> List.tryFind(
+                function
+                | OnCheckboxValueChange(_) -> true
+                | _ -> false)
+            |> Option.defaultValue (OnCheckboxValueChange(ignore))
+
+    let check = { ThemeId = "CheckBox"; Children = []; Attributes = [toggled isChecked; onClickInternal; onCheckBoxValueChange] }
 
     let attributes =
         attributes
@@ -292,6 +309,7 @@ let checkbox attributes =
                 function
                 | Text(_) -> false
                 | Toggled(_) -> false
+                | OnCheckboxValueChange(_) -> false
                 | _ -> true
             )
     div
@@ -397,6 +415,7 @@ module Logic =
         let mutable onPressInternal: NoobishState -> Vector2 -> NoobishLayoutElement -> unit = (fun _ _ _ -> ())
 
         let mutable onTextChange: string -> unit = ignore
+        let mutable onCheckboxValueChange: bool -> unit = ignore
 
         let mutable color = styleSheet.GetColor cid cstate
 
@@ -539,7 +558,8 @@ module Logic =
             | OnTextChange(v) ->
                 onTextChange <- v
                 consumedButtons.Add (NoobishMouseButtonId.Left)
-
+            | OnCheckboxValueChange(v) ->
+                onCheckboxValueChange <- v
             | Enabled (value) ->
                 if (not value) && not (elementState.HasFlag(NoobishElementState.Disabled)) then
                     elementState <- NoobishElementState.disable elementState
@@ -730,6 +750,7 @@ module Logic =
                 onPress mousePos )
 
             OnTextChange = onTextChange
+            OnCheckBoxValueChange = onCheckboxValueChange
             ConsumedMouseButtons = consumedButtons |> Seq.distinct |> Seq.toArray
             ConsumedKeys = consumedKeys |> Seq.distinct |> Seq.toArray
 

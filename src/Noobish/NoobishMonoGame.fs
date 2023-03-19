@@ -193,7 +193,7 @@ module NoobishMonoGame =
         let cstate =
             if cs.CanFocus && cs.Focused then
                 "focused"
-            elif not cs.Enabled then
+            elif cs.Disabled then
                 "disabled"
             elif cs.Toggled then
                 "toggled"
@@ -203,7 +203,7 @@ module NoobishMonoGame =
         let color =
             if cs.CanFocus && cs.Focused then
                 styleSheet.GetColor c.ThemeId "focused"
-            elif not cs.Enabled then
+            elif cs.Disabled then
                 styleSheet.GetColor c.ThemeId "disabled"
             elif cs.Toggled then
                 styleSheet.GetColor c.ThemeId "toggled"
@@ -265,10 +265,14 @@ module NoobishMonoGame =
 
         let layer = 1f - float32 (c.ZIndex + 32) / 255.0f
         let state =
-            if cs.CanFocus && cs.Focused then "focused"
-            elif cs.Disabled then "disabled"
-            elif cs.Toggled then "toggled"
-            else "default"
+            if cs.CanFocus && cs.Focused then
+                "focused"
+            elif cs.Disabled then
+                "disabled"
+            elif cs.Toggled then
+                "toggled"
+            else
+                "default"
 
         let fontId = styleSheet.GetFont c.ThemeId state
         let font = content.Load<NoobishFont> fontId

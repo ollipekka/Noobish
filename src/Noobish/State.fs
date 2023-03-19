@@ -39,7 +39,7 @@ module NoobishElementState =
     let select s =
         s ||| NoobishElementState.Selected
 
-    let unselect s =
+    let deselect s =
         s &&& ~~~NoobishElementState.Selected
 
     let enable s =
@@ -51,7 +51,7 @@ module NoobishElementState =
     let toggle s =
         s |||  NoobishElementState.Toggled
 
-    let untoggle s =
+    let detoggle s =
         s &&& ~~~NoobishElementState.Toggled
 
 type NoobishImage = {
@@ -111,6 +111,7 @@ type NoobishLayoutElement = {
     OnClickInternal: NoobishLayoutElement -> unit
     OnPressInternal: Vector2 -> NoobishLayoutElement -> unit
     OnTextChange: string -> unit
+    OnCheckBoxValueChange: bool -> unit
 
     Layout: NoobishLayout
     ColSpan: int
@@ -204,6 +205,7 @@ type ComponentMessage =
     | Show
     | Hide
     | ToggleVisibility
+    | Toggle
     | SetScrollX of float32
     | SetScrollY of float32
     | ChangeModel of NoobishComponentModel
@@ -213,6 +215,7 @@ type ComponentMessage =
     | InvokeClick
     | InvokePress of Vector2
     | InvokeSliderValueChange of float32
+    | InvokeCheckBoxValueChange
 
 type NoobishState () =
 
@@ -265,20 +268,33 @@ type NoobishState () =
                 match message with
                 | Show ->
                     let es = elementStateById.[cid]
-                    elementStateById.[cid] <- {es with State = es.State &&& ~~~NoobishElementState.Hidden }
+                    elementStateById.[cid] <- {es with State = NoobishElementState.show es.State }
                 | Hide ->
                     let es = elementStateById.[cid]
-                    elementStateById.[cid] <- {es with State = es.State &&& NoobishElementState.Hidden }
+                    elementStateById.[cid] <- {es with State = NoobishElementState.hide es.State}
                 | ToggleVisibility ->
 
                     let es = elementStateById.[cid]
                     let state =
                         if (es.State.HasFlag NoobishElementState.Hidden) then
-                            (es.State &&& ~~~NoobishElementState.Hidden)
+                            NoobishElementState.show es.State
                         else
-                            (es.State &&& NoobishElementState.Hidden)
+                            NoobishElementState.hide es.State
 
                     elementStateById.[cid] <- {es with State = state}
+
+                | Toggle ->
+
+                    let es = elementStateById.[cid]
+
+                    let toggled = (es.State.HasFlag NoobishElementState.Toggled)
+                    let state =
+                        if toggled then
+                            NoobishElementState.detoggle es.State
+                        else
+                            NoobishElementState.toggle es.State
+                    elementStateById.[cid] <- {es with State = state}
+
                 | SetScrollX (v) ->
                     cs.ScrollX <- v
                 | SetScrollY(v) ->
@@ -307,6 +323,9 @@ type NoobishState () =
                     c.OnPressInternal v c
                 | InvokeTextChange t ->
                     c.OnTextChange t
+                | InvokeCheckBoxValueChange ->
+                    let es = elementStateById.[cid]
+                    c.OnCheckBoxValueChange es.Toggled
                 | InvokeSliderValueChange v ->
                     let c = s.ElementsById[cid]
                     c.Model

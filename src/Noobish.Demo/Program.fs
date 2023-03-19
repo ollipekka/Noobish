@@ -419,7 +419,7 @@ module Github =
                             hr []
                             grid 6 4
                                 [
-                                    checkbox [text "FSharp"; toggled true; colspan 2; rowspan 1]
+                                    checkbox [text "FSharp"; toggled true; onCheckBoxValueChange(fun v -> printfn "Hello %b" v); colspan 2; rowspan 1]
                                     checkbox [text "MonoGame"; toggled true; colspan 2; rowspan 1]
                                     checkbox [text "Elmish"; toggled true; colspan 2; rowspan 1]
                                     label [text "Coolness:"; colspan 1; rowspan 1; textLeft]
