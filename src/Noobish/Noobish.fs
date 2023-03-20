@@ -87,11 +87,11 @@ type NoobishElement = {
 
 
 // Attributes
-let name v = Name v
-let text value = Text(value)
-let localizedText value = LocalizedText value
+let name = Name 
+let text = Text
+let localizedText = LocalizedText
 
-let textAlign v = TextAlign (v)
+let textAlign = TextAlign
 let textTopLeft = TextAlign NoobishTextAlignment.TopLeft
 let textTopCenter = TextAlign NoobishTextAlignment.TopCenter
 let textTopRight = TextAlign NoobishTextAlignment.TopRight
@@ -203,6 +203,9 @@ let private isToggled (attributes: list<NoobishAttribute>) =
         | _ -> ()
         i <- i + 1
     toggled
+
+let themePrefix (prefix: string) (e: NoobishElement) = 
+    {e with ThemeId = $"%s{prefix}-%s{e.ThemeId}"}
 
 // Components
 let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }

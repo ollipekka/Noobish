@@ -187,10 +187,12 @@ type NoobishLayoutElementState = {
 } with
     member s.Disabled with get() = s.State.HasFlag NoobishElementState.Disabled
     member s.Enabled with get() = not s.Disabled
-    member s.Focused with get() = (s.State.HasFlag NoobishElementState.Focused)
+    member s.Focused with get() = s.State.HasFlag NoobishElementState.Focused
     member s.Visible with get() = not (s.State.HasFlag NoobishElementState.Hidden)
-    member s.Toggled with get() = (s.State.HasFlag NoobishElementState.Toggled)
-    member s.Pressed with get() = (s.State.HasFlag NoobishElementState.Pressed)
+    member s.Toggled with get() = s.State.HasFlag NoobishElementState.Toggled
+    member s.Hovered with get() = s.State.HasFlag NoobishElementState.Hovered
+    member s.Selected with get() = s.State.HasFlag NoobishElementState.Selected
+    member s.Pressed with get() = s.State.HasFlag NoobishElementState.Pressed
     member s.CanFocus with get() =
         match s.Model with
         | Some(model') ->

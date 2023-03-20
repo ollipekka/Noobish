@@ -191,14 +191,20 @@ module NoobishMonoGame =
         let cs = state.ElementStateById.[c.Id]
 
         let cstate =
-            if cs.CanFocus && cs.Focused then
-                "focused"
-            elif cs.Disabled then
+            
+            if cs.Disabled then
                 "disabled"
-            elif cs.Toggled then
-                "toggled"
-            else
-                "default"
+            else 
+                if cs.CanFocus && cs.Focused then
+                    "focused"
+                elif cs.Toggled then
+                    "toggled"
+                elif cs.Hovered then 
+                    "horvered"
+                elif cs.Selected then 
+                    "selected"
+                else
+                    "default"
 
         let color =
             if cs.CanFocus && cs.Focused then
@@ -208,19 +214,14 @@ module NoobishMonoGame =
             elif cs.Toggled then
                 styleSheet.GetColor c.ThemeId "toggled"
             else
-                if cs.Visible then
-                    let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 0.15) 1.0
+                let progress = 1.0 - min ((time - cs.PressedTime).TotalSeconds / 0.15) 1.0
 
-                    let color = styleSheet.GetColor c.ThemeId "default"
-                    let pressedColor = styleSheet.GetColor c.ThemeId "toggled"
-                    let finalColor = Color.Lerp(color, pressedColor, float32 progress)
+                let color = styleSheet.GetColor c.ThemeId "default"
+                let pressedColor = styleSheet.GetColor c.ThemeId "toggled"
+                let finalColor = Color.Lerp(color, pressedColor, float32 progress)
 
-                    finalColor
+                finalColor
 
-                else if cs.Toggled then
-                    styleSheet.GetColor c.ThemeId "toggled"
-                else
-                    Color.Transparent
 
 
         let rect = c.ContentWithPadding

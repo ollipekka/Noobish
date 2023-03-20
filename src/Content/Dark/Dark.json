@@ -138,6 +138,31 @@
                 "color": "5f6b80ff",
                 "drawables": [ ["scrollbar.9"] ]
             }
+        },
+
+        "List-Label": {
+            "default": {
+                "fontSize": 10,
+                "margin": [0, 0, 0, 0]
+            },
+            "toggled": {
+                "fontColor": "df7126aa"
+            }
+        },
+        "List-HorizontalRule": {
+            "default": {
+
+                "margin": [0, 0, 0, 0],
+                "padding": [0, 0, 0, 0],
+                "drawables": [
+                    ["hr-default.9"]
+                ]
+            }
+        },
+        "List-Division": {
+            "default": {
+                "margin": [0, 0, 0, 0]
+            }
         }
     }
 }
