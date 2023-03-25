@@ -149,19 +149,28 @@
                 "fontColor": "df7126aa"
             }
         },
-        "List-HorizontalRule": {
+        "List-Division-Even": {
             "default": {
-
                 "margin": [0, 0, 0, 0],
-                "padding": [0, 0, 0, 0],
-                "drawables": [
-                    ["hr-default.9"]
-                ]
+                "padding": [0, 0, 0, 0]
+
+            },
+            "toggled": {
+                "drawables": [ ["list-item-toggled.9", "df7126aa"] ]
             }
         },
-        "List-Division": {
+        "List-Division-Odd": {
             "default": {
-                "margin": [0, 0, 0, 0]
+                "margin": [0, 0, 0, 0],
+                "padding": [0, 0, 0, 0],
+                "drawables": [ ["list-item-default.9", "1d2026cc"] ]
+
+            },
+            "toggled": {
+                "drawables": [
+                    ["list-item-default.9", "1d2026ff"],
+                    ["list-item-toggled.9", "df7126aa"]
+                ]
             }
         }
     }

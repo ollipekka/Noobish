@@ -50,7 +50,7 @@ type DemoModel = {
     FeatureText: string
     ListModel: int[]
     SelectedListItemIndex: int
-} with 
+} with
     member m.SelectedListItem with get() = m.ListModel.[m.SelectedListItemIndex]
 
 
@@ -152,18 +152,17 @@ module Text =
 module Containers =
 
 
-         
+
 
     let view model dispatch =
 
-        let createListLabel index = 
+        let createListLabel index =
             div
                 [
                     label [ text $"Item %i{index}"; toggled (model.SelectedListItemIndex = index); fillHorizontal; onClick (fun _ -> dispatch (SelectListItem index))] |> themePrefix "List";
-                    hr [] |> themePrefix "List"
                 ]
-                [block; fillHorizontal]
-                |> themePrefix "List"
+                [block; fillHorizontal; toggled (model.SelectedListItemIndex = index)]
+                |> themePrefix "List" |> themeSuffix (if index % 2 = 0 then "Even" else "Odd")
         [
             grid 2 2
                 [
@@ -521,7 +520,7 @@ type DemoGame () as game =
         nui <- NoobishMonoGame.create game.Content "Dark/Dark" width height settings
 
         let init () =
-            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 10 id; SelectedListItemIndex = 0}, Cmd.ofMsg (ShowButtons)
+            { UI = nui; State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg (ShowButtons)
 
         let update (message: DemoMessage) (model: DemoModel) =
             match message with
@@ -554,7 +553,7 @@ type DemoGame () as game =
             | ToggleDarkMode ->
                 nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Dark/Dark"
                 {model with StyleMode = DarkMode}, Cmd.none
-            | SelectListItem index -> 
+            | SelectListItem index ->
                 {model with SelectedListItemIndex = index}, Cmd.none
 
         let view (model: DemoModel) dispatch =
