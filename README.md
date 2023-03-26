@@ -53,7 +53,7 @@ panel
 
             ]
     ]
-
+```
 
 ## Style Sheets
 
@@ -119,7 +119,6 @@ Fonts are generated using msdf-atlas-gen.
 Noobish tracks identity of a component by its location. Noobish doesn't handle properly layouts where components disappear from the layout between view calls.
 
 ## ToDo
-
 
 * Textbox:
   * double click to clear and focus.
