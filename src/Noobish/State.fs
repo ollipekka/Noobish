@@ -223,6 +223,7 @@ type NoobishState () =
 
     let elementsById = Dictionary<string, NoobishLayoutElement>()
     let elementStateById = Dictionary<string, NoobishLayoutElementState>()
+    let tempElementStateById = Dictionary<string, NoobishLayoutElementState>()
     member val ElementsById = (elementsById :> IReadOnlyDictionary<string, NoobishLayoutElement>)
     member val ElementStateById = (elementStateById :> IReadOnlyDictionary<string, NoobishLayoutElementState>)
     member val FocusedElementId: Option<string> = None with get, set
@@ -235,10 +236,20 @@ type NoobishState () =
     member s.QueueEvent (cid: string) (message:ComponentMessage) =
         s.Events.Enqueue(struct(cid, message))
 
+    member s.BeginUpdate() =
+        for kvp in elementStateById do
+            tempElementStateById.[kvp.Key] <- kvp.Value
+
+        elementsById.Clear()
+        elementStateById.Clear()
+
+    member s.EndUpdate() =
+        tempElementStateById.Clear()
+
     member s.UpdateState (e: NoobishLayoutElement) (state: NoobishElementState)  =
         elementsById.[e.Id] <- e
 
-        let success, es = s.ElementStateById.TryGetValue e.Id
+        let success, es = tempElementStateById.TryGetValue e.Id
         if success then
             elementStateById.[e.Id] <- { es with Model = e.Model; State = state }
         else

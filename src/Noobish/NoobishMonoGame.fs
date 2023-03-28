@@ -191,17 +191,17 @@ module NoobishMonoGame =
         let cs = state.ElementStateById.[c.Id]
 
         let cstate =
-            
+
             if cs.Disabled then
                 "disabled"
-            else 
+            else
                 if cs.CanFocus && cs.Focused then
                     "focused"
                 elif cs.Toggled then
                     "toggled"
-                elif cs.Hovered then 
+                elif cs.Hovered then
                     "horvered"
-                elif cs.Selected then 
+                elif cs.Selected then
                     "selected"
                 else
                     "default"
@@ -717,7 +717,7 @@ module NoobishMonoGame =
                     | NoobishKeyId.None -> failwith "None can't be here."
 
                 let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
-                if exists && cs.Enabled && not (current.IsKeyDown key) && (previous.IsKeyDown key) then
+                if exists && cs.Enabled && current.IsKeyDown key && previous.IsKeyUp key then
                     ui.State.QueueEvent c.Id (InvokeClick)
 
     let keyTyped (ui: NoobishUI) (char: char) =
@@ -766,9 +766,9 @@ module Program =
             let width = (float32 ui.Width)
             let height = (float32 ui.Height)
 
-
+            ui.State.BeginUpdate()
             ui.Layers <- layers |> List.mapi (fun i components -> Logic.layout ui.Content ui.StyleSheet ui.Settings ui.State (i + 1) width height components) |> List.toArray
-
+            ui.State.EndUpdate()
 
             ui.Elements.Clear()
 
