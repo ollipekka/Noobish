@@ -87,9 +87,9 @@ type NoobishElement = {
 
 
 // Attributes
-let name = Name
-let text = Text
-let localizedText = LocalizedText
+let name n = Name n
+let text (t: string) = Text t
+let localizedText t = LocalizedText t
 
 let textAlign = TextAlign
 let textTopLeft = TextAlign NoobishTextAlignment.TopLeft

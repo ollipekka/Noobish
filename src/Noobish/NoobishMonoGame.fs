@@ -3,7 +3,6 @@ namespace Noobish
 open System
 open System.Collections.Generic
 
-open Elmish
 open Noobish
 open Noobish.Internal
 open Noobish.TextureAtlas
@@ -750,6 +749,7 @@ module NoobishMonoGame =
                     i <- i - 1
             | _ -> ()
 
+    (*
 module Program =
     let rec private getElements (elements: Dictionary<string, NoobishLayoutElement>) (overlays: ResizeArray<NoobishLayoutElement>) (e: NoobishLayoutElement) =
         elements.[e.Id] <- e
@@ -784,3 +784,4 @@ module Program =
 
         program
             |> Program.withSetState setState
+    *)

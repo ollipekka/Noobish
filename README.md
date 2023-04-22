@@ -4,9 +4,9 @@
 
 ![Noobish](screenshots/hello.png "Hello Noobish!")
 
-Noobish is an experimental element tree / ui library for MonoGame written with F#. Noobish supports multiple basic components and limited customization through themes and custom components. Noobish uses non-complex (one stretch) Nine Patches for component images. Noobish can be used with mobile devices.
+Noobish is an experimental element tree / ui library for MonoGame written with F#. Noobish supports multiple basic components and limited customization through themes and custom components. Noobish uses non-complex (one stretch) Nine Patches for component images. Noobish takes inspiration from Elmish, but there is no connection to it. Noobish can be used with mobile devices.
 
-Since Noobish is designed for Elmish, the element tree is rebuilt on each *'view'* call. Noobish persists state of elements between view cycles to keep state stuch as scroll position.
+Since Noobish is initially designed for Elmish, the element tree is rebuilt on each *'view'* call. Noobish persists state of elements between view cycles to keep state stuch as scroll position.
 
 ## Supported components
 
@@ -40,7 +40,7 @@ panel
             [
                 checkbox [text "FSharp"; toggled true; colspan 2; rowspan 1]
                 checkbox [text "MonoGame"; toggled true; colspan 2; rowspan 1]
-                checkbox [text "Elmish"; toggled true; colspan 2; rowspan 1]
+                checkbox [text "Elmish"; toggled false; disabled; colspan 2; rowspan 1]
                 label [text "Coolness:"; colspan 1; rowspan 1; textLeft]
                 slider [sliderValue 80f; fillHorizontal; colspan 5; rowspan 1]
                 label [text "Features:"; colspan 1; rowspan 1; textLeft]
