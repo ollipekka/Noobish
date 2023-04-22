@@ -33,7 +33,7 @@ module NoobishInputState =
     let updateDevice<'InputDevice> (device: 'InputDevice) (deviceState: NoobishInputDeviceState<'InputDevice>) =
         {deviceState with Previous = deviceState.Current; Current = device}
 
-type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 'model, 'msg, 'systems> -> 'systems, init: 'arg -> 'model * Cmd2<'msg>, update: 'msg -> 'model -> 'model*Cmd2<'msg>, view: 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>, tick: 'model -> GameTime -> unit, draw: 'model -> GameTime -> unit) as game =
+type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 'model, 'msg, 'systems> -> 'systems, init: 'arg -> 'model * Cmd2<'msg>, update: Game -> 'msg -> 'model -> 'model*Cmd2<'msg>, view: 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>, tick: 'model -> GameTime -> unit, draw: 'model -> GameTime -> unit) as game =
     inherit Game()
 
     let tempMessages = ResizeArray()
@@ -91,7 +91,7 @@ type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 
         }
 
         nui <- NoobishMonoGame.create game.Content "Dark/Dark" this.ScreenWidth this.ScreenHeight settings
-
+        game.Services.AddService nui
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
 
@@ -105,7 +105,6 @@ type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 
 
     override this.Update gameTime =
         base.Update(gameTime)
-
 
         this.Input <- {
             Keyboard = NoobishInputState.updateDevice (Keyboard.GetState()) this.Input.Keyboard
@@ -125,7 +124,7 @@ type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 
             this.Messages.Clear()
             for msg in tempMessages do
 
-                let model', cmd = update msg state
+                let model', cmd = update game msg state
                 state <- model'
 
                 for c in cmd do

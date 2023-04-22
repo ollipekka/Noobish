@@ -149,8 +149,6 @@ module Text =
 module Containers =
 
 
-
-
     let view model dispatch =
 
         let createListLabel index =
@@ -466,7 +464,7 @@ let main argv =
     let init () =
         { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, [ShowButtons]
 
-    let update (message: DemoMessage) (model: DemoModel) =
+    let update (game: Game) (message: DemoMessage) (model: DemoModel) =
         match message with
         | ShowButtons ->
             {model with State = Buttons}, []
@@ -489,13 +487,16 @@ let main argv =
         | FeaturesChanged s ->
             {model with FeatureText = s}, []
         | ToggleDebug ->
-            //model.UI.Settings.Debug <- (not model.UI.Settings.Debug)
+            let nui = game.Services.GetService<NoobishUI>()
+            nui.Settings.Debug <- (not nui.Settings.Debug)
             model, []
         | ToggleLightMode ->
-            //nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Light/Light"
+            let nui = game.Services.GetService<NoobishUI>()
+            nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Light/Light"
             {model with StyleMode = LightMode}, []
         | ToggleDarkMode ->
-            //nui.StyleSheet <- this.Content.Load<NoobishStyleSheet> "Dark/Dark"
+            let nui = game.Services.GetService<NoobishUI>()
+            nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Dark/Dark"
             {model with StyleMode = DarkMode}, []
         | SelectListItem index ->
             {model with SelectedListItemIndex = index}, []
