@@ -33,11 +33,10 @@ module NoobishInputState =
     let updateDevice<'InputDevice> (device: 'InputDevice) (deviceState: NoobishInputDeviceState<'InputDevice>) =
         {deviceState with Previous = deviceState.Current; Current = device}
 
-type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 'model, 'msg, 'systems> -> 'systems, init: 'arg -> 'model * Cmd2<'msg>, update: Game -> 'msg -> 'model -> 'model*Cmd2<'msg>, view: 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>, tick: 'model -> GameTime -> unit, draw: 'model -> GameTime -> unit) as game =
+type NoobishGame<'arg, 'model, 'msg>(subSystemInit: NoobishGame<'arg, 'model, 'msg> -> unit, init: 'arg -> 'model * Cmd2<'msg>, update: Game -> 'msg -> 'model -> 'model*Cmd2<'msg>, view: 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>, tick: 'model -> GameTime -> unit, draw: 'model -> GameTime -> unit) as game =
     inherit Game()
 
     let tempMessages = ResizeArray()
-    let mutable systems: 'systems = Unchecked.defaultof<'systems>
     let mutable state: 'model = Unchecked.defaultof<'model>
     let mutable textBatch = Unchecked.defaultof<TextBatch>
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
@@ -77,7 +76,7 @@ type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 
 
         graphicsDeviceManager.ApplyChanges()
 
-        systems <- subSystemInit this
+        subSystemInit this
 
 
         this.Window.TextInput.Add(fun e ->
@@ -177,33 +176,33 @@ type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 
 
 module Program2 =
     let create subSystemInit init update view tick draw =
-        new NoobishGame<'arg, 'msg, 'model, 'systems>(subSystemInit, init, update, view, tick, draw)
+        new NoobishGame<'arg, 'msg, 'model>(subSystemInit, init, update, view, tick, draw)
 
-    let withContentRoot root (game: NoobishGame<'arg, 'msg, 'model, 'systems>) =
+    let withContentRoot root (game: NoobishGame<'arg, 'msg, 'model>) =
         game.Content.RootDirectory <- root
         game
-    let withScreenSize width height (game: NoobishGame<'arg, 'msg, 'model, 'systems>) =
+    let withScreenSize width height (game: NoobishGame<'arg, 'msg, 'model>) =
         game.SetScreenSize width height
         game
 
-    let withPreferHalfPixelOffset useOffset (game: NoobishGame<'arg, 'msg, 'model, 'systems>) =
+    let withPreferHalfPixelOffset useOffset (game: NoobishGame<'arg, 'msg, 'model>) =
         game.GraphicsDeviceManager.PreferHalfPixelOffset <- useOffset
         game
 
-    let withMouseVisible b (game: NoobishGame<'arg, 'msg, 'model, 'systems>) =
+    let withMouseVisible b (game: NoobishGame<'arg, 'msg, 'model>) =
         game.IsMouseVisible <- b
         game
 
-    let withTermination predicate terminate (game: NoobishGame<'arg, 'msg, 'model, 'systems>) =
+    let withTermination predicate terminate (game: NoobishGame<'arg, 'msg, 'model>) =
         game.Termination <- predicate, terminate
 
-    let runWithArg arg (game: NoobishGame<'arg, 'msg, 'model, 'systems>) =
+    let runWithArg arg (game: NoobishGame<'arg, 'msg, 'model>) =
         let model, cmd = game.Init arg
         game.SetState model
         for c in cmd do
             game.Messages.Add c
         game.Run()
 
-    let run (game: NoobishGame<unit, 'msg, 'model, 'systems>) =
+    let run (game: NoobishGame<unit, 'msg, 'model>) =
         runWithArg () game
 
