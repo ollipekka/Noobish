@@ -37,47 +37,32 @@ type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 
     inherit Game()
 
     let tempMessages = ResizeArray()
-
     let mutable systems: 'systems = Unchecked.defaultof<'systems>
-    let mutable state:'model = Unchecked.defaultof<'model>
-
+    let mutable state: 'model = Unchecked.defaultof<'model>
     let mutable textBatch = Unchecked.defaultof<TextBatch>
-
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
-
     let graphicsDeviceManager = new GraphicsDeviceManager(game)
     do
         graphicsDeviceManager.GraphicsProfile <- GraphicsProfile.HiDef
         #if !__MOBILE__
         #endif
-        //graphics.SynchronizeWithVerticalRetrace <- false
-        graphicsDeviceManager.PreferMultiSampling <- true
-        graphicsDeviceManager.PreferHalfPixelOffset <- false
+        graphicsDeviceManager.SynchronizeWithVerticalRetrace <- true
         graphicsDeviceManager.SupportedOrientations <-
             DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
-        graphicsDeviceManager.ApplyChanges()
-
 
     let mutable nui = Unchecked.defaultof<NoobishUI>
-
-    let mutable viewRoot: list<list<NoobishElement>>= []
-
-
     member val GraphicsDeviceManager = graphicsDeviceManager
     member val Init = init
     member val Messages = ResizeArray<'msg>()
     member val Termination: ('msg -> bool) * ('model -> unit) = (fun _ -> false), (ignore) with get, set
     member val OnError = fun (text, ex) ->  System.Console.Error.WriteLine("{0}: {1}", text, ex) with get, set
 
-    member val ScreenWidth = 800 with get, set
-    member val ScreenHeight = 600 with get, set
+    member _s.ScreenWidth with get() = game.GraphicsDevice.Viewport.Width
+    member _s.ScreenHeight with get() = game.GraphicsDevice.Viewport.Height
 
     member s.SetScreenSize width height =
-        s.ScreenWidth <- width
-        s.ScreenHeight <- height
-        graphicsDeviceManager.PreferredBackBufferWidth <- s.ScreenWidth
-        graphicsDeviceManager.PreferredBackBufferHeight <- s.ScreenHeight
-        graphicsDeviceManager.ApplyChanges()
+        graphicsDeviceManager.PreferredBackBufferWidth <- width
+        graphicsDeviceManager.PreferredBackBufferHeight <- height
 
     member _this.SetState s =
         state <- s
@@ -90,10 +75,10 @@ type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 
     override this.Initialize() =
         base.Initialize()
 
+        graphicsDeviceManager.ApplyChanges()
+
         systems <- subSystemInit this
 
-        let width = this.GraphicsDevice.Viewport.Width
-        let height = this.GraphicsDevice.Viewport.Height
 
         this.Window.TextInput.Add(fun e ->
             NoobishMonoGame.keyTyped nui e.Character
@@ -105,7 +90,7 @@ type NoobishGame<'arg, 'model, 'msg, 'systems>(subSystemInit: NoobishGame<'arg, 
             Debug = false
         }
 
-        nui <- NoobishMonoGame.create game.Content "Dark/Dark" width height settings
+        nui <- NoobishMonoGame.create game.Content "Dark/Dark" this.ScreenWidth this.ScreenHeight settings
 
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
@@ -204,7 +189,6 @@ module Program2 =
 
     let withPreferHalfPixelOffset useOffset (game: NoobishGame<'arg, 'msg, 'model, 'systems>) =
         game.GraphicsDeviceManager.PreferHalfPixelOffset <- useOffset
-        game.GraphicsDeviceManager.ApplyChanges()
         game
 
     let withMouseVisible b (game: NoobishGame<'arg, 'msg, 'model, 'systems>) =
@@ -215,7 +199,6 @@ module Program2 =
         game.Termination <- predicate, terminate
 
     let runWithArg arg (game: NoobishGame<'arg, 'msg, 'model, 'systems>) =
-
         let model, cmd = game.Init arg
         game.SetState model
         for c in cmd do

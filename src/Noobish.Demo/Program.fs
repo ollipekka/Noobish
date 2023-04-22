@@ -570,8 +570,8 @@ let main argv =
 
     Program2.create ignore init update view tick draw
         |> Program2.withContentRoot "Content/"
-        |> Program2.withScreenSize 1280 720
         |> Program2.withPreferHalfPixelOffset true
+        |> Program2.withScreenSize 1280 720
         |> Program2.withMouseVisible true
         |> Program2.run
     0 // return an integer exit code
