@@ -459,118 +459,121 @@ module Github =
                 ]
         ]
 
-[<EntryPoint>]
-let main argv =
-    let init () =
-        { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, [ShowButtons]
+let init _game () =
+    { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd2.ofMsg(ShowButtons)
 
-    let update (game: Game) (message: DemoMessage) (model: DemoModel) =
-        match message with
-        | ShowButtons ->
-            {model with State = Buttons}, []
-        | ShowContainers ->
-            {model with State = Containers}, []
-        | ShowText ->
-            {model with State = Text}, []
-        | ShowSliders ->
-            {model with State = Slider}, []
-        | ShowGithub ->
-            {model with State = Github}, []
-        | SliderValueChanged v ->
-            {model with SliderAValue = v}, []
-        | ComboboxValueChanged v ->
-            {model with ComboboxValue = v}, []
-        | ChangePadding padding ->
-            {model with Padding = padding}, []
-        | ChangeMargin margin ->
-            {model with Margin = margin}, []
-        | FeaturesChanged s ->
-            {model with FeatureText = s}, []
-        | ToggleDebug ->
-            let nui = game.Services.GetService<NoobishUI>()
-            nui.Settings.Debug <- (not nui.Settings.Debug)
-            model, []
-        | ToggleLightMode ->
-            let nui = game.Services.GetService<NoobishUI>()
-            nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Light/Light"
-            {model with StyleMode = LightMode}, []
-        | ToggleDarkMode ->
-            let nui = game.Services.GetService<NoobishUI>()
-            nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Dark/Dark"
-            {model with StyleMode = DarkMode}, []
-        | SelectListItem index ->
-            {model with SelectedListItemIndex = index}, []
+let update (game: Game) (message: DemoMessage) (model: DemoModel) =
+    match message with
+    | ShowButtons ->
+        {model with State = Buttons}, Cmd2.none
+    | ShowContainers ->
+        {model with State = Containers}, Cmd2.none
+    | ShowText ->
+        {model with State = Text}, Cmd2.none
+    | ShowSliders ->
+        {model with State = Slider}, Cmd2.none
+    | ShowGithub ->
+        {model with State = Github}, Cmd2.none
+    | SliderValueChanged v ->
+        {model with SliderAValue = v}, Cmd2.none
+    | ComboboxValueChanged v ->
+        {model with ComboboxValue = v}, Cmd2.none
+    | ChangePadding padding ->
+        {model with Padding = padding}, Cmd2.none
+    | ChangeMargin margin ->
+        {model with Margin = margin}, Cmd2.none
+    | FeaturesChanged s ->
+        {model with FeatureText = s}, Cmd2.none
+    | ToggleDebug ->
+        let nui = game.Services.GetService<NoobishUI>()
+        nui.Settings.Debug <- (not nui.Settings.Debug)
+        model, Cmd2.none
+    | ToggleLightMode ->
+        let nui = game.Services.GetService<NoobishUI>()
+        nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Light/Light"
+        {model with StyleMode = LightMode}, Cmd2.none
+    | ToggleDarkMode ->
+        let nui = game.Services.GetService<NoobishUI>()
+        nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Dark/Dark"
+        {model with StyleMode = DarkMode}, Cmd2.none
+    | SelectListItem index ->
+        {model with SelectedListItemIndex = index}, Cmd2.none
 
-    let view (model: DemoModel) dispatch =
+let view game (model: DemoModel) dispatch =
 
-        let scrollItems =
-            [
-                button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
-                button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
-                button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
-                button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; ]
-                button [text "Github"; onClick (fun () -> dispatch ShowGithub); fillHorizontal; toggled (model.State = Github); padding model.Padding; margin model.Margin; ]
-            ]
-
-        let title, content  =
-            match model.State with
-            | Buttons -> "Buttons", Buttons.view model dispatch
-            | Containers -> "Containers", Containers.view model dispatch
-            | Text -> "Labels", Text.view model dispatch
-            | Slider -> "Slider", Slider.view model dispatch
-            | Github -> "Github", Github.view model dispatch
-
+    let scrollItems =
         [
-            [
-                grid 12 8
-                    [
-                        panel [h1 [text "Noobish"; fill]] [colspan 3; rowspan 1]
-                        panelWithGrid 12 1
-                            [
-                                h1 [text title; fill; colspan 6];
-                                button
-                                    [
-                                        localizedText ("Localization/TestBundle", "Dark");
-                                        toggled (model.StyleMode = DarkMode);
-                                        fill;
-                                        onClick (fun () -> dispatch ToggleDarkMode)
-                                        colspan 2
-                                    ]
-                                button
-                                    [
-                                        localizedText ("Localization/TestBundle", "Light");
-                                        toggled (model.StyleMode = LightMode);
-                                        fill;
-                                        onClick (fun () -> dispatch ToggleLightMode)
-                                        colspan 2
-                                    ]
-                                button
-                                    [
-                                        text "Debug";
-                                        toggled false; //model.UI.Settings.Debug;
-                                        fill;
-                                        onClick (fun () -> dispatch ToggleDebug)
-                                        colspan 2
-                                    ]
-                            ]
-                            [
-                                colspan 9;
-                                rowspan 1
-                            ]
-                        panel [scroll scrollItems [name "LeftMenu";]] [colspan 3; rowspan 7;]
-                        panel content [colspan 9; rowspan 7;]
-                    ]
-                    [
-                        padding 10
-                    ]
-            ]
+            button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
+            button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
+            button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
+            button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; ]
+            button [text "Github"; onClick (fun () -> dispatch ShowGithub); fillHorizontal; toggled (model.State = Github); padding model.Padding; margin model.Margin; ]
         ]
 
-    let tick (model) (gameTime: GameTime) = ()
-    let draw (model) (gameTime: GameTime) = ()
+    let title, content  =
+        match model.State with
+        | Buttons -> "Buttons", Buttons.view model dispatch
+        | Containers -> "Containers", Containers.view model dispatch
+        | Text -> "Labels", Text.view model dispatch
+        | Slider -> "Slider", Slider.view model dispatch
+        | Github -> "Github", Github.view model dispatch
+
+    [
+        [
+            grid 12 8
+                [
+                    panel [h1 [text "Noobish"; fill]] [colspan 3; rowspan 1]
+                    panelWithGrid 12 1
+                        [
+                            h1 [text title; fill; colspan 6];
+                            button
+                                [
+                                    localizedText ("Localization/TestBundle", "Dark");
+                                    toggled (model.StyleMode = DarkMode);
+                                    fill;
+                                    onClick (fun () -> dispatch ToggleDarkMode)
+                                    colspan 2
+                                ]
+                            button
+                                [
+                                    localizedText ("Localization/TestBundle", "Light");
+                                    toggled (model.StyleMode = LightMode);
+                                    fill;
+                                    onClick (fun () -> dispatch ToggleLightMode)
+                                    colspan 2
+                                ]
+                            button
+                                [
+                                    text "Debug";
+                                    toggled false; //model.UI.Settings.Debug;
+                                    fill;
+                                    onClick (fun () -> dispatch ToggleDebug)
+                                    colspan 2
+                                ]
+                        ]
+                        [
+                            colspan 9;
+                            rowspan 1
+                        ]
+                    panel [scroll scrollItems [name "LeftMenu";]] [colspan 3; rowspan 7;]
+                    panel content [colspan 9; rowspan 7;]
+                ]
+                [
+                    padding 10
+                ]
+        ]
+    ]
+
+let tick game (model) (gameTime: GameTime) = ()
+let draw game (model) (gameTime: GameTime) = ()
+
+
+[<EntryPoint>]
+let main argv =
 
     Program2.create ignore init update view tick draw
         |> Program2.withContentRoot "Content/"
+        |> Program2.withTheme "Dark/Dark"
         |> Program2.withPreferHalfPixelOffset true
         |> Program2.withScreenSize 1280 720
         |> Program2.withMouseVisible true
