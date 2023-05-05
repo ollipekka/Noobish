@@ -83,7 +83,8 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
     abstract member DrawInternal: 'model -> GameTime -> unit
 
 
-
+    member _this.State with get() = state
+    member _this.UI with get() = nui
     member val GraphicsDeviceManager = graphicsDeviceManager
     member val Messages = ResizeArray<'msg>()
     member val Termination: ('msg -> bool) * ('model -> unit) = (fun _ -> false), (ignore) with get, set
@@ -156,6 +157,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
         this.TickInternal state gameTime
 
         while this.Messages.Count > 0 do
+            tempMessages.Clear()
             tempMessages.AddRange this.Messages
             this.Messages.Clear()
             for msg in tempMessages do
@@ -204,9 +206,8 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
     override this.Draw (gameTime) =
         base.Draw(gameTime)
         this.GraphicsDevice.Clear(Color.Black)
-        NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
-
         this.DrawInternal state gameTime
+        NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
 
 type SimpleNoobishGame<'arg, 'msg, 'model>(
     serviceInit: Game -> unit,
@@ -268,6 +269,12 @@ module Program2 =
 
         Cmd2.unpack game.Messages cmd
         game.Run()
+
+    let withTextInput<'msg, 'model, 'T when 'T :> NoobishGame<unit, 'msg, 'model>> (game: 'T) =
+        game.Window.TextInput.Add(fun e ->
+            NoobishMonoGame.keyTyped game.UI e.Character
+        )
+        game
 
     let run<'msg, 'model, 'T when 'T :> NoobishGame<unit, 'msg, 'model>> (game: 'T) =
         runWithArg () game
