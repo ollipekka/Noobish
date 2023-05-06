@@ -108,8 +108,8 @@ type NoobishLayoutElement = {
     ConsumedMouseButtons: NoobishMouseButtonId[]
     ConsumedKeys: NoobishKeyId[]
     KeyTypedEnabled: bool
-    OnClickInternal: NoobishLayoutElement -> unit
-    OnPressInternal: Vector2 -> NoobishLayoutElement -> unit
+    OnClickInternal: NoobishLayoutElement -> GameTime -> unit
+    OnPressInternal: Vector2 -> NoobishLayoutElement -> GameTime -> unit
     OnTextChange: string -> unit
     OnCheckBoxValueChange: bool -> unit
 
@@ -271,7 +271,7 @@ type NoobishState () =
                     Children = e.Children |> Array.map(fun child -> child.Id)
                 }
 
-    member s.ProcessEvents() =
+    member s.ProcessEvents(gameTime: GameTime) =
 
         while s.Events.Count > 0 do
             let struct(cid, message) = s.Events.Dequeue()
@@ -331,9 +331,9 @@ type NoobishState () =
                 | InvokeAction (action) ->
                     action()
                 | InvokeClick  ->
-                    c.OnClickInternal c
+                    c.OnClickInternal c gameTime
                 | InvokePress v ->
-                    c.OnPressInternal v c
+                    c.OnPressInternal v c gameTime
                 | InvokeTextChange t ->
                     c.OnTextChange t
                 | InvokeCheckBoxValueChange ->

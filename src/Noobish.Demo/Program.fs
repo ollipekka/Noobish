@@ -258,10 +258,10 @@ module Buttons =
                 [
                 panel
                     [
-                        button [text "Padding 0"; onClick (fun () -> dispatch (ChangePadding 0)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Padding 5"; onClick (fun () -> dispatch (ChangePadding 5)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Padding 10"; onClick (fun () -> dispatch (ChangePadding 10));  padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Padding 15"; onClick (fun () -> dispatch (ChangePadding 15)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Padding 0"; onClick (fun gameTime -> dispatch (ChangePadding 0)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Padding 5"; onClick (fun gameTime -> dispatch (ChangePadding 5)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Padding 10"; onClick (fun gameTime -> dispatch (ChangePadding 10));  padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Padding 15"; onClick (fun gameTime -> dispatch (ChangePadding 15)); padding model.Padding; margin model.Margin; fillHorizontal]
                     ]
                     [
                         name "ButtonsPanel"
@@ -290,10 +290,10 @@ module Buttons =
                     ]
                 panel
                     [
-                        button [text "Margin 0"; onClick (fun () -> dispatch (ChangeMargin 0)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Margin 2"; onClick (fun () -> dispatch (ChangeMargin 2)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Margin 4"; onClick (fun () -> dispatch (ChangeMargin 4)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Margin 6"; onClick (fun () -> dispatch (ChangeMargin 6)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Margin 0"; onClick (fun gameTime -> dispatch (ChangeMargin 0)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Margin 2"; onClick (fun gameTime -> dispatch (ChangeMargin 2)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Margin 4"; onClick (fun gameTime -> dispatch (ChangeMargin 4)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        button [text "Margin 6"; onClick (fun gameTime -> dispatch (ChangeMargin 6)); padding model.Padding; margin model.Margin; fillHorizontal]
                     ]
                     [
                         name "MarginPanel"
@@ -462,7 +462,7 @@ module Github =
 let init _game () =
     { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd2.ofMsg(ShowButtons)
 
-let update (game: Game) (message: DemoMessage) (model: DemoModel) =
+let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
     match message with
     | ShowButtons ->
         {model with State = Buttons}, Cmd2.none
@@ -503,11 +503,11 @@ let view game (model: DemoModel) dispatch =
 
     let scrollItems =
         [
-            button [text "Buttons"; onClick (fun () -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
-            button [text "Text"; onClick (fun () -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
-            button [text "Containers"; onClick (fun () -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
-            button [text "Slider"; onClick (fun () -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; ]
-            button [text "Github"; onClick (fun () -> dispatch ShowGithub); fillHorizontal; toggled (model.State = Github); padding model.Padding; margin model.Margin; ]
+            button [text "Buttons"; onClick (fun gameTime -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
+            button [text "Text"; onClick (fun gameTime -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
+            button [text "Containers"; onClick (fun gameTime -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
+            button [text "Slider"; onClick (fun gameTime -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; ]
+            button [text "Github"; onClick (fun gameTime -> dispatch ShowGithub); fillHorizontal; toggled (model.State = Github); padding model.Padding; margin model.Margin; ]
         ]
 
     let title, content  =
@@ -531,7 +531,7 @@ let view game (model: DemoModel) dispatch =
                                     localizedText ("Localization/TestBundle", "Dark");
                                     toggled (model.StyleMode = DarkMode);
                                     fill;
-                                    onClick (fun () -> dispatch ToggleDarkMode)
+                                    onClick (fun gameTime -> dispatch ToggleDarkMode)
                                     colspan 2
                                 ]
                             button
@@ -539,7 +539,7 @@ let view game (model: DemoModel) dispatch =
                                     localizedText ("Localization/TestBundle", "Light");
                                     toggled (model.StyleMode = LightMode);
                                     fill;
-                                    onClick (fun () -> dispatch ToggleLightMode)
+                                    onClick (fun gameTime -> dispatch ToggleLightMode)
                                     colspan 2
                                 ]
                             button
@@ -547,7 +547,7 @@ let view game (model: DemoModel) dispatch =
                                     text "Debug";
                                     toggled false; //model.UI.Settings.Debug;
                                     fill;
-                                    onClick (fun () -> dispatch ToggleDebug)
+                                    onClick (fun gameTime -> dispatch ToggleDebug)
                                     colspan 2
                                 ]
                         ]

@@ -52,9 +52,9 @@ type NoobishAttribute =
     | FillHorizontal
     | FillVertical
 
-    | OnClick of (unit -> unit)
+    | OnClick of (GameTime -> unit)
     | OnClickInternal of (NoobishState -> NoobishLayoutElement -> unit)
-    | OnPress of (Vector2 -> unit)
+    | OnPress of (Vector2 -> GameTime -> unit)
     | OnPressInternal of (NoobishState -> Vector2 -> NoobishLayoutElement -> unit)
     | OnTextChange of (string -> unit)
     | OnCheckboxValueChange of (bool -> unit)
@@ -411,13 +411,13 @@ module Logic =
         let mutable fillVertical = false
 
         let mutable isBlock = false
-        let mutable onClick: unit -> unit = ignore
+        let mutable onClick: GameTime -> unit = ignore
         let mutable onClickInternal: NoobishState -> NoobishLayoutElement -> unit = (fun _ _ -> ())
         let mutable consumedButtons = ResizeArray<NoobishMouseButtonId>()
         let mutable consumedKeys = ResizeArray<NoobishKeyId>()
         let mutable keyTypedEnabled = false
 
-        let mutable onPress: Vector2 -> unit = ignore
+        let mutable onPress: Vector2 -> GameTime -> unit = (fun _ _ -> ())
         let mutable onPressInternal: NoobishState -> Vector2 -> NoobishLayoutElement -> unit = (fun _ _ _ -> ())
 
         let mutable onTextChange: string -> unit = ignore
@@ -747,13 +747,13 @@ module Logic =
             MarginTop = marginTop
             MarginBottom = marginBottom
 
-            OnClickInternal = (fun c ->
+            OnClickInternal = (fun c gameTime ->
                 onClickInternal state c
-                onClick())
+                onClick gameTime)
 
-            OnPressInternal = (fun mousePos c ->
+            OnPressInternal = (fun mousePos c gameTime ->
                 onPressInternal state mousePos c
-                onPress mousePos )
+                onPress mousePos gameTime)
 
             OnTextChange = onTextChange
             OnCheckBoxValueChange = onCheckboxValueChange

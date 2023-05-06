@@ -76,7 +76,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     abstract member InitInternal: 'arg -> 'model * Cmd2<'msg>
 
-    abstract member UpdateInternal: 'msg -> 'model -> ('model*Cmd2<'msg>)
+    abstract member UpdateInternal: 'msg -> 'model -> GameTime -> ('model*Cmd2<'msg>)
 
     abstract member ViewInternal: 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>
 
@@ -136,7 +136,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         let struct(virtualWidth, virtualHeight) = this.VirtualResolution
 
-        let viewportSize = (struct(this.ScreenWidth, this.ScreenHeight))
+        let viewportSize = (struct(this.GraphicsDevice.Viewport.Width, this.GraphicsDevice.Viewport.Height))
         nui <- NoobishMonoGame.create game.Content this.Theme this.VirtualResolution viewportSize settings
         game.Services.AddService nui
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
@@ -177,7 +177,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
             this.Messages.Clear()
             for msg in tempMessages do
 
-                let model', cmd = this.UpdateInternal msg state
+                let model', cmd = this.UpdateInternal msg state gameTime
                 state <- model'
 
                 Cmd2.unpack this.Messages cmd
@@ -213,15 +213,15 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
             nui.Layers <- Array.concat [nui.Layers; [| overlays.ToArray() |]]
 
-        nui.State.ProcessEvents()
+        nui.State.ProcessEvents gameTime
 
 
 
     override this.Draw (gameTime) =
         base.Draw(gameTime)
+        this.DrawInternal state gameTime
         this.GraphicsDevice.SetRenderTarget(renderTarget)
         this.GraphicsDevice.Clear(Color.Black)
-        this.DrawInternal state gameTime
         NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
         this.GraphicsDevice.SetRenderTarget(null)
 
@@ -233,7 +233,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 type SimpleNoobishGame<'arg, 'msg, 'model>(
     serviceInit: Game -> unit,
     init: SimpleNoobishGame<'arg, 'msg, 'model> ->'arg -> ('model * Cmd2<'msg>),
-    update: SimpleNoobishGame<'arg, 'msg, 'model> -> 'msg -> 'model -> ('model * Cmd2<'msg>),
+    update: SimpleNoobishGame<'arg, 'msg, 'model> -> 'msg -> 'model -> GameTime -> ('model * Cmd2<'msg>),
     view: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>,
     tick: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> GameTime -> unit,
     draw: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> GameTime -> unit) =
@@ -244,8 +244,8 @@ type SimpleNoobishGame<'arg, 'msg, 'model>(
         serviceInit game
     override this.InitInternal arg =
         init this arg
-    override this.UpdateInternal message model =
-        update this message model
+    override this.UpdateInternal message model gameTime =
+        update this message model gameTime
     override this.ViewInternal model dispatch =
         view this model dispatch
     override this.TickInternal model gameTime =
