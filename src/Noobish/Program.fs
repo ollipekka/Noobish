@@ -219,11 +219,15 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     override this.Draw (gameTime) =
         base.Draw(gameTime)
-        this.DrawInternal state gameTime
+
         this.GraphicsDevice.SetRenderTarget(renderTarget)
-        this.GraphicsDevice.Clear(Color.Black)
+        this.GraphicsDevice.Clear(Color.Transparent)
         NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
         this.GraphicsDevice.SetRenderTarget(null)
+
+        this.GraphicsDevice.Clear(Color.Black)
+        this.DrawInternal state gameTime
+
 
         spriteBatch.Begin()
         spriteBatch.Draw(renderTarget, Rectangle(0, 0, game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height), Color.White)
