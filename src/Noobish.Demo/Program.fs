@@ -575,7 +575,7 @@ let main argv =
         |> Program2.withContentRoot "Content/"
         |> Program2.withTheme "Dark/Dark"
         |> Program2.withPreferHalfPixelOffset true
-        |> Program2.withScreenSize 1280 720
+        |> Program2.withResolution 1280 720
         |> Program2.withMouseVisible true
         |> Program2.run
     0 // return an integer exit code

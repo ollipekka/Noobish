@@ -20,8 +20,9 @@ open Noobish
 
 
 type NoobishUI = {
-    Width: int
-    Height: int
+    VirtualResolution: struct(int*int)
+    ViewportSize: struct(int*int)
+
     Content: ContentManager
     Settings: NoobishSettings
     State: NoobishState
@@ -121,14 +122,14 @@ module NoobishMonoGame =
             SpriteEffects.None
 
 
-    let create (content: ContentManager) (styleSheetId: string) width height (settings: NoobishSettings) =
+    let create (content: ContentManager) (styleSheetId: string) (virtualSize) (viewportSize) (settings: NoobishSettings) =
 
         let styleSheet = content.Load<NoobishStyleSheet> styleSheetId
 
 
         {
-            Width = width
-            Height = height
+            VirtualResolution = virtualSize
+            ViewportSize = viewportSize
             Content = content
             StyleSheet = styleSheet
             Settings = settings
@@ -654,15 +655,20 @@ module NoobishMonoGame =
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
 
         let mousePosition = curState.Position
-
+        let struct(viewportWidth, viewportHeight) = ui.ViewportSize
+        let struct(virtualWidth, virtualHeight) = ui.VirtualResolution
+        let virtualMouseX = float32 mousePosition.X / float32 viewportWidth * float32 virtualWidth
+        let virtualMouseY = float32 mousePosition.Y / float32 viewportHeight * float32 virtualHeight
         if curState.LeftButton = ButtonState.Pressed then
             let mutable handled = false
             let mutable i = ui.Layers.Length - 1
             while not handled && i >= 0 do
-                handled <- Noobish.Input.press ui.State ui.Layers.[i] gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+                handled <- Noobish.Input.press ui.State ui.Layers.[i] gameTime.TotalGameTime virtualMouseX virtualMouseY  0.0f 0.0f
                 i <- i - 1
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
-            Input.click ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime (float32 mousePosition.X) (float32 mousePosition.Y) 0.0f 0.0f
+
+
+            Input.click ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime virtualMouseX virtualMouseY 0.0f 0.0f
                 |> ignore
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue

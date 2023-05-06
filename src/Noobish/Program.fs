@@ -54,6 +54,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
     inherit Game()
 
 
+    let mutable virtualResolution: voption<struct(int*int)> = ValueNone
 
     let tempMessages = ResizeArray()
     let mutable state: 'model = Unchecked.defaultof<'model>
@@ -69,6 +70,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
             DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
 
     let mutable nui = Unchecked.defaultof<NoobishUI>
+    let mutable renderTarget = Unchecked.defaultof<RenderTarget2D>
 
     abstract member ServiceInit: Game -> unit
 
@@ -85,6 +87,10 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     member _this.State with get() = state
     member _this.UI with get() = nui
+    member this.VirtualResolution with get() =
+        match virtualResolution with
+        | ValueSome(virtualResolution) -> virtualResolution
+        | ValueNone -> struct(this.GraphicsDevice.Viewport.Width, this.GraphicsDevice.Viewport.Height)
     member val GraphicsDeviceManager = graphicsDeviceManager
     member val Messages = ResizeArray<'msg>()
     member val Termination: ('msg -> bool) * ('model -> unit) = (fun _ -> false), (ignore) with get, set
@@ -95,9 +101,12 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     member val Theme = "" with get, set
 
-    member s.SetScreenSize width height =
+    member s.SetResolution width height =
         graphicsDeviceManager.PreferredBackBufferWidth <- width
         graphicsDeviceManager.PreferredBackBufferHeight <- height
+
+    member s.SetVirtualResolution width height =
+        virtualResolution <- ValueSome(struct(width, height))
 
     member _this.SetState s =
         state <- s
@@ -125,13 +134,19 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
             Debug = false
         }
 
-        nui <- NoobishMonoGame.create game.Content this.Theme this.ScreenWidth this.ScreenHeight settings
+        let struct(virtualWidth, virtualHeight) = this.VirtualResolution
+
+        let viewportSize = (struct(this.ScreenWidth, this.ScreenHeight))
+        nui <- NoobishMonoGame.create game.Content this.Theme this.VirtualResolution viewportSize settings
         game.Services.AddService nui
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
 
         let fontEffect = this.Content.Load<Effect>("MSDFFontEffect")
-        textBatch <- new TextBatch(this.GraphicsDevice, fontEffect, 1024)
+        textBatch <- new TextBatch(this.GraphicsDevice, this.VirtualResolution, fontEffect, 1024)
+
+        renderTarget <- new RenderTarget2D(this.GraphicsDevice, virtualWidth, virtualHeight)
+
 
     override this.LoadContent() =
         ()
@@ -182,11 +197,10 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
             let dispatch = this.Dispatch
             let layers = this.ViewInternal state dispatch
 
-            let width = (float32 nui.Width)
-            let height = (float32 nui.Height)
+            let struct(width, height) = nui.VirtualResolution
 
             nui.State.BeginUpdate()
-            nui.Layers <- layers |> List.mapi (fun i components -> Logic.layout nui.Content nui.StyleSheet nui.Settings nui.State (i + 1) width height components) |> List.toArray
+            nui.Layers <- layers |> List.mapi (fun i components -> Logic.layout nui.Content nui.StyleSheet nui.Settings nui.State (i + 1) (float32 width) (float32 height) components) |> List.toArray
             nui.State.EndUpdate()
 
             nui.Elements.Clear()
@@ -205,9 +219,16 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     override this.Draw (gameTime) =
         base.Draw(gameTime)
+        this.GraphicsDevice.SetRenderTarget(renderTarget)
         this.GraphicsDevice.Clear(Color.Black)
         this.DrawInternal state gameTime
         NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
+        this.GraphicsDevice.SetRenderTarget(null)
+
+        spriteBatch.Begin()
+        spriteBatch.Draw(renderTarget, Rectangle(0, 0, game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height), Color.White)
+        spriteBatch.End()
+
 
 type SimpleNoobishGame<'arg, 'msg, 'model>(
     serviceInit: Game -> unit,
@@ -248,8 +269,11 @@ module Program2 =
     let withTheme<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> theme (game: 'T) =
         game.Theme <- theme
         game
-    let withScreenSize<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> width height (game: 'T) =
-        game.SetScreenSize width height
+    let withResolution<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> width height (game: 'T) =
+        game.SetResolution width height
+        game
+    let withVirtualResolution<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> width height (game: 'T) =
+        game.SetVirtualResolution width height
         game
 
     let withPreferHalfPixelOffset<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> useOffset (game: 'T) =

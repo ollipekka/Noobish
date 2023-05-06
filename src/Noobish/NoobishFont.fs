@@ -338,7 +338,7 @@ module NoobishFont =
 
         {X = (textStartX + scrollX); Y = (textStartY + scrollY); Width = textSizeX; Height = textSizeY}
 
-type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
+type TextBatch (graphics: GraphicsDevice, Resolution: struct(int*int), effect: Effect, batchSize: int) =
 
     let mutable vertexCount = 0
     let vertices = Array.create batchSize (VertexPositionTexture())
@@ -355,8 +355,8 @@ type TextBatch (graphics: GraphicsDevice, effect: Effect, batchSize: int) =
     member val View = Matrix.Identity
 
     member val Projection =
-        let vp = graphics.Viewport
-        Matrix.CreateOrthographicOffCenter(0.0f, float32 vp.Width, float32 vp.Height, 0.0f, 0.0f, -1.0f)
+        let struct(screenWidth, screenHeight) = Resolution
+        Matrix.CreateOrthographicOffCenter(0.0f, float32 screenWidth, float32 screenHeight, 0.0f, 0.0f, -1.0f)
 
 
     member s.Flush () =
