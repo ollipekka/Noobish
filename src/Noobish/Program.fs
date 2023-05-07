@@ -129,15 +129,17 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
         )
 
         let settings: NoobishSettings = {
-            Pixel = "Pixel"
             Locale = "en"
             Debug = false
         }
 
+        let pixel = new Texture2D(this.GraphicsDevice, 1, 1)
+        pixel.SetData<Color> [|Color.White|]
+
         let struct(virtualWidth, virtualHeight) = this.VirtualResolution
 
         let viewportSize = (struct(this.GraphicsDevice.Viewport.Width, this.GraphicsDevice.Viewport.Height))
-        nui <- NoobishMonoGame.create game.Content this.Theme this.VirtualResolution viewportSize settings
+        nui <- NoobishMonoGame.create game.Content this.Theme pixel this.VirtualResolution viewportSize settings
         game.Services.AddService nui
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)

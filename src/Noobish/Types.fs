@@ -1,4 +1,5 @@
 namespace Noobish
+open Microsoft.Xna.Framework.Graphics
 
 [<RequireQualifiedAccess>]
 type NoobishLayout =
@@ -45,7 +46,6 @@ type NoobishMouseButtonId =
 
 
 type NoobishSettings = {
-    Pixel: string
     mutable Locale: string
     mutable Debug: bool
 }
