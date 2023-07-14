@@ -58,6 +58,9 @@ type NoobishAttribute =
     | OnPressInternal of (NoobishState -> Vector2 -> NoobishLayoutElement -> unit)
     | OnTextChange of (string -> unit)
     | OnCheckboxValueChange of (bool -> unit)
+
+    | DoNotConsumeMouseInput
+
     | Visible of bool
     | Enabled of bool
     | Toggled of bool
@@ -223,18 +226,16 @@ let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attri
 let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes }
 let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; block] }
 let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: attributes }
-
-
 let scroll children attributes =
     { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical; ] @ attributes}
 
-let space attributes = { ThemeId = "Space"; Children = []; Attributes = fill :: attributes}
+let space attributes = { ThemeId = "Space"; Children = []; Attributes = DoNotConsumeMouseInput :: fill :: attributes}
 
 let panel children attributes =
     { ThemeId = "Panel"; Children = children; Attributes = stackLayout :: block :: attributes}
 let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill :: attributes}
-let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: attributes}
-let div children attributes = { ThemeId = "Division"; Children = children; Attributes = stackLayout :: attributes}
+let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: DoNotConsumeMouseInput :: attributes}
+let div children attributes = { ThemeId = "Division"; Children = children; Attributes = DoNotConsumeMouseInput :: stackLayout :: attributes}
 let window children attributes =
     grid 12 8
         [
@@ -413,7 +414,7 @@ module Logic =
         let mutable isBlock = false
         let mutable onClick: GameTime -> unit = ignore
         let mutable onClickInternal: NoobishState -> NoobishLayoutElement -> unit = (fun _ _ -> ())
-        let mutable consumedButtons = ResizeArray<NoobishMouseButtonId>()
+        let mutable consumedButtons = [|NoobishMouseButtonId.Left; NoobishMouseButtonId.Middle; NoobishMouseButtonId.Right|]
         let mutable consumedKeys = ResizeArray<NoobishKeyId>()
         let mutable keyTypedEnabled = false
 
@@ -551,21 +552,18 @@ module Logic =
                     )
             | OnClick(v) ->
                 onClick <- v
-                consumedButtons.Add (NoobishMouseButtonId.Left)
             | OnClickInternal(v) ->
                 onClickInternal <- v
-                consumedButtons.Add (NoobishMouseButtonId.Left)
             | OnPress(v) ->
                 onPress <- v
-                consumedButtons.Add (NoobishMouseButtonId.Left)
             | OnPressInternal(v) ->
                 onPressInternal <- v
-                consumedButtons.Add (NoobishMouseButtonId.Left)
             | OnTextChange(v) ->
                 onTextChange <- v
-                consumedButtons.Add (NoobishMouseButtonId.Left)
             | OnCheckboxValueChange(v) ->
                 onCheckboxValueChange <- v
+            | DoNotConsumeMouseInput ->
+                consumedButtons <- [||]
             | Enabled (value) ->
                 if (not value) && not (elementState.HasFlag(NoobishElementState.Disabled)) then
                     elementState <- NoobishElementState.disable elementState
