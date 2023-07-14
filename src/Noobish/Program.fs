@@ -11,24 +11,24 @@ open Microsoft.Xna.Framework.Input.Touch
 type Dispatch2<'msg> = 'msg -> unit
 
 [<RequireQualifiedAccess>]
-type Cmd2<'msg> =
+type Cmd<'msg> =
 | Single of message: 'msg
-| Batch of messages: list<Cmd2<'msg>>
+| Batch of messages: list<Cmd<'msg>>
 | None
 
-module Cmd2 =
-    let ofMsg<'msg> (m: 'msg) = Cmd2<'msg>.Single(m)
-    let batch<'msg> (l: list<Cmd2<'msg>>) = Cmd2<'msg>.Batch l
-    let none = Cmd2.None
+module Cmd =
+    let ofMsg<'msg> (m: 'msg) = Cmd<'msg>.Single(m)
+    let batch<'msg> (l: list<Cmd<'msg>>) = Cmd<'msg>.Batch l
+    let none = Cmd.None
 
-    let rec unpack (array: ResizeArray<'msg>) (cmd: Cmd2<'msg>) =
+    let rec unpack (array: ResizeArray<'msg>) (cmd: Cmd<'msg>) =
         match cmd with
-        | Cmd2.Single(msg) ->
+        | Cmd.Single(msg) ->
             array.Add msg
-        | Cmd2.Batch (msgs) ->
+        | Cmd.Batch (msgs) ->
             for msg in msgs do
                 unpack array msg
-        | Cmd2.None -> ()
+        | Cmd.None -> ()
 
 
 [<Struct>]
@@ -74,9 +74,9 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     abstract member ServiceInit: Game -> unit
 
-    abstract member InitInternal: 'arg -> 'model * Cmd2<'msg>
+    abstract member InitInternal: 'arg -> 'model * Cmd<'msg>
 
-    abstract member UpdateInternal: 'msg -> 'model -> GameTime -> ('model*Cmd2<'msg>)
+    abstract member UpdateInternal: 'msg -> 'model -> GameTime -> ('model*Cmd<'msg>)
 
     abstract member ViewInternal: 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>
 
@@ -182,7 +182,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
                 let model', cmd = this.UpdateInternal msg state gameTime
                 state <- model'
 
-                Cmd2.unpack this.Messages cmd
+                Cmd.unpack this.Messages cmd
         if tempMessages.Count > 0 then
 
             tempMessages.Clear()
@@ -238,8 +238,8 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
 type SimpleNoobishGame<'arg, 'msg, 'model>(
     serviceInit: Game -> unit,
-    init: SimpleNoobishGame<'arg, 'msg, 'model> ->'arg -> ('model * Cmd2<'msg>),
-    update: SimpleNoobishGame<'arg, 'msg, 'model> -> 'msg -> 'model -> GameTime -> ('model * Cmd2<'msg>),
+    init: SimpleNoobishGame<'arg, 'msg, 'model> ->'arg -> ('model * Cmd<'msg>),
+    update: SimpleNoobishGame<'arg, 'msg, 'model> -> 'msg -> 'model -> GameTime -> ('model * Cmd<'msg>),
     view: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>,
     tick: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> GameTime -> unit,
     draw: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> GameTime -> unit) =
@@ -297,7 +297,7 @@ module Program2 =
         let model, cmd = game.InitInternal arg
         game.SetState model
 
-        Cmd2.unpack game.Messages cmd
+        Cmd.unpack game.Messages cmd
         game.Run()
 
     let withTextInput<'msg, 'model, 'T when 'T :> NoobishGame<unit, 'msg, 'model>> (game: 'T) =

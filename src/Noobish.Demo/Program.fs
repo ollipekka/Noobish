@@ -460,44 +460,44 @@ module Github =
         ]
 
 let init _game () =
-    { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd2.ofMsg(ShowButtons)
+    { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg(ShowButtons)
 
 let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
     match message with
     | ShowButtons ->
-        {model with State = Buttons}, Cmd2.none
+        {model with State = Buttons}, Cmd.none
     | ShowContainers ->
-        {model with State = Containers}, Cmd2.none
+        {model with State = Containers}, Cmd.none
     | ShowText ->
-        {model with State = Text}, Cmd2.none
+        {model with State = Text}, Cmd.none
     | ShowSliders ->
-        {model with State = Slider}, Cmd2.none
+        {model with State = Slider}, Cmd.none
     | ShowGithub ->
-        {model with State = Github}, Cmd2.none
+        {model with State = Github}, Cmd.none
     | SliderValueChanged v ->
-        {model with SliderAValue = v}, Cmd2.none
+        {model with SliderAValue = v}, Cmd.none
     | ComboboxValueChanged v ->
-        {model with ComboboxValue = v}, Cmd2.none
+        {model with ComboboxValue = v}, Cmd.none
     | ChangePadding padding ->
-        {model with Padding = padding}, Cmd2.none
+        {model with Padding = padding}, Cmd.none
     | ChangeMargin margin ->
-        {model with Margin = margin}, Cmd2.none
+        {model with Margin = margin}, Cmd.none
     | FeaturesChanged s ->
-        {model with FeatureText = s}, Cmd2.none
+        {model with FeatureText = s}, Cmd.none
     | ToggleDebug ->
         let nui = game.Services.GetService<NoobishUI>()
         nui.Settings.Debug <- (not nui.Settings.Debug)
-        model, Cmd2.none
+        model, Cmd.none
     | ToggleLightMode ->
         let nui = game.Services.GetService<NoobishUI>()
         nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Light/Light"
-        {model with StyleMode = LightMode}, Cmd2.none
+        {model with StyleMode = LightMode}, Cmd.none
     | ToggleDarkMode ->
         let nui = game.Services.GetService<NoobishUI>()
         nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Dark/Dark"
-        {model with StyleMode = DarkMode}, Cmd2.none
+        {model with StyleMode = DarkMode}, Cmd.none
     | SelectListItem index ->
-        {model with SelectedListItemIndex = index}, Cmd2.none
+        {model with SelectedListItemIndex = index}, Cmd.none
 
 let view game (model: DemoModel) dispatch =
 
