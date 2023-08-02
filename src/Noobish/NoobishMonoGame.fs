@@ -722,7 +722,7 @@ module NoobishMonoGame =
                     | NoobishKeyId.None -> failwith "None can't be here."
 
                 let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
-                if exists && cs.Enabled && current.IsKeyDown key && previous.IsKeyUp key then
+                if exists && cs.Enabled && current.IsKeyUp key && previous.IsKeyDown key then
                     ui.State.QueueEvent c.Id (InvokeClick)
 
     let keyTyped (ui: NoobishUI) (char: char) =
