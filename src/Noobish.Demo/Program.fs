@@ -532,6 +532,7 @@ let view game (model: DemoModel) dispatch =
                                     toggled (model.StyleMode = DarkMode);
                                     fill;
                                     onClick (fun gameTime -> dispatch ToggleDarkMode)
+                                    keyboardShortcut (ctrl NoobishKeyId.B)
                                     colspan 2
                                 ]
                             button
@@ -540,6 +541,7 @@ let view game (model: DemoModel) dispatch =
                                     toggled (model.StyleMode = LightMode);
                                     fill;
                                     onClick (fun gameTime -> dispatch ToggleLightMode)
+                                    keyboardShortcut (ctrl NoobishKeyId.L)
                                     colspan 2
                                 ]
                             button
@@ -548,6 +550,7 @@ let view game (model: DemoModel) dispatch =
                                     toggled false; //model.UI.Settings.Debug;
                                     fill;
                                     onClick (fun gameTime -> dispatch ToggleDebug)
+                                    keyboardShortcut (alt NoobishKeyId.D)
                                     colspan 2
                                 ]
                         ]

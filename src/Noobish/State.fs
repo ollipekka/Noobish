@@ -103,7 +103,7 @@ type NoobishLayoutElement = {
 
     Model: option<NoobishComponentModel>
 
-    KeyboardShortcut: NoobishKeyId
+    KeyboardShortcut: NoobishKeyboardShortcut
 
     ConsumedMouseButtons: NoobishMouseButtonId[]
     ConsumedKeys: NoobishKeyId[]
@@ -180,7 +180,7 @@ type NoobishLayoutElementState = {
 
     mutable Model: option<NoobishComponentModel>
 
-    KeyboardShortcut: NoobishKeyId
+    KeyboardShortcut: NoobishKeyboardShortcut
 
 
     Children: string[]

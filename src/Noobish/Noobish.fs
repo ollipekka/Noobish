@@ -17,8 +17,6 @@ module ZIndex =
         let v = clamp v 0 255
         1f - (float32 v / 255f)
 
-
-
 type NoobishAttribute =
 
     | Name of string
@@ -78,7 +76,7 @@ type NoobishAttribute =
     | RowSpan of int
     | ColSpan of int
     | RelativePosition of x: int * y: int
-    | KeyboardShortcut of NoobishKeyId
+    | KeyboardShortcut of NoobishKeyboardShortcut
     | OnOpenKeyboard of ((string -> unit) -> unit)
     | KeyTypedEnabled
 
@@ -177,6 +175,8 @@ let rowspan s = RowSpan s
 
 let relativePosition x y = RelativePosition(x, y)
 
+let ctrl (nk: NoobishKeyId) = NoobishKeyboardShortcut.CtrlKeyPressed nk
+let alt (nk: NoobishKeyId) = NoobishKeyboardShortcut.AltKeyPressed nk
 let keyboardShortcut k = KeyboardShortcut k
 
 let onOpenKeyboard cb = OnOpenKeyboard cb
@@ -448,7 +448,7 @@ module Logic =
 
         let mutable model: option<NoobishComponentModel> = None
 
-        let mutable keyboardShortcut = NoobishKeyId.None
+        let mutable keyboardShortcut = NoobishKeyboardShortcut.NoShortcut
 
         for a in attributes do
             match a with
@@ -623,7 +623,15 @@ module Logic =
                 relativeY <- float32 y
             | KeyboardShortcut k ->
                 keyboardShortcut <- k
-                consumedKeys.Add k
+
+                let keyId =
+                    match k with
+                    | NoobishKeyboardShortcut.KeyPressed(k) -> k
+                    | NoobishKeyboardShortcut.CtrlKeyPressed(k) -> k
+                    | NoobishKeyboardShortcut.AltKeyPressed(k) -> k
+                    | NoobishKeyboardShortcut.NoShortcut -> failwith "User logic error. Can't have no shortcut here."
+
+                consumedKeys.Add keyId
             | KeyTypedEnabled ->
                 keyTypedEnabled <- true
                 if model.IsNone then

@@ -684,6 +684,40 @@ module NoobishMonoGame =
             for layer in ui.Layers do
                 Noobish.Input.scroll ui.State layer (float32 mousePosition.X) (float32 mousePosition.Y) 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
 
+    let noobishKeyToMonogameKey (nk: NoobishKeyId) =
+        match nk with
+        | NoobishKeyId.Enter -> Keys.Enter
+        | NoobishKeyId.Escape -> Keys.Escape
+        | NoobishKeyId.Space -> Keys.Space
+        | NoobishKeyId.A -> Keys.A
+        | NoobishKeyId.B -> Keys.B
+        | NoobishKeyId.C -> Keys.C
+        | NoobishKeyId.D -> Keys.D
+        | NoobishKeyId.E -> Keys.E
+        | NoobishKeyId.F -> Keys.F
+        | NoobishKeyId.G -> Keys.G
+        | NoobishKeyId.H -> Keys.H
+        | NoobishKeyId.I -> Keys.I
+        | NoobishKeyId.J -> Keys.J
+        | NoobishKeyId.K -> Keys.K
+        | NoobishKeyId.L -> Keys.L
+        | NoobishKeyId.M -> Keys.M
+        | NoobishKeyId.N -> Keys.N
+        | NoobishKeyId.O -> Keys.O
+        | NoobishKeyId.P -> Keys.P
+        | NoobishKeyId.Q -> Keys.Q
+        | NoobishKeyId.R -> Keys.R
+        | NoobishKeyId.S -> Keys.S
+        | NoobishKeyId.T -> Keys.T
+        | NoobishKeyId.U -> Keys.U
+        | NoobishKeyId.V -> Keys.V
+        | NoobishKeyId.W -> Keys.W
+        | NoobishKeyId.X -> Keys.X
+        | NoobishKeyId.Y -> Keys.Y
+        | NoobishKeyId.Z -> Keys.Z
+        | NoobishKeyId.None -> failwith "None can't be here."
+
+
     let updateKeyboard (ui: NoobishUI)  (previous: KeyboardState) (current: KeyboardState) (_gameTime: GameTime) =
 
         if ui.State.FocusedElementId.IsSome then
@@ -713,17 +747,29 @@ module NoobishMonoGame =
         for kvp in ui.State.ElementsById do
             let c = kvp.Value
             let noobishKey = kvp.Value.KeyboardShortcut
-            if noobishKey <> NoobishKeyId.None then
-                let key =
-                    match noobishKey with
-                    | NoobishKeyId.Enter -> Keys.Enter
-                    | NoobishKeyId.Escape -> Keys.Escape
-                    | NoobishKeyId.Space -> Keys.Space
-                    | NoobishKeyId.None -> failwith "None can't be here."
+
+            match kvp.Value.KeyboardShortcut with
+            | NoobishKeyboardShortcut.KeyPressed (k) ->
+                let key = noobishKeyToMonogameKey k
 
                 let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
                 if exists && cs.Enabled && current.IsKeyUp key && previous.IsKeyDown key then
                     ui.State.QueueEvent c.Id (InvokeClick)
+            | NoobishKeyboardShortcut.CtrlKeyPressed (k) ->
+                let key = noobishKeyToMonogameKey k
+
+                let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
+                if exists && cs.Enabled && (current.IsKeyDown Keys.LeftControl || current.IsKeyDown Keys.RightControl) && current.IsKeyUp key && previous.IsKeyDown key then
+                    ui.State.QueueEvent c.Id (InvokeClick)
+            | NoobishKeyboardShortcut.AltKeyPressed (k) ->
+
+                let key = noobishKeyToMonogameKey k
+
+                let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
+                if exists && cs.Enabled && (current.IsKeyDown Keys.LeftAlt || current.IsKeyDown Keys.RightAlt) && current.IsKeyUp key && previous.IsKeyDown key then
+                    ui.State.QueueEvent c.Id (InvokeClick)
+            | NoobishKeyboardShortcut.NoShortcut -> ()
+
 
     let keyTyped (ui: NoobishUI) (char: char) =
         let mutable i = 0
