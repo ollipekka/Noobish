@@ -30,7 +30,6 @@ module Cmd =
                 unpack array msg
         | Cmd.None -> ()
 
-
 [<Struct>]
 type NoobishInputDeviceState<'InputDevice> = {
     Current: 'InputDevice
@@ -42,7 +41,16 @@ type NoobishInputState = {
     Keyboard: NoobishInputDeviceState<KeyboardState>
     Mouse: NoobishInputDeviceState<MouseState>
     Touch: NoobishInputDeviceState<TouchCollection>
-}
+} with
+    member this.IsKeyPressed (k:Keys) =
+        this.Keyboard.Previous.IsKeyDown k && this.Keyboard.Current.IsKeyUp k
+
+    member this.IsLeftMouseButtonPressed () =
+        this.Mouse.Previous.LeftButton = ButtonState.Pressed && this.Mouse.Current.LeftButton = ButtonState.Released
+
+    member this.IsRightMouseButtonPressed () =
+        this.Mouse.Previous.LeftButton = ButtonState.Pressed && this.Mouse.Current.LeftButton = ButtonState.Released
+
 
 module NoobishInputState =
     let updateDevice<'InputDevice> (device: 'InputDevice) (deviceState: NoobishInputDeviceState<'InputDevice>) =
@@ -60,14 +68,6 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
     let mutable state: 'model = Unchecked.defaultof<'model>
     let mutable textBatch = Unchecked.defaultof<TextBatch>
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
-    let graphicsDeviceManager = new GraphicsDeviceManager(game)
-    do
-        graphicsDeviceManager.GraphicsProfile <- GraphicsProfile.HiDef
-        #if !__MOBILE__
-        #endif
-        graphicsDeviceManager.SynchronizeWithVerticalRetrace <- true
-        graphicsDeviceManager.SupportedOrientations <-
-            DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
 
     let mutable nui = Unchecked.defaultof<NoobishUI>
     let mutable renderTarget = Unchecked.defaultof<RenderTarget2D>
@@ -91,9 +91,18 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
         match virtualResolution with
         | ValueSome(virtualResolution) -> virtualResolution
         | ValueNone -> struct(this.GraphicsDevice.Viewport.Width, this.GraphicsDevice.Viewport.Height)
-    member val GraphicsDeviceManager = graphicsDeviceManager
+    member val GraphicsDeviceManager =
+        let graphicsDeviceManager = new GraphicsDeviceManager(game)
+        graphicsDeviceManager.GraphicsProfile <- GraphicsProfile.HiDef
+        graphicsDeviceManager.PreferMultiSampling <- true
+        graphicsDeviceManager.PreferHalfPixelOffset <- true
+        graphicsDeviceManager.SynchronizeWithVerticalRetrace <- true
+        graphicsDeviceManager.SupportedOrientations <-
+            DisplayOrientation.LandscapeLeft ||| DisplayOrientation.LandscapeRight;
+
+        graphicsDeviceManager
     member val Messages = ResizeArray<'msg>()
-    member val Termination: ('msg -> bool) * ('model -> unit) = (fun _ -> false), (ignore) with get, set
+    member val Termination: ('msg -> bool) = (fun _ -> false) with get, set
     member val OnError = fun (text, ex) ->  System.Console.Error.WriteLine("{0}: {1}", text, ex) with get, set
 
     member _s.ScreenWidth with get() = game.GraphicsDevice.Viewport.Width
@@ -101,9 +110,9 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     member val Theme = "" with get, set
 
-    member s.SetResolution width height =
-        graphicsDeviceManager.PreferredBackBufferWidth <- width
-        graphicsDeviceManager.PreferredBackBufferHeight <- height
+    member this.SetResolution width height =
+        this.GraphicsDeviceManager.PreferredBackBufferWidth <- width
+        this.GraphicsDeviceManager.PreferredBackBufferHeight <- height
 
     member s.SetVirtualResolution width height =
         virtualResolution <- ValueSome(struct(width, height))
@@ -117,9 +126,12 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
         this.Messages.Add msg
 
     override this.Initialize() =
+
         base.Initialize()
 
-        graphicsDeviceManager.ApplyChanges()
+        this.GraphicsDevice.PresentationParameters.MultiSampleCount <- 4
+        this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
+        this.GraphicsDeviceManager.ApplyChanges();
 
         this.ServiceInit (game :> Game)
 
@@ -141,7 +153,6 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
         let viewportSize = (struct(this.GraphicsDevice.Viewport.Width, this.GraphicsDevice.Viewport.Height))
         nui <- NoobishMonoGame.create game.Content this.Theme pixel this.VirtualResolution viewportSize settings
         game.Services.AddService nui
-        this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
 
         let fontEffect = this.Content.Load<Effect>("MSDFFontEffect")
@@ -183,6 +194,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
                 state <- model'
 
                 Cmd.unpack this.Messages cmd
+
         if tempMessages.Count > 0 then
 
             tempMessages.Clear()
@@ -290,14 +302,11 @@ module Program2 =
         game.IsMouseVisible <- b
         game
 
-    let withTermination<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> predicate terminate (game: 'T) =
-        game.Termination <- predicate, terminate
-
     let runWithArg<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> (arg: 'arg) (game: 'T)  =
         let model, cmd = game.InitInternal arg
         game.SetState model
 
-        Cmd.unpack game.Messages cmd
+        let terminate = Cmd.unpack game.Messages cmd
         game.Run()
 
     let withTextInput<'msg, 'model, 'T when 'T :> NoobishGame<unit, 'msg, 'model>> (game: 'T) =

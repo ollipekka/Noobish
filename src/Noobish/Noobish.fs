@@ -177,6 +177,9 @@ let relativePosition x y = RelativePosition(x, y)
 
 let ctrl (nk: NoobishKeyId) = NoobishKeyboardShortcut.CtrlKeyPressed nk
 let alt (nk: NoobishKeyId) = NoobishKeyboardShortcut.AltKeyPressed nk
+
+let key (nk: NoobishKeyId) = NoobishKeyboardShortcut.KeyPressed nk
+
 let keyboardShortcut k = KeyboardShortcut k
 
 let onOpenKeyboard cb = OnOpenKeyboard cb
