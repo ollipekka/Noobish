@@ -20,6 +20,13 @@ module Cmd =
     let ofMsg<'msg> (m: 'msg) = Cmd<'msg>.Single(m)
     let batch<'msg> (l: list<Cmd<'msg>>) = Cmd<'msg>.Batch l
     let none = Cmd.None
+    let rec map<'msg1, 'msg2> (projection: 'msg1 -> 'msg2) (msg: Cmd<'msg1>): Cmd<'msg2> =
+        match msg with
+        | Cmd.Single(msg) ->
+            Cmd.Single (projection msg)
+        | Cmd.Batch (msgs) ->
+            Cmd.Batch(msgs |> List.map (fun msg -> map projection msg ))
+        | Cmd.None -> Cmd.None
 
     let rec unpack (array: ResizeArray<'msg>) (cmd: Cmd<'msg>) =
         match cmd with
