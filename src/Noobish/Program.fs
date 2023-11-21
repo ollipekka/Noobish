@@ -117,6 +117,8 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     member val Theme = "" with get, set
 
+    member val FontEffectId = "MSDFFontEffect" with get, set
+
     member this.SetResolution width height =
         this.GraphicsDeviceManager.PreferredBackBufferWidth <- width
         this.GraphicsDeviceManager.PreferredBackBufferHeight <- height
@@ -162,7 +164,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
         game.Services.AddService nui
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
 
-        let fontEffect = this.Content.Load<Effect>("MSDFFontEffect")
+        let fontEffect = this.Content.Load<Effect>(this.FontEffectId)
         textBatch <- new TextBatch(this.GraphicsDevice, this.VirtualResolution, fontEffect, 1024)
 
         renderTarget <- new RenderTarget2D(this.GraphicsDevice, virtualWidth, virtualHeight)
@@ -294,6 +296,12 @@ module Program2 =
     let withTheme<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> theme (game: 'T) =
         game.Theme <- theme
         game
+
+
+    let withFontEffectId<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> fontEffectId (game: 'T) =
+        game.FontEffectId <- fontEffectId
+        game
+
     let withResolution<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> width height (game: 'T) =
         game.SetResolution width height
         game
