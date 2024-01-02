@@ -57,7 +57,6 @@ module NoobishElementState =
 type NoobishImage = {
     Texture: NoobishTextureId
     TextureEffect: NoobishTextureEffect
-    Color: Color
     ImageSize: NoobishImageSize
     Rotation: int
 }

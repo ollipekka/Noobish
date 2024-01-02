@@ -27,6 +27,7 @@ type NoobishAttribute =
     | PaddingBottom of int
 
     | ColorOverride of Color
+    | DisabledColorOverride of Color
 
     | Margin of left: int * right: int * top: int * bottom: int
     | MarginLeft of int
@@ -37,6 +38,7 @@ type NoobishAttribute =
     | Overlay
 
     | Text of string
+    | ShowText
     | LocalizedText of bundleId: string * localizationKey: string
     | TextAlign of NoobishTextAlignment
     | TextWrap
@@ -104,7 +106,8 @@ let textBottomCenter = TextAlign NoobishTextAlignment.BottomCenter
 let textBottomRight = TextAlign NoobishTextAlignment.BottomRight
 let textWrap = TextWrap
 
-let color (c: string) =
+let private colorFromString (c: string): Color = 
+
     let v =
         if c.StartsWith "#" then
             int(c.Replace("#", "0x"))
@@ -115,7 +118,14 @@ let color (c: string) =
     let b = (v >>> 8) &&& 255;
     let a = v &&& 255;
 
-    ColorOverride (Color(r, g, b, a))
+    (Color(r, g, b, a))
+
+let color (c: string) =
+    ColorOverride (colorFromString c)
+
+
+let disabledColor (c: string) =
+    DisabledColorOverride (colorFromString c)
 
 let sliderRange min max = SliderRange(min, max)
 let sliderValue v = SliderValue v
@@ -218,16 +228,16 @@ let themeSuffix (suffix: string) (e: NoobishElement) =
 
 // Components
 let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
-let label attributes = { ThemeId = "Label"; Children = []; Attributes = attributes }
-let h1 attributes = { ThemeId = "Header1"; Children = []; Attributes = block :: attributes }
-let h2 attributes = { ThemeId = "Header2"; Children = []; Attributes = block :: attributes }
-let h3 attributes = { ThemeId = "Header3"; Children = []; Attributes = block :: attributes }
-let textbox attributes = { ThemeId = "TextBox"; Children = []; Attributes = textAlign NoobishTextAlignment.TopLeft :: KeyTypedEnabled :: attributes }
-let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlignment.TopLeft :: attributes }
-let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block] @ attributes }
+let label attributes = { ThemeId = "Label"; Children = []; Attributes = ShowText :: attributes }
+let h1 attributes = { ThemeId = "Header1"; Children = []; Attributes = block :: ShowText :: attributes }
+let h2 attributes = { ThemeId = "Header2"; Children = []; Attributes = block :: ShowText :: attributes }
+let h3 attributes = { ThemeId = "Header3"; Children = []; Attributes = block :: ShowText :: attributes }
+let textbox attributes = { ThemeId = "TextBox"; Children = []; Attributes = textAlign NoobishTextAlignment.TopLeft :: ShowText :: KeyTypedEnabled :: attributes }
+let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlignment.TopLeft :: ShowText :: attributes }
+let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block; ShowText] @ attributes }
 let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
 let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes }
-let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; block] }
+let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; ShowText; block] }
 let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: attributes }
 let scroll children attributes =
     { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical; ] @ attributes}
@@ -407,6 +417,7 @@ module Logic =
 
         let mutable textAlign = styleSheet.GetTextAlignment themeId cstate
         let mutable text = ""
+        let mutable showText = false
         let mutable textWrap = false
         let mutable paddingTop, paddingRight, paddingBottom, paddingLeft = toFloat (styleSheet.GetPadding themeId cstate)
         let mutable marginTop, marginRight, marginBottom, marginLeft = toFloat (styleSheet.GetMargin themeId cstate)
@@ -428,11 +439,11 @@ module Logic =
         let mutable onCheckboxValueChange: bool -> unit = ignore
 
         let mutable color = styleSheet.GetColor cid cstate
+        let mutable disabledColor = styleSheet.GetColor cid "disabled"
 
         let mutable texture = NoobishTextureId.None
         let mutable textureEffect = NoobishTextureEffect.None
         let mutable imageSize = NoobishImageSize.BestFitMax
-        let mutable imageColor = Color.White
         let mutable textureRotation = 0
 
         let mutable scrollHorizontal = false
@@ -486,14 +497,16 @@ module Logic =
 
             | ColorOverride c ->
                 color <- c
+            | DisabledColorOverride c ->
+                disabledColor <- c
             | MinSize (width, height) ->
                 minWidth <- float32 width
                 minHeight <- float32 height
             // Text
             | Text(value) ->
                 text <- value
-
-
+            | ShowText -> 
+                showText <- true
             | LocalizedText(bundleId, keyId) ->
                 let localBundleId = $"{bundleId}-{settings.Locale}"
                 let bundle = content.Load<NoobishLocalizationBundle> localBundleId
@@ -667,7 +680,7 @@ module Logic =
             | Textbox (_t) -> ()
         )
 
-        if not (String.IsNullOrWhiteSpace(text)) then
+        if showText || not (String.IsNullOrWhiteSpace(text)) then
             model <- model |> Option.map(
                 fun model' ->
                     match model' with
@@ -676,7 +689,7 @@ module Logic =
                     | _ -> model'
             )
 
-        if not (String.IsNullOrWhiteSpace text) then
+        if showText || not (String.IsNullOrWhiteSpace text) then
             let paddedWidth = maxWidth - marginLeft - marginRight - paddingLeft - paddingRight
 
             let fontId = styleSheet.GetFont themeId "default"
@@ -732,7 +745,6 @@ module Logic =
                         {
                             Texture = texture
                             TextureEffect = textureEffect
-                            Color = imageColor
                             ImageSize = imageSize
                             Rotation = textureRotation
                         }
@@ -775,8 +787,8 @@ module Logic =
             ColSpan = colspan
             RowSpan = rowspan
 
-            Color = styleSheet.GetColor themeId "default"
-            ColorDisabled = styleSheet.GetColor themeId "disabled"
+            Color = color
+            ColorDisabled = disabledColor
 
             ScrollHorizontal = scrollHorizontal
             ScrollVertical = scrollVertical
