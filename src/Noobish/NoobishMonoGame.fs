@@ -430,9 +430,20 @@ module NoobishMonoGame =
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = toRadians t.Rotation
             let textureColor = c.Color
-            spriteBatch.Draw(texture, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), sourceRect, textureColor, rotation, origin, textureEffect, layer)
 
+            let startPos = Vector2(float32 rect.X + float32 rect.Width / 2.0f, float32 rect.Y + float32 rect.Height / 2.0f)
+            let scale = Vector2(float32 rect.Width / float32 texture.Width, float32 rect.Height / float32 texture.Height)
 
+            spriteBatch.Draw(
+                texture,
+                startPos,
+                sourceRect,
+                textureColor,
+                rotation,
+                origin,
+                scale,
+                textureEffect,
+                1.0f)
         | NoobishTextureId.Atlas(aid, tid) ->
 
             let atlas = content.Load<NoobishTextureAtlas> aid
@@ -445,7 +456,19 @@ module NoobishMonoGame =
             let rotation = toRadians t.Rotation
             let textureColor = c.Color
 
-            spriteBatch.Draw(texture.Atlas, Rectangle(rect.X + rect.Width / 2, rect.Y + rect.Height / 2, rect.Width, rect.Height), texture.SourceRectangle, textureColor, rotation, origin, textureEffect, layer)
+            let startPos = Vector2(float32 rect.X + float32 rect.Width / 2.0f, float32 rect.Y + float32 rect.Height / 2.0f)
+            let scale = Vector2(float32 rect.Width / float32 texture.Width, float32 rect.Height / float32 texture.Height)
+
+            spriteBatch.Draw(
+                texture.Atlas,
+                startPos,
+                texture.SourceRectangle,
+                textureColor,
+                rotation,
+                origin,
+                scale,
+                textureEffect,
+                1.0f)
 
         | NoobishTextureId.NinePatch (aid, tid) ->
 
@@ -453,15 +476,19 @@ module NoobishMonoGame =
             let texture = atlas.[tid]
 
             let textureEffect = getTextureEfffect t.TextureEffect
-            let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
             let rect = c.ContentWithPadding
             let textureColor = c.Color
 
-            spriteBatch.DrawAtlasNinePatch2(
+            spriteBatch.DrawAtlasNinePatch(
                 texture,
-                Rectangle(int rect.X, int rect.Y, int rect.Width, int rect.Height),
+                Vector2(rect.X, rect.Y),
+                rect.Width,
+                rect.Height,
                 textureColor,
-                0f )
+                0.0f,
+                Vector2.One,
+                textureEffect,
+                0.0f)
 
         | NoobishTextureId.None -> failwith "Can't have empty texture at this point."
 
