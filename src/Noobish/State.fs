@@ -11,6 +11,7 @@ open System
 open System.Collections.Generic
 
 [<Flags>]
+[<Struct>]
 [<RequireQualifiedAccess>]
 type NoobishElementState =
 | Empty    =  0

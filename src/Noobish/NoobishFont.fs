@@ -6,6 +6,7 @@ open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework
 
 open Noobish.Internal
+open System
 
 
 type NoobishFontAtlas = {
@@ -399,11 +400,11 @@ type TextBatch (graphics: GraphicsDevice, Resolution: struct(int*int), effect: E
 
         addDegenerate()
 
-    member s.DrawSubstring (font: NoobishFont) (size: float32) (position: Vector2) (layer: float32) (color: Color) (text:string) (startPos: int) (endPos: int)=
+    member s.DrawSubstring ((font: NoobishFont), (size: float32), (position: Vector2), (layer: float32), (color: Color), (text: ReadOnlySpan<Char>)) =
 
         let mutable nextPosX = position.X
 
-        for i = startPos to endPos do
+        for i = 0 to text.Length - 1 do
             let c = text.[i]
             let (success, glyph) = font.Glyphs.TryGetValue c
 
@@ -412,7 +413,7 @@ type TextBatch (graphics: GraphicsDevice, Resolution: struct(int*int), effect: E
                 let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
 
                 let kern =
-                    if i + 1 < endPos then
+                    if i + 1 < text.Length then
                         glyph.Kerning.GetValueOrDefault (text.[i + 1], 0f) * size
                     else
                         0f
@@ -444,7 +445,7 @@ type TextBatch (graphics: GraphicsDevice, Resolution: struct(int*int), effect: E
         effect.CurrentTechnique <- if size > 10.0f then effect.Techniques["LargeText"] else effect.Techniques["SmallText"]
 
         let position = position + Vector2(0f, font.Metrics.Descender * size)
-        s.DrawSubstring font size position layer color text 0 (text.Length - 1)
+        s.DrawSubstring(font, size, position, layer, color, text.AsSpan())
 
         s.Flush()
 
@@ -491,7 +492,8 @@ type TextBatch (graphics: GraphicsDevice, Resolution: struct(int*int), effect: E
                             struct(i, i + wsCount + wordCount, wsWidth)
 
                     let nextPos = position + Vector2(nextPosX, nextPosY)
-                    s.DrawSubstring font size nextPos layer color text startPos endPos
+                    let textSpan = (text.AsSpan(startPos, (endPos - startPos)))
+                    s.DrawSubstring(font, size, nextPos, layer, color, textSpan)
 
                     nextPosX <- nextPosX + wsWidth + wordWidth
 

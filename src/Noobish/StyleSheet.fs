@@ -45,9 +45,12 @@ type NoobishStyleSheet = {
 } with
 
     static member private GetDefault (d: IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>) (themeId: string) (state: string) (fallback: 'T): 'T =
-        let (success, defaultDict) = d.TryGetValue(themeId)
+        
+        let mutable defaultDict = Unchecked.defaultof<IReadOnlyDictionary<string, 'T>>
+        let success = d.TryGetValue(themeId, &defaultDict)
         if success then
-            let (success', v) = defaultDict.TryGetValue state
+            let mutable v = Unchecked.defaultof<'T>
+            let success' = defaultDict.TryGetValue (state, &v)
             if success' then
                 v
             else
@@ -56,9 +59,11 @@ type NoobishStyleSheet = {
             fallback
 
     static member private GetValue (d: IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>) (themeId: string) (state: string) (fallback: 'T): 'T =
-        let (success, defaultDict) = d.TryGetValue(themeId)
+        let mutable defaultDict = Unchecked.defaultof<IReadOnlyDictionary<string, 'T>>
+        let success = d.TryGetValue(themeId, &defaultDict)
         if success then
-            let (success', v) = defaultDict.TryGetValue state
+            let mutable v = Unchecked.defaultof<'T>
+            let success' = defaultDict.TryGetValue (state, &v)
             if success' then
                 v
             else
