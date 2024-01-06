@@ -779,21 +779,21 @@ module NoobishMonoGame =
             | NoobishKeyboardShortcut.KeyPressed (k) ->
                 let key = noobishKeyToMonogameKey k
 
-                let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
-                if exists && cs.Enabled && current.IsKeyUp key && previous.IsKeyDown key then
+                let cs = ui.State.GetById kvp.Key
+                if cs.Enabled && current.IsKeyUp key && previous.IsKeyDown key then
                     ui.State.QueueEvent c.Id (InvokeClick)
             | NoobishKeyboardShortcut.CtrlKeyPressed (k) ->
                 let key = noobishKeyToMonogameKey k
-
-                let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
-                if exists && cs.Enabled && (current.IsKeyDown Keys.LeftControl || current.IsKeyDown Keys.RightControl) && current.IsKeyUp key && previous.IsKeyDown key then
+                
+                let cs = ui.State.GetById kvp.Key
+                if cs.Enabled && (current.IsKeyDown Keys.LeftControl || current.IsKeyDown Keys.RightControl) && current.IsKeyUp key && previous.IsKeyDown key then
                     ui.State.QueueEvent c.Id (InvokeClick)
             | NoobishKeyboardShortcut.AltKeyPressed (k) ->
 
                 let key = noobishKeyToMonogameKey k
-
-                let (exists, cs) = ui.State.ElementStateById.TryGetValue kvp.Key
-                if exists && cs.Enabled && (current.IsKeyDown Keys.LeftAlt || current.IsKeyDown Keys.RightAlt) && current.IsKeyUp key && previous.IsKeyDown key then
+                
+                let cs = ui.State.GetById kvp.Key
+                if cs.Enabled && (current.IsKeyDown Keys.LeftAlt || current.IsKeyDown Keys.RightAlt) && current.IsKeyUp key && previous.IsKeyDown key then
                     ui.State.QueueEvent c.Id (InvokeClick)
             | NoobishKeyboardShortcut.NoShortcut -> ()
 

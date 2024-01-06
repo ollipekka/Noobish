@@ -25,6 +25,9 @@ type NoobishElementState =
 
 module NoobishElementState =
 
+    let inline isSet (self: NoobishElementState) (flag: NoobishElementState) =
+        self &&& flag = flag
+
     let hide s =
         s ||| NoobishElementState.Hidden
 
@@ -185,14 +188,14 @@ type NoobishLayoutElementState = {
 
     Children: string[]
 } with
-    member s.Disabled with get() = s.State.HasFlag NoobishElementState.Disabled
+    member s.Disabled with get() = (NoobishElementState.isSet s.State NoobishElementState.Disabled)
     member s.Enabled with get() = not s.Disabled
-    member s.Focused with get() = s.State.HasFlag NoobishElementState.Focused
-    member s.Visible with get() = not (s.State.HasFlag NoobishElementState.Hidden)
-    member s.Toggled with get() = s.State.HasFlag NoobishElementState.Toggled
-    member s.Hovered with get() = s.State.HasFlag NoobishElementState.Hovered
-    member s.Selected with get() = s.State.HasFlag NoobishElementState.Selected
-    member s.Pressed with get() = s.State.HasFlag NoobishElementState.Pressed
+    member s.Focused with get() =  (NoobishElementState.isSet s.State NoobishElementState.Focused)
+    member s.Visible with get() = not ( (NoobishElementState.isSet s.State NoobishElementState.Hidden))
+    member s.Toggled with get() =  (NoobishElementState.isSet s.State NoobishElementState.Toggled)
+    member s.Hovered with get() =  (NoobishElementState.isSet s.State NoobishElementState.Hovered)
+    member s.Selected with get() =  (NoobishElementState.isSet s.State NoobishElementState.Selected)
+    member s.Pressed with get() =  (NoobishElementState.isSet s.State NoobishElementState.Pressed)
     member s.CanFocus with get() =
         match s.Model with
         | Some(model') ->
@@ -233,6 +236,13 @@ type NoobishState () =
     member s.Item
         with get (tid: string) = s.ElementStateById.[tid]
 
+    member this.GetById (stateId: string) = 
+        let mutable value = Unchecked.defaultof<NoobishLayoutElementState>
+        let success = this.ElementStateById.TryGetValue(stateId, &value)
+        if not success then failwith $"No such state: {stateId}"
+        value
+
+
     member s.QueueEvent (cid: string) (message:ComponentMessage) =
         s.Events.Enqueue(struct(cid, message))
 
@@ -249,7 +259,8 @@ type NoobishState () =
     member s.UpdateState (e: NoobishLayoutElement) (state: NoobishElementState)  =
         elementsById.[e.Id] <- e
 
-        let success, es = tempElementStateById.TryGetValue e.Id
+        let mutable es = Unchecked.defaultof<NoobishLayoutElementState>
+        let success = tempElementStateById.TryGetValue(e.Id, &es)
         if success then
             elementStateById.[e.Id] <- { es with Model = e.Model; State = state }
         else
@@ -275,8 +286,11 @@ type NoobishState () =
 
         while s.Events.Count > 0 do
             let struct(cid, message) = s.Events.Dequeue()
-            let (success, c) = s.ElementsById.TryGetValue cid
-            let (successState, cs) = s.ElementStateById.TryGetValue cid
+            let mutable c = Unchecked.defaultof<NoobishLayoutElement>
+            let success = s.ElementsById.TryGetValue(cid, &c)
+            
+            let mutable cs = Unchecked.defaultof<NoobishLayoutElementState>
+            let successState= s.ElementStateById.TryGetValue(cid, &cs)
             if success && successState then
                 match message with
                 | Show ->
@@ -289,7 +303,7 @@ type NoobishState () =
 
                     let es = elementStateById.[cid]
                     let state =
-                        if (es.State.HasFlag NoobishElementState.Hidden) then
+                        if NoobishElementState.isSet es.State NoobishElementState.Hidden then
                             NoobishElementState.show es.State
                         else
                             NoobishElementState.hide es.State
@@ -300,7 +314,7 @@ type NoobishState () =
 
                     let es = elementStateById.[cid]
 
-                    let toggled = (es.State.HasFlag NoobishElementState.Toggled)
+                    let toggled = NoobishElementState.isSet es.State NoobishElementState.Toggled
                     let state =
                         if toggled then
                             NoobishElementState.detoggle es.State

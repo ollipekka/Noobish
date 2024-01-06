@@ -97,6 +97,14 @@ type NoobishFont = {
 module NoobishFont =
     open Noobish.Styles
 
+    let getGlyph (f: NoobishFont) (c: char) = 
+        let mutable v = Unchecked.defaultof<NoobishGlyph>
+        let s = f.Glyphs.TryGetValue (c, &v)
+        if s then 
+            v
+        else 
+            f.Glyphs.['x']
+
     let truncate (size: int) (value:string) =
         let size = min value.Length size
         value.Substring(0, size)
@@ -115,11 +123,10 @@ module NoobishFont =
             elif c <> ' ' then
                 nonWhiteSpaceFound <- true
             else
-                let (success, g) = font.Glyphs.TryGetValue c
+                let g = getGlyph font c
 
-                if success then
-                    let struct(a, xOffset, yOffset, gw, gh) = NoobishGlyph.getGlyphMetricsInPx size g
-                    width <- width + a + xOffset
+                let struct(a, xOffset, yOffset, gw, gh) = NoobishGlyph.getGlyphMetricsInPx size g
+                width <- width + a + xOffset
 
                 i <- i + 1
         struct(width, newLinePos, i - startPos)
@@ -135,18 +142,9 @@ module NoobishFont =
             if c = ' ' || c = '\n' then
                 wordFound <- true
             else
-                let (success, g) = font.Glyphs.TryGetValue c
-                if success then
+                let g = getGlyph font c
 
-                    (*
-                    let kern =
-                        if i + 1 < text.Length - 1 then
-                            g.Kerning.GetValueOrDefault (text.[i + 1], 0f)
-                        else
-                            0f
-                    *)
-
-                    width <- width + g.Advance * size
+                width <- width + g.Advance * size
                 i <- i + 1
 
         struct(width, i - startPos)
@@ -161,9 +159,8 @@ module NoobishFont =
             if c = '\n' then
                 ()
             else
-                let (success, g) = font.Glyphs.TryGetValue c
-                if success then
-                    width <- width + g.Advance * size
+                let g = getGlyph font c
+                width <- width + g.Advance * size
 
         struct(width, font.Metrics.LineHeight * size)
 
@@ -296,11 +293,17 @@ module NoobishFont =
             if c = '\n' then
                 ()
             else
-                let (success, g) = font.Glyphs.TryGetValue c
-                if success then
-                    width <- width + g.Advance * size
+                let g = getGlyph font c
+                width <- width + g.Advance * size
             i <- i + 1
         i
+
+    let inline leftX (bounds: NoobishRectangle) = bounds.X
+    let inline rightX (bounds: NoobishRectangle) (textSizeX: float32) = bounds.X + bounds.Width - textSizeX
+    let inline topY (bounds: NoobishRectangle) = bounds.Y
+    let inline bottomY (bounds: NoobishRectangle) (textSizeY: float32) = bounds.Y + bounds.Height - textSizeY
+    let inline centerX (bounds: NoobishRectangle) (textSizeX: float32) = bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
+    let inline centerY (bounds: NoobishRectangle) (textSizeY: float32) = bounds.Y + bounds.Height / 2.0f - textSizeY / 2.0f
 
     let calculateBounds
         (font: NoobishFont)
@@ -318,24 +321,19 @@ module NoobishFont =
             else
                 measureSingleLine font fontSize text
 
-        let inline leftX () = bounds.X
-        let inline rightX () = bounds.X + bounds.Width - textSizeX
-        let inline topY () = bounds.Y
-        let inline bottomY () = bounds.Y + bounds.Height - textSizeY
-        let inline centerX () = bounds.X + bounds.Width / 2.0f  - textSizeX / 2.0f
-        let inline centerY () = bounds.Y  + bounds.Height / 2.0f - textSizeY / 2.0f
+
 
         let struct(textStartX, textStartY) =
             match textAlign with
-            | NoobishTextAlignment.TopLeft -> struct(leftX(), topY())
-            | NoobishTextAlignment.TopCenter -> struct(centerX(), topY())
-            | NoobishTextAlignment.TopRight -> struct(rightX(), topY())
-            | NoobishTextAlignment.Left -> struct(leftX(), centerY())
-            | NoobishTextAlignment.Center -> struct(centerX(), centerY())
-            | NoobishTextAlignment.Right -> struct(rightX(), centerY())
-            | NoobishTextAlignment.BottomLeft -> struct(leftX(), bottomY())
-            | NoobishTextAlignment.BottomCenter -> struct(centerX(), bottomY())
-            | NoobishTextAlignment.BottomRight -> struct(rightX(), bottomY())
+            | NoobishTextAlignment.TopLeft -> struct(leftX bounds, topY(bounds))
+            | NoobishTextAlignment.TopCenter -> struct(centerX(bounds) textSizeX, topY(bounds))
+            | NoobishTextAlignment.TopRight -> struct(rightX bounds textSizeX, topY(bounds))
+            | NoobishTextAlignment.Left -> struct(leftX bounds, centerY bounds textSizeY)
+            | NoobishTextAlignment.Center -> struct(centerX bounds textSizeX, centerY bounds textSizeY)
+            | NoobishTextAlignment.Right -> struct(rightX bounds textSizeX, centerY bounds textSizeY)
+            | NoobishTextAlignment.BottomLeft -> struct(leftX bounds, bottomY bounds textSizeY)
+            | NoobishTextAlignment.BottomCenter -> struct(centerX(bounds) textSizeX, bottomY bounds textSizeY)
+            | NoobishTextAlignment.BottomRight -> struct(rightX bounds textSizeX, bottomY bounds textSizeY)
 
         {X = (textStartX + scrollX); Y = (textStartY + scrollY); Width = textSizeX; Height = textSizeY}
 
@@ -406,27 +404,25 @@ type TextBatch (graphics: GraphicsDevice, Resolution: struct(int*int), effect: E
 
         for i = 0 to text.Length - 1 do
             let c = text.[i]
-            let (success, glyph) = font.Glyphs.TryGetValue c
+            let glyph = NoobishFont.getGlyph font c
 
-            if success then
+            let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
 
-                let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) = NoobishGlyph.getGlyphMetricsInPx size glyph
+            let kern =
+                if i + 1 < text.Length then
+                    glyph.Kerning.GetValueOrDefault (text.[i + 1], 0f) * size
+                else
+                    0f
 
-                let kern =
-                    if i + 1 < text.Length then
-                        glyph.Kerning.GetValueOrDefault (text.[i + 1], 0f) * size
-                    else
-                        0f
+            let x = nextPosX + xOffset
+            let y = position.Y + (size * font.Metrics.LineHeight - glyphHeight) - yOffset
 
-                let x = nextPosX + xOffset
-                let y = position.Y + (size * font.Metrics.LineHeight - glyphHeight) - yOffset
+            let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
+            let position = Vector2(x, y) + glyphHalfSize
 
-                let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
-                let position = Vector2(x, y) + glyphHalfSize
+            s.DrawGlyph font position glyphHalfSize layer glyph
 
-                s.DrawGlyph font position glyphHalfSize layer glyph
-
-                nextPosX <- nextPosX + advance + kern
+            nextPosX <- nextPosX + advance + kern
 
 
     member s.DrawSingleLine (font: NoobishFont) (size: int) (position: Vector2) (layer: float32) (color: Color) (text:string) =

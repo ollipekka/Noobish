@@ -510,12 +510,8 @@ module Logic =
             | LocalizedText(bundleId, keyId) ->
                 let localBundleId = $"{bundleId}-{settings.Locale}"
                 let bundle = content.Load<NoobishLocalizationBundle> localBundleId
-                let success, localizedText = bundle.Localizations.TryGetValue keyId
 
-                if success then
-                    text <- localizedText
-                else
-                    text <- $"*%s{text}*"
+                text <- bundle.GetLocalizedText keyId
 
 
             | TextAlign (value) -> textAlign <- value
@@ -581,16 +577,16 @@ module Logic =
             | DoNotConsumeMouseInput ->
                 consumedButtons <- [||]
             | Enabled (value) ->
-                if (not value) && not (elementState.HasFlag(NoobishElementState.Disabled)) then
+                if (not value) && not (NoobishElementState.isSet elementState NoobishElementState.Disabled) then
                     elementState <- NoobishElementState.disable elementState
             | Visible (value) ->
-                if (not value) && not (elementState.HasFlag(NoobishElementState.Hidden)) then
+                if (not value) && not (NoobishElementState.isSet elementState NoobishElementState.Hidden) then
                     elementState <- NoobishElementState.hide elementState
             | Toggled(value) ->
-                if value && not (elementState.HasFlag(NoobishElementState.Toggled)) then
+                if value && not (NoobishElementState.isSet elementState NoobishElementState.Toggled) then
                     elementState <- NoobishElementState.toggle elementState
             | Selected(value) ->
-                if value && not (elementState.HasFlag(NoobishElementState.Selected)) then
+                if value && not (NoobishElementState.isSet elementState NoobishElementState.Selected) then
                     elementState <- NoobishElementState.select elementState
             | ZIndex(value) ->
                 zIndex <- value

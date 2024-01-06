@@ -10,4 +10,12 @@ type NoobishLocalizationBundle = {
     member this.Item
         with get (tid: string) = this.Localizations.[tid]
 
+    member this.GetLocalizedText (key: string) = 
+        let mutable value = ""
+        let success = this.Localizations.TryGetValue(key, &value)
+        if success then 
+            value 
+        else 
+            $"*{key}*"
+
 

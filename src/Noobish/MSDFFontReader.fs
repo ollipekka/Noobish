@@ -52,14 +52,7 @@ type MSDFFontReader () =
         let advance = reader.ReadSingle()
         let atlasBounds = readBounds (reader)
         let planeBounds = readBounds (reader)
-        let kerning =
-            let success, result =
-                kerning.TryGetValue unicode
-
-            if success then
-                result
-            else
-                Dictionary()
+        let kerning = kerning.GetOrAdd unicode (fun _ -> Dictionary())
 
         {Unicode = unicode; Advance = advance; AtlasBounds = atlasBounds; PlaneBounds = planeBounds; Kerning = kerning }
 

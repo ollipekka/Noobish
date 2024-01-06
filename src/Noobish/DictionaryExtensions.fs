@@ -6,7 +6,8 @@ module internal DictionaryExtensions =
 
         member d.GetOrAdd (key: 'TKey) (init: unit -> 'TValue) =
 
-            let (success, value) = d.TryGetValue(key)
+            let mutable value = Unchecked.defaultof<'TValue>
+            let success = d.TryGetValue(key, &value)
 
             if success then
                 value
