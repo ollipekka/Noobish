@@ -69,6 +69,11 @@ type NoobishUI = {
 [<RequireQualifiedAccess>]
 module NoobishMonoGame =
 
+    let rasterizerState = 
+        let rasterizerState = new RasterizerState() { ScissorTestEnable = true}
+        rasterizerState.ScissorTestEnable <- true
+        rasterizerState
+
     open Noobish
     open Noobish.Internal
     let private createRectangle (x: float32) (y:float32) (width: float32) (height: float32) =
@@ -529,8 +534,6 @@ module NoobishMonoGame =
 
         let oldScissorRect = graphics.ScissorRectangle
 
-        let rasterizerState = new RasterizerState()
-        rasterizerState.ScissorTestEnable <- true
         graphics.ScissorRectangle <- outerRectangle
         spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
@@ -667,6 +670,8 @@ module NoobishMonoGame =
 
     let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (textBatch: TextBatch) (ui: NoobishUI)  (time: TimeSpan) =
 
+        let oldRasterizerState = graphics.RasterizerState
+        graphics.RasterizerState <- rasterizerState
         let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
 
         for layer in ui.Layers do
@@ -678,6 +683,8 @@ module NoobishMonoGame =
 
         if ui.Settings.Debug || ui.FPSEnabled then
             drawFps content spriteBatch textBatch ui time
+            
+        graphics.RasterizerState <- oldRasterizerState
 
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
 
