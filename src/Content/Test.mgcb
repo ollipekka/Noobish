@@ -2,6 +2,17 @@
 /reference:../../bin/net6.0/Noobish.PipelineExtension.dll
 /reference:../../bin/net6.0/Newtonsoft.Json.dll
 
+#begin Pixel.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=0,0,0,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Pixel.png
 
 #begin TestAtlas/TestAtlas.json
 /importer:TextureAtlasImporter

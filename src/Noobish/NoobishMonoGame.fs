@@ -70,7 +70,7 @@ type NoobishUI = {
 module NoobishMonoGame =
 
     let rasterizerState = 
-        let rasterizerState = new RasterizerState() { ScissorTestEnable = true}
+        let rasterizerState = new RasterizerState()
         rasterizerState.ScissorTestEnable <- true
         rasterizerState
 
@@ -778,30 +778,27 @@ module NoobishMonoGame =
                         ui.State.QueueEvent cs.Id (ChangeModel m')
                     )
 
-        for kvp in ui.State.ElementsById do
-            let c = kvp.Value
-            let noobishKey = kvp.Value.KeyboardShortcut
+        for struct(noobishKey: NoobishKeyboardShortcut, componentId: string) in ui.State.KeyboardShortcuts do
 
-            match kvp.Value.KeyboardShortcut with
+            match noobishKey with
             | NoobishKeyboardShortcut.KeyPressed (k) ->
                 let key = noobishKeyToMonogameKey k
 
-                let cs = ui.State.GetById kvp.Key
+                let cs = ui.State.GetById componentId
                 if cs.Enabled && current.IsKeyUp key && previous.IsKeyDown key then
-                    ui.State.QueueEvent c.Id (InvokeClick)
+                    ui.State.QueueEvent cs.Id (InvokeClick)
             | NoobishKeyboardShortcut.CtrlKeyPressed (k) ->
                 let key = noobishKeyToMonogameKey k
                 
-                let cs = ui.State.GetById kvp.Key
+                let cs = ui.State.GetById componentId
                 if cs.Enabled && (current.IsKeyDown Keys.LeftControl || current.IsKeyDown Keys.RightControl) && current.IsKeyUp key && previous.IsKeyDown key then
-                    ui.State.QueueEvent c.Id (InvokeClick)
+                    ui.State.QueueEvent cs.Id (InvokeClick)
             | NoobishKeyboardShortcut.AltKeyPressed (k) ->
-
                 let key = noobishKeyToMonogameKey k
                 
-                let cs = ui.State.GetById kvp.Key
+                let cs = ui.State.GetById componentId
                 if cs.Enabled && (current.IsKeyDown Keys.LeftAlt || current.IsKeyDown Keys.RightAlt) && current.IsKeyUp key && previous.IsKeyDown key then
-                    ui.State.QueueEvent c.Id (InvokeClick)
+                    ui.State.QueueEvent cs.Id (InvokeClick)
             | NoobishKeyboardShortcut.NoShortcut -> ()
 
 

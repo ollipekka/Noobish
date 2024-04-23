@@ -227,8 +227,13 @@ type NoobishState () =
     let elementsById = Dictionary<string, NoobishLayoutElement>()
     let elementStateById = Dictionary<string, NoobishLayoutElementState>()
     let tempElementStateById = Dictionary<string, NoobishLayoutElementState>()
+
+    let keyboardShortcuts = ResizeArray<struct(NoobishKeyboardShortcut*string)>()
+
     member val ElementsById = (elementsById :> IReadOnlyDictionary<string, NoobishLayoutElement>)
     member val ElementStateById = (elementStateById :> IReadOnlyDictionary<string, NoobishLayoutElementState>)
+
+    member val KeyboardShortcuts = keyboardShortcuts :> IReadOnlyList<struct(NoobishKeyboardShortcut*string)>
     member val FocusedElementId: Option<string> = None with get, set
 
     member val Events = Queue<struct(string*ComponentMessage)>()
@@ -252,12 +257,16 @@ type NoobishState () =
 
         elementsById.Clear()
         elementStateById.Clear()
+        keyboardShortcuts.Clear()
 
     member s.EndUpdate() =
         tempElementStateById.Clear()
 
     member s.UpdateState (e: NoobishLayoutElement) (state: NoobishElementState)  =
         elementsById.[e.Id] <- e
+
+        if e.KeyboardShortcut <> NoobishKeyboardShortcut.NoShortcut then 
+            keyboardShortcuts.Add (struct(e.KeyboardShortcut, e.Id))
 
         let mutable es = Unchecked.defaultof<NoobishLayoutElementState>
         let success = tempElementStateById.TryGetValue(e.Id, &es)
