@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             //"preLaunchTask": "build",
-            "program": "${workspaceFolder}/bin/net6.0/Noobish.Demo.dll",
+            "program": "${workspaceFolder}/bin/net8.0/Noobish.Demo.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
