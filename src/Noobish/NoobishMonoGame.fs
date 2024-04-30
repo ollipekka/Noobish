@@ -28,7 +28,7 @@ type NoobishUI = {
     Settings: NoobishSettings
     State: NoobishState
     Elements: Dictionary<string, NoobishLayoutElement>
-    mutable StyleSheet: NoobishStyleSheet
+    mutable StyleSheetId: string
     mutable FPSEnabled: bool
     mutable FPS: int
     mutable FPSCounter: int
@@ -129,16 +129,12 @@ module NoobishMonoGame =
 
 
     let create (content: ContentManager) (styleSheetId: string) pixel (virtualSize) (viewportSize) (settings: NoobishSettings) =
-
-        let styleSheet = content.Load<NoobishStyleSheet> styleSheetId
-
-
         {
             VirtualResolution = virtualSize
             ViewportSize = viewportSize
             WhitePixel = pixel
             Content = content
-            StyleSheet = styleSheet
+            StyleSheetId = styleSheetId
             Settings = settings
             State = NoobishState()
             Elements = Dictionary()
@@ -647,8 +643,9 @@ module NoobishMonoGame =
 
         ui.FPSCounter <- ui.FPSCounter + 1
 
+        let styleSheet = content.Load<NoobishStyleSheet> ui.StyleSheetId
 
-        let fontId = ui.StyleSheet.GetFont "Default" "default"
+        let fontId = styleSheet.GetFont "Default" "default"
         let font = content.Load<NoobishFont> fontId
         let struct(areaWidth, areaHeight) = NoobishFont.measureSingleLine font 32 "255"
 
@@ -670,6 +667,7 @@ module NoobishMonoGame =
 
     let draw (content: ContentManager) (graphics: GraphicsDevice) (spriteBatch: SpriteBatch) (textBatch: TextBatch) (ui: NoobishUI)  (time: TimeSpan) =
 
+        let styleSheet = content.Load<NoobishStyleSheet> ui.StyleSheetId
         let oldRasterizerState = graphics.RasterizerState
         graphics.RasterizerState <- rasterizerState
         let source = Rectangle(0, 0, graphics.Viewport.Width, graphics.Viewport.Height)
@@ -678,7 +676,7 @@ module NoobishMonoGame =
             layer |> Array.iter(fun e ->
                 let es = ui.State.[e.Id]
                 if es.Visible then
-                    drawComponent ui.StyleSheet ui.State content ui.WhitePixel graphics spriteBatch textBatch ui.Settings.Debug time e 0.0f 0.0f source
+                    drawComponent styleSheet ui.State content ui.WhitePixel graphics spriteBatch textBatch ui.Settings.Debug time e 0.0f 0.0f source
             )
 
         if ui.Settings.Debug || ui.FPSEnabled then
@@ -688,6 +686,7 @@ module NoobishMonoGame =
 
     let updateMouse (ui: NoobishUI) (prevState: MouseState) (curState: MouseState) (gameTime: GameTime) =
 
+        let styleSheet = ui.Content.Load<NoobishStyleSheet> (ui.StyleSheetId)
         let mousePosition = curState.Position
         let struct(viewportWidth, viewportHeight) = ui.ViewportSize
         let struct(virtualWidth, virtualHeight) = ui.VirtualResolution
@@ -702,7 +701,7 @@ module NoobishMonoGame =
         elif prevState.LeftButton = ButtonState.Pressed && curState.LeftButton = ButtonState.Released then
 
 
-            Input.click ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime virtualMouseX virtualMouseY 0.0f 0.0f
+            Input.click ui.Content ui.State styleSheet ui.Layers gameTime.TotalGameTime virtualMouseX virtualMouseY 0.0f 0.0f
                 |> ignore
 
         let scrollWheelValue = curState.ScrollWheelValue - prevState.ScrollWheelValue
@@ -813,6 +812,7 @@ module NoobishMonoGame =
 
     let updateMobile (ui: NoobishUI) (_prevState: TouchCollection) (curState: TouchCollection) (gameTime: GameTime) =
 
+        let styleSheet = ui.Content.Load<NoobishStyleSheet> ui.StyleSheetId
         for touch in curState  do
             match touch.State with
             | TouchLocationState.Pressed ->
@@ -828,6 +828,6 @@ module NoobishMonoGame =
                 let mutable i = ui.Layers.Length - 1
                 let mousePosition = touch.Position
                 while not handled && i >= 0 do
-                    handled <- Noobish.Input.click ui.Content ui.State ui.StyleSheet ui.Layers gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
+                    handled <- Noobish.Input.click ui.Content ui.State styleSheet ui.Layers gameTime.TotalGameTime mousePosition.X mousePosition.Y 0.0f 0.0f
                     i <- i - 1
             | _ -> ()

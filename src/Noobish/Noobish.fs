@@ -837,6 +837,7 @@ module Logic =
                 0.0f
             else
                 newChildren |> Seq.map (fun c -> c.OuterWidth) |> Seq.max
+                
 
         let parentComponent =
             match parentComponent.Layout with

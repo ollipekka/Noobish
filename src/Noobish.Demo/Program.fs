@@ -2,6 +2,10 @@
 
 open System
 
+open Serilog
+open Serilog.Configuration
+open Serilog.Sinks
+
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
@@ -459,7 +463,7 @@ module Github =
                 ]
         ]
 
-let init _game () =
+let init (game: NoobishGame<unit, DemoMessage, DemoModel>) () =
     { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg(ShowButtons)
 
 let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
@@ -490,11 +494,11 @@ let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: Gam
         model, Cmd.none
     | ToggleLightMode ->
         let nui = game.Services.GetService<NoobishUI>()
-        nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Light/Light"
+        nui.StyleSheetId <- "Light/Light"
         {model with StyleMode = LightMode}, Cmd.none
     | ToggleDarkMode ->
         let nui = game.Services.GetService<NoobishUI>()
-        nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Dark/Dark"
+        nui.StyleSheetId <- "Dark/Dark"
         {model with StyleMode = DarkMode}, Cmd.none
     | SelectListItem index ->
         {model with SelectedListItemIndex = index}, Cmd.none
@@ -573,7 +577,13 @@ let draw game (model) (gameTime: GameTime) = ()
 
 [<EntryPoint>]
 let main argv =
+    let logger =
+        LoggerConfiguration()
+            .WriteTo.Console()
+            .MinimumLevel.Debug()
+            .CreateLogger()
 
+    Log.Logger <- logger
     Program2.create ignore init update view tick draw
         |> Program2.withContentRoot "Content/"
         |> Program2.withTheme "Dark/Dark"

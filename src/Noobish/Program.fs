@@ -1,5 +1,6 @@
 namespace Noobish
 
+open Serilog 
 open System
 open System.Collections.Generic
 
@@ -7,6 +8,7 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
 open Microsoft.Xna.Framework.Input.Touch
+open Noobish.Styles
 
 type Dispatch2<'msg> = 'msg -> unit
 
@@ -91,7 +93,8 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     abstract member DrawInternal: 'model -> GameTime -> unit
 
-
+    member val Noobish2 = Noobish2(256)
+    member _this.TextBatch with get() = textBatch
     member _this.State with get() = state
     member _this.UI with get() = nui
     member this.VirtualResolution with get() =
@@ -138,6 +141,8 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         base.Initialize()
 
+
+
         this.GraphicsDevice.PresentationParameters.MultiSampleCount <- 4
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         this.GraphicsDeviceManager.ApplyChanges();
@@ -168,6 +173,53 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
         textBatch <- new TextBatch(this.GraphicsDevice, this.VirtualResolution, fontEffect, 1024)
 
         renderTarget <- new RenderTarget2D(this.GraphicsDevice, virtualWidth, virtualHeight)
+
+        let nui2 = game.Noobish2
+        
+        let window2 = 
+            nui2.Window()
+            |> nui2.SetMinWidth 150
+            |> nui2.Children [|
+                nui2.Header "Hello"
+                nui2.HorizontalRule()
+                nui2.Button "One" (fun _ -> ( Log.Logger.Information "One")) 
+                    |> nui2.FillHorizontal
+                nui2.Button "Two" (fun _ -> ( Log.Logger.Information "Two"))
+                nui2.Button "Three" (fun _ -> (Log.Logger.Information "Three"))
+            |]
+        
+        
+        let window3 = 
+            nui2.Window()
+            |> nui2.SetPosition (200, 0)
+            |> nui2.Children [|
+                nui2.Header "Hello 2"
+                nui2.HorizontalRule()
+                nui2.Button "One 2" (fun _ -> (Log.Logger.Information "One 2"))
+                nui2.Button "Two 2" (fun _ -> (Log.Logger.Information "Two 2"))
+                nui2.Button "Three 2" (fun _ -> (Log.Logger.Information "Three 2"))
+            |] 
+
+        let window3 = 
+            nui2.Window()
+            |> nui2.WithGrid(2, 2)
+            |> nui2.SetPosition (0, 200)
+            |> nui2.Children [|
+                nui2.Button "1" (fun _ -> (Log.Logger.Information "1"))
+                    |> nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1 
+                    |> nui2.SetFill
+                nui2.Button "2" (fun _ -> (Log.Logger.Information "2"))
+                    |>nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1
+                nui2.Button "3" (fun _ -> (Log.Logger.Information "3"))
+                    |>nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1
+                nui2.Button "44444" (fun _ -> (Log.Logger.Information "4444"))
+                    |>nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1
+            |] 
+        ()
 
 
     override this.LoadContent() =
@@ -204,6 +256,9 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
                 Cmd.unpack this.Messages cmd
 
+
+        let styleSheet = game.Content.Load<NoobishStyleSheet> nui.StyleSheetId
+
         if tempMessages.Count > 0 then
 
             tempMessages.Clear()
@@ -223,7 +278,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
             let struct(width, height) = nui.VirtualResolution
 
             nui.State.BeginUpdate()
-            nui.Layers <- layers |> List.mapi (fun i components -> Logic.layout nui.Content nui.StyleSheet nui.Settings nui.State (i + 1) (float32 width) (float32 height) components) |> List.toArray
+            nui.Layers <- layers |> List.mapi (fun i components -> Logic.layout nui.Content styleSheet nui.Settings nui.State (i + 1) (float32 width) (float32 height) components) |> List.toArray
             nui.State.EndUpdate()
 
             nui.Elements.Clear()
@@ -238,6 +293,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         nui.State.ProcessEvents gameTime
 
+        this.Noobish2.Update(game.Content) nui.StyleSheetId
 
 
     override this.Draw (gameTime) =
@@ -245,7 +301,8 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         this.GraphicsDevice.SetRenderTarget(renderTarget)
         this.GraphicsDevice.Clear(Color.Transparent)
-        NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
+        //NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
+        this.Noobish2.Draw game.GraphicsDevice game.Content spriteBatch textBatch nui.StyleSheetId false gameTime 
         this.GraphicsDevice.SetRenderTarget(null)
 
         this.GraphicsDevice.Clear(Color.Black)
