@@ -23,6 +23,7 @@ let loremIpsum2 =
 
 type DemoMessage =
     | ShowContainers
+    | ShowNoobish2Demo
     | ShowButtons
     | ShowText
     | ShowSliders
@@ -39,7 +40,7 @@ type DemoMessage =
 
 type StyleMode = LightMode | DarkMode
 
-type ViewState = | Containers | Buttons | Text | Slider | Github
+type ViewState = | Noobish2Demo | Containers | Buttons | Text | Slider | Github
 
 type DemoModel = {
     State: ViewState
@@ -53,6 +54,56 @@ type DemoModel = {
     SelectedListItemIndex: int
 } with
     member m.SelectedListItem with get() = m.ListModel.[m.SelectedListItemIndex]
+
+module Noobish2Demo = 
+
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model dispatch =
+        let nui2 = game.Noobish2
+        
+        let window2 = 
+            nui2.Window()
+            |> nui2.SetMinWidth 150
+            |> nui2.Children [|
+                nui2.Header "Hello"
+                nui2.HorizontalRule()
+                nui2.Button "One" (fun _ -> ( Log.Logger.Information "One")) 
+                    |> nui2.FillHorizontal
+                nui2.Button "Two" (fun _ -> ( Log.Logger.Information "Two"))
+                nui2.Button "Three" (fun _ -> (Log.Logger.Information "Three"))
+            |]
+        
+        
+        let window3 = 
+            nui2.Window()
+            |> nui2.SetPosition (200, 0)
+            |> nui2.Children [|
+                nui2.Header "Hello 2"
+                nui2.HorizontalRule()
+                nui2.Button "One 2" (fun _ -> (Log.Logger.Information "One 2"))
+                nui2.Button "Two 2" (fun _ -> (Log.Logger.Information "Two 2"))
+                nui2.Button "Three 2" (fun _ -> (Log.Logger.Information "Three 2"))
+            |] 
+
+        let window3 = 
+            nui2.Window()
+            |> nui2.WithGrid(2, 2)
+            |> nui2.SetPosition (0, 200)
+            |> nui2.Children [|
+                nui2.Button "1" (fun _ -> (Log.Logger.Information "1"))
+                    |> nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1 
+                    |> nui2.SetFill
+                nui2.Button "2" (fun _ -> (Log.Logger.Information "2"))
+                    |>nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1
+                nui2.Button "3" (fun _ -> (Log.Logger.Information "3"))
+                    |>nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1
+                nui2.Button "44444" (fun _ -> (Log.Logger.Information "4444"))
+                    |>nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1
+            |] 
+        ()
 
 
 module Text =
@@ -468,6 +519,8 @@ let init (game: NoobishGame<unit, DemoMessage, DemoModel>) () =
 
 let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
     match message with
+    | ShowNoobish2Demo ->
+        {model with State = Noobish2Demo}, Cmd.none
     | ShowButtons ->
         {model with State = Buttons}, Cmd.none
     | ShowContainers ->
@@ -507,6 +560,7 @@ let view game (model: DemoModel) dispatch =
 
     let scrollItems =
         [
+            button [text "Noobish2"; onClick (fun gameTime -> dispatch ShowNoobish2Demo); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
             button [text "Buttons"; onClick (fun gameTime -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
             button [text "Text"; onClick (fun gameTime -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
             button [text "Containers"; onClick (fun gameTime -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
@@ -516,6 +570,9 @@ let view game (model: DemoModel) dispatch =
 
     let title, content  =
         match model.State with
+        | Noobish2Demo ->
+            Noobish2Demo.view game model dispatch
+            "Noobish2Demo", []
         | Buttons -> "Buttons", Buttons.view model dispatch
         | Containers -> "Containers", Containers.view model dispatch
         | Text -> "Labels", Text.view model dispatch

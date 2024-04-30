@@ -174,53 +174,6 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         renderTarget <- new RenderTarget2D(this.GraphicsDevice, virtualWidth, virtualHeight)
 
-        let nui2 = game.Noobish2
-        
-        let window2 = 
-            nui2.Window()
-            |> nui2.SetMinWidth 150
-            |> nui2.Children [|
-                nui2.Header "Hello"
-                nui2.HorizontalRule()
-                nui2.Button "One" (fun _ -> ( Log.Logger.Information "One")) 
-                    |> nui2.FillHorizontal
-                nui2.Button "Two" (fun _ -> ( Log.Logger.Information "Two"))
-                nui2.Button "Three" (fun _ -> (Log.Logger.Information "Three"))
-            |]
-        
-        
-        let window3 = 
-            nui2.Window()
-            |> nui2.SetPosition (200, 0)
-            |> nui2.Children [|
-                nui2.Header "Hello 2"
-                nui2.HorizontalRule()
-                nui2.Button "One 2" (fun _ -> (Log.Logger.Information "One 2"))
-                nui2.Button "Two 2" (fun _ -> (Log.Logger.Information "Two 2"))
-                nui2.Button "Three 2" (fun _ -> (Log.Logger.Information "Three 2"))
-            |] 
-
-        let window3 = 
-            nui2.Window()
-            |> nui2.WithGrid(2, 2)
-            |> nui2.SetPosition (0, 200)
-            |> nui2.Children [|
-                nui2.Button "1" (fun _ -> (Log.Logger.Information "1"))
-                    |> nui2.SetColspan 1 
-                    |> nui2.SetRowspan 1 
-                    |> nui2.SetFill
-                nui2.Button "2" (fun _ -> (Log.Logger.Information "2"))
-                    |>nui2.SetColspan 1 
-                    |> nui2.SetRowspan 1
-                nui2.Button "3" (fun _ -> (Log.Logger.Information "3"))
-                    |>nui2.SetColspan 1 
-                    |> nui2.SetRowspan 1
-                nui2.Button "44444" (fun _ -> (Log.Logger.Information "4444"))
-                    |>nui2.SetColspan 1 
-                    |> nui2.SetRowspan 1
-            |] 
-        ()
-
 
     override this.LoadContent() =
         ()
@@ -301,7 +254,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         this.GraphicsDevice.SetRenderTarget(renderTarget)
         this.GraphicsDevice.Clear(Color.Transparent)
-        //NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
+        NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
         this.Noobish2.Draw game.GraphicsDevice game.Content spriteBatch textBatch nui.StyleSheetId false gameTime 
         this.GraphicsDevice.SetRenderTarget(null)
 

@@ -153,9 +153,7 @@ type Noobish2(maxCount: int) =
 
     let childrenIds = Array.init maxCount (fun _ -> ResizeArray())
 
-    let block = Array.create maxCount false
-
-
+    member val Block = Array.create maxCount false
     member val Text = Array.create maxCount ""
 
     member val Textwrap = Array.create maxCount false
@@ -209,7 +207,7 @@ type Noobish2(maxCount: int) =
         toLayout.Add i
 
         this.Count <- this.Count + 1
-        
+
         cid
 
     member this.Window() =
@@ -226,7 +224,7 @@ type Noobish2(maxCount: int) =
     member this.Header (t: string) = 
         let cid = this.Create "Header"
         this.Text.[cid.Index] <- t
-        block.[cid.Index] <- true
+        this.Block.[cid.Index] <- true
 
         cid
 
@@ -245,7 +243,6 @@ type Noobish2(maxCount: int) =
     member this.Button (t: string) (onClick: OnClickEvent -> unit) = 
         let cid = this.Create "Button"
         this.Text.[cid.Index] <- t
-        block.[cid.Index] <- true
         this.OnClick.[cid.Index] <- onClick
         cid
 
@@ -256,7 +253,7 @@ type Noobish2(maxCount: int) =
 
     member this.Div () = 
         let cid = this.Create "Space"
-        block.[cid.Index] <- true
+        this.Block.[cid.Index] <- true
 
         cid     
     member this.Grid (rows: int) (cols: int) = 
@@ -269,7 +266,7 @@ type Noobish2(maxCount: int) =
     member this.HorizontalRule () = 
         let cid = this.Create "HorizontalRule"
         ids.[cid.Index] <- cid
-        block.[cid.Index] <- true
+        this.Block.[cid.Index] <- true
         this.Fill.[cid.Index] <- {Horizontal = true; Vertical = false} 
         cid
 
@@ -375,6 +372,7 @@ type Noobish2(maxCount: int) =
         while j < children.Count do 
             let cid = children.[j]
 
+            let block = this.Block.[cid.Index]
             let bounds = this.Bounds.[cid.Index]
             let fill = this.Fill.[cid.Index]
             let width = 
@@ -383,7 +381,7 @@ type Noobish2(maxCount: int) =
                 else 
                     bounds.Width 
 
-            if (childX + width) <= contentWidth + 0.1f then 
+            if not block && (childX + width) <= contentWidth + 0.1f then 
                 let newBounds = {bounds with X = contentX + childX; Y = contentY + childY; Width = width}
                 this.Bounds.[cid.Index] <- newBounds
                 childX <- childX + width
@@ -708,6 +706,23 @@ type Noobish2(maxCount: int) =
             this.DrawComponent graphics content spriteBatch textBatch styleSheet false i gameTime
 
 
+    member this.Clear() =
+        for i = 0 to this.Count - 1 do 
+            free.Enqueue(i, i)
+            ids.[i] <- UIComponentId.empty
+            themeIds.[i] <- ""
 
+            this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+            this.MinSize.[i] <- {Width = 0f; Height = 0f}
+            this.Padding.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+            this.Margin.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+
+            this.Layer.[i] <- -1
+            this.Layout.[i] <- Layout.None
+
+            this.Text.[i] <- ""
+            this.Textwrap.[i] <- false
+
+            this.OnClick.[i] <- ignore
 
 
