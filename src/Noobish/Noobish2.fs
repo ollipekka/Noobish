@@ -132,11 +132,9 @@ module UIComponentId =
 
 type Noobish2(maxCount: int) =
 
+    let mutable waitForLayout = true
+
     let drawQueue = PriorityQueue<int, int>()
-    let layoutQueue = PriorityQueue<int, int>()
-
-    let sizeQueue = PriorityQueue<int, int>()
-
 
     let toLayout = ResizeArray<int>()
 
@@ -299,7 +297,6 @@ type Noobish2(maxCount: int) =
 
     member private this.SetLayout (layout: Layout) (index: int) =
         this.Layout.[index] <- layout
-        toLayout.Add index
 
     member this.SetRowspan (rowspan: int) (cid: UIComponentId) =
         let index = this.GetIndex cid 
@@ -476,21 +473,6 @@ type Noobish2(maxCount: int) =
         | Layout.Absolute -> failwith "Not implemented"
         | Layout.None -> ()
 
-    member this.LayoutComponents (content: ContentManager) (styleSheet: NoobishStyleSheet) =
-        if toLayout.Count > 0 then 
-            for i = 0 to this.Count - 1 do 
-                let themeId = themeIds.[i]
-                let (top, left, bottom, right) = styleSheet.GetMargin themeId "default"
-                this.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
-
-                let themeId = themeIds.[i]
-                let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
-                this.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
-
-            for j = 0 to toLayout.Count - 1 do 
-                this.LayoutComponent content styleSheet 0f 0f this.ScreenWidth this.ScreenHeight toLayout.[j]
-
-            toLayout.Clear()
 
     member this.DrawBackground (styleSheet: NoobishStyleSheet) (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (gameTime: GameTime) (i: int)=
 
@@ -613,12 +595,29 @@ type Noobish2(maxCount: int) =
             this.ScreenWidth <- screenWidth
             this.ScreenHeight <- screenHeight
             // Relayout
+            waitForLayout <- true
+
+        
+
+        let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
+        if waitForLayout && this.Count > 0 then 
+
+            for i = 0 to this.Count - 1 do 
+                let themeId = themeIds.[i]
+                let (top, left, bottom, right) = styleSheet.GetMargin themeId "default"
+                this.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+
+                let themeId = themeIds.[i]
+                let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
+                this.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+
             for i = 0 to this.Count - 1 do 
                 if parentIds.[i] = UIComponentId.empty then 
-                    toLayout.Add i
-        
-        let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
-        this.LayoutComponents (content) (styleSheet)
+                    this.LayoutComponent content styleSheet 0f 0f this.ScreenWidth this.ScreenHeight i
+
+            waitForLayout <- false
+
+
 
         for i = 0 to this.Count - 1 do 
             let layer = this.Layer.[i]
@@ -636,17 +635,29 @@ type Noobish2(maxCount: int) =
             ids.[i] <- UIComponentId.empty
             themeIds.[i] <- ""
 
+            parentIds.[i] <- UIComponentId.empty
+
+            this.Block.[i] <- false
+
+            this.Text.[i] <- ""
+            this.Textwrap.[i] <- false
+
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+            this.OverflowSize.[i] <- {Width = 0f; Height = 0f}
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
+            this.Fill.[i] <- {Horizontal = false; Vertical = false}
             this.Padding.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
             this.Margin.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
 
             this.Layer.[i] <- -1
             this.Layout.[i] <- Layout.None
 
-            this.Text.[i] <- ""
-            this.Textwrap.[i] <- false
-
+            this.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
             this.OnClick.[i] <- ignore
+
+            childrenIds.[i].Clear()
+        this.Count <- 0
+
+        waitForLayout <- true
 
 

@@ -226,6 +226,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
                     getElements elements overlays e2
 
             let dispatch = this.Dispatch
+            this.Noobish2.Clear()
             let layers = this.ViewInternal state dispatch
 
             let struct(width, height) = nui.VirtualResolution
