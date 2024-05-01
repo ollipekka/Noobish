@@ -246,7 +246,6 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         nui.State.ProcessEvents gameTime
 
-        this.Noobish2.Update(game.Content) nui.StyleSheetId
 
 
     override this.Draw (gameTime) =

@@ -62,7 +62,7 @@ module Noobish2Demo =
         
         let window2 = 
             nui2.Window()
-            |> nui2.SetMinWidth 150
+            |> nui2.SetSize (150, 200)
             |> nui2.Children [|
                 nui2.Header "Hello"
                 nui2.HorizontalRule()
@@ -86,7 +86,7 @@ module Noobish2Demo =
 
         let window3 = 
             nui2.Window()
-            |> nui2.WithGrid(2, 2)
+            |> nui2.SetGrid(2, 2)
             |> nui2.SetPosition (0, 200)
             |> nui2.Children [|
                 nui2.Button "1" (fun _ -> (Log.Logger.Information "1"))
@@ -306,7 +306,75 @@ module Containers =
 
 
 module Buttons =
-    let view model dispatch =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model dispatch =
+
+        let ui = game.Noobish2
+
+        let gridId = 
+            ui.Grid(2, 2)
+            |> ui.Children 
+                [|
+                    ui.Grid (3, 3)
+                        |> ui.Children [|
+                            ui.PanelHorizontal ()
+                                |> ui.SetColspan 3
+                                |> ui.Children [|
+                                    ui.Button "1" ignore 
+                                    ui.Button "2" ignore 
+                                    ui.Button "3" ignore
+                                |]
+                            ui.PanelHorizontal ()
+                                |> ui.SetColspan 3
+                                |> ui.Children [|
+                                    ui.Button "4" ignore 
+                                    ui.Button "5" ignore 
+                                    ui.Button "6" ignore
+                                |]
+                            ui.PanelHorizontal ()
+                                |> ui.SetColspan 3
+                                |> ui.Children [|
+                                    ui.Button "7" ignore 
+                                    ui.Button "8" ignore 
+                                    ui.Button "9" ignore
+                                |]
+                            |]
+                    ui.Grid (3, 3)
+                        |> ui.Children [|
+                            
+                            ui.PanelVertical ()
+                                |> ui.SetRowspan 3
+                                |> ui.Children [|
+                                    ui.Button "1" ignore 
+                                        |> ui.FillHorizontal
+                                    ui.Button "2" ignore 
+                                    ui.Button "3" ignore
+                                |]
+                            
+                            ui.PanelVertical ()
+                                |> ui.SetRowspan 3
+                                |> ui.Children [|
+                                    ui.Button "4" ignore 
+                                    ui.Button "5" ignore 
+                                    ui.Button "6" ignore
+                                |]
+                            ui.PanelVertical ()
+                                |> ui.SetRowspan 3
+                                |> ui.Children [|
+                                    ui.Button "7" ignore 
+                                    ui.Button "8" ignore 
+                                    ui.Button "9" ignore
+                                |]
+                            
+                            |]
+                    ui.Div ()
+                        |> ui.Children [|
+                                ui.Header "Three"
+                            |]
+                    ui.Div ()
+                        |> ui.Children [|
+                                ui.Header "four"
+                            |]
+                |]
 
         [
             grid 2 2
@@ -560,7 +628,7 @@ let view game (model: DemoModel) dispatch =
 
     let scrollItems =
         [
-            button [text "Noobish2"; onClick (fun gameTime -> dispatch ShowNoobish2Demo); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
+            button [text "Noobish2"; onClick (fun gameTime -> dispatch ShowNoobish2Demo); fillHorizontal; toggled (model.State = Noobish2Demo); padding model.Padding; margin model.Margin; ]
             button [text "Buttons"; onClick (fun gameTime -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
             button [text "Text"; onClick (fun gameTime -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
             button [text "Containers"; onClick (fun gameTime -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
@@ -573,7 +641,7 @@ let view game (model: DemoModel) dispatch =
         | Noobish2Demo ->
             Noobish2Demo.view game model dispatch
             "Noobish2Demo", []
-        | Buttons -> "Buttons", Buttons.view model dispatch
+        | Buttons -> "Buttons", Buttons.view game model dispatch
         | Containers -> "Containers", Containers.view model dispatch
         | Text -> "Labels", Text.view model dispatch
         | Slider -> "Slider", Slider.view model dispatch
