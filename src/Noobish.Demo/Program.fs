@@ -310,71 +310,46 @@ module Buttons =
 
         let ui = game.Noobish2
 
+        (**)
         let gridId = 
             ui.Grid(2, 2)
             |> ui.Children 
                 [|
-                    ui.Grid (3, 3)
-                        |> ui.Children [|
-                            ui.PanelHorizontal ()
-                                |> ui.SetColspan 3
-                                |> ui.Children [|
-                                    ui.Button "1" ignore 
-                                    ui.Button "2" ignore 
-                                    ui.Button "3" ignore
-                                |]
-                            ui.PanelHorizontal ()
-                                |> ui.SetColspan 3
-                                |> ui.Children [|
-                                    ui.Button "4" ignore 
-                                    ui.Button "5" ignore 
-                                    ui.Button "6" ignore
-                                |]
-                            ui.PanelHorizontal ()
-                                |> ui.SetColspan 3
-                                |> ui.Children [|
-                                    ui.Button "7" ignore 
-                                    ui.Button "8" ignore 
-                                    ui.Button "9" ignore
-                                |]
-                            |]
-                    ui.Grid (3, 3)
-                        |> ui.Children [|
-                            
-                            ui.PanelVertical ()
-                                |> ui.SetRowspan 3
-                                |> ui.Children [|
-                                    ui.Button "1" ignore 
-                                        |> ui.FillHorizontal
-                                    ui.Button "2" ignore 
-                                    ui.Button "3" ignore
-                                |]
-                            
-                            ui.PanelVertical ()
-                                |> ui.SetRowspan 3
-                                |> ui.Children [|
-                                    ui.Button "4" ignore 
-                                    ui.Button "5" ignore 
-                                    ui.Button "6" ignore
-                                |]
-                            ui.PanelVertical ()
-                                |> ui.SetRowspan 3
-                                |> ui.Children [|
-                                    ui.Button "7" ignore 
-                                    ui.Button "8" ignore 
-                                    ui.Button "9" ignore
-                                |]
-                            
-                            |]
-                    ui.Div ()
-                        |> ui.Children [|
-                                ui.Header "Three"
-                            |]
-                    ui.Div ()
-                        |> ui.Children [|
-                                ui.Header "four"
-                            |]
+                    ui.PanelVertical ()
+                    |> ui.Children [|
+                        ui.Button "Padding 0" (fun gameTime -> dispatch (ChangePadding 0))
+                            |> ui.SetFillHorizontal
+                        ui.Button "Padding 5" (fun gameTime -> dispatch (ChangePadding 5)) 
+                            |> ui.SetFillHorizontal
+                        ui.Button "Padding 10" (fun gameTime -> dispatch (ChangePadding 10))
+                            |> ui.SetFillHorizontal
+                        ui.Button "Padding 15" (fun gameTime -> dispatch (ChangePadding 15))
+                            |> ui.SetFillHorizontal
+                    |]
+                    ui.PanelVertical ()
+                    |> ui.Children [|
+                        ui.Button "Margin 0" (fun gameTime -> dispatch (ChangeMargin 0))
+                            |> ui.SetFillHorizontal
+                        ui.Button "Margin 5" (fun gameTime -> dispatch (ChangeMargin 5)) 
+                            |> ui.SetFillHorizontal
+                        ui.Button "Margin 10" (fun gameTime -> dispatch (ChangeMargin 10))
+                            |> ui.SetFillHorizontal
+                        ui.Button "Margin 15" (fun gameTime -> dispatch (ChangeMargin 15))
+                            |> ui.SetFillHorizontal
+                    |]
+                    ui.PanelVertical ()
+                    |> ui.Children [|
+                        ui.Combobox [| "One"; "Two"; "Three" |] (fun event value -> Log.Logger.Information("Value changed {Value}", value))
+
+                        ui.Button "8" ignore 
+                        ui.Button "9" ignore
+                    |]
+                    ui.PanelHorizontal ()
+                    |> ui.Children [|
+                            ui.Header "Three"
+                        |]
                 |]
+                
 
         [
             grid 2 2
@@ -446,7 +421,7 @@ module Buttons =
 
                 ]
 
-        ]
+        ], gridId
 
 
 module Slider =
@@ -626,28 +601,34 @@ let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: Gam
 
 let view game (model: DemoModel) dispatch =
 
-    let scrollItems =
-        [
-            button [text "Noobish2"; onClick (fun gameTime -> dispatch ShowNoobish2Demo); fillHorizontal; toggled (model.State = Noobish2Demo); padding model.Padding; margin model.Margin; ]
-            button [text "Buttons"; onClick (fun gameTime -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
-            button [text "Text"; onClick (fun gameTime -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
-            button [text "Containers"; onClick (fun gameTime -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
-            button [text "Slider"; onClick (fun gameTime -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; ]
-            button [text "Github"; onClick (fun gameTime -> dispatch ShowGithub); fillHorizontal; toggled (model.State = Github); padding model.Padding; margin model.Margin; ]
-        ]
-
-    let title, content  =
+    let title, content2, content  =
         match model.State with
         | Noobish2Demo ->
             Noobish2Demo.view game model dispatch
-            "Noobish2Demo", []
-        | Buttons -> "Buttons", Buttons.view game model dispatch
-        | Containers -> "Containers", Containers.view model dispatch
-        | Text -> "Labels", Text.view model dispatch
-        | Slider -> "Slider", Slider.view model dispatch
-        | Github -> "Github", Github.view model dispatch
+            "Noobish2Demo", UIComponentId.empty, []
+        | Buttons ->
+            let content2, content = Buttons.view game model dispatch
+            "Buttons", content, content2
+        | Containers -> 
+            let content= Containers.view model dispatch
+            "Containers", UIComponentId.empty, content
+        | Text -> 
+            let content = Text.view model dispatch
+            "Labels", UIComponentId.empty, content
+        | Slider -> 
+            let content = Slider.view model dispatch
+            "Slider", UIComponentId.empty, content
+        | Github -> 
+            let content = Github.view model dispatch
+            "Github", UIComponentId.empty, content
 
     let ui = game.Noobish2
+
+    let contentId = 
+        if content2 = UIComponentId.empty then 
+            ui.Space()
+        else 
+            content2
 
     let gridId = 
         ui.Grid(8, 12)
@@ -689,7 +670,7 @@ let view game (model: DemoModel) dispatch =
                 ui.Button "Text" (fun gameTime -> dispatch ShowText)
                 |> ui.FillHorizontal 
                 |> ui.SetToggled (model.State = Text)
-                ui.Button "Containers" (fun gameTime -> dispatch ShowButtons)
+                ui.Button "Containers" (fun gameTime -> dispatch ShowContainers)
                 |> ui.FillHorizontal 
                 |> ui.SetToggled (model.State = Containers)
                 ui.Button "Slider" (fun gameTime -> dispatch ShowSliders)
@@ -699,7 +680,7 @@ let view game (model: DemoModel) dispatch =
                 |> ui.FillHorizontal 
                 |> ui.SetToggled (model.State = Github)
             |]
-            ui.PanelHorizontal() 
+            contentId
             |> ui.SetRowspan 7 
             |> ui.SetColspan 9
         |]
@@ -744,7 +725,7 @@ let view game (model: DemoModel) dispatch =
                             colspan 9;
                             rowspan 1
                         ]
-                    panel [scroll scrollItems [name "LeftMenu";]] [colspan 3; rowspan 7;]
+                    space [colspan 3; rowspan 7;]
                     panel content [colspan 9; rowspan 7;]
                 ]
                 [

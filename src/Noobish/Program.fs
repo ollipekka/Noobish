@@ -189,6 +189,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
             Touch = NoobishInputState.updateDevice (TouchPanel.GetState()) this.Input.Touch
         }
 
+        this.Noobish2.Update gameTime
         #if __MOBILE__
         NoobishMonoGame.updateMobile nui this.Input.Touch.Previous this.Input.Touch.Current gameTime
         #else

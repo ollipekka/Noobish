@@ -8,6 +8,7 @@ open Serilog
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Content
 open Microsoft.Xna.Framework.Graphics
+open Microsoft.Xna.Framework.Input
 
 open Noobish
 open Noobish.Styles
@@ -132,6 +133,7 @@ module UIComponentId =
 
 type Noobish2(maxCount: int) =
 
+    let mutable previousMouseState: MouseState = Microsoft.Xna.Framework.Input.Mouse.GetState()
     let mutable waitForLayout = true
 
     let drawQueue = PriorityQueue<int, int>()
@@ -150,6 +152,9 @@ type Noobish2(maxCount: int) =
     let parentIds = Array.create maxCount UIComponentId.empty
 
     let childrenIds = Array.init maxCount (fun _ -> ResizeArray())
+
+    member val Visible = Array.create maxCount true 
+    member val Enabled = Array.create maxCount true 
 
     member val Block = Array.create maxCount false
 
@@ -202,6 +207,8 @@ type Noobish2(maxCount: int) =
         let cid: UIComponentId = {Index = i; Id = Guid.NewGuid()}
         ids.[i] <- cid
         themeIds.[i] <- themeId
+        this.Enabled.[i] <- true 
+        this.Visible.[i] <- true 
         this.Layer.[i] <- 1
         this.Layout.[i] <- Layout.None
         this.GridSpan.[i] <- {Colspan = 1; Rowspan = 1}
@@ -293,10 +300,67 @@ type Noobish2(maxCount: int) =
         this.Fill.[cid.Index] <- {Horizontal = true; Vertical = false} 
         cid
 
+    member this.Combobox<'T> (items: 'T[]) (onValueChanged: OnClickEvent -> 'T -> unit)= 
+        let cid = this.Create "Combobox"
+        this.Text.[cid.Index] <- items.[0].ToString()
+        let overlayWindowId = 
+            this.Window()
+            |> this.Children (
+                items |> Array.map (
+                    fun i -> 
+                        this.Button (i.ToString()) (fun (event) -> this.Text.[cid.Index] <- i.ToString(); onValueChanged ({SourceId=cid.Id}) i)
+                        |> this.SetFillHorizontal
+                )
+            )
+            |> this.SetSize(200, 300)
+            |> this.SetLayer 226
+            |> this.SetVisible false 
+
+
+        this.OnClick.[cid.Index] <- (fun event -> 
+            let visible = this.Visible.[overlayWindowId.Index]
+            this.SetVisible (true) overlayWindowId |> ignore
+        )
+
+        cid
+
     member this.SetSize (width: int, height: int) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.MinSize.[index] <- {Width = float32 width; Height = float32 height}
+        cid
+
+    member this.SetLayer (layer: int) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+
+            let children = childrenIds.[cid.Index]
+            if children.Count > 0 then 
+                let previousLayer = this.Layer.[index]
+
+                for j = 0 to children.Count - 1 do 
+                    let ccid = children.[j]
+                    let deltaLayer = this.Layer.[ccid.Index] - previousLayer
+                    this.SetLayer (layer + deltaLayer) children.[j] |> ignore
+
+            this.Layer.[index] <- layer
+        cid
+
+
+    member this.SetVisible (v: bool) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Visible.[index] <- v
+            
+            let children = childrenIds.[cid.Index]
+            for j = 0 to children.Count - 1 do 
+                this.SetVisible v children.[j] |> ignore
+        cid
+
+    member this.SetEnabled (v: bool) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Enabled.[index] <- v
         cid
 
     member this.SetPosition (x: int, y: int) (cid: UIComponentId) =
@@ -328,6 +392,12 @@ type Noobish2(maxCount: int) =
         cid
 
     member this.FillHorizontal (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Fill.[index] <- {this.Fill.[index] with Horizontal = true}
+        cid
+
+    member this.SetFillHorizontal (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Fill.[index] <- {this.Fill.[index] with Horizontal = true}
@@ -514,7 +584,6 @@ type Noobish2(maxCount: int) =
 
         let layer = 1f - (float32 layer / 255f)
 
-        Log.Logger.Information("Drawing {ThemId} Background at {Layer}", themeId, layer)
         DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
 
 
@@ -543,8 +612,6 @@ type Noobish2(maxCount: int) =
             let textBounds =
                     NoobishFont.calculateBounds font fontSize false bounds 0f 0f NoobishTextAlignment.Left text
 
-
-            Log.Logger.Information("Drawing {ThemId} Text at {Layer}", themeId, layer)
             let textColor = styleSheet.GetFontColor themeId "default"
             if textWrap then
                 textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textBounds.X, textBounds.Y)) layer textColor text
@@ -561,43 +628,46 @@ type Noobish2(maxCount: int) =
         (i: int)
         (gameTime: GameTime) =
 
-        let textureAtlas = content.Load(styleSheet.TextureAtlasId)
 
-        let bounds = this.Bounds.[i]
-        let margin = this.Margin.[i]
-        let padding = this.Padding.[i]
-        let contentStartX = bounds.X + padding.Left + margin.Left
-        let contentStartY = bounds.Y + padding.Top + margin.Top
-        let contentWidth = bounds.Width - padding.Left - padding.Right - margin.Left - margin.Right
-        let contentHeight = bounds.Height - padding.Top - padding.Bottom - margin.Left - margin.Right
+        let visible = this.Visible.[i]
+        if visible then 
+            let textureAtlas = content.Load(styleSheet.TextureAtlasId)
 
-        let parentBounds = {X = 0f; Y = 0f; Width = 25000f; Height = 25000f}
+            let bounds = this.Bounds.[i]
+            let margin = this.Margin.[i]
+            let padding = this.Padding.[i]
+            let contentStartX = bounds.X + padding.Left + margin.Left
+            let contentStartY = bounds.Y + padding.Top + margin.Top
+            let contentWidth = bounds.Width - padding.Left - padding.Right - margin.Left - margin.Right
+            let contentHeight = bounds.Height - padding.Top - padding.Bottom - margin.Left - margin.Right
 
-        let outerRectangle =
-            let startX = contentStartX // + totalScrollX
-            let startY = contentStartY // + totalScrollY
-            let sourceStartX = max startX (float32 parentBounds.X)
-            let sourceStartY = max startY (float32 parentBounds.Y)
-            let sourceWidth = min (contentWidth) (float32 parentBounds.Right - startX)
-            let sourceHeight = min (contentHeight) (float32 parentBounds.Bottom - startY)
-            DrawUI.createRectangle
-                sourceStartX
-                sourceStartY
-                ((min sourceWidth (float32 parentBounds.Width)) + 2f)
-                ((min sourceHeight (float32 parentBounds.Height)) + 2f)
+            let parentBounds = {X = 0f; Y = 0f; Width = 25000f; Height = 25000f}
 
-        let oldScissorRect = graphics.ScissorRectangle
+            let outerRectangle =
+                let startX = contentStartX // + totalScrollX
+                let startY = contentStartY // + totalScrollY
+                let sourceStartX = max startX (float32 parentBounds.X)
+                let sourceStartY = max startY (float32 parentBounds.Y)
+                let sourceWidth = min (contentWidth) (float32 parentBounds.Right - startX)
+                let sourceHeight = min (contentHeight) (float32 parentBounds.Bottom - startY)
+                DrawUI.createRectangle
+                    sourceStartX
+                    sourceStartY
+                    ((min sourceWidth (float32 parentBounds.Width)) + 2f)
+                    ((min sourceHeight (float32 parentBounds.Height)) + 2f)
 
-        graphics.ScissorRectangle <- outerRectangle
-        spriteBatch.Begin(rasterizerState = RasterizerState.CullCounterClockwise, samplerState = SamplerState.PointClamp)
+            let oldScissorRect = graphics.ScissorRectangle
 
-        this.DrawBackground styleSheet textureAtlas spriteBatch gameTime i
+            graphics.ScissorRectangle <- outerRectangle
+            spriteBatch.Begin(rasterizerState = RasterizerState.CullCounterClockwise, samplerState = SamplerState.PointClamp)
 
-        spriteBatch.End()
+            this.DrawBackground styleSheet textureAtlas spriteBatch gameTime i
 
-        this.DrawText content styleSheet textBatch i
+            spriteBatch.End()
 
-        graphics.ScissorRectangle <- oldScissorRect
+            this.DrawText content styleSheet textBatch i
+
+            graphics.ScissorRectangle <- oldScissorRect
     member this.Draw 
         (graphics: GraphicsDevice) 
         (content: ContentManager)
@@ -646,6 +716,67 @@ type Noobish2(maxCount: int) =
             this.DrawComponent graphics content spriteBatch textBatch styleSheet false i gameTime
 
 
+    member this.ComponentContains (x: float32) (y: float32) (i: int) = 
+        let bounds = this.Bounds.[i]
+
+        x > bounds.X && x < bounds.X + bounds.Width && y > bounds.Y && y < bounds.Y + bounds.Height
+
+    member this.Hover (x: float32) (y: float32) (gameTime: GameTime) (i: int)  =
+        if this.ComponentContains x y i then 
+            Log.Logger.Information ("Mouse Hover inside component {ComponentId}", i)
+
+            let children = childrenIds.[i]
+            for j = 0 to children.Count - 1 do 
+                this.Hover x y gameTime children.[j].Index
+
+    member this.Click (x: float32) (y: float32) (gameTime: GameTime) (i: int): bool  =
+        if this.ComponentContains x y i then 
+            Log.Logger.Information ("Mouse click inside component {ComponentId}", i)
+
+            let children = childrenIds.[i]
+
+            if children.Count = 0 then 
+                this.OnClick.[i] ({SourceId = ids.[i].Id})
+                true 
+            else 
+                let mutable found = false
+                let mutable j = 0
+                while not found && j < children.Count do 
+                    let handled = this.Click x y gameTime children.[j].Index
+                    if handled then 
+                        found <- true 
+                    j <- j + 1
+                found
+        else 
+            false
+
+    member this.ProcessMouse(gameTime: GameTime) =
+
+        let mouseState =  Microsoft.Xna.Framework.Input.Mouse.GetState()
+
+        let x = float32 mouseState.X
+        let y = float32 mouseState.Y
+        for i = 0 to this.Count - 1 do 
+            if parentIds.[i] = UIComponentId.empty then 
+                this.Hover x y gameTime i 
+
+
+        let leftPressed = previousMouseState.LeftButton = ButtonState.Pressed && mouseState.LeftButton = ButtonState.Pressed
+
+        if leftPressed then 
+
+            for i = 0 to this.Count - 1 do 
+                if parentIds.[i] = UIComponentId.empty then 
+                    this.Click x y gameTime i |> ignore
+
+        previousMouseState <- mouseState
+
+    member this.Update (gameTime: GameTime) = 
+        this.ProcessMouse(gameTime)
+
+
+
+
     member this.Clear() =
         for i = 0 to this.Count - 1 do 
             free.Enqueue(i, i)
@@ -653,6 +784,9 @@ type Noobish2(maxCount: int) =
             themeIds.[i] <- ""
 
             parentIds.[i] <- UIComponentId.empty
+
+            this.Visible.[i] <- true 
+            this.Enabled.[i] <- true 
 
             this.Block.[i] <- false
 
