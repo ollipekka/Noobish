@@ -647,6 +647,63 @@ let view game (model: DemoModel) dispatch =
         | Slider -> "Slider", Slider.view model dispatch
         | Github -> "Github", Github.view model dispatch
 
+    let ui = game.Noobish2
+
+    let gridId = 
+        ui.Grid(8, 12)
+        |> ui.Children [|
+            ui.PanelHorizontal() 
+            |> ui.SetRowspan 1
+            |> ui.SetColspan 3
+            |> ui.Children [|
+                ui.Header "Noobish"
+            |]
+            ui.PanelWithGrid(1, 12)
+            |> ui.SetRowspan 1 
+            |> ui.SetColspan 9
+            |> ui.Children [|
+                ui.Header title
+                |> ui.SetColspan 6
+                
+                ui.Button "Dark" (fun e -> dispatch ToggleDarkMode) 
+                |> ui.SetFill
+                |> ui.SetColspan 2     
+                |> ui.SetToggled (model.StyleMode = DarkMode )          
+                ui.Button "Light" (fun e -> dispatch ToggleLightMode) 
+                |> ui.SetFill
+                |> ui.SetToggled (model.StyleMode = LightMode )       
+                |> ui.SetColspan 2
+                ui.Button "Debug" (fun e -> dispatch ToggleDebug) 
+                |> ui.SetFill
+                |> ui.SetColspan 2
+                |> ui.SetToggled (ui.Debug)       
+                
+            |]
+            ui.PanelVertical() 
+            |> ui.SetRowspan 7
+            |> ui.SetColspan 3
+            |> ui.Children [|
+                ui.Button "Buttons" (fun gameTime -> dispatch ShowButtons)
+                |> ui.FillHorizontal 
+                |> ui.SetToggled (model.State = Buttons)
+                ui.Button "Text" (fun gameTime -> dispatch ShowText)
+                |> ui.FillHorizontal 
+                |> ui.SetToggled (model.State = Text)
+                ui.Button "Containers" (fun gameTime -> dispatch ShowButtons)
+                |> ui.FillHorizontal 
+                |> ui.SetToggled (model.State = Containers)
+                ui.Button "Slider" (fun gameTime -> dispatch ShowSliders)
+                |> ui.FillHorizontal 
+                |> ui.SetToggled (model.State = Slider)
+                ui.Button "Github" (fun gameTime -> dispatch ShowGithub)
+                |> ui.FillHorizontal 
+                |> ui.SetToggled (model.State = Github)
+            |]
+            ui.PanelHorizontal() 
+            |> ui.SetRowspan 7 
+            |> ui.SetColspan 9
+        |]
+
     [
         [
             grid 12 8

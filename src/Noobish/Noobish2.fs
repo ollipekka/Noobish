@@ -152,8 +152,8 @@ type Noobish2(maxCount: int) =
     let childrenIds = Array.init maxCount (fun _ -> ResizeArray())
 
     member val Block = Array.create maxCount false
-    member val Text = Array.create maxCount ""
 
+    member val Text = Array.create maxCount ""
     member val Textwrap = Array.create maxCount false
 
     member val Layer = Array.create maxCount 0
@@ -171,8 +171,12 @@ type Noobish2(maxCount: int) =
     member val OnClick = Array.init<OnClickEvent -> unit> maxCount (fun _event -> ignore)
     member val Scroll = Array.create<Scroll> maxCount {Horizontal = true; Vertical = true}
 
+    member val Toggled = Array.create maxCount false 
+
     member val ScreenWidth: float32 = 0f with get, set 
     member val ScreenHeight: float32 = 0f with get, set
+
+    member val Debug = false with get, set
 
     member val private Count = 0 with get, set
 
@@ -218,7 +222,7 @@ type Noobish2(maxCount: int) =
         cid
 
     member this.Header (t: string) = 
-        let cid = this.Create "Header"
+        let cid = this.Create "Header1"
         this.Text.[cid.Index] <- t
         this.Block.[cid.Index] <- true
 
@@ -256,6 +260,12 @@ type Noobish2(maxCount: int) =
 
     member this.Grid (rows: int, cols: int) = 
         let cid = this.Create "Grid"
+        this.SetLayout (Layout.Grid(cols, rows)) cid.Index
+        this.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid
+
+    member this.PanelWithGrid (rows: int, cols: int) = 
+        let cid = this.Create "Panel"
         this.SetLayout (Layout.Grid(cols, rows)) cid.Index
         this.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
@@ -346,10 +356,17 @@ type Noobish2(maxCount: int) =
             this.Scroll.[index] <- {this.Scroll.[index] with Vertical = true}
         cid
 
+
     member this.SetScroll (horizontal: bool) (vertical: bool) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Scroll.[index] <- {this.Scroll.[index] with Horizontal = horizontal; Vertical = vertical}
+        cid
+
+    member this.SetToggled (t: bool) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Toggled.[index] <- t
         cid
 
     member this.BumpLayer (layer: int) (childIds: IReadOnlyList<UIComponentId>) = 
@@ -604,10 +621,10 @@ type Noobish2(maxCount: int) =
 
             for i = 0 to this.Count - 1 do 
                 let themeId = themeIds.[i]
+
                 let (top, left, bottom, right) = styleSheet.GetMargin themeId "default"
                 this.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
-                let themeId = themeIds.[i]
                 let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
                 this.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
