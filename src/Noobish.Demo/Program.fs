@@ -340,7 +340,7 @@ module Buttons =
                     ui.PanelVertical ()
                     |> ui.Children [|
                         ui.Combobox [| "One"; "Two"; "Three" |] (fun event value -> Log.Logger.Information("Value changed {Value}", value))
-
+                        ui.Textbox "what" (fun event value -> Log.Logger.Information("Text changed {value}", value))
                         ui.Button "8" ignore 
                         ui.Button "9" ignore
                     |]
@@ -356,10 +356,12 @@ module Buttons =
                 [
                 panel
                     [
+                        (*
                         button [text "Padding 0"; onClick (fun gameTime -> dispatch (ChangePadding 0)); padding model.Padding; margin model.Margin; fillHorizontal]
                         button [text "Padding 5"; onClick (fun gameTime -> dispatch (ChangePadding 5)); padding model.Padding; margin model.Margin; fillHorizontal]
                         button [text "Padding 10"; onClick (fun gameTime -> dispatch (ChangePadding 10));  padding model.Padding; margin model.Margin; fillHorizontal]
                         button [text "Padding 15"; onClick (fun gameTime -> dispatch (ChangePadding 15)); padding model.Padding; margin model.Margin; fillHorizontal]
+                        *)
                     ]
                     [
                         name "ButtonsPanel"

@@ -93,7 +93,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     abstract member DrawInternal: 'model -> GameTime -> unit
 
-    member val Noobish2 = Noobish2(256)
+    member val Noobish2 = Noobish2(1024)
     member _this.TextBatch with get() = textBatch
     member _this.State with get() = state
     member _this.UI with get() = nui
