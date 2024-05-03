@@ -152,6 +152,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         this.Window.TextInput.Add(fun e ->
             NoobishMonoGame.keyTyped nui e.Character
+            this.Noobish2.KeyTyped (e.Character)
         )
 
         let settings: NoobishSettings = {

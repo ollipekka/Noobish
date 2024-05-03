@@ -184,8 +184,7 @@ type Noobish2(maxCount: int) =
 
     member val WantsKeyTyped = Array.create maxCount false 
     member val OnKeyTyped = Array.create<OnClickEvent -> char -> unit> maxCount (fun _ _ -> ()) 
-
-    member val Focus = Array.create maxCount false
+    member val FocusedElementId = UIComponentId.empty with get, set
     member val WantsFocus = Array.create maxCount false 
     member val OnFocus = Array.create<OnClickEvent -> bool -> unit> maxCount (fun _ _ -> ())
 
@@ -639,7 +638,7 @@ type Noobish2(maxCount: int) =
     member this.DrawBackground (styleSheet: NoobishStyleSheet) (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (gameTime: GameTime) (i: int)=
 
         let cstate =
-            if this.WantsFocus.[i] && this.Focus.[i] then 
+            if this.WantsFocus.[i] && this.FocusedElementId.Id = ids.[i].Id then 
                 "focused"
             else 
                 "default"
@@ -832,7 +831,7 @@ type Noobish2(maxCount: int) =
             
             if not found  && this.WantsFocus.[i] then
                 found <- true 
-                this.Focus.[i] <- true 
+                this.FocusedElementId <- ids.[i]
                 this.OnFocus.[i] ({SourceId = ids.[i]}) true
             
             found
@@ -841,6 +840,13 @@ type Noobish2(maxCount: int) =
 
         else 
             false
+
+
+    member this.KeyTyped (c: char) = 
+        let focusedIndex = this.GetIndex this.FocusedElementId
+        if focusedIndex <> -1 then 
+            this.Text.[focusedIndex] <- $"{this.Text.[focusedIndex]}{c}"
+
 
     member this.ProcessMouse(gameTime: GameTime) =
 
@@ -856,7 +862,7 @@ type Noobish2(maxCount: int) =
         let leftPressed = previousMouseState.LeftButton = ButtonState.Pressed && mouseState.LeftButton = ButtonState.Pressed
 
         if leftPressed then 
-
+            this.FocusedElementId <- UIComponentId.empty
             for i = 0 to this.Count - 1 do 
                 if parentIds.[i] = UIComponentId.empty then 
                     toLayout.Enqueue(i, -this.Layer.[i])
@@ -874,6 +880,7 @@ type Noobish2(maxCount: int) =
 
 
     member this.Clear() =
+        this.FocusedElementId <- UIComponentId.empty
         for i = 0 to this.Count - 1 do 
             free.Enqueue(i, i)
             ids.[i] <- UIComponentId.empty
@@ -908,7 +915,6 @@ type Noobish2(maxCount: int) =
             this.WantsKeyTyped.[i] <- false 
             this.OnKeyTyped.[i] <- (fun _ _ ->())
 
-            this.Focus.[i] <- false
             this.WantsFocus.[i] <- false 
             this.OnFocus.[i] <- (fun _ _ ->())
 
