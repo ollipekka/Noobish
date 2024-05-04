@@ -138,6 +138,8 @@ type Layout =
 type Noobish2(maxCount: int) =
 
     let mutable previousMouseState: MouseState = Microsoft.Xna.Framework.Input.Mouse.GetState()
+
+    let mutable previousKeyState: KeyboardState = Microsoft.Xna.Framework.Input.Keyboard.GetState()
     let mutable waitForLayout = true
 
     let drawQueue = PriorityQueue<int, int>()
@@ -163,6 +165,7 @@ type Noobish2(maxCount: int) =
     member val Block = Array.create maxCount false
 
     member val Text = Array.create maxCount ""
+    member val TextAlign = Array.create maxCount NoobishTextAlignment.Left
     member val Textwrap = Array.create maxCount false
 
     member val Layer = Array.create maxCount 0
@@ -184,7 +187,16 @@ type Noobish2(maxCount: int) =
 
     member val WantsKeyTyped = Array.create maxCount false 
     member val OnKeyTyped = Array.create<OnClickEvent -> char -> unit> maxCount (fun _ _ -> ()) 
+
+
+    member val WantsKeyPressed = Array.create maxCount false 
+    member val OnKeyPressed = Array.create<OnClickEvent -> Keys -> unit> maxCount (fun _ _ -> ()) 
+
     member val FocusedElementId = UIComponentId.empty with get, set
+    member val FocusedTime = TimeSpan.Zero with get, set
+
+    member val Cursor = 0 with get, set 
+
     member val WantsFocus = Array.create maxCount false 
     member val OnFocus = Array.create<OnClickEvent -> bool -> unit> maxCount (fun _ _ -> ())
 
@@ -272,9 +284,36 @@ type Noobish2(maxCount: int) =
         this.OnFocus.[cid.Index] <- (fun event focus -> ())
 
         this.WantsKeyTyped.[cid.Index] <- true 
-        this.OnKeyTyped.[cid.Index] <- (fun event k ->
-            ()
+        this.OnKeyTyped.[cid.Index] <- (fun event typed ->
+            let text = this.Text.[cid.Index]
+            if int typed = 8 then // backspace
+                if text.Length > 0 && this.Cursor > 0 then
+                    this.Text.[cid.Index] <- text.Remove(this.Cursor - 1, 1)
+                    this.Cursor <- this.Cursor - 1
+            elif int typed = 13 then
+                this.FocusedElementId <- UIComponentId.empty
+                this.Cursor <- 0
+            elif int typed = 127 then // deleted
+                if text.Length > 0 && this.Cursor < text.Length - 1 then
+                    this.Text.[cid.Index] <- text.Remove(this.Cursor, 1)
+                else
+                    this.Text.[cid.Index] <- ""
+                    this.Cursor <- 0
+            else
+                this.Text.[cid.Index] <- text.Insert(this.Cursor, typed.ToString())
+                this.Cursor <- this.Cursor + 1
         )
+        this.WantsKeyPressed.[cid.Index] <- true 
+        this.OnKeyPressed.[cid.Index] <- (fun event key ->
+            let text = this.Text.[cid.Index]
+            if key = Microsoft.Xna.Framework.Input.Keys.Left then 
+                let newCursorPos = this.Cursor - 1 
+                this.Cursor <- max 0 newCursorPos
+            elif key = Microsoft.Xna.Framework.Input.Keys.Right then 
+                let newCursorPos = this.Cursor + 1 
+                this.Cursor <- min text.Length newCursorPos
+        )
+
         this.Text.[cid.Index] <- t
 
 
@@ -635,6 +674,53 @@ type Noobish2(maxCount: int) =
         | Layout.None -> ()
 
 
+    member this.DrawCursor
+        (styleSheet: NoobishStyleSheet)
+        (content: ContentManager)
+        (textureAtlas: NoobishTextureAtlas)
+        (spriteBatch: SpriteBatch)
+        (i: int)
+        (gameTime: GameTime)
+        (scrollX: float32)
+        (scrollY: float32) =
+        let time = float32 gameTime.TotalGameTime.Seconds
+        let themeId = themeIds.[i]
+        let layer = 1f - float32 (this.Layer.[i] + 32) / 255f
+
+
+        let fontId = styleSheet.GetFont themeId "default"
+        let font = content.Load<NoobishFont>  fontId
+        let fontSize = styleSheet.GetFontSize themeId "default"
+
+        let bounds = this.Bounds.[i]
+        let margin = this.Margin.[i]
+        let padding = this.Padding.[i]
+        let contentStartX = bounds.X + margin.Left + padding.Left
+        let contentStartY = bounds.Y +  margin.Top + padding.Top
+        let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
+        let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
+
+        let text = this.Text.[i]
+        let textAlign = this.TextAlign.[i]
+        let textWrap = this.Textwrap.[i]
+
+        let textBounds = NoobishFont.calculateCursorPosition font fontSize textWrap ({X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}) scrollX scrollY textAlign this.Cursor text
+
+
+        let timeFocused = gameTime.TotalGameTime - this.FocusedTime
+        let blinkProgress = Cursor.blink timeFocused
+
+        let cursorColor = styleSheet.GetColor "Cursor" "default"
+        let color = Color.Lerp(cursorColor, Color.Transparent, float32 blinkProgress)
+
+        let drawables = styleSheet.GetDrawables "Cursor" "default"
+        let position = Vector2(bounds.X + textBounds.Width, textBounds.Y)
+
+        let cursorWidth = styleSheet.GetWidth "Cursor" "default"
+        if cursorWidth = 0f then failwith "Cursor:defaul width is 0"
+        let size = Vector2(cursorWidth, textBounds.Height)
+        DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
+
     member this.DrawBackground (styleSheet: NoobishStyleSheet) (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (gameTime: GameTime) (i: int)=
 
         let cstate =
@@ -652,7 +738,7 @@ type Noobish2(maxCount: int) =
         let contentStartX = bounds.X + margin.Left
         let contentStartY = bounds.Y +  margin.Top 
         let contentWidth = bounds.Width - margin.Left - margin.Right
-        let contentHeight = bounds.Height - margin.Left - margin.Right
+        let contentHeight = bounds.Height - margin.Top - margin.Bottom
 
         let drawables = styleSheet.GetDrawables themeId cstate
 
@@ -685,9 +771,10 @@ type Noobish2(maxCount: int) =
             let contentWidth = bounds.Width - padding.Left - padding.Right - margin.Left - margin.Right
             let contentHeight = bounds.Height - padding.Top - padding.Bottom - margin.Left - margin.Right
             let bounds: Internal.NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
-            let textWrap = false
+            let textWrap = this.Textwrap.[i]
+            let textAlign = this.TextAlign.[i]
             let textBounds =
-                    NoobishFont.calculateBounds font fontSize false bounds 0f 0f NoobishTextAlignment.Left text
+                    NoobishFont.calculateBounds font fontSize false bounds 0f 0f textAlign text
 
             let textColor = styleSheet.GetFontColor themeId "default"
             if textWrap then
@@ -740,11 +827,15 @@ type Noobish2(maxCount: int) =
 
             this.DrawBackground styleSheet textureAtlas spriteBatch gameTime i
 
+            if this.FocusedElementId = ids.[i] then 
+                this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
+
             spriteBatch.End()
 
             this.DrawText content styleSheet textBatch i
 
             graphics.ScissorRectangle <- oldScissorRect
+
     member this.Draw 
         (graphics: GraphicsDevice) 
         (content: ContentManager)
@@ -796,6 +887,7 @@ type Noobish2(maxCount: int) =
             this.DrawComponent graphics content spriteBatch textBatch styleSheet false i gameTime
 
 
+
     member this.ComponentContains (x: float32) (y: float32) (i: int) = 
         let bounds = this.Bounds.[i]
 
@@ -832,6 +924,7 @@ type Noobish2(maxCount: int) =
             if not found  && this.WantsFocus.[i] then
                 found <- true 
                 this.FocusedElementId <- ids.[i]
+                this.FocusedTime <- gameTime.TotalGameTime
                 this.OnFocus.[i] ({SourceId = ids.[i]}) true
             
             found
@@ -844,8 +937,8 @@ type Noobish2(maxCount: int) =
 
     member this.KeyTyped (c: char) = 
         let focusedIndex = this.GetIndex this.FocusedElementId
-        if focusedIndex <> -1 then 
-            this.Text.[focusedIndex] <- $"{this.Text.[focusedIndex]}{c}"
+        if focusedIndex <> -1 && this.WantsKeyTyped.[focusedIndex] then 
+            this.OnKeyTyped.[focusedIndex] {SourceId = ids.[focusedIndex]} c
 
 
     member this.ProcessMouse(gameTime: GameTime) =
@@ -873,8 +966,21 @@ type Noobish2(maxCount: int) =
 
         previousMouseState <- mouseState
 
+    member this.ProcessKeys (gameTime: GameTime) = 
+        let keyState = Keyboard.GetState()
+
+        let index = this.GetIndex(this.FocusedElementId)
+        if index <> -1 && this.WantsKeyPressed.[index] then 
+            if previousKeyState.IsKeyDown(Keys.Left) && keyState.IsKeyUp (Keys.Left) then 
+                this.OnKeyPressed.[index] {SourceId = ids.[index]} Keys.Left
+
+            if previousKeyState.IsKeyDown(Keys.Right) && keyState.IsKeyUp (Keys.Right) then 
+                this.OnKeyPressed.[index] {SourceId = ids.[index]} Keys.Right
+
+        previousKeyState <- keyState
     member this.Update (gameTime: GameTime) = 
         this.ProcessMouse(gameTime)
+        this.ProcessKeys(gameTime)
 
 
 
@@ -914,6 +1020,9 @@ type Noobish2(maxCount: int) =
 
             this.WantsKeyTyped.[i] <- false 
             this.OnKeyTyped.[i] <- (fun _ _ ->())
+
+            this.WantsKeyPressed.[i] <- false 
+            this.OnKeyPressed.[i] <- (fun _ _ ->())
 
             this.WantsFocus.[i] <- false 
             this.OnFocus.[i] <- (fun _ _ ->())
