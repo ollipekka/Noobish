@@ -699,12 +699,13 @@ type Noobish2(maxCount: int) =
         let contentStartY = bounds.Y +  margin.Top + padding.Top
         let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
         let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
+        let bounds: Internal.NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
 
         let text = this.Text.[i]
         let textAlign = this.TextAlign.[i]
         let textWrap = this.Textwrap.[i]
 
-        let textBounds = NoobishFont.calculateCursorPosition font fontSize textWrap ({X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}) scrollX scrollY textAlign this.Cursor text
+        let textBounds = NoobishFont.calculateCursorPosition font fontSize textWrap bounds scrollX scrollY textAlign this.Cursor text
 
 
         let timeFocused = gameTime.TotalGameTime - this.FocusedTime

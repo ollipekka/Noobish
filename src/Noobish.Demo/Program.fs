@@ -310,120 +310,44 @@ module Buttons =
 
         let ui = game.Noobish2
 
-        (**)
-        let gridId = 
-            ui.Grid(2, 2)
-            |> ui.Children 
-                [|
-                    ui.PanelVertical ()
-                    |> ui.Children [|
-                        ui.Button "Padding 0" (fun gameTime -> dispatch (ChangePadding 0))
-                            |> ui.SetFillHorizontal
-                        ui.Button "Padding 5" (fun gameTime -> dispatch (ChangePadding 5)) 
-                            |> ui.SetFillHorizontal
-                        ui.Button "Padding 10" (fun gameTime -> dispatch (ChangePadding 10))
-                            |> ui.SetFillHorizontal
-                        ui.Button "Padding 15" (fun gameTime -> dispatch (ChangePadding 15))
-                            |> ui.SetFillHorizontal
-                    |]
-                    ui.PanelVertical ()
-                    |> ui.Children [|
-                        ui.Button "Margin 0" (fun gameTime -> dispatch (ChangeMargin 0))
-                            |> ui.SetFillHorizontal
-                        ui.Button "Margin 5" (fun gameTime -> dispatch (ChangeMargin 5)) 
-                            |> ui.SetFillHorizontal
-                        ui.Button "Margin 10" (fun gameTime -> dispatch (ChangeMargin 10))
-                            |> ui.SetFillHorizontal
-                        ui.Button "Margin 15" (fun gameTime -> dispatch (ChangeMargin 15))
-                            |> ui.SetFillHorizontal
-                    |]
-                    ui.PanelVertical ()
-                    |> ui.Children [|
-                        ui.Combobox [| "One"; "Two"; "Three" |] (fun event value -> Log.Logger.Information("Value changed {Value}", value))
-                        ui.Textbox "what" (fun event value -> Log.Logger.Information("Text changed {value}", value))
-                        ui.Button "8" ignore 
-                        ui.Button "9" ignore
-                    |]
-                    ui.PanelHorizontal ()
-                    |> ui.Children [|
-                            ui.Header "Three"
-                        |]
+    
+        ui.Grid(2, 2)
+        |> ui.Children 
+            [|
+                ui.PanelVertical ()
+                |> ui.Children [|
+                    ui.Button "Padding 0" (fun gameTime -> dispatch (ChangePadding 0))
+                        |> ui.SetFillHorizontal
+                    ui.Button "Padding 5" (fun gameTime -> dispatch (ChangePadding 5)) 
+                        |> ui.SetFillHorizontal
+                    ui.Button "Padding 10" (fun gameTime -> dispatch (ChangePadding 10))
+                        |> ui.SetFillHorizontal
+                    ui.Button "Padding 15" (fun gameTime -> dispatch (ChangePadding 15))
+                        |> ui.SetFillHorizontal
                 |]
-                
-
-        [
-            grid 2 2
-                [
-                panel
-                    [
-                        (*
-                        button [text "Padding 0"; onClick (fun gameTime -> dispatch (ChangePadding 0)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Padding 5"; onClick (fun gameTime -> dispatch (ChangePadding 5)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Padding 10"; onClick (fun gameTime -> dispatch (ChangePadding 10));  padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Padding 15"; onClick (fun gameTime -> dispatch (ChangePadding 15)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        *)
-                    ]
-                    [
-                        name "ButtonsPanel"
-                        padding model.Padding; margin model.Margin;
-                    ]
-                panel
-                    [
-                        combobox
-                            [
-                                option "Value 1"
-                                option "Value 2"
-                                option "Value 3"
-                            ]
-                            [
-                                text model.ComboboxValue;
-                                onTextChange (fun v -> dispatch (ComboboxValueChanged v))
-                                block;
-                            ]
-                        textbox [
-                            text "Please insert coin"
-                            //onOpenKeyboard (fun setText -> setText "opened")
-                        ]
-                    ]
-                    [
-
-                    ]
-                panel
-                    [
-                        button [text "Margin 0"; onClick (fun gameTime -> dispatch (ChangeMargin 0)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Margin 2"; onClick (fun gameTime -> dispatch (ChangeMargin 2)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Margin 4"; onClick (fun gameTime -> dispatch (ChangeMargin 4)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Margin 6"; onClick (fun gameTime -> dispatch (ChangeMargin 6)); padding model.Padding; margin model.Margin; fillHorizontal]
-                    ]
-                    [
-                        name "MarginPanel"
-
-                    ]
-                panel
-                    [
-                        scroll
-                            [
-                                button [text "Button 1"; fillHorizontal]
-                                button [text "Button 2"; fillHorizontal]
-                                button [text "Button 3"; fillHorizontal]
-                                button [text "Button 4"; fillHorizontal]
-                                button [text "Button 5"; fillHorizontal]
-                                button [text "Button 6"; fillHorizontal]
-                                button [text "Button 7"; fillHorizontal]
-                            ]
-                            [
-
-                            ]
-                    ]
-                    [
-
-                    ]
-                ]
-                [
-
-                ]
-
-        ], gridId
+                ui.PanelVertical ()
+                |> ui.Children [|
+                    ui.Button "Margin 0" (fun gameTime -> dispatch (ChangeMargin 0))
+                        |> ui.SetFillHorizontal
+                    ui.Button "Margin 5" (fun gameTime -> dispatch (ChangeMargin 5)) 
+                        |> ui.SetFillHorizontal
+                    ui.Button "Margin 10" (fun gameTime -> dispatch (ChangeMargin 10))
+                        |> ui.SetFillHorizontal
+                    ui.Button "Margin 15" (fun gameTime -> dispatch (ChangeMargin 15))
+                        |> ui.SetFillHorizontal
+                |]
+                ui.PanelVertical ()
+                |> ui.Children [|
+                    ui.Combobox [| "One"; "Two"; "Three" |] (fun event value -> Log.Logger.Information("Value changed {Value}", value))
+                    ui.Textbox "what" (fun event value -> Log.Logger.Information("Text changed {value}", value))
+                    ui.Button "8" ignore 
+                    ui.Button "9" ignore
+                |]
+                ui.PanelHorizontal ()
+                |> ui.Children [|
+                        ui.Header "Three"
+                    |]
+            |]
 
 
 module Slider =
@@ -609,8 +533,8 @@ let view game (model: DemoModel) dispatch =
             Noobish2Demo.view game model dispatch
             "Noobish2Demo", UIComponentId.empty, []
         | Buttons ->
-            let content2, content = Buttons.view game model dispatch
-            "Buttons", content, content2
+            let content = Buttons.view game model dispatch
+            "Buttons", content, []
         | Containers -> 
             let content= Containers.view model dispatch
             "Containers", UIComponentId.empty, content
