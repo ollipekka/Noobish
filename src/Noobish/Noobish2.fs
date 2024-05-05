@@ -151,13 +151,13 @@ type Noobish2(maxCount: int) =
 
 
 
-    let ids = Array.create maxCount UIComponentId.empty
+    member val Id = Array.create maxCount UIComponentId.empty
 
-    let themeIds = Array.create maxCount ""
+    member val ThemeId = Array.create maxCount ""
 
-    let parentIds = Array.create maxCount UIComponentId.empty
+    member val ParentId = Array.create maxCount UIComponentId.empty
 
-    let childrenIds = Array.init maxCount (fun _ -> ResizeArray())
+    member val Children = Array.init maxCount (fun _ -> ResizeArray())
 
     member val Visible = Array.create maxCount true 
     member val Enabled = Array.create maxCount true 
@@ -214,14 +214,14 @@ type Noobish2(maxCount: int) =
     member this.IsActive(cid: UIComponentId) =
         let index = cid.Index
 
-        if index <> -1 && ids.[index].Id.Equals cid.Id then 
+        if index <> -1 && this.Id.[index].Id.Equals cid.Id then 
             index
         else 
             -1
     member this.GetIndex(cid: UIComponentId) =
         let index = cid.Index
 
-        if index <> -1 && ids.[index].Id.Equals cid.Id then 
+        if index <> -1 && this.Id.[index].Id.Equals cid.Id then 
             index
         else 
             -1
@@ -231,9 +231,9 @@ type Noobish2(maxCount: int) =
 
         let i = free.Dequeue() 
         let cid: UIComponentId = {Index = i; Id = Guid.NewGuid()}
-        ids.[i] <- cid
-        themeIds.[i] <- themeId
-        if parentIds.[i] <> UIComponentId.empty then failwith "crap"
+        this.Id.[i] <- cid
+        this.ThemeId.[i] <- themeId
+        if this.ParentId.[i] <> UIComponentId.empty then failwith "crap"
         this.Enabled.[i] <- true 
         this.Visible.[i] <- true 
         this.Layer.[i] <- 1
@@ -281,7 +281,10 @@ type Noobish2(maxCount: int) =
         let cid = this.Create "TextBox"
 
         this.WantsFocus.[cid.Index] <- true 
-        this.OnFocus.[cid.Index] <- (fun event focus -> ())
+        this.OnFocus.[cid.Index] <- (
+            fun event focus -> ()
+                
+        )
 
         this.WantsKeyTyped.[cid.Index] <- true 
         this.OnKeyTyped.[cid.Index] <- (fun event typed ->
@@ -294,11 +297,8 @@ type Noobish2(maxCount: int) =
                 this.FocusedElementId <- UIComponentId.empty
                 this.Cursor <- 0
             elif int typed = 127 then // deleted
-                if text.Length > 0 && this.Cursor < text.Length - 1 then
+                if text.Length > 0 && this.Cursor < text.Length then
                     this.Text.[cid.Index] <- text.Remove(this.Cursor, 1)
-                else
-                    this.Text.[cid.Index] <- ""
-                    this.Cursor <- 0
             else
                 this.Text.[cid.Index] <- text.Insert(this.Cursor, typed.ToString())
                 this.Cursor <- this.Cursor + 1
@@ -369,7 +369,7 @@ type Noobish2(maxCount: int) =
 
     member this.HorizontalRule () = 
         let cid = this.Create "HorizontalRule"
-        ids.[cid.Index] <- cid
+        this.Id.[cid.Index] <- cid
         this.Block.[cid.Index] <- true
         this.Fill.[cid.Index] <- {Horizontal = true; Vertical = false} 
         cid
@@ -386,21 +386,19 @@ type Noobish2(maxCount: int) =
 
         let overlayWindowId =
             this.Window()
-            |> this.Children (
+            |> this.SetChildren (
                 items |> Array.map (
                     fun i -> 
                         this.Button (i.ToString()) (
                             fun (event) -> 
                                 this.Text.[cid.Index] <- i.ToString(); onValueChanged ({SourceId=cid}) i
-                        )
-                        |> this.SetFillHorizontal
+                        ) |> this.SetFillHorizontal
                 )
             )
-            |> this.SetSize(200, 300)
  
             
         overlayPaneId 
-        |> this.Children [| overlayWindowId |]
+        |> this.SetChildren [| overlayWindowId |]
         |> this.SetLayer 225
         |> this.SetVisible false 
         |> ignore
@@ -423,7 +421,7 @@ type Noobish2(maxCount: int) =
         let index = this.GetIndex cid 
         if index <> -1 then 
 
-            let children = childrenIds.[cid.Index]
+            let children = this.Children.[cid.Index]
             if children.Count > 0 then 
                 let previousLayer = this.Layer.[index]
 
@@ -441,7 +439,7 @@ type Noobish2(maxCount: int) =
         if index <> -1 then 
             this.Visible.[index] <- v
             
-            let children = childrenIds.[cid.Index]
+            let children = this.Children.[cid.Index]
             for j = 0 to children.Count - 1 do 
                 this.SetVisible v children.[j] |> ignore
         cid
@@ -535,22 +533,22 @@ type Noobish2(maxCount: int) =
             this.OnClick.[index] <- onClick
         cid
 
-    member this.BumpLayer (layer: int) (childIds: IReadOnlyList<UIComponentId>) = 
-        for i = 0 to childIds.Count - 1 do 
-            let cid = childIds.[i]
+    member this.BumpLayer (layer: int) (children: IReadOnlyList<UIComponentId>) = 
+        for i = 0 to children.Count - 1 do 
+            let cid = children.[i]
             let childLayer = this.Layer.[cid.Index] + layer
             this.Layer.[cid.Index] <- childLayer
-            this.BumpLayer childLayer childrenIds.[cid.Index]
+            this.BumpLayer childLayer this.Children.[cid.Index]
 
 
-    member this.Children (cs: UIComponentId[]) (cid: UIComponentId) =
+    member this.SetChildren (cs: UIComponentId[]) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index > -1 then 
             for i = 0 to cs.Length - 1 do 
                 let childId = cs[i]
-                if parentIds.[childId.Index] <> UIComponentId.empty then failwith "what"
-                parentIds.[childId.Index] <- cid
-            let childrenIds = childrenIds.[index]
+                if this.ParentId.[childId.Index] <> UIComponentId.empty then failwith "what"
+                this.ParentId.[childId.Index] <- cid
+            let childrenIds = this.Children.[index]
             childrenIds.AddRange cs
 
             let layer = this.Layer.[index]
@@ -572,7 +570,7 @@ type Noobish2(maxCount: int) =
         let mutable height = if fill.Vertical then maxHeight else min minSize.Height maxHeight
 
         if not (String.IsNullOrWhiteSpace text) then
-            let themeId = themeIds.[i]
+            let themeId = this.ThemeId.[i]
             let paddedWidth = maxWidth
 
             let fontId = styleSheet.GetFont themeId "default"
@@ -588,19 +586,13 @@ type Noobish2(maxCount: int) =
             width <- max width (float32 contentWidth)
             height <- max height (float32 contentHeight)
 
-        this.Bounds[i] <- {
-            this.Bounds.[i] with  
-                X = startX
-                Y = startY
-                Width = width + margin.Left + margin.Right + padding.Left + padding.Right
-                Height = height + margin.Top + margin.Bottom + padding.Top + padding.Bottom
-        }
 
-        let layout = this.Layout.[i]
 
-        match layout with 
+
+
+        match this.Layout.[i] with 
         | Layout.LinearHorizontal -> 
-            let children = childrenIds.[i]
+            let children = this.Children.[i]
             let mutable childX = startX + margin.Left + padding.Left
             let childY = startY + margin.Top + padding.Top
             for j = 0 to children.Count - 1 do 
@@ -609,9 +601,10 @@ type Noobish2(maxCount: int) =
 
                 let childBounds = this.Bounds.[cid.Index]
                 childX <- childX + childBounds.Width
+                height <- max height childBounds.Height
 
         | Layout.LinearVertical -> 
-            let children = childrenIds.[i]
+            let children = this.Children.[i]
             let childX = startX + margin.Left + padding.Left
             let mutable childY = startY + margin.Top + padding.Top
             for j = 0 to children.Count - 1 do 
@@ -620,12 +613,13 @@ type Noobish2(maxCount: int) =
 
                 let childBounds = this.Bounds.[cid.Index]
                 childY <- childY + childBounds.Height
+                height <- max width childBounds.Width
 
         | Layout.Grid(cols, rows) -> 
             let startX = startX + margin.Left + padding.Left
             let startY = startY + margin.Top + padding.Top
 
-            let children = childrenIds.[i]
+            let children = this.Children.[i]
             let colWidth = width / float32 cols
             let rowHeight = height  / float32 rows
             let mutable col = 0
@@ -655,14 +649,14 @@ type Noobish2(maxCount: int) =
              
                 this.LayoutComponent content styleSheet childStartX childStartY childWidth childHeight cid.Index
         | Layout.Relative (rcid) -> 
-            let pcid = parentIds.[rcid.Index]
+            let pcid = this.ParentId.[rcid.Index]
             let parentBounds = this.Bounds.[pcid.Index]
 
             let relativeBounds = this.Bounds.[rcid.Index]
             let startX = relativeBounds.X
             let startY = relativeBounds.Y
             
-            let children = childrenIds.[i]
+            let children = this.Children.[i]
             for i = 0 to children.Count - 1 do 
                 let ccid = children.[i]
                 let relativePosition = this.RelativePosition.[ccid.Index]
@@ -674,6 +668,13 @@ type Noobish2(maxCount: int) =
         | Layout.None -> ()
 
 
+        this.Bounds[i] <- {
+            this.Bounds.[i] with  
+                X = startX
+                Y = startY
+                Width = width + margin.Left + margin.Right + padding.Left + padding.Right
+                Height = height + margin.Top + margin.Bottom + padding.Top + padding.Bottom
+        }
     member this.DrawCursor
         (styleSheet: NoobishStyleSheet)
         (content: ContentManager)
@@ -684,7 +685,7 @@ type Noobish2(maxCount: int) =
         (scrollX: float32)
         (scrollY: float32) =
         let time = float32 gameTime.TotalGameTime.Seconds
-        let themeId = themeIds.[i]
+        let themeId = this.ThemeId.[i]
         let layer = 1f - float32 (this.Layer.[i] + 32) / 255f
 
 
@@ -725,14 +726,14 @@ type Noobish2(maxCount: int) =
     member this.DrawBackground (styleSheet: NoobishStyleSheet) (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (gameTime: GameTime) (i: int)=
 
         let cstate =
-            if this.WantsFocus.[i] && this.FocusedElementId.Id = ids.[i].Id then 
+            if this.WantsFocus.[i] && this.FocusedElementId.Id = this.Id.[i].Id then 
                 "focused"
             else 
                 "default"
 
         let color = Color.White
 
-        let themeId = themeIds.[i]
+        let themeId = this.ThemeId.[i]
         let bounds = this.Bounds.[i]
         let margin = this.Margin.[i]
         let layer = this.Layer.[i]
@@ -754,7 +755,7 @@ type Noobish2(maxCount: int) =
     member this.DrawText (content: ContentManager) (styleSheet: NoobishStyleSheet) (textBatch: TextBatch) (i: int) =
         let text = this.Text.[i]
         if text.Length > 0 then 
-            let themeId = themeIds.[i]
+            let themeId = this.ThemeId.[i]
             let layer = this.Layer.[i]
 
             let layer = (1f - float32 (layer + 1) / 255.0f)
@@ -828,7 +829,7 @@ type Noobish2(maxCount: int) =
 
             this.DrawBackground styleSheet textureAtlas spriteBatch gameTime i
 
-            if this.FocusedElementId = ids.[i] then 
+            if this.FocusedElementId = this.Id.[i] then 
                 this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
 
             spriteBatch.End()
@@ -859,7 +860,7 @@ type Noobish2(maxCount: int) =
         if waitForLayout && this.Count > 0 then 
 
             for i = 0 to this.Count - 1 do 
-                let themeId = themeIds.[i]
+                let themeId = this.ThemeId.[i]
 
                 let (top, left, bottom, right) = styleSheet.GetMargin themeId "default"
                 this.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
@@ -867,7 +868,7 @@ type Noobish2(maxCount: int) =
                 let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
                 this.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
-                if parentIds.[i] = UIComponentId.empty then 
+                if this.ParentId.[i] = UIComponentId.empty then 
                     toLayout.Enqueue(i, this.Layer.[i])
 
             while toLayout.Count > 0 do 
@@ -898,7 +899,7 @@ type Noobish2(maxCount: int) =
         if this.ComponentContains x y i then 
             Log.Logger.Information ("Mouse Hover inside component {ComponentId}", i)
 
-            let children = childrenIds.[i]
+            let children = this.Children.[i]
             for j = 0 to children.Count - 1 do 
                 this.Hover x y gameTime children.[j].Index
 
@@ -906,7 +907,7 @@ type Noobish2(maxCount: int) =
         if this.Visible.[i] && this.Enabled.[i]&& this.ComponentContains x y i then 
             Log.Logger.Information ("Mouse click inside component {ComponentId}", i)
 
-            let children = childrenIds.[i]
+            let children = this.Children.[i]
 
 
             let mutable found = false
@@ -920,13 +921,14 @@ type Noobish2(maxCount: int) =
 
             if not found && this.WantsOnClick.[i] then 
                 found <- true
-                this.OnClick.[i] ({SourceId = ids.[i]})
+                this.OnClick.[i] ({SourceId = this.Id.[i]})
             
             if not found  && this.WantsFocus.[i] then
                 found <- true 
-                this.FocusedElementId <- ids.[i]
+                this.FocusedElementId <- this.Id.[i]
+                this.Cursor <- this.Text.[i].Length
                 this.FocusedTime <- gameTime.TotalGameTime
-                this.OnFocus.[i] ({SourceId = ids.[i]}) true
+                this.OnFocus.[i] ({SourceId = this.Id.[i]}) true
             
             found
 
@@ -939,7 +941,7 @@ type Noobish2(maxCount: int) =
     member this.KeyTyped (c: char) = 
         let focusedIndex = this.GetIndex this.FocusedElementId
         if focusedIndex <> -1 && this.WantsKeyTyped.[focusedIndex] then 
-            this.OnKeyTyped.[focusedIndex] {SourceId = ids.[focusedIndex]} c
+            this.OnKeyTyped.[focusedIndex] {SourceId = this.Id.[focusedIndex]} c
 
 
     member this.ProcessMouse(gameTime: GameTime) =
@@ -949,7 +951,7 @@ type Noobish2(maxCount: int) =
         let x = float32 mouseState.X
         let y = float32 mouseState.Y
         for i = 0 to this.Count - 1 do 
-            if parentIds.[i] = UIComponentId.empty then 
+            if this.ParentId.[i] = UIComponentId.empty then 
                 this.Hover x y gameTime i 
 
 
@@ -958,7 +960,7 @@ type Noobish2(maxCount: int) =
         if leftPressed then 
             this.FocusedElementId <- UIComponentId.empty
             for i = 0 to this.Count - 1 do 
-                if parentIds.[i] = UIComponentId.empty then 
+                if this.ParentId.[i] = UIComponentId.empty then 
                     toLayout.Enqueue(i, -this.Layer.[i])
 
             while toLayout.Count > 0 do 
@@ -973,10 +975,10 @@ type Noobish2(maxCount: int) =
         let index = this.GetIndex(this.FocusedElementId)
         if index <> -1 && this.WantsKeyPressed.[index] then 
             if previousKeyState.IsKeyDown(Keys.Left) && keyState.IsKeyUp (Keys.Left) then 
-                this.OnKeyPressed.[index] {SourceId = ids.[index]} Keys.Left
+                this.OnKeyPressed.[index] {SourceId = this.Id.[index]} Keys.Left
 
             if previousKeyState.IsKeyDown(Keys.Right) && keyState.IsKeyUp (Keys.Right) then 
-                this.OnKeyPressed.[index] {SourceId = ids.[index]} Keys.Right
+                this.OnKeyPressed.[index] {SourceId = this.Id.[index]} Keys.Right
 
         previousKeyState <- keyState
     member this.Update (gameTime: GameTime) = 
@@ -990,10 +992,10 @@ type Noobish2(maxCount: int) =
         this.FocusedElementId <- UIComponentId.empty
         for i = 0 to this.Count - 1 do 
             free.Enqueue(i, i)
-            ids.[i] <- UIComponentId.empty
-            themeIds.[i] <- ""
+            this.Id.[i] <- UIComponentId.empty
+            this.ThemeId.[i] <- ""
 
-            parentIds.[i] <- UIComponentId.empty
+            this.ParentId.[i] <- UIComponentId.empty
 
             this.Visible.[i] <- true 
             this.Enabled.[i] <- true 
@@ -1028,7 +1030,7 @@ type Noobish2(maxCount: int) =
             this.WantsFocus.[i] <- false 
             this.OnFocus.[i] <- (fun _ _ ->())
 
-            childrenIds.[i].Clear()
+            this.Children.[i].Clear()
         this.Count <- 0
 
         waitForLayout <- true

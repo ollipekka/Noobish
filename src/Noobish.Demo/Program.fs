@@ -63,7 +63,7 @@ module Noobish2Demo =
         let window2 = 
             nui2.Window()
             |> nui2.SetSize (150, 200)
-            |> nui2.Children [|
+            |> nui2.SetChildren [|
                 nui2.Header "Hello"
                 nui2.HorizontalRule()
                 nui2.Button "One" (fun _ -> ( Log.Logger.Information "One")) 
@@ -76,7 +76,7 @@ module Noobish2Demo =
         let window3 = 
             nui2.Window()
             |> nui2.SetPosition (200, 0)
-            |> nui2.Children [|
+            |> nui2.SetChildren [|
                 nui2.Header "Hello 2"
                 nui2.HorizontalRule()
                 nui2.Button "One 2" (fun _ -> (Log.Logger.Information "One 2"))
@@ -88,7 +88,7 @@ module Noobish2Demo =
             nui2.Window()
             |> nui2.SetGrid(2, 2)
             |> nui2.SetPosition (0, 200)
-            |> nui2.Children [|
+            |> nui2.SetChildren [|
                 nui2.Button "1" (fun _ -> (Log.Logger.Information "1"))
                     |> nui2.SetColspan 1 
                     |> nui2.SetRowspan 1 
@@ -312,10 +312,10 @@ module Buttons =
 
     
         ui.Grid(2, 2)
-        |> ui.Children 
+        |> ui.SetChildren 
             [|
                 ui.PanelVertical ()
-                |> ui.Children [|
+                |> ui.SetChildren [|
                     ui.Button "Padding 0" (fun gameTime -> dispatch (ChangePadding 0))
                         |> ui.SetFillHorizontal
                     ui.Button "Padding 5" (fun gameTime -> dispatch (ChangePadding 5)) 
@@ -326,7 +326,7 @@ module Buttons =
                         |> ui.SetFillHorizontal
                 |]
                 ui.PanelVertical ()
-                |> ui.Children [|
+                |> ui.SetChildren [|
                     ui.Button "Margin 0" (fun gameTime -> dispatch (ChangeMargin 0))
                         |> ui.SetFillHorizontal
                     ui.Button "Margin 5" (fun gameTime -> dispatch (ChangeMargin 5)) 
@@ -337,14 +337,14 @@ module Buttons =
                         |> ui.SetFillHorizontal
                 |]
                 ui.PanelVertical ()
-                |> ui.Children [|
+                |> ui.SetChildren [|
                     ui.Combobox [| "One"; "Two"; "Three" |] (fun event value -> Log.Logger.Information("Value changed {Value}", value))
                     ui.Textbox "what" (fun event value -> Log.Logger.Information("Text changed {value}", value))
                     ui.Button "8" ignore 
                     ui.Button "9" ignore
                 |]
                 ui.PanelHorizontal ()
-                |> ui.Children [|
+                |> ui.SetChildren [|
                         ui.Header "Three"
                     |]
             |]
@@ -558,17 +558,17 @@ let view game (model: DemoModel) dispatch =
 
     let gridId = 
         ui.Grid(8, 12)
-        |> ui.Children [|
+        |> ui.SetChildren [|
             ui.PanelHorizontal() 
             |> ui.SetRowspan 1
             |> ui.SetColspan 3
-            |> ui.Children [|
+            |> ui.SetChildren [|
                 ui.Header "Noobish"
             |]
             ui.PanelWithGrid(1, 12)
             |> ui.SetRowspan 1 
             |> ui.SetColspan 9
-            |> ui.Children [|
+            |> ui.SetChildren [|
                 ui.Header title
                 |> ui.SetColspan 6
                 
@@ -589,7 +589,7 @@ let view game (model: DemoModel) dispatch =
             ui.PanelVertical() 
             |> ui.SetRowspan 7
             |> ui.SetColspan 3
-            |> ui.Children [|
+            |> ui.SetChildren [|
                 ui.Button "Buttons" (fun gameTime -> dispatch ShowButtons)
                 |> ui.FillHorizontal 
                 |> ui.SetToggled (model.State = Buttons)
