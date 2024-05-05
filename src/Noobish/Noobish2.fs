@@ -144,6 +144,7 @@ type Noobish2(maxCount: int) =
 
     let drawQueue = PriorityQueue<int, int>()
 
+    let toCalculateSize = PriorityQueue<int, int>()
     let toLayout = PriorityQueue<int, int>()
 
 
@@ -170,8 +171,8 @@ type Noobish2(maxCount: int) =
 
     member val Layer = Array.create maxCount 0
     member val Bounds = Array.create<NoobishRectangle> maxCount {X = 0f; Y = 0f; Width = 0f; Height = 0f}
-    member val OverflowSize = Array.create maxCount {Width = 0f; Height = 0f}
     member val MinSize = Array.create maxCount {Width = 0f; Height = 0f}
+    member val ContentSize = Array.create maxCount {Width = 0f; Height = 0f}
     member val RelativePosition = Array.create maxCount {X = 0f; Y = 0f}
 
     member val Fill = Array.create<Fill> maxCount ({Horizontal = false; Vertical = false})
@@ -378,7 +379,6 @@ type Noobish2(maxCount: int) =
         let cid = this.Create "Combobox"
         this.Text.[cid.Index] <- items.[0].ToString()
 
-
         let overlayPaneId =
             this.Overlaypane cid 
             |> this.SetOnClick (fun event ->  
@@ -395,7 +395,6 @@ type Noobish2(maxCount: int) =
                         ) |> this.SetFillHorizontal
                 )
             )
- 
             
         overlayPaneId 
         |> this.SetChildren [| overlayWindowId |]
@@ -555,6 +554,84 @@ type Noobish2(maxCount: int) =
             this.BumpLayer layer (childrenIds :> IReadOnlyList<UIComponentId>)
         cid
 
+    member this.CalculateMinSize (content: ContentManager) (styleSheet: NoobishStyleSheet) (i: int) = 
+
+        let minSize = this.MinSize.[i]
+
+        let struct(contentWidth, contentHeight) = 
+            match this.Layout.[i] with 
+            | Layout.LinearHorizontal -> 
+                let children = this.Children.[i]
+                let mutable width = 0f
+                let mutable height = 0f
+                for j = 0 to children.Count - 1 do 
+                    let cid = children.[j]
+
+                    let childPadding = this.Padding.[cid.Index]
+                    let childMargin = this.Margin.[cid.Index]
+                    let childSize = this.ContentSize.[cid.Index]
+                    width <- width + (childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right)
+                    height <- max height (childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom)
+                struct(width, height)
+            | Layout.LinearVertical -> 
+                let children = this.Children.[i]
+                let mutable width = 0f
+                let mutable height = 0f
+                for j = 0 to children.Count - 1 do 
+                    let cid = children.[j]
+
+                    let childPadding = this.Padding.[cid.Index]
+                    let childMargin = this.Margin.[cid.Index]
+                    let childSize = this.ContentSize.[cid.Index]
+                    width <- max width (childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right)
+                    height <- height + (childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom)
+                struct (width, height)
+
+            | Layout.Grid(cols, rows) -> 
+                let children = this.Children.[i]
+
+                let mutable maxColWidth = 0f
+                let mutable maxRowHeight = 0f
+
+                for i = 0 to children.Count - 1 do
+                    let cid = children.[i]
+
+                    let gridSpan = this.GridSpan.[cid.Index]
+                    let childPadding = this.Padding.[cid.Index]
+                    let childMargin = this.Margin.[cid.Index]
+                    let childSize = this.ContentSize.[cid.Index]
+                    maxColWidth <- max maxColWidth ((childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right) / float32 gridSpan.Colspan)
+                    maxRowHeight <- max maxRowHeight ((childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom) / float32 gridSpan.Rowspan)
+
+                struct(maxColWidth * float32 cols, maxRowHeight * float32 rows)
+            | Layout.Relative (rcid) -> 
+                let pcid = this.ParentId.[rcid.Index]
+                struct(0f, 0f)
+            | Layout.None -> 
+                let mutable width = 0f
+                let mutable height = 0f
+
+                let text = this.Text.[i]
+                if not (String.IsNullOrWhiteSpace text) then
+                    let themeId = this.ThemeId.[i]
+
+                    let fontId = styleSheet.GetFont themeId "default"
+                    let font = content.Load<NoobishFont> fontId
+                    let fontSize = int(float32 (styleSheet.GetFontSize themeId "default"))
+
+                    let struct (contentWidth, contentHeight) =
+                        if this.Textwrap.[i] then
+                            struct(minSize.Width, minSize.Height)
+                        else
+                            NoobishFont.measureSingleLine font fontSize text
+
+                    width <- max width (float32 contentWidth)
+                    height <- max height (float32 contentHeight)
+                struct (width, height)
+
+
+        this.ContentSize.[i] <- {Width = contentWidth; Height = contentHeight}
+
     member this.LayoutComponent (content: ContentManager) (styleSheet: NoobishStyleSheet) (startX: float32) (startY: float32) (parentWidth: float32) (parentHeight: float32) (i: int) = 
 
         let fill = this.Fill.[i]
@@ -562,12 +639,13 @@ type Noobish2(maxCount: int) =
         let margin = this.Margin.[i]
         let padding = this.Padding.[i]
         let minSize = this.MinSize.[i]
+        let contentSize = this.ContentSize.[i]
 
         let maxWidth = parentWidth - margin.Left - margin.Right - padding.Left - padding.Right
         let maxHeight = parentHeight - margin.Top - margin.Bottom - padding.Top - padding.Bottom
 
-        let mutable width = if fill.Horizontal then maxWidth else min minSize.Width maxWidth
-        let mutable height = if fill.Vertical then maxHeight else min minSize.Height maxHeight
+        let mutable width = if fill.Horizontal then maxWidth else min (max contentSize.Width minSize.Width) maxWidth
+        let mutable height = if fill.Vertical then maxHeight else min (max contentSize.Height minSize.Height) maxHeight
 
         if not (String.IsNullOrWhiteSpace text) then
             let themeId = this.ThemeId.[i]
@@ -587,8 +665,13 @@ type Noobish2(maxCount: int) =
             height <- max height (float32 contentHeight)
 
 
-
-
+        this.Bounds[i] <- {
+            this.Bounds.[i] with  
+                X = startX
+                Y = startY
+                Width = width + margin.Left + margin.Right + padding.Left + padding.Right
+                Height = height + margin.Top + margin.Bottom + padding.Top + padding.Bottom
+        }
 
         match this.Layout.[i] with 
         | Layout.LinearHorizontal -> 
@@ -599,9 +682,8 @@ type Noobish2(maxCount: int) =
                 let cid = children.[j]
                 this.LayoutComponent content styleSheet childX childY width height cid.Index
 
-                let childBounds = this.Bounds.[cid.Index]
-                childX <- childX + childBounds.Width
-                height <- max height childBounds.Height
+                let childSize = this.Bounds.[cid.Index]
+                childX <- childX + childSize.Width
 
         | Layout.LinearVertical -> 
             let children = this.Children.[i]
@@ -611,9 +693,8 @@ type Noobish2(maxCount: int) =
                 let cid = children.[j]
                 this.LayoutComponent content styleSheet childX childY width height cid.Index
 
-                let childBounds = this.Bounds.[cid.Index]
-                childY <- childY + childBounds.Height
-                height <- max width childBounds.Width
+                let childSize = this.Bounds.[cid.Index]
+                childY <- childY + childSize.Height
 
         | Layout.Grid(cols, rows) -> 
             let startX = startX + margin.Left + padding.Left
@@ -667,14 +748,6 @@ type Noobish2(maxCount: int) =
 
         | Layout.None -> ()
 
-
-        this.Bounds[i] <- {
-            this.Bounds.[i] with  
-                X = startX
-                Y = startY
-                Width = width + margin.Left + margin.Right + padding.Left + padding.Right
-                Height = height + margin.Top + margin.Bottom + padding.Top + padding.Bottom
-        }
     member this.DrawCursor
         (styleSheet: NoobishStyleSheet)
         (content: ContentManager)
@@ -868,8 +941,16 @@ type Noobish2(maxCount: int) =
                 let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
                 this.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
+                (* Calculate size for all the components going from topmost to bottom. *)
+                toCalculateSize.Enqueue(i, - this.Layer.[i])
+
+                (* Run layout only for root components. *)
                 if this.ParentId.[i] = UIComponentId.empty then 
                     toLayout.Enqueue(i, this.Layer.[i])
+
+            while toCalculateSize.Count > 0 do 
+                let i = toCalculateSize.Dequeue()
+                this.CalculateMinSize content styleSheet i 
 
             while toLayout.Count > 0 do 
                 let i = toLayout.Dequeue()
@@ -1006,8 +1087,8 @@ type Noobish2(maxCount: int) =
             this.Textwrap.[i] <- false
 
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
-            this.OverflowSize.[i] <- {Width = 0f; Height = 0f}
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
+            this.ContentSize.[i] <- {Width = 0f; Height = 0f}
             this.RelativePosition.[i] <- {X = 0f; Y = 0f}
             this.Fill.[i] <- {Horizontal = false; Vertical = false}
             this.Padding.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
