@@ -336,10 +336,12 @@ module Buttons =
                     ui.Button "Margin 15" (fun gameTime -> dispatch (ChangeMargin 15))
                         |> ui.SetFillHorizontal
                 |]
+                let items = [| "Option 1"; "Option 2"; "Option 3" |]
+                let selectedItemIndex = items |> Array.findIndex(fun item -> item = model.ComboboxValue)
                 ui.PanelVertical ()
                 |> ui.SetChildren [|
-                    ui.Combobox [| "One"; "Two"; "Three" |] (fun event value -> Log.Logger.Information("Value changed {Value}", value))
-                    ui.Textbox "what" (fun event value -> Log.Logger.Information("Text changed {value}", value))
+                    ui.Combobox items selectedItemIndex (fun event value -> Log.Logger.Information("Value changed {Value}", value); dispatch (ComboboxValueChanged value))
+                    ui.Textbox model.FeatureText (fun event value -> Log.Logger.Information("Text changed {value}", value); dispatch (FeaturesChanged value))
                     ui.Button "8" ignore 
                     ui.Button "9" ignore
                 |]
