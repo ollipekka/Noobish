@@ -147,18 +147,25 @@ type NoobishFrame(count) =
     member val Children = Array.init count (fun _ -> ResizeArray<UIComponentId>())
 
     member val Visible = Array.create count true 
+
     member val Enabled = Array.create count true 
 
     member val Block = Array.create count false
 
     member val Text = Array.create count ""
+
     member val TextAlign = Array.create count NoobishTextAlignment.Left
+
     member val Textwrap = Array.create count false
 
     member val Layer = Array.create count 0
+
     member val Bounds = Array.create<NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
+
     member val ContentSize = Array.create count {Width = 0f; Height = 0f}
+
     member val RelativePosition = Array.create count {X = 0f; Y = 0f}
 
     member val Fill = Array.create<Fill> count ({Horizontal = false; Vertical = false})

@@ -651,7 +651,7 @@ type Noobish2(maxCount: int) =
                 styleSheet.GetColor themeId "toggled"
             else
                 let lastPressTime = this.Active.LastPressTime.[i]
-                let progress = 1.0 - min ((gameTime.TotalGameTime - lastPressTime).TotalSeconds / 0.15) 1.0
+                let progress = 1.0 - min ((gameTime.TotalGameTime - lastPressTime).TotalSeconds / 0.05) 1.0
 
                 let color = styleSheet.GetColor themeId "default"
                 let pressedColor = styleSheet.GetColor themeId "toggled"
@@ -883,7 +883,7 @@ type Noobish2(maxCount: int) =
     member this.KeyTyped (c: char) = 
         let focusedIndex = this.GetIndex this.FocusedElementId
         if focusedIndex <> -1 && this.Active.WantsKeyTyped.[focusedIndex] then 
-            Log.Logger.Debug ("Key typed {Key} for component {ComponentId}", c, focusedIndex)
+            Log.Logger.Debug ("Key typed {Key} for component {Component}", c, focusedIndex)
             this.Active.OnKeyTyped.[focusedIndex] {SourceId = this.Active.Id.[focusedIndex]} c
 
 
@@ -967,8 +967,8 @@ type Noobish2(maxCount: int) =
 
     member this.Clear() =
         this.FocusedElementId <- UIComponentId.empty
-        previousFrameIndex <- activeFrameIndex
-        activeFrameIndex <- activeFrameIndex % frames.Length
+        //previousFrameIndex <- activeFrameIndex
+        //activeFrameIndex <- activeFrameIndex % frames.Length
         for i = 0 to this.Active.Count - 1 do 
             free.Enqueue(i, i)
             this.Active.Id.[i] <- UIComponentId.empty
