@@ -94,7 +94,7 @@ type NoobishRectangle = {
 module DrawUI = 
 
 
-    let createRectangle (x: float32) (y:float32) (width: float32) (height: float32) =
+    let createRectangle (x: float32, y:float32, width: float32, height: float32) =
         Rectangle (int (x), int (y), int (width), int (height))
 
     let drawDrawable (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (layer: float32) (color: Color) (drawables: NoobishDrawable[]) =

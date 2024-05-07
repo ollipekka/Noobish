@@ -21,6 +21,12 @@ open Noobish.TextureAtlas
 
 type Noobish2(maxCount: int) =
 
+
+    let rasterizerState = 
+        let rasterizerState = new RasterizerState()
+        rasterizerState.ScissorTestEnable <- true
+        rasterizerState
+
     let mutable previousMouseState: MouseState = Microsoft.Xna.Framework.Input.Mouse.GetState()
 
     let mutable previousKeyState: KeyboardState = Microsoft.Xna.Framework.Input.Keyboard.GetState()
@@ -35,12 +41,8 @@ type Noobish2(maxCount: int) =
     let free = PriorityQueue<int, int>(Array.init maxCount (fun i -> struct(i,i)))
 
 
-    let frames = Array.init 2 (fun _ -> NoobishFrame (255))
 
-    let mutable previousFrameIndex = 0
-    let mutable activeFrameIndex = 0
-
-    member private this.Active with get () = frames.[activeFrameIndex]
+    member val Components = NoobishFrame(256)
 
     member val Cursor = 0 with get, set 
 
@@ -55,14 +57,14 @@ type Noobish2(maxCount: int) =
     member this.IsActive(cid: UIComponentId) =
         let index = cid.Index
 
-        if index <> -1 && this.Active.Id.[index].Id.Equals cid.Id then 
+        if index <> -1 && this.Components.Id.[index].Id.Equals cid.Id then 
             index
         else 
             -1
     member this.GetIndex(cid: UIComponentId) =
         let index = cid.Index
 
-        if index <> -1 && this.Active.Id.[index].Id.Equals cid.Id then 
+        if index <> -1 && this.Components.Id.[index].Id.Equals cid.Id then 
             index
         else 
             -1
@@ -72,87 +74,87 @@ type Noobish2(maxCount: int) =
 
         let i = free.Dequeue() 
         let cid: UIComponentId = {Index = i; Id = Guid.NewGuid()}
-        this.Active.Id.[i] <- cid
-        this.Active.ThemeId.[i] <- themeId
-        if this.Active.ParentId.[i] <> UIComponentId.empty then failwith "crap"
-        this.Active.Enabled.[i] <- true 
-        this.Active.Visible.[i] <- true 
-        this.Active.Layer.[i] <- 1
-        this.Active.Layout.[i] <- Layout.None
-        this.Active.GridSpan.[i] <- {Colspan = 1; Rowspan = 1}
-        this.Active.MinSize.[i] <- {Width = 0f; Height = 0f}
+        this.Components.Id.[i] <- cid
+        this.Components.ThemeId.[i] <- themeId
+        if this.Components.ParentId.[i] <> UIComponentId.empty then failwith "crap"
+        this.Components.Enabled.[i] <- true 
+        this.Components.Visible.[i] <- true 
+        this.Components.Layer.[i] <- 1
+        this.Components.Layout.[i] <- Layout.None
+        this.Components.GridSpan.[i] <- {Colspan = 1; Rowspan = 1}
+        this.Components.MinSize.[i] <- {Width = 0f; Height = 0f}
 
-        this.Active.WantsOnClick.[i] <- false 
-        this.Active.OnClick.[i] <- ignore
-        this.Active.LastPressTime[i] <- TimeSpan.Zero
+        this.Components.WantsOnClick.[i] <- false 
+        this.Components.OnClick.[i] <- ignore
+        this.Components.LastPressTime[i] <- TimeSpan.Zero
         
-        this.Active.Count <- this.Active.Count + 1
+        this.Components.Count <- this.Components.Count + 1
 
         cid
 
     member this.Overlaypane(rcid: UIComponentId) =
         let cid = this.Create "Division"
-        this.Active.Layout.[cid.Index] <- Layout.Relative rcid
-        this.Active.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        this.Components.Layout.[cid.Index] <- Layout.Relative rcid
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid
 
     member this.Window() =
         let cid = this.Create "Panel"
-        this.Active.Layout.[cid.Index] <- Layout.LinearVertical
+        this.Components.Layout.[cid.Index] <- Layout.LinearVertical
         cid
 
-    member this.WindowWithGrid (cols: int) (rows: int) =
+    member this.WindowWithGrid (cols: int, rows: int) =
         let cid = this.Create "Window"
-        this.Active.Layout.[cid.Index] <- Layout.Grid(cols, rows)
+        this.Components.Layout.[cid.Index] <- Layout.Grid(cols, rows)
         cid
 
     member this.Header (t: string) = 
         let cid = this.Create "Header1"
-        this.Active.Text.[cid.Index] <- t
-        this.Active.Block.[cid.Index] <- true
+        this.Components.Text.[cid.Index] <- t
+        this.Components.Block.[cid.Index] <- true
 
         cid
 
     member this.Label (t: string) = 
         let cid = this.Create "Label"
-        this.Active.Text.[cid.Index] <- t
+        this.Components.Text.[cid.Index] <- t
 
         cid
 
     member this.Textbox (t: string) (onTextChanged: (OnClickEvent)-> string-> unit) = 
         let cid = this.Create "TextBox"
 
-        this.Active.WantsFocus.[cid.Index] <- true 
-        this.Active.OnFocus.[cid.Index] <- (
+        this.Components.WantsFocus.[cid.Index] <- true 
+        this.Components.OnFocus.[cid.Index] <- (
             fun event focus -> ()
                 
         )
 
-        this.Active.WantsKeyTyped.[cid.Index] <- true 
-        this.Active.OnKeyTyped.[cid.Index] <- (fun event typed ->
-            let text = this.Active.Text.[cid.Index]
+        this.Components.WantsKeyTyped.[cid.Index] <- true 
+        this.Components.OnKeyTyped.[cid.Index] <- (fun event typed ->
+            let text = this.Components.Text.[cid.Index]
             if int typed = 8 then // backspace
                 if text.Length > 0 && this.Cursor > 0 then
-                    this.Active.Text.[cid.Index] <- text.Remove(this.Cursor - 1, 1)
+                    this.Components.Text.[cid.Index] <- text.Remove(this.Cursor - 1, 1)
                     this.Cursor <- this.Cursor - 1
             elif int typed = 13 || int typed = 10 then 
                 this.FocusedElementId <- UIComponentId.empty
-                onTextChanged {SourceId = cid} this.Active.Text[cid.Index]
+                onTextChanged {SourceId = cid} this.Components.Text[cid.Index]
                 this.Cursor <- 0
             elif int typed = 27 then
                 this.FocusedElementId <- UIComponentId.empty
-                this.Active.Text.[cid.Index] <- t
+                this.Components.Text.[cid.Index] <- t
                 this.Cursor <- 0
             elif int typed = 127 then // deleted
                 if text.Length > 0 && this.Cursor < text.Length then
-                    this.Active.Text.[cid.Index] <- text.Remove(this.Cursor, 1)
+                    this.Components.Text.[cid.Index] <- text.Remove(this.Cursor, 1)
             else
-                this.Active.Text.[cid.Index] <- text.Insert(this.Cursor, typed.ToString())
+                this.Components.Text.[cid.Index] <- text.Insert(this.Cursor, typed.ToString())
                 this.Cursor <- this.Cursor + 1
         )
-        this.Active.WantsKeyPressed.[cid.Index] <- true 
-        this.Active.OnKeyPressed.[cid.Index] <- (fun event key ->
-            let text = this.Active.Text.[cid.Index]
+        this.Components.WantsKeyPressed.[cid.Index] <- true 
+        this.Components.OnKeyPressed.[cid.Index] <- (fun event key ->
+            let text = this.Components.Text.[cid.Index]
             if key = Microsoft.Xna.Framework.Input.Keys.Left then 
                 let newCursorPos = this.Cursor - 1 
                 this.Cursor <- max 0 newCursorPos
@@ -161,7 +163,7 @@ type Noobish2(maxCount: int) =
                 this.Cursor <- min text.Length newCursorPos
         )
 
-        this.Active.Text.[cid.Index] <- t
+        this.Components.Text.[cid.Index] <- t
 
 
 
@@ -169,61 +171,57 @@ type Noobish2(maxCount: int) =
 
     member this.Button (t: string) (onClick: OnClickEvent -> unit) = 
         let cid = this.Create "Button"
-        this.Active.Text.[cid.Index] <- t
-        this.Active.WantsOnClick.[cid.Index] <- true
-        this.Active.OnClick.[cid.Index] <- onClick
+        this.Components.Text.[cid.Index] <- t
+        this.Components.WantsOnClick.[cid.Index] <- true
+        this.Components.OnClick.[cid.Index] <- onClick
         cid
 
     member this.Space () = 
         let cid = this.Create "Space"
-        this.Active.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid
 
     member this.Div () = 
         let cid = this.Create "Division"
-        this.Active.Block.[cid.Index] <- true
+        this.Components.Block.[cid.Index] <- true
         this.SetLayout (Layout.LinearVertical) cid.Index
 
         cid
 
-    member this.Grid (rows: int, cols: int) = 
-        let cid = this.Create "Grid"
+    member this.Grid (cols: int, rows: int) = 
+        let cid = this.Create "Division"
         this.SetLayout (Layout.Grid(cols, rows)) cid.Index
-        this.Active.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid
 
-    member this.PanelWithGrid (rows: int, cols: int) = 
+    member this.PanelWithGrid (cols: int, rows: int) = 
         let cid = this.Create "Panel"
         this.SetLayout (Layout.Grid(cols, rows)) cid.Index
-        this.Active.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
-        cid   
-
-    member this.SetGrid (rows: int, cols: int) (cid: UIComponentId)= 
-        this.SetLayout (Layout.Grid(cols, rows)) cid.Index
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.PanelHorizontal () = 
         let cid = this.Create "Panel"
         this.SetLayout (Layout.LinearHorizontal) cid.Index
-        this.Active.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.PanelVertical () = 
         let cid = this.Create "Panel"
         this.SetLayout (Layout.LinearVertical) cid.Index
-        this.Active.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.HorizontalRule () = 
         let cid = this.Create "HorizontalRule"
-        this.Active.Id.[cid.Index] <- cid
-        this.Active.Block.[cid.Index] <- true
-        this.Active.Fill.[cid.Index] <- {Horizontal = true; Vertical = false} 
+        this.Components.Id.[cid.Index] <- cid
+        this.Components.Block.[cid.Index] <- true
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = false} 
         cid
 
     member this.Combobox<'T> (items: 'T[]) (selectedIndex: int) (onValueChanged: OnClickEvent -> 'T -> unit)= 
         let cid = this.Create "Combobox"
-        this.Active.Text.[cid.Index] <- items.[selectedIndex].ToString()
+        this.Components.Text.[cid.Index] <- items.[selectedIndex].ToString()
 
         let overlayPaneId =
             this.Overlaypane cid 
@@ -237,7 +235,7 @@ type Noobish2(maxCount: int) =
                     fun i -> 
                         this.Button (i.ToString()) (
                             fun (event) -> 
-                                this.Active.Text.[cid.Index] <- i.ToString(); onValueChanged ({SourceId=cid}) i
+                                this.Components.Text.[cid.Index] <- i.ToString(); onValueChanged ({SourceId=cid}) i
                         ) |> this.SetFillHorizontal
                 )
             )
@@ -249,8 +247,8 @@ type Noobish2(maxCount: int) =
         |> ignore
 
 
-        this.Active.WantsOnClick.[cid.Index] <- true
-        this.Active.OnClick.[cid.Index] <- (fun event -> 
+        this.Components.WantsOnClick.[cid.Index] <- true
+        this.Components.OnClick.[cid.Index] <- (fun event -> 
             this.SetVisible true overlayPaneId |> ignore
         )
 
@@ -259,32 +257,32 @@ type Noobish2(maxCount: int) =
     member this.SetSize (width: int, height: int) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.MinSize.[index] <- {Width = float32 width; Height = float32 height}
+            this.Components.MinSize.[index] <- {Width = float32 width; Height = float32 height}
         cid
 
     member this.SetLayer (layer: int) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
 
-            let children = this.Active.Children.[cid.Index]
+            let children = this.Components.Children.[cid.Index]
             if children.Count > 0 then 
-                let previousLayer = this.Active.Layer.[index]
+                let previousLayer = this.Components.Layer.[index]
 
                 for j = 0 to children.Count - 1 do 
                     let ccid = children.[j]
-                    let deltaLayer = this.Active.Layer.[ccid.Index] - previousLayer
+                    let deltaLayer = this.Components.Layer.[ccid.Index] - previousLayer
                     this.SetLayer (layer + deltaLayer) children.[j] |> ignore
 
-            this.Active.Layer.[index] <- layer
+            this.Components.Layer.[index] <- layer
         cid
 
 
     member this.SetVisible (v: bool) (cid: UIComponentId): UIComponentId = 
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Visible.[index] <- v
+            this.Components.Visible.[index] <- v
             
-            let children = this.Active.Children.[cid.Index]
+            let children = this.Components.Children.[cid.Index]
             for j = 0 to children.Count - 1 do 
                 this.SetVisible v children.[j] |> ignore
         cid
@@ -292,98 +290,134 @@ type Noobish2(maxCount: int) =
     member this.SetEnabled (v: bool) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Enabled.[index] <- v
+            this.Components.Enabled.[index] <- v
         cid
 
     member this.SetPosition (x: int, y: int) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Bounds.[index] <- {this.Active.Bounds.[index] with X = float32 x; Y = float32 y}
+            this.Components.Bounds.[index] <- {this.Components.Bounds.[index] with X = float32 x; Y = float32 y}
         cid
 
     member private this.SetLayout (layout: Layout) (index: int) =
-        this.Active.Layout.[index] <- layout
+        this.Components.Layout.[index] <- layout
 
     member this.SetRowspan (rowspan: int) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.GridSpan.[index] <- {this.Active.GridSpan.[index] with Rowspan = rowspan}
+            this.Components.GridSpan.[index] <- {this.Components.GridSpan.[index] with Rowspan = rowspan}
         cid
 
     member this.SetColspan (colspan: int) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.GridSpan.[index] <- {this.Active.GridSpan.[index] with Colspan = colspan}
+            this.Components.GridSpan.[index] <- {this.Components.GridSpan.[index] with Colspan = colspan}
         cid
 
     member this.SetMargin (margin: int) (cid: UIComponentId) =
         let margin = float32 margin
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Margin.[index] <- {Top = margin; Right = margin; Bottom = margin; Left = margin}
+            this.Components.Margin.[index] <- {Top = margin; Right = margin; Bottom = margin; Left = margin}
         cid
 
     member this.FillHorizontal (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Fill.[index] <- {this.Active.Fill.[index] with Horizontal = true}
+            this.Components.Fill.[index] <- {this.Components.Fill.[index] with Horizontal = true}
         cid
 
     member this.SetFillHorizontal (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Fill.[index] <- {this.Active.Fill.[index] with Horizontal = true}
+            this.Components.Fill.[index] <- {this.Components.Fill.[index] with Horizontal = true}
         cid
 
     member this.FillVertical (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Fill.[index] <- {this.Active.Fill.[index] with Vertical = true}
+            this.Components.Fill.[index] <- {this.Components.Fill.[index] with Vertical = true}
         cid
     member this.SetFill (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Fill.[index] <- {Horizontal = true; Vertical = true}
+            this.Components.Fill.[index] <- {Horizontal = true; Vertical = true}
         cid
 
     member this.SetScrollHorizontal (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Scroll.[index] <- {this.Active.Scroll.[index] with Horizontal = true}
+            this.Components.Scroll.[index] <- {this.Components.Scroll.[index] with Horizontal = true}
         cid
 
     member this.SetScrollVertical (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Scroll.[index] <- {this.Active.Scroll.[index] with Vertical = true}
+            this.Components.Scroll.[index] <- {this.Components.Scroll.[index] with Vertical = true}
         cid
 
 
     member this.SetScroll (horizontal: bool) (vertical: bool) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Scroll.[index] <- {this.Active.Scroll.[index] with Horizontal = horizontal; Vertical = vertical}
+            this.Components.Scroll.[index] <- {this.Components.Scroll.[index] with Horizontal = horizontal; Vertical = vertical}
         cid
 
+    member this.AlignText (textAlignment: NoobishTextAlignment) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.TextAlign.[index] <- textAlignment
+        cid       
+
+    member this.AlignTextTopLeft (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.TopLeft cid
+
+    member this.AlignTextTop (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.TopCenter cid
+
+    member this.AlignTextTopRight (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.TopRight cid
+
+
+    member this.AlignTextLeft (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.Left cid
+
+    member this.AlignTextCenter (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.Center cid
+
+    member this.AlignTextRight (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.Right cid
+
+
+    member this.AlignTextBottomLeft (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.BottomLeft cid
+
+    member this.AlignTextBottomCenter (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.BottomCenter cid
+
+    member this.AlignTextBottomRight (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.BottomRight cid
+
+  
     member this.SetToggled (t: bool) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.Toggled.[index] <- t
+            this.Components.Toggled.[index] <- t
         cid
 
     member this.SetOnClick (onClick: OnClickEvent -> unit) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Active.WantsOnClick.[index] <- true
-            this.Active.OnClick.[index] <- onClick
+            this.Components.WantsOnClick.[index] <- true
+            this.Components.OnClick.[index] <- onClick
         cid
 
     member this.BumpLayer (layer: int) (children: IReadOnlyList<UIComponentId>) = 
         for i = 0 to children.Count - 1 do 
             let cid = children.[i]
-            let childLayer = this.Active.Layer.[cid.Index] + layer
-            this.Active.Layer.[cid.Index] <- childLayer
-            this.BumpLayer childLayer this.Active.Children.[cid.Index]
+            let childLayer = this.Components.Layer.[cid.Index] + layer
+            this.Components.Layer.[cid.Index] <- childLayer
+            this.BumpLayer childLayer this.Components.Children.[cid.Index]
 
 
     member this.SetChildren (cs: UIComponentId[]) (cid: UIComponentId) =
@@ -391,50 +425,50 @@ type Noobish2(maxCount: int) =
         if index > -1 then 
             for i = 0 to cs.Length - 1 do 
                 let childId = cs[i]
-                if this.Active.ParentId.[childId.Index] <> UIComponentId.empty then failwith "what"
-                this.Active.ParentId.[childId.Index] <- cid
-            let childrenIds = this.Active.Children.[index]
+                if this.Components.ParentId.[childId.Index] <> UIComponentId.empty then failwith "what"
+                this.Components.ParentId.[childId.Index] <- cid
+            let childrenIds = this.Components.Children.[index]
             childrenIds.AddRange cs
 
-            let layer = this.Active.Layer.[index]
+            let layer = this.Components.Layer.[index]
             this.BumpLayer layer (childrenIds :> IReadOnlyList<UIComponentId>)
         cid
 
     member this.CalculateMinSize (content: ContentManager) (styleSheet: NoobishStyleSheet) (i: int) = 
 
-        let minSize = this.Active.MinSize.[i]
+        let minSize = this.Components.MinSize.[i]
 
         let struct(contentWidth, contentHeight) = 
-            match this.Active.Layout.[i] with 
+            match this.Components.Layout.[i] with 
             | Layout.LinearHorizontal -> 
-                let children = this.Active.Children.[i]
+                let children = this.Components.Children.[i]
                 let mutable width = 0f
                 let mutable height = 0f
                 for j = 0 to children.Count - 1 do 
                     let cid = children.[j]
 
-                    let childPadding = this.Active.Padding.[cid.Index]
-                    let childMargin = this.Active.Margin.[cid.Index]
-                    let childSize = this.Active.ContentSize.[cid.Index]
+                    let childPadding = this.Components.Padding.[cid.Index]
+                    let childMargin = this.Components.Margin.[cid.Index]
+                    let childSize = this.Components.ContentSize.[cid.Index]
                     width <- width + (childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right)
                     height <- max height (childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom)
                 struct(width, height)
             | Layout.LinearVertical -> 
-                let children = this.Active.Children.[i]
+                let children = this.Components.Children.[i]
                 let mutable width = 0f
                 let mutable height = 0f
                 for j = 0 to children.Count - 1 do 
                     let cid = children.[j]
 
-                    let childPadding = this.Active.Padding.[cid.Index]
-                    let childMargin = this.Active.Margin.[cid.Index]
-                    let childSize = this.Active.ContentSize.[cid.Index]
+                    let childPadding = this.Components.Padding.[cid.Index]
+                    let childMargin = this.Components.Margin.[cid.Index]
+                    let childSize = this.Components.ContentSize.[cid.Index]
                     width <- max width (childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right)
                     height <- height + (childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom)
                 struct (width, height)
 
             | Layout.Grid(cols, rows) -> 
-                let children = this.Active.Children.[i]
+                let children = this.Components.Children.[i]
 
                 let mutable maxColWidth = 0f
                 let mutable maxRowHeight = 0f
@@ -442,31 +476,31 @@ type Noobish2(maxCount: int) =
                 for i = 0 to children.Count - 1 do
                     let cid = children.[i]
 
-                    let gridSpan = this.Active.GridSpan.[cid.Index]
-                    let childPadding = this.Active.Padding.[cid.Index]
-                    let childMargin = this.Active.Margin.[cid.Index]
-                    let childSize = this.Active.ContentSize.[cid.Index]
+                    let gridSpan = this.Components.GridSpan.[cid.Index]
+                    let childPadding = this.Components.Padding.[cid.Index]
+                    let childMargin = this.Components.Margin.[cid.Index]
+                    let childSize = this.Components.ContentSize.[cid.Index]
                     maxColWidth <- max maxColWidth ((childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right) / float32 gridSpan.Colspan)
                     maxRowHeight <- max maxRowHeight ((childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom) / float32 gridSpan.Rowspan)
 
                 struct(maxColWidth * float32 cols, maxRowHeight * float32 rows)
             | Layout.Relative (rcid) -> 
-                let pcid = this.Active.ParentId.[rcid.Index]
+                let pcid = this.Components.ParentId.[rcid.Index]
                 struct(0f, 0f)
             | Layout.None -> 
                 let mutable width = 0f
                 let mutable height = 0f
 
-                let text = this.Active.Text.[i]
+                let text = this.Components.Text.[i]
                 if not (String.IsNullOrWhiteSpace text) then
-                    let themeId = this.Active.ThemeId.[i]
+                    let themeId = this.Components.ThemeId.[i]
 
                     let fontId = styleSheet.GetFont themeId "default"
                     let font = content.Load<NoobishFont> fontId
                     let fontSize = int(float32 (styleSheet.GetFontSize themeId "default"))
 
                     let struct (contentWidth, contentHeight) =
-                        if this.Active.Textwrap.[i] then
+                        if this.Components.Textwrap.[i] then
                             struct(minSize.Width, minSize.Height)
                         else
                             NoobishFont.measureSingleLine font fontSize text
@@ -476,61 +510,66 @@ type Noobish2(maxCount: int) =
                 struct (width, height)
 
 
-        this.Active.ContentSize.[i] <- {Width = contentWidth; Height = contentHeight}
+        this.Components.ContentSize.[i] <- {Width = contentWidth; Height = contentHeight}
 
     member this.LayoutComponent (content: ContentManager) (styleSheet: NoobishStyleSheet) (startX: float32) (startY: float32) (parentWidth: float32) (parentHeight: float32) (i: int) = 
 
-        let fill = this.Active.Fill.[i]
-        let text = this.Active.Text.[i]
-        let margin = this.Active.Margin.[i]
-        let padding = this.Active.Padding.[i]
-        let minSize = this.Active.MinSize.[i]
-        let contentSize = this.Active.ContentSize.[i]
+        let fill = this.Components.Fill.[i]
+        let text = this.Components.Text.[i]
+        let margin = this.Components.Margin.[i]
+        let padding = this.Components.Padding.[i]
+        let contentSize = this.Components.ContentSize.[i]
 
-        let maxWidth = parentWidth - margin.Left - margin.Right - padding.Left - padding.Right
-        let maxHeight = parentHeight - margin.Top - margin.Bottom - padding.Top - padding.Bottom
+        let maxWidth = parentWidth
+        let maxHeight = parentHeight
 
-        let mutable width = if fill.Horizontal then maxWidth else min (max contentSize.Width minSize.Width) maxWidth
-        let mutable height = if fill.Vertical then maxHeight else min (max contentSize.Height minSize.Height) maxHeight
+        let mutable width = if fill.Horizontal then maxWidth else min (contentSize.Width + margin.Left + margin.Right + padding.Left + padding.Right) maxWidth
+        let mutable height = if fill.Vertical then maxHeight else min (contentSize.Height + margin.Top + margin.Bottom + padding.Top + padding.Bottom ) maxHeight
 
-        this.Active.Bounds[i] <- {
-            this.Active.Bounds.[i] with  
+        this.Components.Bounds[i] <- {
+            this.Components.Bounds.[i] with  
                 X = startX
                 Y = startY
-                Width = width + margin.Left + margin.Right + padding.Left + padding.Right
-                Height = height + margin.Top + margin.Bottom + padding.Top + padding.Bottom
+                Width = width 
+                Height = height
         }
 
-        match this.Active.Layout.[i] with 
+
+        let contentStartX = startX + margin.Left + padding.Left
+        let contentStartY = startY + margin.Top + padding.Top
+        let contentWidth = width - margin.Left - margin.Right - padding.Left - padding.Right
+        let contentHeight = height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
+
+        match this.Components.Layout.[i] with 
         | Layout.LinearHorizontal -> 
-            let children = this.Active.Children.[i]
-            let mutable childX = startX + margin.Left + padding.Left
-            let childY = startY + margin.Top + padding.Top
+            let children = this.Components.Children.[i]
+            let mutable childX = contentStartX
+            let childY = contentStartY
             for j = 0 to children.Count - 1 do 
                 let cid = children.[j]
-                this.LayoutComponent content styleSheet childX childY width height cid.Index
+                this.LayoutComponent content styleSheet childX childY contentWidth contentHeight cid.Index
 
-                let childSize = this.Active.Bounds.[cid.Index]
-                childX <- childX + childSize.Width
+                let childBounds = this.Components.Bounds.[cid.Index]
+                childX <- childBounds.Right
 
         | Layout.LinearVertical -> 
-            let children = this.Active.Children.[i]
-            let childX = startX + margin.Left + padding.Left
-            let mutable childY = startY + margin.Top + padding.Top
+            let children = this.Components.Children.[i]
+            let childX = contentStartX
+            let mutable childY = contentStartY
             for j = 0 to children.Count - 1 do 
                 let cid = children.[j]
-                this.LayoutComponent content styleSheet childX childY width height cid.Index
+                this.LayoutComponent content styleSheet childX childY contentWidth contentHeight cid.Index
 
-                let childSize = this.Active.Bounds.[cid.Index]
-                childY <- childY + childSize.Height
+                let childBounds = this.Components.Bounds.[cid.Index]
+                childY <- childBounds.Bottom
 
         | Layout.Grid(cols, rows) -> 
-            let startX = startX + margin.Left + padding.Left
-            let startY = startY + margin.Top + padding.Top
+            let startX = contentStartX
+            let startY = contentStartY
 
-            let children = this.Active.Children.[i]
-            let colWidth = width / float32 cols
-            let rowHeight = height  / float32 rows
+            let children = this.Components.Children.[i]
+            let colWidth = contentWidth / float32 cols
+            let rowHeight = contentHeight  / float32 rows
             let mutable col = 0
             let mutable row = 0
 
@@ -541,7 +580,7 @@ type Noobish2(maxCount: int) =
                 let childStartX = (startX + (float32 col) * (colWidth))
                 let childStartY = (startY + (float32 row) * (rowHeight))
 
-                let gridSpan = this.Active.GridSpan.[cid.Index]
+                let gridSpan = this.Components.GridSpan.[cid.Index]
 
                 for c = col to col + gridSpan.Colspan - 1 do
                     for r = row to row + gridSpan.Rowspan - 1 do
@@ -558,17 +597,17 @@ type Noobish2(maxCount: int) =
              
                 this.LayoutComponent content styleSheet childStartX childStartY childWidth childHeight cid.Index
         | Layout.Relative (rcid) -> 
-            let pcid = this.Active.ParentId.[rcid.Index]
-            let parentBounds = this.Active.Bounds.[pcid.Index]
+            let pcid = this.Components.ParentId.[rcid.Index]
+            let parentBounds = this.Components.Bounds.[pcid.Index]
 
-            let relativeBounds = this.Active.Bounds.[rcid.Index]
+            let relativeBounds = this.Components.Bounds.[rcid.Index]
             let startX = relativeBounds.X
             let startY = relativeBounds.Y
             
-            let children = this.Active.Children.[i]
+            let children = this.Components.Children.[i]
             for i = 0 to children.Count - 1 do 
                 let ccid = children.[i]
-                let relativePosition = this.Active.RelativePosition.[ccid.Index]
+                let relativePosition = this.Components.RelativePosition.[ccid.Index]
                 let childStartX = startX + relativePosition.X 
                 let childStartY = startY + relativePosition.Y 
                 this.LayoutComponent content styleSheet childStartX childStartY parentBounds.Width parentBounds.Height ccid.Index
@@ -586,26 +625,26 @@ type Noobish2(maxCount: int) =
         (scrollX: float32)
         (scrollY: float32) =
         let time = float32 gameTime.TotalGameTime.Seconds
-        let themeId = this.Active.ThemeId.[i]
-        let layer = 1f - float32 (this.Active.Layer.[i] + 32) / 255f
+        let themeId = this.Components.ThemeId.[i]
+        let layer = 1f - float32 (this.Components.Layer.[i] + 32) / 255f
 
 
         let fontId = styleSheet.GetFont themeId "default"
         let font = content.Load<NoobishFont>  fontId
         let fontSize = styleSheet.GetFontSize themeId "default"
 
-        let bounds = this.Active.Bounds.[i]
-        let margin = this.Active.Margin.[i]
-        let padding = this.Active.Padding.[i]
+        let bounds = this.Components.Bounds.[i]
+        let margin = this.Components.Margin.[i]
+        let padding = this.Components.Padding.[i]
         let contentStartX = bounds.X + margin.Left + padding.Left
         let contentStartY = bounds.Y +  margin.Top + padding.Top
         let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
         let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
         let bounds: Internal.NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
 
-        let text = this.Active.Text.[i]
-        let textAlign = this.Active.TextAlign.[i]
-        let textWrap = this.Active.Textwrap.[i]
+        let text = this.Components.Text.[i]
+        let textAlign = this.Components.TextAlign.[i]
+        let textWrap = this.Components.Textwrap.[i]
 
         let textBounds = NoobishFont.calculateCursorPosition font fontSize textWrap bounds scrollX scrollY textAlign this.Cursor text
 
@@ -627,30 +666,30 @@ type Noobish2(maxCount: int) =
     member this.DrawBackground (styleSheet: NoobishStyleSheet) (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (gameTime: GameTime) (i: int)=
 
         let cstate =
-            if this.Active.WantsFocus.[i] && this.FocusedElementId.Id = this.Active.Id.[i].Id then 
+            if this.Components.WantsFocus.[i] && this.FocusedElementId.Id = this.Components.Id.[i].Id then 
                 "focused"
             else 
                 "default"
 
 
-        let themeId = this.Active.ThemeId.[i]
-        let bounds = this.Active.Bounds.[i]
-        let margin = this.Active.Margin.[i]
-        let layer = this.Active.Layer.[i]
+        let themeId = this.Components.ThemeId.[i]
+        let bounds = this.Components.Bounds.[i]
+        let margin = this.Components.Margin.[i]
+        let layer = this.Components.Layer.[i]
         let contentStartX = bounds.X + margin.Left
         let contentStartY = bounds.Y +  margin.Top 
         let contentWidth = bounds.Width - margin.Left - margin.Right
         let contentHeight = bounds.Height - margin.Top - margin.Bottom
 
         let color =
-            if this.Active.WantsFocus.[i] && this.FocusedElementId = this.Active.Id.[i] then
+            if this.Components.WantsFocus.[i] && this.FocusedElementId = this.Components.Id.[i] then
                 styleSheet.GetColor themeId "focused"
-            elif not this.Active.Enabled.[i] then
+            elif not this.Components.Enabled.[i] then
                 styleSheet.GetColor themeId "disabled"
-            elif this.Active.Toggled.[i] then
+            elif this.Components.Toggled.[i] then
                 styleSheet.GetColor themeId "toggled"
             else
-                let lastPressTime = this.Active.LastPressTime.[i]
+                let lastPressTime = this.Components.LastPressTime.[i]
                 let progress = 1.0 - min ((gameTime.TotalGameTime - lastPressTime).TotalSeconds / 0.05) 1.0
 
                 let color = styleSheet.GetColor themeId "default"
@@ -670,10 +709,10 @@ type Noobish2(maxCount: int) =
 
 
     member this.DrawText (content: ContentManager) (styleSheet: NoobishStyleSheet) (textBatch: TextBatch) (i: int) =
-        let text = this.Active.Text.[i]
+        let text = this.Components.Text.[i]
         if text.Length > 0 then 
-            let themeId = this.Active.ThemeId.[i]
-            let layer = this.Active.Layer.[i]
+            let themeId = this.Components.ThemeId.[i]
+            let layer = this.Components.Layer.[i]
 
             let layer = (1f - float32 (layer + 1) / 255.0f)
 
@@ -682,16 +721,16 @@ type Noobish2(maxCount: int) =
 
             let fontSize = (styleSheet.GetFontSize themeId "default")
 
-            let bounds = this.Active.Bounds.[i]
-            let margin = this.Active.Margin.[i]
-            let padding = this.Active.Padding.[i]
+            let bounds = this.Components.Bounds.[i]
+            let margin = this.Components.Margin.[i]
+            let padding = this.Components.Padding.[i]
             let contentStartX = bounds.X + padding.Left + margin.Left
             let contentStartY = bounds.Y + padding.Top + margin.Top
             let contentWidth = bounds.Width - padding.Left - padding.Right - margin.Left - margin.Right
             let contentHeight = bounds.Height - padding.Top - padding.Bottom - margin.Left - margin.Right
             let bounds: Internal.NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
-            let textWrap = this.Active.Textwrap.[i]
-            let textAlign = this.Active.TextAlign.[i]
+            let textWrap = this.Components.Textwrap.[i]
+            let textAlign = this.Components.TextAlign.[i]
             let textBounds =
                     NoobishFont.calculateBounds font fontSize false bounds 0f 0f textAlign text
 
@@ -712,49 +751,51 @@ type Noobish2(maxCount: int) =
         (gameTime: GameTime) =
 
 
-        let visible = this.Active.Visible.[i]
+        let visible = this.Components.Visible.[i]
         if visible then 
             let textureAtlas = content.Load(styleSheet.TextureAtlasId)
 
-            let bounds = this.Active.Bounds.[i]
-            let margin = this.Active.Margin.[i]
-            let padding = this.Active.Padding.[i]
-            let contentStartX = bounds.X + padding.Left + margin.Left
-            let contentStartY = bounds.Y + padding.Top + margin.Top
-            let contentWidth = bounds.Width - padding.Left - padding.Right - margin.Left - margin.Right
-            let contentHeight = bounds.Height - padding.Top - padding.Bottom - margin.Left - margin.Right
+            let bounds = this.Components.Bounds.[i]
+            let margin = this.Components.Margin.[i]
+            let padding = this.Components.Padding.[i]
+            let contentStartX = bounds.X + margin.Left
+            let contentStartY = bounds.Y + margin.Top
+            let contentWidth = bounds.Width - margin.Left - margin.Right
+            let contentHeight = bounds.Height - margin.Left - margin.Right
 
-            let parentBounds = {X = 0f; Y = 0f; Width = 25000f; Height = 25000f}
 
-            let outerRectangle =
-                let startX = contentStartX // + totalScrollX
-                let startY = contentStartY // + totalScrollY
-                let sourceStartX = max startX (float32 parentBounds.X)
-                let sourceStartY = max startY (float32 parentBounds.Y)
-                let sourceWidth = min (contentWidth) (float32 parentBounds.Right - startX)
-                let sourceHeight = min (contentHeight) (float32 parentBounds.Bottom - startY)
-                DrawUI.createRectangle
-                    sourceStartX
-                    sourceStartY
-                    ((min sourceWidth (float32 parentBounds.Width)) + 2f)
-                    ((min sourceHeight (float32 parentBounds.Height)) + 2f)
+            let boundsWithMargin =
+                DrawUI.createRectangle(
+                    contentStartX,
+                    contentStartY,
+                    contentWidth,
+                    contentHeight)
+
+            let boundsWithMarginAndPadding =
+                DrawUI.createRectangle(
+                    contentStartX + padding.Left,
+                    contentStartY + padding.Top,
+                    contentWidth - padding.Left - padding.Right,
+                    contentHeight - padding.Top - padding.Bottom)
+
 
             let oldScissorRect = graphics.ScissorRectangle
 
-            graphics.ScissorRectangle <- outerRectangle
-            spriteBatch.Begin(rasterizerState = RasterizerState.CullCounterClockwise, samplerState = SamplerState.PointClamp)
+            graphics.ScissorRectangle <- boundsWithMargin
+            spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
             this.DrawBackground styleSheet textureAtlas spriteBatch gameTime i
 
-            if this.FocusedElementId = this.Active.Id.[i] then 
+            if this.FocusedElementId = this.Components.Id.[i] then 
                 this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
 
             spriteBatch.End()
 
+            graphics.ScissorRectangle <- boundsWithMarginAndPadding
+
             this.DrawText content styleSheet textBatch i
 
             graphics.ScissorRectangle <- oldScissorRect
-
     member this.Draw 
         (graphics: GraphicsDevice) 
         (content: ContentManager)
@@ -774,23 +815,23 @@ type Noobish2(maxCount: int) =
         
 
         let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
-        if waitForLayout && this.Active.Count > 0 then 
+        if waitForLayout && this.Components.Count > 0 then 
 
-            for i = 0 to this.Active.Count - 1 do 
-                let themeId = this.Active.ThemeId.[i]
+            for i = 0 to this.Components.Count - 1 do 
+                let themeId = this.Components.ThemeId.[i]
 
                 let (top, left, bottom, right) = styleSheet.GetMargin themeId "default"
-                this.Active.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+                this.Components.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
                 let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
-                this.Active.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+                this.Components.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
                 (* Calculate size for all the components going from topmost to bottom. *)
-                toCalculateSize.Enqueue(i, - this.Active.Layer.[i])
+                toCalculateSize.Enqueue(i, - this.Components.Layer.[i])
 
                 (* Run layout only for root components. *)
-                if this.Active.ParentId.[i] = UIComponentId.empty then 
-                    toLayout.Enqueue(i, this.Active.Layer.[i])
+                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                    toLayout.Enqueue(i, this.Components.Layer.[i])
 
             while toCalculateSize.Count > 0 do 
                 let i = toCalculateSize.Dequeue()
@@ -800,61 +841,46 @@ type Noobish2(maxCount: int) =
                 let i = toLayout.Dequeue()
                 this.LayoutComponent content styleSheet 0f 0f this.ScreenWidth this.ScreenHeight i
 
-            let previous = frames.[previousFrameIndex]
-            let current = frames.[activeFrameIndex]
-            if previous.Count = current.Count then 
-                
-                let mutable drift = false
-
-                let mutable i = 0
-                while not drift && i < current.Count - 1 do 
-                    if previous.ThemeId.[i] = current.ThemeId.[i] && 
-                     previous.ContentSize.[i] = current.ContentSize.[i] then 
-
-                        current.LastPressTime.[i] <- previous.LastPressTime.[i]
-                        current.LastHoverTime.[i] <- previous.LastHoverTime.[i]    
-
-                        i <- i + 1
-                    else 
-                        drift <- true
-
-
             waitForLayout <- false
 
 
 
-        for i = 0 to this.Active.Count - 1 do 
-            let layer = this.Active.Layer.[i]
+        for i = 0 to this.Components.Count - 1 do 
+            let layer = this.Components.Layer.[i]
             drawQueue.Enqueue(i, layer)
+
+        let oldRasterizerState = graphics.RasterizerState
+        graphics.RasterizerState <- rasterizerState
 
         let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet> styleSheetId
         while drawQueue.Count > 0 do 
             let i = drawQueue.Dequeue()
             this.DrawComponent graphics content spriteBatch textBatch styleSheet false i gameTime
 
+        graphics.RasterizerState <- oldRasterizerState
 
 
     member this.ComponentContains (x: float32) (y: float32) (i: int) = 
-        let bounds = this.Active.Bounds.[i]
+        let bounds = this.Components.Bounds.[i]
 
         x > bounds.X && x < bounds.X + bounds.Width && y > bounds.Y && y < bounds.Y + bounds.Height
 
     member this.Hover (x: float32) (y: float32) (gameTime: GameTime) (i: int)  =
-        if this.Active.Visible.[i] && this.Active.Enabled.[i]&& this.ComponentContains x y i then 
+        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y i then 
             Log.Logger.Debug ("Mouse hover inside component {ComponentId}", i)
 
-            let children = this.Active.Children.[i]
+            let children = this.Components.Children.[i]
             if children.Count = 0 then 
-                this.Active.LastHoverTime.[i] <- gameTime.TotalGameTime
+                this.Components.LastHoverTime.[i] <- gameTime.TotalGameTime
             else 
                 for j = 0 to children.Count - 1 do 
                     this.Hover x y gameTime children.[j].Index
 
     member this.Click (x: float32) (y: float32) (gameTime: GameTime) (i: int): bool  =
-        if this.Active.Visible.[i] && this.Active.Enabled.[i]&& this.ComponentContains x y i then 
+        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y i then 
             Log.Logger.Debug ("Mouse click inside component {ComponentId}", i)
 
-            let children = this.Active.Children.[i]
+            let children = this.Components.Children.[i]
 
             let mutable found = false
             let mutable j = 0
@@ -863,16 +889,16 @@ type Noobish2(maxCount: int) =
                     found <- true 
                 j <- j + 1
 
-            if not found && this.Active.WantsOnClick.[i] then 
+            if not found && this.Components.WantsOnClick.[i] then 
                 found <- true
-                this.Active.OnClick.[i] ({SourceId = this.Active.Id.[i]})
+                this.Components.OnClick.[i] ({SourceId = this.Components.Id.[i]})
             
-            if not found  && this.Active.WantsFocus.[i] then
+            if not found  && this.Components.WantsFocus.[i] then
                 found <- true 
-                this.FocusedElementId <- this.Active.Id.[i]
-                this.Cursor <- this.Active.Text.[i].Length
+                this.FocusedElementId <- this.Components.Id.[i]
+                this.Cursor <- this.Components.Text.[i].Length
                 this.FocusedTime <- gameTime.TotalGameTime
-                this.Active.OnFocus.[i] ({SourceId = this.Active.Id.[i]}) true
+                this.Components.OnFocus.[i] ({SourceId = this.Components.Id.[i]}) true
             
             found
 
@@ -882,19 +908,19 @@ type Noobish2(maxCount: int) =
 
     member this.KeyTyped (c: char) = 
         let focusedIndex = this.GetIndex this.FocusedElementId
-        if focusedIndex <> -1 && this.Active.WantsKeyTyped.[focusedIndex] then 
+        if focusedIndex <> -1 && this.Components.WantsKeyTyped.[focusedIndex] then 
             Log.Logger.Debug ("Key typed {Key} for component {Component}", c, focusedIndex)
-            this.Active.OnKeyTyped.[focusedIndex] {SourceId = this.Active.Id.[focusedIndex]} c
+            this.Components.OnKeyTyped.[focusedIndex] {SourceId = this.Components.Id.[focusedIndex]} c
 
 
     member this.Press (x: float32) (y: float32) (gameTime: GameTime) (i: int): bool =
 
-        if this.Active.Visible.[i] && this.Active.Enabled.[i]&& this.ComponentContains x y i then 
+        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y i then 
             Log.Logger.Debug ("Mouse press inside component {ComponentId}", i)
-            let children = this.Active.Children.[i]
+            let children = this.Components.Children.[i]
 
             if children.Count = 0 then 
-                this.Active.LastPressTime.[i] <- gameTime.TotalGameTime
+                this.Components.LastPressTime.[i] <- gameTime.TotalGameTime
                 true 
             else 
 
@@ -919,16 +945,16 @@ type Noobish2(maxCount: int) =
 
         let x = float32 mouseState.X
         let y = float32 mouseState.Y
-        for i = 0 to this.Active.Count - 1 do 
-            if this.Active.ParentId.[i] = UIComponentId.empty then 
+        for i = 0 to this.Components.Count - 1 do 
+            if this.Components.ParentId.[i] = UIComponentId.empty then 
                 this.Hover x y gameTime i 
 
 
         if mouseState.LeftButton = ButtonState.Pressed then 
 
-            for i = 0 to this.Active.Count - 1 do 
-                if this.Active.ParentId.[i] = UIComponentId.empty then 
-                    toLayout.Enqueue(i, -this.Active.Layer.[i])
+            for i = 0 to this.Components.Count - 1 do 
+                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                    toLayout.Enqueue(i, -this.Components.Layer.[i])
 
             while toLayout.Count > 0 do 
                 let i = toLayout.Dequeue()
@@ -936,9 +962,9 @@ type Noobish2(maxCount: int) =
 
         elif mouseState.LeftButton = ButtonState.Released && previousMouseState.LeftButton = ButtonState.Pressed then 
             this.FocusedElementId <- UIComponentId.empty
-            for i = 0 to this.Active.Count - 1 do 
-                if this.Active.ParentId.[i] = UIComponentId.empty then 
-                    toLayout.Enqueue(i, -this.Active.Layer.[i])
+            for i = 0 to this.Components.Count - 1 do 
+                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                    toLayout.Enqueue(i, -this.Components.Layer.[i])
 
             while toLayout.Count > 0 do 
                 let i = toLayout.Dequeue()
@@ -950,12 +976,12 @@ type Noobish2(maxCount: int) =
         let keyState = Keyboard.GetState()
 
         let index = this.GetIndex(this.FocusedElementId)
-        if index <> -1 && this.Active.WantsKeyPressed.[index] then 
+        if index <> -1 && this.Components.WantsKeyPressed.[index] then 
             if previousKeyState.IsKeyDown(Keys.Left) && keyState.IsKeyUp (Keys.Left) then 
-                this.Active.OnKeyPressed.[index] {SourceId = this.Active.Id.[index]} Keys.Left
+                this.Components.OnKeyPressed.[index] {SourceId = this.Components.Id.[index]} Keys.Left
 
             if previousKeyState.IsKeyDown(Keys.Right) && keyState.IsKeyUp (Keys.Right) then 
-                this.Active.OnKeyPressed.[index] {SourceId = this.Active.Id.[index]} Keys.Right
+                this.Components.OnKeyPressed.[index] {SourceId = this.Components.Id.[index]} Keys.Right
 
         previousKeyState <- keyState
     member this.Update (gameTime: GameTime) = 
@@ -967,55 +993,54 @@ type Noobish2(maxCount: int) =
 
     member this.Clear() =
         this.FocusedElementId <- UIComponentId.empty
-        //previousFrameIndex <- activeFrameIndex
-        //activeFrameIndex <- activeFrameIndex % frames.Length
-        for i = 0 to this.Active.Count - 1 do 
+        for i = 0 to this.Components.Count - 1 do 
             free.Enqueue(i, i)
-            this.Active.Id.[i] <- UIComponentId.empty
-            this.Active.ThemeId.[i] <- ""
+            this.Components.Id.[i] <- UIComponentId.empty
+            this.Components.ThemeId.[i] <- ""
 
-            this.Active.ParentId.[i] <- UIComponentId.empty
+            this.Components.ParentId.[i] <- UIComponentId.empty
 
-            this.Active.Visible.[i] <- true 
-            this.Active.Enabled.[i] <- true 
-            this.Active.Toggled.[i] <- false 
-            this.Active.Hovered.[i] <- false 
+            this.Components.Visible.[i] <- true 
+            this.Components.Enabled.[i] <- true 
+            this.Components.Toggled.[i] <- false 
+            this.Components.Hovered.[i] <- false 
 
-            this.Active.Block.[i] <- false
+            this.Components.Block.[i] <- false
 
-            this.Active.Text.[i] <- ""
-            this.Active.Textwrap.[i] <- false
+            this.Components.Text.[i] <- ""
+            this.Components.Textwrap.[i] <- false
+            this.Components.TextAlign.[i] <- NoobishTextAlignment.Left
 
-            this.Active.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
-            this.Active.MinSize.[i] <- {Width = 0f; Height = 0f}
-            this.Active.ContentSize.[i] <- {Width = 0f; Height = 0f}
-            this.Active.RelativePosition.[i] <- {X = 0f; Y = 0f}
-            this.Active.Fill.[i] <- {Horizontal = false; Vertical = false}
-            this.Active.Padding.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
-            this.Active.Margin.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+            this.Components.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+            this.Components.MinSize.[i] <- {Width = 0f; Height = 0f}
+            this.Components.ContentSize.[i] <- {Width = 0f; Height = 0f}
+            this.Components.RelativePosition.[i] <- {X = 0f; Y = 0f}
+            this.Components.Fill.[i] <- {Horizontal = false; Vertical = false}
+            this.Components.Padding.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+            this.Components.Margin.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
 
-            this.Active.Layer.[i] <- -1
-            this.Active.Layout.[i] <- Layout.None
+            this.Components.Layer.[i] <- -1
+            this.Components.Layout.[i] <- Layout.None
 
-            this.Active.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
+            this.Components.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
 
-            this.Active.WantsOnClick.[i] <- false
-            this.Active.OnClick.[i] <- ignore
+            this.Components.WantsOnClick.[i] <- false
+            this.Components.OnClick.[i] <- ignore
 
-            this.Active.WantsKeyTyped.[i] <- false 
-            this.Active.OnKeyTyped.[i] <- (fun _ _ ->())
+            this.Components.WantsKeyTyped.[i] <- false 
+            this.Components.OnKeyTyped.[i] <- (fun _ _ ->())
 
-            this.Active.WantsKeyPressed.[i] <- false 
-            this.Active.OnKeyPressed.[i] <- (fun _ _ ->())
+            this.Components.WantsKeyPressed.[i] <- false 
+            this.Components.OnKeyPressed.[i] <- (fun _ _ ->())
 
-            this.Active.WantsFocus.[i] <- false 
-            this.Active.OnFocus.[i] <- (fun _ _ ->())
+            this.Components.WantsFocus.[i] <- false 
+            this.Components.OnFocus.[i] <- (fun _ _ ->())
 
-            this.Active.LastPressTime.[i] <- TimeSpan.Zero
-            this.Active.LastHoverTime.[i] <- TimeSpan.Zero
+            this.Components.LastPressTime.[i] <- TimeSpan.Zero
+            this.Components.LastHoverTime.[i] <- TimeSpan.Zero
 
-            this.Active.Children.[i].Clear()
-        this.Active.Count <- 0
+            this.Components.Children.[i].Clear()
+        this.Components.Count <- 0
 
         waitForLayout <- true
 

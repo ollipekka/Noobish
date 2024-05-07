@@ -85,8 +85,7 @@ module Noobish2Demo =
             |] 
 
         let window3 = 
-            nui2.Window()
-            |> nui2.SetGrid(2, 2)
+            nui2.WindowWithGrid(2, 2)
             |> nui2.SetPosition (0, 200)
             |> nui2.SetChildren [|
                 nui2.Button "1" (fun _ -> (Log.Logger.Information "1"))
@@ -108,13 +107,63 @@ module Noobish2Demo =
 
 module Text =
 
-    let view model _dispatch =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model _dispatch =
+        let ui = game.Noobish2
+
+        let gridId =
+            ui.PanelWithGrid (2, 2) 
+            |> ui.SetChildren [|
+                ui.PanelWithGrid(3, 3)
+                |> ui.SetChildren [|
+                    ui.Label "Top Left"
+                    |> ui.SetFill
+                    |> ui.AlignTextTopLeft
+                    
+                    ui.Label "Top"
+                    |> ui.SetFill
+                    |> ui.AlignTextTop
+
+                    
+                    ui.Label "Top Right"
+                    |> ui.SetFill
+                    |> ui.AlignTextTopRight
+
+
+                    ui.Label "Left"
+                    |> ui.SetFill
+                    |> ui.AlignTextLeft
+                    
+                    ui.Label "Center"
+                    |> ui.SetFill
+                    |> ui.AlignTextCenter
+                    
+                    ui.Label "Right"
+                    |> ui.SetFill
+                    |> ui.AlignTextRight
+
+
+                    ui.Label "Bottom Left"
+                    |> ui.SetFill
+                    |> ui.AlignTextBottomLeft
+                    
+                    ui.Label "Bottom Center"
+                    |> ui.SetFill
+                    |> ui.AlignTextBottomCenter
+                    
+                    ui.Label "Bottom Right"
+                    |> ui.SetFill
+                    |> ui.AlignTextBottomRight
+
+                |]
+            |]
+
 
         [
             grid 2 2
                 [
                 panelWithGrid 3 3
                     [
+                        (*
                         label [text "Top Left"; textTopLeft; fill]
                         label [text "Top"; textTopCenter; fill]
                         label [text "Top Right"; textTopRight; fill]
@@ -123,7 +172,7 @@ module Text =
                         label [text "Right"; textRight; fill]
                         label [text "Bottom Left"; textBottomLeft; fill]
                         label [text "Bottom Center"; textBottomCenter; fill]
-                        label [text "Bottom Right"; textBottomRight; fill]
+                        label [text "Bottom Right"; textBottomRight; fill]*)
                     ]
                     [
 
@@ -199,7 +248,7 @@ module Text =
 
                 ]
 
-        ]
+        ], gridId
 
 module Containers =
 
@@ -538,11 +587,11 @@ let view game (model: DemoModel) dispatch =
             let content = Buttons.view game model dispatch
             "Buttons", content, []
         | Containers -> 
-            let content= Containers.view model dispatch
+            let content = Containers.view model dispatch
             "Containers", UIComponentId.empty, content
         | Text -> 
-            let content = Text.view model dispatch
-            "Labels", UIComponentId.empty, content
+            let content, content2 = Text.view game model dispatch
+            "Labels", content2, content
         | Slider -> 
             let content = Slider.view model dispatch
             "Slider", UIComponentId.empty, content
@@ -559,7 +608,7 @@ let view game (model: DemoModel) dispatch =
             content2
 
     let gridId = 
-        ui.Grid(8, 12)
+        ui.Grid(12, 8)
         |> ui.SetChildren [|
             ui.PanelHorizontal() 
             |> ui.SetRowspan 1
@@ -567,7 +616,7 @@ let view game (model: DemoModel) dispatch =
             |> ui.SetChildren [|
                 ui.Header "Noobish"
             |]
-            ui.PanelWithGrid(1, 12)
+            ui.PanelWithGrid(12, 1)
             |> ui.SetRowspan 1 
             |> ui.SetColspan 9
             |> ui.SetChildren [|
