@@ -121,6 +121,17 @@ type Noobish2(maxCount: int) =
 
         cid
 
+    member this.Paragraph (t: string) = 
+        let cid = this.Create "Paragraph"
+        this.Components.Text.[cid.Index] <- t
+        this.Components.Textwrap.[cid.Index] <- true 
+        this.Components.TextAlign.[cid.Index] <- NoobishTextAlignment.TopLeft 
+        this.Components.Block.[cid.Index] <- true 
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = false}
+
+        cid
+
+
     member this.Textbox (t: string) (onTextChanged: (OnClickEvent)-> string-> unit) = 
         let cid = this.Create "TextBox"
 
@@ -434,9 +445,8 @@ type Noobish2(maxCount: int) =
             this.BumpLayer layer (childrenIds :> IReadOnlyList<UIComponentId>)
         cid
 
-    member this.CalculateMinSize (content: ContentManager) (styleSheet: NoobishStyleSheet) (i: int) = 
+    member this.CalculateContentSize (content: ContentManager) (styleSheet: NoobishStyleSheet) (i: int) =
 
-        let minSize = this.Components.MinSize.[i]
 
         let struct(contentWidth, contentHeight) = 
             match this.Components.Layout.[i] with 
@@ -487,89 +497,98 @@ type Noobish2(maxCount: int) =
             | Layout.Relative (rcid) -> 
                 let pcid = this.Components.ParentId.[rcid.Index]
                 struct(0f, 0f)
-            | Layout.None -> 
-                let mutable width = 0f
-                let mutable height = 0f
-
-                let text = this.Components.Text.[i]
-                if not (String.IsNullOrWhiteSpace text) then
-                    let themeId = this.Components.ThemeId.[i]
-
-                    let fontId = styleSheet.GetFont themeId "default"
-                    let font = content.Load<NoobishFont> fontId
-                    let fontSize = int(float32 (styleSheet.GetFontSize themeId "default"))
-
-                    let struct (contentWidth, contentHeight) =
-                        if this.Components.Textwrap.[i] then
-                            struct(minSize.Width, minSize.Height)
-                        else
-                            NoobishFont.measureSingleLine font fontSize text
-
-                    width <- max width (float32 contentWidth)
-                    height <- max height (float32 contentHeight)
-                struct (width, height)
-
-
+            | Layout.None -> struct(0f,0f)
         this.Components.ContentSize.[i] <- {Width = contentWidth; Height = contentHeight}
 
     member this.LayoutComponent (content: ContentManager) (styleSheet: NoobishStyleSheet) (startX: float32) (startY: float32) (parentWidth: float32) (parentHeight: float32) (i: int) = 
 
         let fill = this.Components.Fill.[i]
+        let scroll = this.Components.Scroll.[i]
         let text = this.Components.Text.[i]
         let margin = this.Components.Margin.[i]
         let padding = this.Components.Padding.[i]
-        let contentSize = this.Components.ContentSize.[i]
+        let minSize = this.Components.MinSize.[i]
+
 
         let maxWidth = parentWidth
         let maxHeight = parentHeight
 
-        let mutable width = if fill.Horizontal then maxWidth else min (contentSize.Width + margin.Left + margin.Right + padding.Left + padding.Right) maxWidth
-        let mutable height = if fill.Vertical then maxHeight else min (contentSize.Height + margin.Top + margin.Bottom + padding.Top + padding.Bottom ) maxHeight
+        let viewportStartX = startX + margin.Left + padding.Left
+        let viewportStartY = startY + margin.Top + padding.Top
+        let viewportWidth = maxWidth - margin.Left - margin.Right - padding.Left - padding.Right
+        let viewportHeight = maxHeight - margin.Top - margin.Bottom - padding.Top - padding.Bottom
 
-        this.Components.Bounds[i] <- {
-            this.Components.Bounds.[i] with  
-                X = startX
-                Y = startY
-                Width = width 
-                Height = height
-        }
-
-
-        let contentStartX = startX + margin.Left + padding.Left
-        let contentStartY = startY + margin.Top + padding.Top
-        let contentWidth = width - margin.Left - margin.Right - padding.Left - padding.Right
-        let contentHeight = height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
 
         match this.Components.Layout.[i] with 
         | Layout.LinearHorizontal -> 
             let children = this.Components.Children.[i]
-            let mutable childX = contentStartX
-            let childY = contentStartY
+            let mutable totalWidth = viewportStartX
+            let childY = viewportStartY
+            let mutable maxChildHeight = 0f
             for j = 0 to children.Count - 1 do 
                 let cid = children.[j]
-                this.LayoutComponent content styleSheet childX childY contentWidth contentHeight cid.Index
+                this.LayoutComponent content styleSheet totalWidth childY viewportWidth viewportHeight cid.Index
 
                 let childBounds = this.Components.Bounds.[cid.Index]
-                childX <- childBounds.Right
+                totalWidth <- childBounds.Right
+                maxChildHeight <- max maxChildHeight childBounds.Height
+
+            this.Components.ContentSize.[i] <- {
+                Width = totalWidth
+                Height = maxChildHeight
+            }
+
+            this.Components.Bounds.[i] <- {
+                X = viewportStartX; 
+                Y = viewportStartY; 
+                Width = 
+                    if fill.Horizontal then viewportWidth
+                    elif scroll.Horizontal && totalWidth > viewportWidth then maxWidth
+                    else totalWidth
+                Height = 
+                    if fill.Vertical then viewportHeight
+                    elif scroll.Vertical && maxChildHeight > viewportHeight then maxHeight
+                    else maxChildHeight 
+            }
 
         | Layout.LinearVertical -> 
             let children = this.Components.Children.[i]
-            let childX = contentStartX
-            let mutable childY = contentStartY
+            let mutable totalHeight = viewportStartY
+            let childX = viewportStartX
+            let mutable maxChildWidth = 0f
             for j = 0 to children.Count - 1 do 
                 let cid = children.[j]
-                this.LayoutComponent content styleSheet childX childY contentWidth contentHeight cid.Index
+                this.LayoutComponent content styleSheet childX totalHeight viewportWidth viewportHeight cid.Index
 
                 let childBounds = this.Components.Bounds.[cid.Index]
-                childY <- childBounds.Bottom
+                totalHeight <- childBounds.Bottom
+                maxChildWidth <- max maxChildWidth childBounds.Width
+
+            this.Components.ContentSize.[i] <- {
+                Width = maxChildWidth
+                Height = totalHeight
+            }
+
+            this.Components.Bounds.[i] <- {
+                X = viewportStartX; 
+                Y = viewportStartY; 
+                Width = 
+                    if fill.Horizontal then viewportWidth
+                    elif scroll.Horizontal && maxChildWidth > viewportWidth then maxWidth
+                    else maxChildWidth
+                Height = 
+                    if fill.Vertical then viewportHeight
+                    elif scroll.Vertical && totalHeight > viewportHeight then maxHeight
+                    else totalHeight 
+            }
 
         | Layout.Grid(cols, rows) -> 
-            let startX = contentStartX
-            let startY = contentStartY
+            let startX = viewportStartX
+            let startY = viewportStartY
 
             let children = this.Components.Children.[i]
-            let colWidth = contentWidth / float32 cols
-            let rowHeight = contentHeight  / float32 rows
+            let colWidth = viewportWidth / float32 cols
+            let rowHeight = viewportHeight  / float32 rows
             let mutable col = 0
             let mutable row = 0
 
@@ -596,6 +615,19 @@ type Noobish2(maxCount: int) =
                 let childHeight =  float32 gridSpan.Rowspan * rowHeight
              
                 this.LayoutComponent content styleSheet childStartX childStartY childWidth childHeight cid.Index
+
+
+            this.Components.ContentSize.[i] <- {
+                Width = viewportWidth
+                Height = viewportHeight
+            }
+
+            this.Components.Bounds.[i] <- {
+                X = viewportStartX; 
+                Y = viewportStartY; 
+                Width = viewportWidth;
+                Height = viewportHeight;
+            }
         | Layout.Relative (rcid) -> 
             let pcid = this.Components.ParentId.[rcid.Index]
             let parentBounds = this.Components.Bounds.[pcid.Index]
@@ -612,8 +644,52 @@ type Noobish2(maxCount: int) =
                 let childStartY = startY + relativePosition.Y 
                 this.LayoutComponent content styleSheet childStartX childStartY parentBounds.Width parentBounds.Height ccid.Index
 
+            this.Components.ContentSize.[i] <- {
+                Width = viewportWidth
+                Height = viewportHeight
+            }
 
-        | Layout.None -> ()
+            this.Components.Bounds.[i] <- {
+                X = viewportStartX; 
+                Y = viewportStartY; 
+                Width = viewportWidth;
+                Height = viewportHeight;
+            }
+
+        | Layout.None -> 
+
+            let struct(contentWidth, contentHeight) = 
+                if not (String.IsNullOrWhiteSpace text) then
+                    let themeId = this.Components.ThemeId.[i]
+
+                    let fontId = styleSheet.GetFont themeId "default"
+                    let font = content.Load<NoobishFont> fontId
+                    let fontSize = int(float32 (styleSheet.GetFontSize themeId "default"))
+
+                    if this.Components.Textwrap.[i] then
+                        NoobishFont.measureMultiLine font fontSize viewportWidth text
+                    else 
+                        NoobishFont.measureSingleLine font fontSize text
+                else 
+                    struct(minSize.Width, minSize.Height)
+                
+            this.Components.ContentSize.[i] <- {Width = contentWidth; Height = contentHeight}
+            this.Components.Bounds[i] <- {
+                this.Components.Bounds.[i] with  
+                    X = startX + margin.Left + padding.Left
+                    Y = startY + margin.Top + padding.Top
+                    Width = 
+                        if fill.Horizontal then 
+                            viewportWidth
+                        else 
+                            contentWidth + margin.Left + margin.Right + padding.Left + padding.Right
+                    Height = 
+                        if fill.Vertical then 
+                            viewportHeight
+                        else 
+                            contentHeight + margin.Top + margin.Bottom + padding.Top + padding.Bottom
+            }
+
 
     member this.DrawCursor
         (styleSheet: NoobishStyleSheet)
@@ -826,16 +902,10 @@ type Noobish2(maxCount: int) =
                 let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
                 this.Components.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
-                (* Calculate size for all the components going from topmost to bottom. *)
-                toCalculateSize.Enqueue(i, - this.Components.Layer.[i])
-
                 (* Run layout only for root components. *)
                 if this.Components.ParentId.[i] = UIComponentId.empty then 
                     toLayout.Enqueue(i, this.Components.Layer.[i])
 
-            while toCalculateSize.Count > 0 do 
-                let i = toCalculateSize.Dequeue()
-                this.CalculateMinSize content styleSheet i 
 
             while toLayout.Count > 0 do 
                 let i = toLayout.Dequeue()

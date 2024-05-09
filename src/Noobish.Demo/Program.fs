@@ -116,45 +116,40 @@ module Text =
                 ui.PanelWithGrid(3, 3)
                 |> ui.SetChildren [|
                     ui.Label "Top Left"
-                    |> ui.SetFill
-                    |> ui.AlignTextTopLeft
-                    
+                        |> ui.SetFill
+                        |> ui.AlignTextTopLeft
                     ui.Label "Top"
-                    |> ui.SetFill
-                    |> ui.AlignTextTop
-
-                    
+                        |> ui.SetFill
+                        |> ui.AlignTextTop
                     ui.Label "Top Right"
-                    |> ui.SetFill
-                    |> ui.AlignTextTopRight
-
-
+                        |> ui.SetFill
+                        |> ui.AlignTextTopRight
                     ui.Label "Left"
-                    |> ui.SetFill
-                    |> ui.AlignTextLeft
-                    
+                        |> ui.SetFill
+                        |> ui.AlignTextLeft
                     ui.Label "Center"
-                    |> ui.SetFill
-                    |> ui.AlignTextCenter
-                    
+                        |> ui.SetFill
+                        |> ui.AlignTextCenter
                     ui.Label "Right"
-                    |> ui.SetFill
-                    |> ui.AlignTextRight
-
-
+                        |> ui.SetFill
+                        |> ui.AlignTextRight
                     ui.Label "Bottom Left"
-                    |> ui.SetFill
-                    |> ui.AlignTextBottomLeft
-                    
+                        |> ui.SetFill
+                        |> ui.AlignTextBottomLeft
                     ui.Label "Bottom Center"
-                    |> ui.SetFill
-                    |> ui.AlignTextBottomCenter
-                    
+                        |> ui.SetFill
+                        |> ui.AlignTextBottomCenter
                     ui.Label "Bottom Right"
-                    |> ui.SetFill
-                    |> ui.AlignTextBottomRight
+                        |> ui.SetFill
+                        |> ui.AlignTextBottomRight
 
                 |]
+                ui.PanelVertical()
+                    |> ui.SetScrollVertical
+                    |> ui.SetChildren [|
+                        ui.Paragraph loremIpsum1
+                        ui.Paragraph loremIpsum2
+                    |]  
             |]
 
 
