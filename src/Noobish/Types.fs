@@ -97,6 +97,22 @@ module Internal =
         member r.Top with get() = r.Y
         member r.Bottom with get() = r.Y + r.Height
 
+        member this.Clamp (bounds: NoobishRectangle) =
+            let x = 
+                if this.X < bounds.X then bounds.X else this.X
+            let y = 
+                if this.Y < bounds.Y then bounds.Y else this.Y
+            let right = if this.Right > bounds.Right then bounds.Right else this.Right
+
+            let bottom = if this.Bottom > bounds.Bottom then bounds.Bottom else this.Bottom
+
+            {
+                X = x 
+                Y = y
+                Width = right - x 
+                Height = bottom - y
+            }
+
     type SliderModel = {
         Min: float32
         Max: float32

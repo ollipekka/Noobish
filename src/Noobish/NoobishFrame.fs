@@ -78,24 +78,17 @@ type Size = {Width: float32; Height: float32}
 type Position = {X: float32; Y: float32}
 
 
-[<Struct>]
-type NoobishRectangle = {
-    X: float32
-    Y: float32
-    Width: float32
-    Height: float32
-} with
-    member r.Left with get() = r.X
-    member r.Right with get() = r.X + r.Width
-    member r.Top with get() = r.Y
-    member r.Bottom with get() = r.Y + r.Height
-
 
 module DrawUI = 
+    open Internal
 
 
     let createRectangle (x: float32, y:float32, width: float32, height: float32) =
         Rectangle (int (x), int (y), int (width), int (height))
+
+
+    let toRectangle (r: NoobishRectangle) =
+        Rectangle (int (r.X), int (r.Y), int (r.Width), int (r.Height))
 
     let drawDrawable (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (layer: float32) (color: Color) (drawables: NoobishDrawable[]) =
         for drawable in drawables do
@@ -160,7 +153,7 @@ type NoobishFrame(count) =
 
     member val Layer = Array.create count 0
 
-    member val Bounds = Array.create<NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+    member val Bounds = Array.create<Internal.NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
 
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
 

@@ -13,6 +13,7 @@ open Microsoft.Xna.Framework.Input
 open Noobish
 open Noobish.Styles
 open Noobish.TextureAtlas
+open Internal
 
 
 
@@ -676,8 +677,8 @@ type Noobish2(maxCount: int) =
             this.Components.ContentSize.[i] <- {Width = contentWidth; Height = contentHeight}
             this.Components.Bounds[i] <- {
                 this.Components.Bounds.[i] with  
-                    X = startX + margin.Left + padding.Left
-                    Y = startY + margin.Top + padding.Top
+                    X = viewportStartX
+                    Y = viewportStartY
                     Width = 
                         if fill.Horizontal then 
                             viewportWidth
@@ -829,6 +830,22 @@ type Noobish2(maxCount: int) =
 
         let visible = this.Components.Visible.[i]
         if visible then 
+
+            let pcid = this.Components.ParentId.[i]
+            let parentViewport: NoobishRectangle =
+                if pcid = UIComponentId.empty then 
+                    {X = 0.0f; Y = 0.0f; Width = this.ScreenWidth; Height = this.ScreenHeight}
+                else 
+                    let padding = this.Components.Padding.[pcid.Index]
+                    let margin = this.Components.Margin.[pcid.Index]
+                    let bounds = this.Components.Bounds.[pcid.Index]
+                    {
+                        X = bounds.X + margin.Left + padding.Left
+                        Y = bounds.Y + margin.Top + padding.Top
+                        Width = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
+                        Height = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
+                    }
+
             let textureAtlas = content.Load(styleSheet.TextureAtlasId)
 
             let bounds = this.Components.Bounds.[i]
@@ -840,24 +857,26 @@ type Noobish2(maxCount: int) =
             let contentHeight = bounds.Height - margin.Left - margin.Right
 
 
-            let boundsWithMargin =
-                DrawUI.createRectangle(
-                    contentStartX,
-                    contentStartY,
-                    contentWidth,
-                    contentHeight)
+            let boundsWithMargin = ({
+                    X = contentStartX
+                    Y = contentStartY
+                    Width = contentWidth
+                    Height =contentHeight
+            })
+            let boundsWithMargin = boundsWithMargin.Clamp parentViewport
 
-            let boundsWithMarginAndPadding =
-                DrawUI.createRectangle(
-                    contentStartX + padding.Left,
-                    contentStartY + padding.Top,
-                    contentWidth - padding.Left - padding.Right,
-                    contentHeight - padding.Top - padding.Bottom)
+            let boundsWithMarginAndPadding = {
 
+                    X = contentStartX + padding.Left
+                    Y = contentStartY + padding.Top
+                    Width = contentWidth - padding.Left - padding.Right
+                    Height = contentHeight - padding.Top - padding.Bottom
+            }
+            let boundsWithMarginAndPadding = boundsWithMarginAndPadding.Clamp parentViewport
 
             let oldScissorRect = graphics.ScissorRectangle
 
-            graphics.ScissorRectangle <- boundsWithMargin
+            graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMargin 
             spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
             this.DrawBackground styleSheet textureAtlas spriteBatch gameTime i
@@ -867,7 +886,7 @@ type Noobish2(maxCount: int) =
 
             spriteBatch.End()
 
-            graphics.ScissorRectangle <- boundsWithMarginAndPadding
+            graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMarginAndPadding
 
             this.DrawText content styleSheet textBatch i
 
