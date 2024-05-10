@@ -532,7 +532,7 @@ module Github =
 let init (game: NoobishGame<unit, DemoMessage, DemoModel>) () =
     { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg(ShowButtons)
 
-let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
+let update (game: NoobishGame<unit, DemoMessage, DemoModel>) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
     match message with
     | ShowNoobish2Demo ->
         {model with State = Noobish2Demo}, Cmd.none
@@ -559,6 +559,7 @@ let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: Gam
     | ToggleDebug ->
         let nui = game.Services.GetService<NoobishUI>()
         nui.Settings.Debug <- (not nui.Settings.Debug)
+        game.Noobish2.Debug <- nui.Settings.Debug
         model, Cmd.none
     | ToggleLightMode ->
         let nui = game.Services.GetService<NoobishUI>()
@@ -626,7 +627,10 @@ let view game (model: DemoModel) dispatch =
                 |> ui.SetFill
                 |> ui.SetToggled (model.StyleMode = LightMode )       
                 |> ui.SetColspan 2
-                ui.Button "Debug" (fun e -> dispatch ToggleDebug) 
+                ui.Button "Debug" (
+                    fun e -> 
+                        dispatch ToggleDebug
+                    ) 
                 |> ui.SetFill
                 |> ui.SetColspan 2
                 |> ui.SetToggled (ui.Debug)       
@@ -688,7 +692,6 @@ let view game (model: DemoModel) dispatch =
                                     text "Debug";
                                     toggled false; //model.UI.Settings.Debug;
                                     fill;
-                                    onClick (fun gameTime -> dispatch ToggleDebug)
                                     keyboardShortcut (alt NoobishKeyId.D)
                                     colspan 2
                                 ]

@@ -110,7 +110,34 @@ module DrawUI =
                     Rectangle(int position.X, int position.Y, int size.X, int size.Y),
                     color,
                     layer)
+    let drawRectangle (spriteBatch: SpriteBatch) (pixel: Texture2D) (color: Color) (x: float32) (y:float32) (width: float32) (height: float32) =
+        let origin = Vector2(0.0f, 0.0f)
+        let startPos = Vector2(x, y)
+        let scale = Vector2(width / float32 pixel.Width, height / float32 pixel.Height)
 
+        spriteBatch.Draw(
+            pixel,
+            startPos,
+            Nullable(Rectangle(0, 0, pixel.Width, pixel.Height)),
+            color,
+            0.0f,
+            origin,
+            scale,
+            SpriteEffects.None,
+            1.0f)
+
+    let debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
+        let borderSize = 2f
+        let widthWithoutBorders = float32 bounds.Width - borderSize
+
+        //Left
+        drawRectangle spriteBatch pixel borderColor (bounds.X) bounds.Y borderSize bounds.Height
+        // Right
+        drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize) bounds.Y  borderSize bounds.Height
+        // Top
+        drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) bounds.Y widthWithoutBorders borderSize
+        // Bottom
+        drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( bounds.Y + bounds.Height - borderSize) widthWithoutBorders borderSize
 
 
 
@@ -186,7 +213,10 @@ type NoobishFrame(count) =
     member val WantsFocus = Array.create count false 
     member val OnFocus = Array.create<OnClickEvent -> bool -> unit> count (fun _ _ -> ())
 
-    member val Scroll = Array.create<Scroll> count {Horizontal = true; Vertical = true}
+    member val Scroll = Array.create<Scroll> count {Horizontal = false; Vertical = false}
+    member val ScrollX = Array.create count 0f
+    member val ScrollY = Array.create count 0f
+    member val LastScrollTime = Array.create count TimeSpan.Zero
 
     member val Toggled = Array.create count false 
     member val Hovered = Array.create count false 
