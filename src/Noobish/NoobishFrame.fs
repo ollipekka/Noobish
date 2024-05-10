@@ -189,8 +189,10 @@ type NoobishFrame(count) =
     member val RelativePosition = Array.create count {X = 0f; Y = 0f}
 
     member val Fill = Array.create<Fill> count ({Horizontal = false; Vertical = false})
-
+    member val PaddingOverride = Array.create count false
     member val Padding = Array.create<Padding> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+
+    member val MarginOverride = Array.create count false
     member val Margin = Array.create<Margin> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val Layout = Array.create count Layout.None
 

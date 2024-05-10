@@ -94,9 +94,10 @@ type Noobish2(maxCount: int) =
         cid
 
     member this.Overlaypane(rcid: UIComponentId) =
-        let cid = this.Create "Division"
+        let cid = this.Create "Overlay"
         this.Components.Layout.[cid.Index] <- Layout.Relative rcid
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        
         cid
 
     member this.Window() =
@@ -330,6 +331,7 @@ type Noobish2(maxCount: int) =
         let margin = float32 margin
         let index = this.GetIndex cid 
         if index <> -1 then 
+            this.Components.MarginOverride.[index] <- true
             this.Components.Margin.[index] <- {Top = margin; Right = margin; Bottom = margin; Left = margin}
         cid
 
@@ -906,11 +908,15 @@ type Noobish2(maxCount: int) =
             for i = 0 to this.Components.Count - 1 do 
                 let themeId = this.Components.ThemeId.[i]
 
-                let (top, left, bottom, right) = styleSheet.GetMargin themeId "default"
-                this.Components.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
-                let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
-                this.Components.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+                if not this.Components.MarginOverride.[i] then 
+                    let (top, left, bottom, right) = styleSheet.GetMargin themeId "default"
+                    this.Components.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+
+
+                if not this.Components.PaddingOverride.[i] then 
+                    let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
+                    this.Components.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
                 (* Run layout only for root components. *)
                 if this.Components.ParentId.[i] = UIComponentId.empty then 
@@ -1086,7 +1092,6 @@ type Noobish2(maxCount: int) =
 
 
         if mouseState.LeftButton = ButtonState.Pressed then 
-
             for i = 0 to this.Components.Count - 1 do 
                 if this.Components.ParentId.[i] = UIComponentId.empty then 
                     toLayout.Enqueue(i, -this.Components.Layer.[i])
@@ -1132,12 +1137,10 @@ type Noobish2(maxCount: int) =
                 this.Components.OnKeyPressed.[index] {SourceId = this.Components.Id.[index]} Keys.Right
 
         previousKeyState <- keyState
+
     member this.Update (gameTime: GameTime) = 
         this.ProcessMouse(gameTime)
         this.ProcessKeys(gameTime)
-
-
-
 
     member this.Clear() =
         this.FocusedElementId <- UIComponentId.empty
@@ -1164,7 +1167,11 @@ type Noobish2(maxCount: int) =
             this.Components.ContentSize.[i] <- {Width = 0f; Height = 0f}
             this.Components.RelativePosition.[i] <- {X = 0f; Y = 0f}
             this.Components.Fill.[i] <- {Horizontal = false; Vertical = false}
+            
+            this.Components.PaddingOverride.[i] <- false
             this.Components.Padding.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+
+            this.Components.MarginOverride.[i] <- false
             this.Components.Margin.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
 
             this.Components.Layer.[i] <- -1

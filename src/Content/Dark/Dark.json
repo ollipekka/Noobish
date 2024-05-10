@@ -48,6 +48,11 @@
         "Division": {
 
         },
+        "Overlay": {
+            "default": {
+                "margin": [0, 0, 0, 0]
+            }
+        },
         "Button": {
             "default": {
                 "padding": [10, 10, 10, 10],
