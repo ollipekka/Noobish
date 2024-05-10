@@ -580,15 +580,14 @@ type Noobish2(maxCount: int) =
             let parentBounds = this.Components.Bounds.[pcid.Index]
 
             let relativeBounds = this.Components.Bounds.[rcid.Index]
-            let startX = relativeBounds.X
-            let startY = relativeBounds.Y
+            
             
             let children = this.Components.Children.[i]
             for i = 0 to children.Count - 1 do 
                 let ccid = children.[i]
                 let relativePosition = this.Components.RelativePosition.[ccid.Index]
-                let childStartX = startX + relativePosition.X 
-                let childStartY = startY + relativePosition.Y 
+                let childStartX = relativeBounds.X + margin.Left + relativePosition.X 
+                let childStartY = relativeBounds.Y + margin.Top + relativePosition.Y 
                 this.LayoutComponent content styleSheet childStartX childStartY parentBounds.Width parentBounds.Height ccid.Index
 
             this.Components.ContentSize.[i] <- {
