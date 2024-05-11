@@ -597,8 +597,8 @@ type Noobish2(maxCount: int) =
                     let margin = this.Components.Margin.[pcid.Index]
                     let bounds = this.Components.Bounds.[pcid.Index]
                     {
-                        X = parentScrollX + bounds.X + margin.Left + padding.Left
-                        Y = parentScrollY + bounds.Y + margin.Top + padding.Top
+                        X = bounds.X + margin.Left + padding.Left
+                        Y = bounds.Y + margin.Top + padding.Top
                         Width = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
                         Height = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
                     }
@@ -608,8 +608,8 @@ type Noobish2(maxCount: int) =
             let bounds = this.Components.Bounds.[i]
             let margin = this.Components.Margin.[i]
             let padding = this.Components.Padding.[i]
-            let contentStartX = bounds.X + margin.Left
-            let contentStartY = bounds.Y + margin.Top
+            let contentStartX = parentScrollX + bounds.X + margin.Left
+            let contentStartY = parentScrollY + bounds.Y + margin.Top
             let contentWidth = bounds.Width - margin.Left - margin.Right
             let contentHeight = bounds.Height - margin.Left - margin.Right
 
@@ -685,8 +685,6 @@ type Noobish2(maxCount: int) =
                     DrawUI.drawRectangle spriteBatch pixel Color.Purple (textBounds.X) (textBounds.Y) (textBounds.Width) (textBounds.Height)
 
             spriteBatch.End()
-
-
 
             let scrollX = parentScrollX + this.Components.ScrollX.[i]
             let scrollY = parentScrollY + this.Components.ScrollY.[i]

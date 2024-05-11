@@ -109,8 +109,8 @@ module Internal =
             {
                 X = x 
                 Y = y
-                Width = right - x 
-                Height = bottom - y
+                Width = max 0f (right - x)
+                Height = max 0f (bottom - y)
             }
 
     type SliderModel = {
