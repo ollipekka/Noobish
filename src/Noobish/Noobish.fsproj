@@ -23,7 +23,7 @@
     <Compile Include="Noobish.fs" />
     <Compile Include="NoobishInput.fs" />
     <Compile Include="NoobishMonoGame.fs" />
-    <Compile Include="NoobishFrame.fs" />
+    <Compile Include="NoobishComponents.fs" />
     <Compile Include="Noobish2.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
