@@ -858,7 +858,7 @@ type Noobish2(maxCount: int) =
                 let children = this.Components.Children.[i]
                 let mutable handledByChild = false 
                 for j = 0 to children.Count - 1 do 
-                    if this.Scroll positionX positionY scale time scrollX scrollY j then 
+                    if this.Scroll positionX positionY scale time scrollX scrollY children.[j].Index then 
                         handledByChild <- true 
                     else 
                         handledByChild <- false 
@@ -930,7 +930,7 @@ type Noobish2(maxCount: int) =
 
             for i = 0 to this.Components.Count - 1 do 
                 if this.Components.ParentId.[i] = UIComponentId.empty then 
-                    this.Scroll x y 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) |> ignore
+                    this.Scroll x y 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) i |> ignore
 
 
         previousMouseState <- mouseState
