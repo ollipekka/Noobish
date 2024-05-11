@@ -149,8 +149,6 @@ module Text =
                     |> ui.SetChildren [|
                         ui.Paragraph loremIpsum1
                         ui.Paragraph loremIpsum2
-                        ui.Paragraph loremIpsum1
-                        ui.Paragraph loremIpsum2
                     |]  
             |]
 

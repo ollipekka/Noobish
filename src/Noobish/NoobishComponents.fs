@@ -157,75 +157,44 @@ type Layout =
 type NoobishComponents(count) = 
 
     member val Count = 0 with get, set
-
     member val Id = Array.create count UIComponentId.empty
-
     member val ThemeId = Array.create count ""
-
     member val ParentId = Array.create count UIComponentId.empty
-
     member val Children = Array.init count (fun _ -> ResizeArray<UIComponentId>())
-
     member val Visible = Array.create count true 
-
     member val Enabled = Array.create count true 
-
     member val Block = Array.create count false
-
     member val Text = Array.create count ""
-
     member val TextAlign = Array.create count NoobishTextAlignment.Left
-
     member val Textwrap = Array.create count false
-
     member val Layer = Array.create count 0
-
     member val Bounds = Array.create<Internal.NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
-
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
-
     member val ContentSize = Array.create count {Width = 0f; Height = 0f}
-
     member val RelativePosition = Array.create count {X = 0f; Y = 0f}
-
     member val Fill = Array.create<Fill> count ({Horizontal = false; Vertical = false})
     member val PaddingOverride = Array.create count false
     member val Padding = Array.create<Padding> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
-
     member val MarginOverride = Array.create count false
     member val Margin = Array.create<Margin> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val Layout = Array.create count Layout.None
-
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
-
     member val WantsOnClick = Array.create count false
     member val OnClick = Array.init<OnClickEvent -> unit> count (fun _event -> ignore)
-
     member val LastPressTime = Array.create count TimeSpan.Zero
-
     member val LastHoverTime = Array.create count TimeSpan.Zero
-
     member val WantsKeyTyped = Array.create count false 
     member val OnKeyTyped = Array.create<OnClickEvent -> char -> unit> count (fun _ _ -> ()) 
-
-
     member val WantsKeyPressed = Array.create count false 
     member val OnKeyPressed = Array.create<OnClickEvent -> Keys -> unit> count (fun _ _ -> ()) 
-
     member val WantsFocus = Array.create count false 
     member val OnFocus = Array.create<OnClickEvent -> bool -> unit> count (fun _ _ -> ())
-
     member val Scroll = Array.create<Scroll> count {Horizontal = false; Vertical = false}
     member val ScrollX = Array.create count 0f
     member val ScrollY = Array.create count 0f
     member val LastScrollTime = Array.create count TimeSpan.Zero
-
     member val Toggled = Array.create count false 
     member val Hovered = Array.create count false 
-
-
-
-
 
     member this.CalculateContentSize (content: ContentManager) (styleSheet: NoobishStyleSheet) (parentWidth: float32) (parentHeight: float32) (i: int) =
         
@@ -233,7 +202,7 @@ type NoobishComponents(count) =
         let margin = this.Margin.[i]
 
         let viewportWidth = parentWidth - margin.Left - margin.Right - padding.Left - padding.Right
-        let viewportHeight = parentWidth - margin.Top - margin.Bottom - padding.Top - padding.Bottom
+        let viewportHeight = parentHeight - margin.Top - margin.Bottom - padding.Top - padding.Bottom
         
         let contentSize =
             match this.Layout.[i] with 
@@ -275,10 +244,13 @@ type NoobishComponents(count) =
                 let mutable maxColWidth = 0f
                 let mutable maxRowHeight = 0f
 
+                let cellWidth = viewportWidth / float32 cols 
+                let cellHeight = viewportHeight / float32 rows
+
                 for i = 0 to children.Count - 1 do
                     let cid = children.[i]
-
-                    this.CalculateContentSize content styleSheet viewportWidth viewportHeight cid.Index
+                    let cellspan = this.GridSpan.[cid.Index]
+                    this.CalculateContentSize content styleSheet (cellWidth * float32 cellspan.Colspan) (cellHeight * float32 cellspan.Rowspan) cid.Index
 
                     let gridSpan = this.GridSpan.[cid.Index]
                     let childPadding = this.Padding.[cid.Index]

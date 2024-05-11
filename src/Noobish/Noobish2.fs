@@ -124,7 +124,7 @@ type Noobish2(maxCount: int) =
         cid
 
     member this.Paragraph (t: string) = 
-        let cid = this.Create "Paragraph"
+        let cid = this.Create "Panel"
         this.Components.Text.[cid.Index] <- t
         this.Components.Textwrap.[cid.Index] <- true 
         this.Components.TextAlign.[cid.Index] <- NoobishTextAlignment.TopLeft 
@@ -497,7 +497,7 @@ type Noobish2(maxCount: int) =
         let size = Vector2(cursorWidth, textBounds.Height)
         DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
 
-    member this.DrawBackground (styleSheet: NoobishStyleSheet) (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (gameTime: GameTime) (i: int)=
+    member this.DrawBackground (styleSheet: NoobishStyleSheet) (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (gameTime: GameTime) (scrollX: float32) (scrollY: float32) (i: int)=
 
         let cstate =
             if this.Components.WantsFocus.[i] && this.FocusedElementId.Id = this.Components.Id.[i].Id then 
@@ -505,14 +505,12 @@ type Noobish2(maxCount: int) =
             else 
                 "default"
 
-
         let themeId = this.Components.ThemeId.[i]
         let bounds = this.Components.Bounds.[i]
         let margin = this.Components.Margin.[i]
         let layer = this.Components.Layer.[i]
-        let scrollY = this.Components.ScrollY.[i]
-        let contentStartX = bounds.X + margin.Left
-        let contentStartY = bounds.Y +  margin.Top 
+        let contentStartX = bounds.X + margin.Left + scrollX
+        let contentStartY = bounds.Y +  margin.Top + scrollY
         let contentWidth = bounds.Width - margin.Left - margin.Right
         let contentHeight = bounds.Height - margin.Top - margin.Bottom
 
@@ -535,7 +533,7 @@ type Noobish2(maxCount: int) =
 
         let drawables = styleSheet.GetDrawables themeId cstate
 
-        let position = Vector2(contentStartX, contentStartY + scrollY)
+        let position = Vector2(contentStartX, contentStartY)
         let size = Vector2(contentWidth, contentHeight)
 
         let layer = 1f - (float32 layer / 255f)
@@ -543,7 +541,7 @@ type Noobish2(maxCount: int) =
         DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
 
 
-    member this.DrawText (content: ContentManager) (styleSheet: NoobishStyleSheet) (textBatch: TextBatch) (i: int) =
+    member this.DrawText (content: ContentManager) (styleSheet: NoobishStyleSheet) (textBatch: TextBatch) (scrollX: float32) (scrollY: float32) (i: int) =
         let text = this.Components.Text.[i]
         if text.Length > 0 then 
             let themeId = this.Components.ThemeId.[i]
@@ -557,11 +555,10 @@ type Noobish2(maxCount: int) =
             let fontSize = (styleSheet.GetFontSize themeId "default")
 
             let bounds = this.Components.Bounds.[i]
-            let scrollY = this.Components.ScrollY.[i]
             let margin = this.Components.Margin.[i]
             let padding = this.Components.Padding.[i]
-            let contentStartX = bounds.X + padding.Left + margin.Left
-            let contentStartY = bounds.Y + padding.Top + margin.Top + scrollY
+            let contentStartX = scrollX + bounds.X + padding.Left + margin.Left
+            let contentStartY = scrollY + bounds.Y + padding.Top + margin.Top
             let contentWidth = bounds.Width - padding.Left - padding.Right - margin.Left - margin.Right
             let contentHeight = bounds.Height - padding.Top - padding.Bottom - margin.Left - margin.Right
             let bounds: Internal.NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
@@ -583,13 +580,13 @@ type Noobish2(maxCount: int) =
         (textBatch: TextBatch)
         (styleSheet: NoobishStyleSheet)
         (debug: bool)
+        (parentScrollX: float32)
+        (parentScrollY: float32)
         (i: int)
         (gameTime: GameTime) =
 
-
         let visible = this.Components.Visible.[i]
         if visible then 
-
             let pcid = this.Components.ParentId.[i]
             let parentViewport: NoobishRectangle =
                 if pcid = UIComponentId.empty then 
@@ -600,8 +597,8 @@ type Noobish2(maxCount: int) =
                     let margin = this.Components.Margin.[pcid.Index]
                     let bounds = this.Components.Bounds.[pcid.Index]
                     {
-                        X = bounds.X + margin.Left + padding.Left
-                        Y = bounds.Y + margin.Top + padding.Top
+                        X = parentScrollX + bounds.X + margin.Left + padding.Left
+                        Y = parentScrollY + bounds.Y + margin.Top + padding.Top
                         Width = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
                         Height = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
                     }
@@ -638,7 +635,7 @@ type Noobish2(maxCount: int) =
             graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMargin 
             spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
-            this.DrawBackground styleSheet textureAtlas spriteBatch gameTime i
+            this.DrawBackground styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i
 
             if this.FocusedElementId = this.Components.Id.[i] then 
                 this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
@@ -647,13 +644,12 @@ type Noobish2(maxCount: int) =
 
             graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMarginAndPadding
 
-            this.DrawText content styleSheet textBatch i
+            this.DrawText content styleSheet textBatch parentScrollX parentScrollY i
+
 
             graphics.ScissorRectangle <- oldScissorRect
 
             spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
-            let totalScrollX = 0f
-            let totalScrollY = 0f
             if debug then
                 let pixel = content.Load<Texture2D> "Pixel"
                 let themeId = this.Components.ThemeId.[i]
@@ -665,8 +661,7 @@ type Noobish2(maxCount: int) =
                     elif themeId = "Paragraph" then Color.Multiply(Color.Purple, 0.1f)
                     else Color.Multiply(Color.Yellow, 0.1f)
 
-
-                DrawUI.drawRectangle spriteBatch pixel debugColor (bounds.X + totalScrollX) (bounds.Y + totalScrollY) (bounds.Width) (bounds.Height)
+                DrawUI.drawRectangle spriteBatch pixel debugColor (bounds.X + parentScrollX) (bounds.Y + parentScrollY) (bounds.Width) (bounds.Height)
                 if themeId = "Scroll" || themeId = "Slider" then
                     let r = {
                         X = float32 bounds.X
@@ -685,16 +680,20 @@ type Noobish2(maxCount: int) =
                     let fontSize = styleSheet.GetFontSize themeId "default"
 
 
-                    let textBounds = NoobishFont.calculateBounds font fontSize textWrap bounds totalScrollX totalScrollY textAlign text
+                    let textBounds = NoobishFont.calculateBounds font fontSize textWrap bounds parentScrollX parentScrollX textAlign text
 
                     DrawUI.drawRectangle spriteBatch pixel Color.Purple (textBounds.X) (textBounds.Y) (textBounds.Width) (textBounds.Height)
 
             spriteBatch.End()
 
 
+
+            let scrollX = parentScrollX + this.Components.ScrollX.[i]
+            let scrollY = parentScrollY + this.Components.ScrollY.[i]
+
             let children = this.Components.Children.[i]
             for j = 0 to children.Count - 1 do 
-                this.DrawComponent graphics content spriteBatch textBatch styleSheet debug children.[j].Index gameTime 
+                this.DrawComponent graphics content spriteBatch textBatch styleSheet debug scrollX scrollY children.[j].Index gameTime 
     member this.Draw 
         (graphics: GraphicsDevice) 
         (content: ContentManager)
@@ -753,7 +752,7 @@ type Noobish2(maxCount: int) =
         let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet> styleSheetId
         while drawQueue.Count > 0 do 
             let i = drawQueue.Dequeue()
-            this.DrawComponent graphics content spriteBatch textBatch styleSheet this.Debug i gameTime
+            this.DrawComponent graphics content spriteBatch textBatch styleSheet this.Debug 0f 0f i gameTime
 
 
         graphics.RasterizerState <- oldRasterizerState
@@ -851,10 +850,7 @@ type Noobish2(maxCount: int) =
         let mutable handled = false
 
         if this.Components.Enabled.[i] && this.Components.Visible.[i] && this.ComponentContains positionX positionY scrollX scrollY i then
-            
-
             let handledByChild =
-
                 let children = this.Components.Children.[i]
                 let mutable handledByChild = false 
                 for j = 0 to children.Count - 1 do 
@@ -891,7 +887,6 @@ type Noobish2(maxCount: int) =
 
 
     member this.ProcessMouse(gameTime: GameTime) =
-
         let mouseState =  Microsoft.Xna.Framework.Input.Mouse.GetState()
 
         let x = float32 mouseState.X
@@ -899,7 +894,6 @@ type Noobish2(maxCount: int) =
         for i = 0 to this.Components.Count - 1 do 
             if this.Components.ParentId.[i] = UIComponentId.empty then 
                 this.Hover x y gameTime i 
-
 
         if mouseState.LeftButton = ButtonState.Pressed then 
             for i = 0 to this.Components.Count - 1 do 
@@ -922,7 +916,6 @@ type Noobish2(maxCount: int) =
 
         let scrollWheelValue = mouseState.ScrollWheelValue - previousMouseState.ScrollWheelValue
         if scrollWheelValue <> 0 then
-
             let scroll = float32 scrollWheelValue / 2.0f
             let absScroll = abs scroll
             let sign = sign scroll |> float32
@@ -931,7 +924,6 @@ type Noobish2(maxCount: int) =
             for i = 0 to this.Components.Count - 1 do 
                 if this.Components.ParentId.[i] = UIComponentId.empty then 
                     this.Scroll x y 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) i |> ignore
-
 
         previousMouseState <- mouseState
 
