@@ -464,8 +464,6 @@ type TextBatch (graphics: GraphicsDevice, Resolution: struct(int*int), effect: E
         let mutable nextPosX = 0f
         let mutable nextPosY = 0f
 
-        let mutable circuitBreaker = 0
-
         let mutable i = 0
         while i < text.Length - 1 do
             let struct(wsWidth, wsNewLinePos, wsCount) = NoobishFont.measureLeadingWhiteSpace font size text i
@@ -480,12 +478,10 @@ type TextBatch (graphics: GraphicsDevice, Resolution: struct(int*int), effect: E
 
                 if nextPosX + wsWidth + wordWidth > maxWidth then
 
-                    if circuitBreaker > 0 then failwith "Word is larger than line width. Use smalelr font."
-                    circuitBreaker <- circuitBreaker + 1
+                    if nextPosX <= Single.Epsilon then failwith "Word is larger than line width. Use smalelr font."
                     nextPosX <- 0.0f
                     nextPosY <- nextPosY + font.Metrics.LineHeight * size
                 else
-                    circuitBreaker <- 0 
                     // Handle the case of leading whitespace by skipping whitespace at the start of line.
                     let struct(startPos, endPos, wsWidth) =
                         if nextPosX < System.Single.Epsilon && wsCount > 0 then
