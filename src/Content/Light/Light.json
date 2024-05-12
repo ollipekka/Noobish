@@ -65,6 +65,11 @@
                 "fontSize": 16
             }
         },
+        "Paragraph": {
+            "default": {
+                "fontSize": 14
+            }
+        },
         "TextBox": {
             "default": {
                 "drawables": [

@@ -291,7 +291,7 @@ type NoobishComponents(count) =
 
 
     member this.LayoutComponent (content: ContentManager) (styleSheet: NoobishStyleSheet) (startX: float32) (startY: float32) (parentWidth: float32) (parentHeight: float32) (i: int) = 
-
+        Log.Logger.Information ("Entering Layouting {ComponentId}", i)
         let fill = this.Fill.[i]
         let scroll = this.Scroll.[i]
         let text = this.Text.[i]
@@ -400,4 +400,6 @@ type NoobishComponents(count) =
                 this.LayoutComponent content styleSheet childStartX childStartY parentBounds.Width parentBounds.Height ccid.Index
 
         | Layout.None -> ()
+
+        Log.Logger.Information ("Exiting Layouting {ComponentId}", i)
             
