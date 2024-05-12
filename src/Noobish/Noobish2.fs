@@ -700,15 +700,14 @@ type Noobish2(maxCount: int) =
         (styleSheetId: string)
         (debug: bool)
         (gameTime: GameTime) = 
+
         let screenWidth = float32 graphics.Viewport.Width
         let screenHeight = float32 graphics.Viewport.Height
         if abs (this.ScreenWidth - screenWidth) > Single.Epsilon || abs (this.ScreenHeight - screenHeight )> Single.Epsilon then
             this.ScreenWidth <- screenWidth
             this.ScreenHeight <- screenHeight
             // Relayout
-            waitForLayout <- true
-
-        
+            waitForLayout <- true 
 
         let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
         if waitForLayout && this.Components.Count > 0 then 
@@ -731,8 +730,8 @@ type Noobish2(maxCount: int) =
 
             while toLayout.Count > 0 do 
                 let i = toLayout.Dequeue()
-                this.Components.CalculateContentSize content styleSheet this.ScreenWidth this.ScreenHeight i
-                this.Components.LayoutComponent content styleSheet 0f 0f this.ScreenWidth this.ScreenHeight i
+                this.Components.CalculateContentSize content styleSheet screenWidth screenHeight i
+                this.Components.LayoutComponent content styleSheet 0f 0f screenWidth screenHeight i
 
             waitForLayout <- false
 
@@ -862,16 +861,20 @@ type Noobish2(maxCount: int) =
                 let contentSize = this.Components.ContentSize.[i]
                 let bounds = this.Components.Bounds.[i]
                 let scroll = this.Components.Scroll.[i]
+                let padding = this.Components.Padding.[i]
+                let margin = this.Components.Margin.[i]
                 
+                let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
+                let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
 
-                if scroll.Horizontal && contentSize.Width > bounds.Width then
+                if scroll.Horizontal && contentSize.Width > contentWidth then
                     this.Components.ScrollX.[i] <- this.Components.ScrollX.[i] + scrollX
                     this.Components.LastScrollTime.[i] <- time
                     handled <- true
-                if scroll.Vertical && contentSize.Height > bounds.Height then
+                if scroll.Vertical && contentSize.Height > contentHeight then
                     let scaledScroll = scaleValue scrollY
                     let nextScroll = this.Components.ScrollY.[i] + scaledScroll
-                    let minScroll = bounds.Height - contentSize.Height
+                    let minScroll = contentHeight - contentSize.Height
 
 
                     this.Components.ScrollY.[i] <- clamp nextScroll minScroll 0.0f
