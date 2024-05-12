@@ -574,7 +574,7 @@ type Noobish2(maxCount: int) =
             let contentY = bounds.Y + margin.Top + padding.Top
             let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
             let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
-            let x = contentX + contentWidth - scrollBarWidth
+            let x = contentX + contentWidth - scrollBarWidth / 2f
             let color = Color.Multiply(scrollBarColor, progress)
 
             let layer = this.Components.Layer.[i]
