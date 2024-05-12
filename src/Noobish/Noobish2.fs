@@ -541,6 +541,54 @@ type Noobish2(maxCount: int) =
         DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
 
 
+    member this.DrawScrollBars
+        (styleSheet: NoobishStyleSheet)
+        (textureAtlas: NoobishTextureAtlas)
+        (spriteBatch: SpriteBatch)
+        (gameTime: GameTime)
+        _scrollX
+        _scrollY
+        (i: int) =
+
+        let scroll = this.Components.Scroll.[i]
+        let lastScrollTime = this.Components.LastScrollTime.[i]
+        let delta = float32 (min (gameTime.TotalGameTime - lastScrollTime).TotalSeconds 0.3)
+        let progress = 1.0f - delta / 0.3f
+
+        let scrollBarWidth = styleSheet.GetWidth "ScrollBar" "default"
+        if scrollBarWidth = 0f then failwith "Missing width for styleSheet 'ScrollBar' mode 'default'."
+        if scroll.Vertical && progress > 0.0f then
+
+            let scrollBarColor = styleSheet.GetColor "ScrollBar" "default"
+            let scrollbarDrawable = styleSheet.GetDrawables "ScrollBar" "default"
+
+            let scrollbarPinColor = styleSheet.GetColor "ScrollBarPin" "default"
+            let scrollbarPinDrawable = styleSheet.GetDrawables "ScrollBar" "default"
+
+            let scrollY = this.Components.ScrollY.[i]
+            let contentSize = this.Components.ContentSize.[i]
+            let bounds = this.Components.Bounds.[i]
+            let padding = this.Components.Padding.[i]
+            let margin = this.Components.Margin.[i]
+            let contentX = bounds.X + margin.Left + padding.Left
+            let contentY = bounds.Y + margin.Top + padding.Top
+            let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
+            let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
+            let x = contentX + contentWidth - scrollBarWidth
+            let color = Color.Multiply(scrollBarColor, progress)
+
+            let layer = this.Components.Layer.[i]
+            let layer = 1f - float32 (layer + 5) / 255.0f
+
+            DrawUI.drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + 4f)) (Vector2(scrollBarWidth, bounds.Height - 8f)) layer color scrollbarDrawable
+
+            let pinPosition =  - ( scrollY / contentSize.Height) * bounds.Height
+            let pinHeight = ( contentHeight / contentSize.Height) * bounds.Height
+            let color = Color.Multiply(scrollbarPinColor, progress)
+
+            DrawUI.drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + pinPosition + 4f)) (Vector2(scrollBarWidth, pinHeight - 8f)) layer color scrollbarPinDrawable
+
+
     member this.DrawText (content: ContentManager) (styleSheet: NoobishStyleSheet) (textBatch: TextBatch) (scrollX: float32) (scrollY: float32) (i: int) =
         let text = this.Components.Text.[i]
         if text.Length > 0 then 
@@ -640,6 +688,7 @@ type Noobish2(maxCount: int) =
             if this.FocusedElementId = this.Components.Id.[i] then 
                 this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
 
+            this.DrawScrollBars styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i 
             spriteBatch.End()
 
             graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMarginAndPadding

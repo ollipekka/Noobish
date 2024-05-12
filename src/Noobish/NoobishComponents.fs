@@ -139,9 +139,6 @@ module DrawUI =
         // Bottom
         drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( bounds.Y + bounds.Height - borderSize) widthWithoutBorders borderSize
 
-
-
-
 type OnClickEvent = {
     SourceId: UIComponentId
 }
