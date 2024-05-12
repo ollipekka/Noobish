@@ -124,7 +124,7 @@ type Noobish2(maxCount: int) =
         cid
 
     member this.Paragraph (t: string) = 
-        let cid = this.Create "Panel"
+        let cid = this.Create "Paragraph"
         this.Components.Text.[cid.Index] <- t
         this.Components.Textwrap.[cid.Index] <- true 
         this.Components.TextAlign.[cid.Index] <- NoobishTextAlignment.TopLeft 
@@ -335,6 +335,15 @@ type Noobish2(maxCount: int) =
             this.Components.Margin.[index] <- {Top = margin; Right = margin; Bottom = margin; Left = margin}
         cid
 
+    member this.SetPadding (padding: int) (cid: UIComponentId) =
+        let padding = float32 padding
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.PaddingOverride.[index] <- true
+            this.Components.Padding.[index] <- {Top = padding; Right = padding; Bottom = padding; Left = padding}
+        cid
+
+
     member this.FillHorizontal (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
@@ -361,12 +370,16 @@ type Noobish2(maxCount: int) =
     member this.SetScrollHorizontal (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
+            if this.Components.Layout.[index] = Layout.None then 
+                failwith "Layout can't be none when scroll is set."
             this.Components.Scroll.[index] <- {this.Components.Scroll.[index] with Horizontal = true}
         cid
 
     member this.SetScrollVertical (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
+            if this.Components.Layout.[index] = Layout.None then 
+                failwith "Layout can't be none when scroll is set."
             this.Components.Scroll.[index] <- {this.Components.Scroll.[index] with Vertical = true}
         cid
 
@@ -374,6 +387,8 @@ type Noobish2(maxCount: int) =
     member this.SetScroll (horizontal: bool) (vertical: bool) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
+            if this.Components.Layout.[index] = Layout.None then 
+                failwith "Layout can't be none when scroll is set."
             this.Components.Scroll.[index] <- {this.Components.Scroll.[index] with Horizontal = horizontal; Vertical = vertical}
         cid
 
@@ -640,7 +655,6 @@ type Noobish2(maxCount: int) =
                 if pcid = UIComponentId.empty then 
                     {X = 0.0f; Y = 0.0f; Width = this.ScreenWidth; Height = this.ScreenHeight}
                 else 
-
                     let padding = this.Components.Padding.[pcid.Index]
                     let margin = this.Components.Margin.[pcid.Index]
                     let bounds = this.Components.Bounds.[pcid.Index]
@@ -665,7 +679,7 @@ type Noobish2(maxCount: int) =
                     X = contentStartX
                     Y = contentStartY
                     Width = contentWidth
-                    Height =contentHeight
+                    Height = contentHeight
             })
             let boundsWithMargin = boundsWithMargin.Clamp parentViewport
 

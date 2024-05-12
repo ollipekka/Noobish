@@ -110,7 +110,7 @@ module Text =
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model _dispatch =
         let ui = game.Noobish2
 
-        let gridId =
+        let gridId = 
             ui.PanelWithGrid (2, 2) 
             |> ui.SetChildren [|
                 ui.PanelWithGrid(3, 3)
@@ -150,8 +150,32 @@ module Text =
                         ui.Paragraph loremIpsum1
                         ui.Paragraph loremIpsum2
                     |]  
+                ui.PanelWithGrid (3, 1)
+                    |> ui.SetChildren [|
+                        ui.Paragraph loremIpsum2 |> ui.AlignTextTopLeft |> ui.SetFill
+                        ui.PanelVertical()
+                            |> ui.SetScrollVertical
+                            |> ui.SetChildren [|
+                                ui.Paragraph loremIpsum1
+                                |> ui.SetMargin 0 
+                                |> ui.SetPadding 0
+                            |]
+                        ui.Paragraph $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}" |> ui.SetFill
+                    |]
+                ui.PanelWithGrid (1, 3)
+                    |> ui.SetChildren [|
+                        ui.Paragraph loremIpsum2 |> ui.AlignTextTopLeft |> ui.SetFill
+                        ui.PanelVertical()
+                            |> ui.SetScrollVertical
+                            |> ui.SetChildren [|
+                                ui.Paragraph loremIpsum1
+                                |> ui.SetMargin 0 
+                                |> ui.SetPadding 0
+                            |]
+                        ui.Paragraph $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}" |> ui.SetFill
+                    |]
             |]
-
+        
 
         [
             grid 2 2

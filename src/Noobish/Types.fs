@@ -102,8 +102,8 @@ module Internal =
                 if this.X < bounds.X then bounds.X else this.X
             let y = 
                 if this.Y < bounds.Y then bounds.Y else this.Y
-            let right = if this.Right > bounds.Right then bounds.Right else this.Right
 
+            let right = if this.Right > bounds.Right then bounds.Right else this.Right
             let bottom = if this.Bottom > bounds.Bottom then bounds.Bottom else this.Bottom
 
             {

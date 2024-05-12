@@ -75,6 +75,7 @@
         },
         "Combobox": {
             "default": {
+                "padding": [10, 10, 10, 10],
                 "drawables": [
                     ["button-default.9"]
                 ]
