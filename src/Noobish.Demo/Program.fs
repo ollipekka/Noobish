@@ -25,6 +25,7 @@ type DemoMessage =
     | ShowContainers
     | ShowNoobish2Demo
     | ShowButtons
+    | ShowList
     | ShowText
     | ShowSliders
     | ShowGithub
@@ -40,7 +41,7 @@ type DemoMessage =
 
 type StyleMode = LightMode | DarkMode
 
-type ViewState = | Noobish2Demo | Containers | Buttons | Text | Slider | Github
+type ViewState = | Noobish2Demo | Containers | Buttons | Text | List | Slider | Github
 
 type DemoModel = {
     State: ViewState
@@ -109,165 +110,82 @@ module Text =
 
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model _dispatch =
         let ui = game.Noobish2
-
-        let gridId = 
-            ui.PanelWithGrid (2, 2) 
+        ui.PanelWithGrid (2, 2) 
+        |> ui.SetChildren [|
+            ui.PanelWithGrid(3, 3)
             |> ui.SetChildren [|
-                ui.PanelWithGrid(3, 3)
-                |> ui.SetChildren [|
-                    ui.Label "Top Left"
-                        |> ui.SetFill
-                        |> ui.AlignTextTopLeft
-                    ui.Label "Top"
-                        |> ui.SetFill
-                        |> ui.AlignTextTop
-                    ui.Label "Top Right"
-                        |> ui.SetFill
-                        |> ui.AlignTextTopRight
-                    ui.Label "Left"
-                        |> ui.SetFill
-                        |> ui.AlignTextLeft
-                    ui.Label "Center"
-                        |> ui.SetFill
-                        |> ui.AlignTextCenter
-                    ui.Label "Right"
-                        |> ui.SetFill
-                        |> ui.AlignTextRight
-                    ui.Label "Bottom Left"
-                        |> ui.SetFill
-                        |> ui.AlignTextBottomLeft
-                    ui.Label "Bottom Center"
-                        |> ui.SetFill
-                        |> ui.AlignTextBottomCenter
-                    ui.Label "Bottom Right"
-                        |> ui.SetFill
-                        |> ui.AlignTextBottomRight
+                ui.Label "Top Left"
+                    |> ui.SetFill
+                    |> ui.AlignTextTopLeft
+                ui.Label "Top"
+                    |> ui.SetFill
+                    |> ui.AlignTextTop
+                ui.Label "Top Right"
+                    |> ui.SetFill
+                    |> ui.AlignTextTopRight
+                ui.Label "Left"
+                    |> ui.SetFill
+                    |> ui.AlignTextLeft
+                ui.Label "Center"
+                    |> ui.SetFill
+                    |> ui.AlignTextCenter
+                ui.Label "Right"
+                    |> ui.SetFill
+                    |> ui.AlignTextRight
+                ui.Label "Bottom Left"
+                    |> ui.SetFill
+                    |> ui.AlignTextBottomLeft
+                ui.Label "Bottom Center"
+                    |> ui.SetFill
+                    |> ui.AlignTextBottomCenter
+                ui.Label "Bottom Right"
+                    |> ui.SetFill
+                    |> ui.AlignTextBottomRight
 
-                |]
-                ui.PanelVertical()
-                    |> ui.SetScrollVertical
-                    |> ui.SetChildren [|
-                        ui.Paragraph loremIpsum1
-                        ui.Paragraph loremIpsum2
-                    |]  
-                ui.PanelWithGrid (3, 1)
-                    |> ui.SetChildren [|
-                        ui.Paragraph loremIpsum2 |> ui.AlignTextTopLeft |> ui.SetFill
-                        ui.PanelVertical()
-                            |> ui.SetScrollVertical
-                            |> ui.SetChildren [|
-                                ui.Paragraph loremIpsum1
-                                |> ui.SetMargin 0 
-                                |> ui.SetPadding 0
-                            |]
-                        ui.Paragraph $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}" |> ui.SetFill
-                    |]
-                ui.PanelWithGrid (1, 3)
-                    |> ui.SetChildren [|
-                        ui.Paragraph loremIpsum2 |> ui.AlignTextTopLeft |> ui.SetFill
-                        ui.PanelVertical()
-                            |> ui.SetScrollVertical
-                            |> ui.SetChildren [|
-                                ui.Paragraph loremIpsum1
-                                |> ui.SetMargin 0 
-                                |> ui.SetPadding 0
-                            |]
-                        ui.Paragraph $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}" |> ui.SetFill
-                    |]
             |]
-        
+            ui.PanelVertical()
+                |> ui.SetScrollVertical
+                |> ui.SetChildren [|
+                    ui.Paragraph loremIpsum1
+                    ui.Paragraph loremIpsum2
+                |]  
+            ui.PanelWithGrid (3, 1)
+                |> ui.SetChildren [|
+                    ui.Paragraph loremIpsum2 |> ui.AlignTextTopLeft |> ui.SetFill
+                    ui.PanelVertical()
+                        |> ui.SetScrollVertical
+                        |> ui.SetChildren [|
+                            ui.Paragraph loremIpsum1
+                            |> ui.SetMargin 0 
+                            |> ui.SetPadding 0
+                        |]
+                    ui.Paragraph $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}" |> ui.SetFill
+                |]
+            ui.PanelWithGrid (1, 3)
+                |> ui.SetChildren [|
+                    ui.Paragraph loremIpsum2 |> ui.AlignTextTopLeft |> ui.SetFill
+                    ui.DivVertical()
+                        |> ui.SetScrollVertical
+                        |> ui.SetChildren [|
+                            ui.Paragraph loremIpsum1
+                            |> ui.SetMargin 0 
+                            |> ui.SetPadding 0
+                        |]
+                    ui.Paragraph $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}" |> ui.SetFill
+                |]
+        |]
+    
 
-        [
-            grid 2 2
-                [
-                panelWithGrid 3 3
-                    [
-                        (*
-                        label [text "Top Left"; textTopLeft; fill]
-                        label [text "Top"; textTopCenter; fill]
-                        label [text "Top Right"; textTopRight; fill]
-                        label [text "Left"; textLeft; fill]
-                        label [text "Center"; textCenter; fill]
-                        label [text "Right"; textRight; fill]
-                        label [text "Bottom Left"; textBottomLeft; fill]
-                        label [text "Bottom Center"; textBottomCenter; fill]
-                        label [text "Bottom Right"; textBottomRight; fill]*)
-                    ]
-                    [
 
-                    ]
-                panel
-                    [
-                        scroll
-                            [
-                                paragraph [text loremIpsum1; block; name "FailedLorem1"]
-                                paragraph [text loremIpsum2; block; name "FailedLorem2"]
-                            ]
-                            [
-                                name "FailedScroll"
-                                scrollVertical
-                            ]
-                    ]
-                    [
 
-                    ]
-                panelWithGrid 1 3
-                    [
-                        paragraph [text loremIpsum2; textTopCenter; rowspan 1; ]
-                        scroll
-                            [
-                                paragraph [text loremIpsum2; textTopCenter;]
-                            ]
-                            [
-                                rowspan 1
-                            ]
-                        scroll
-                            [
-                                paragraph [text $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}"]
-
-                            ]
-                            [
-                                name "DebugScroll"
-                                scrollVertical
-                                rowspan 1
-                            ]
-                    ]
-                    [
-                        name "ParentPanel"
-                    ]
-
-                panelWithGrid 2 1
-                    [
-                        div
-                            [
-                                h1 [text "Header 1"; block]
-                                h2 [text "Header 2"; block]
-                                h3 [text "Header 3"; block]
-                            ]
-                            [
-
-                            ]
-                        div
-                            [
-                                label [text "Font size 16"; block]
-                                label [text "Regular"; block]
-                                label [text "Bold"; block]
-                                label [text "Italic"; block]
-                            ]
-                            [
-
-                            ]
-
-                    ]
-                    [
-
-                    ]
-                ]
-                [
-
-                ]
-
-        ], gridId
+module List =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) _dispatch =
+        let ui = game.Noobish2
+        ui.PanelWithGrid (2, 2) 
+        |> ui.SetChildren [|
+            ui.List model.ListModel 0 (fun source value -> Log.Logger.Information ("Clicked {value}", value))
+        |]
+    
 
 module Containers =
 
@@ -566,6 +484,8 @@ let update (game: NoobishGame<unit, DemoMessage, DemoModel>) (message: DemoMessa
         {model with State = Containers}, Cmd.none
     | ShowText ->
         {model with State = Text}, Cmd.none
+    | ShowList ->
+        {model with State = List}, Cmd.none
     | ShowSliders ->
         {model with State = Slider}, Cmd.none
     | ShowGithub ->
@@ -610,8 +530,11 @@ let view game (model: DemoModel) dispatch =
             let content = Containers.view model dispatch
             "Containers", UIComponentId.empty, content
         | Text -> 
-            let content, content2 = Text.view game model dispatch
-            "Labels", content2, content
+            let content = Text.view game model dispatch
+            "Labels", content, []
+        | List -> 
+            let content = List.view game model dispatch
+            "List", content, []
         | Slider -> 
             let content = Slider.view model dispatch
             "Slider", UIComponentId.empty, content
@@ -673,6 +596,9 @@ let view game (model: DemoModel) dispatch =
                 ui.Button "Containers" (fun gameTime -> dispatch ShowContainers)
                 |> ui.FillHorizontal 
                 |> ui.SetToggled (model.State = Containers)
+                ui.Button "List" (fun gameTime -> dispatch ShowList)
+                |> ui.FillHorizontal 
+                |> ui.SetToggled (model.State = List)
                 ui.Button "Slider" (fun gameTime -> dispatch ShowSliders)
                 |> ui.FillHorizontal 
                 |> ui.SetToggled (model.State = Slider)

@@ -70,7 +70,7 @@ type Noobish2(maxCount: int) =
         else 
             -1
 
-    member private this.Create(themeId: string): UIComponentId =
+    member this.Create(themeId: string): UIComponentId =
         if free.Count = 0 then failwith "Out of free components."
 
         let i = free.Dequeue() 
@@ -225,6 +225,18 @@ type Noobish2(maxCount: int) =
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
+    member this.DivHorizontal () = 
+        let cid = this.Create "Division"
+        this.SetLayout (Layout.LinearHorizontal) cid.Index
+        //this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid   
+
+    member this.DivVertical () = 
+        let cid = this.Create "Division"
+        this.SetLayout (Layout.LinearVertical) cid.Index
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid   
+
     member this.HorizontalRule () = 
         let cid = this.Create "HorizontalRule"
         this.Components.Id.[cid.Index] <- cid
@@ -232,39 +244,12 @@ type Noobish2(maxCount: int) =
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = false} 
         cid
 
-    member this.Combobox<'T> (items: 'T[]) (selectedIndex: int) (onValueChanged: OnClickEvent -> 'T -> unit)= 
-        let cid = this.Create "Combobox"
-        this.Components.Text.[cid.Index] <- items.[selectedIndex].ToString()
-
-        let overlayPaneId =
-            this.Overlaypane cid 
-            |> this.SetOnClick (fun event ->  
-                this.SetVisible false event.SourceId |> ignore)
-
-        let overlayWindowId =
-            this.Window()
-            |> this.SetChildren (
-                items |> Array.map (
-                    fun i -> 
-                        this.Button (i.ToString()) (
-                            fun (event) -> 
-                                this.Components.Text.[cid.Index] <- i.ToString(); onValueChanged ({SourceId=cid}) i
-                        ) |> this.SetFillHorizontal
-                )
-            )
-            
-        overlayPaneId 
-        |> this.SetChildren [| overlayWindowId |]
-        |> this.SetLayer 225
-        |> this.SetVisible false 
-        |> ignore
 
 
-        this.Components.WantsOnClick.[cid.Index] <- true
-        this.Components.OnClick.[cid.Index] <- (fun event -> 
-            this.SetVisible true overlayPaneId |> ignore
-        )
-
+    member this.SetThemeId (themeId: string) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.ThemeId.[index] <- themeId
         cid
 
     member this.SetSize (width: int, height: int) (cid: UIComponentId) = 
