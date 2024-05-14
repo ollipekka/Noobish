@@ -16,16 +16,16 @@ type Noobish2 with
         cid |> this.SetChildren (
             items |> Array.mapi (
                 fun i item -> 
-
                     this.DivHorizontal()
-                    |> this.FillHorizontal
                     |> this.SetThemeId (if i % 2 = 0 then "List-Division-Even" else "List-Division-Odd")
+                    |> this.FillHorizontal
                     |> this.SetToggled (selectedIndex = i)
                     |> this.SetOnClick(fun src -> onValueChanged src item)
                     |> this.SetChildren [|
                         this.Label (item.ToString())
-                        |> this.FillHorizontal
                         |> this.SetThemeId ("List-Label")
+                        |> this.FillHorizontal
+                        |> this.SetToggled (selectedIndex = i)
                         |> this.SetOnClick (fun src -> onValueChanged src item)
                     |]
 

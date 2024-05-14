@@ -35,15 +35,14 @@ type Noobish2(maxCount: int) =
 
     let drawQueue = PriorityQueue<int, int>()
 
-    let toCalculateSize = PriorityQueue<int, int>()
     let toLayout = PriorityQueue<int, int>()
 
+    let frames = Array.init 2 (fun _ -> NoobishComponents(256))
+    
+    let mutable previousFrameIndex = 0
+    let mutable frameIndex = 1
 
-    let free = PriorityQueue<int, int>(Array.init maxCount (fun i -> struct(i,i)))
-
-
-
-    member val Components = NoobishComponents(256)
+    member this.Components with get() = frames.[frameIndex]
 
     member val Cursor = 0 with get, set 
 
@@ -71,9 +70,8 @@ type Noobish2(maxCount: int) =
             -1
 
     member this.Create(themeId: string): UIComponentId =
-        if free.Count = 0 then failwith "Out of free components."
 
-        let i = free.Dequeue() 
+        let i = this.Components.Count
         let cid: UIComponentId = {Index = i; Id = Guid.NewGuid()}
         this.Components.Id.[i] <- cid
         this.Components.ThemeId.[i] <- themeId
@@ -502,9 +500,12 @@ type Noobish2(maxCount: int) =
         let cstate =
             if this.Components.WantsFocus.[i] && this.FocusedElementId.Id = this.Components.Id.[i].Id then 
                 "focused"
-            else 
+            elif not this.Components.Enabled.[i] then
+                "disabled"
+            elif this.Components.Toggled.[i] then
+                "toggled"
+            else
                 "default"
-
         let themeId = this.Components.ThemeId.[i]
         let bounds = this.Components.Bounds.[i]
         let margin = this.Components.Margin.[i]
@@ -597,10 +598,21 @@ type Noobish2(maxCount: int) =
 
             let layer = (1f - float32 (layer + 1) / 255.0f)
 
-            let fontId = styleSheet.GetFont themeId "default"
+            let state = 
+                if this.Components.WantsFocus.[i] && this.FocusedElementId = this.Components.Id.[i] then
+                    "focused"
+                elif not this.Components.Enabled.[i] then
+                    "disabled"
+                elif this.Components.Toggled.[i] then
+                    "toggled"
+                else
+                    "default"
+
+
+            let fontId = styleSheet.GetFont themeId state
             let font = content.Load<NoobishFont> fontId
 
-            let fontSize = (styleSheet.GetFontSize themeId "default")
+            let fontSize = (styleSheet.GetFontSize themeId state)
 
             let bounds = this.Components.Bounds.[i]
             let margin = this.Components.Margin.[i]
@@ -615,7 +627,7 @@ type Noobish2(maxCount: int) =
             let textBounds =
                     NoobishFont.calculateBounds font fontSize false bounds 0f 0f textAlign text
 
-            let textColor = styleSheet.GetFontColor themeId "default"
+            let textColor = styleSheet.GetFontColor themeId state
             if textWrap then
                 textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textBounds.X, textBounds.Y)) layer textColor text
             else
@@ -627,7 +639,7 @@ type Noobish2(maxCount: int) =
         (spriteBatch: SpriteBatch)
         (textBatch: TextBatch)
         (styleSheet: NoobishStyleSheet)
-        (debug: bool)
+        (parentBounds: NoobishRectangle)
         (parentScrollX: float32)
         (parentScrollY: float32)
         (i: int)
@@ -635,20 +647,6 @@ type Noobish2(maxCount: int) =
 
         let visible = this.Components.Visible.[i]
         if visible then 
-            let pcid = this.Components.ParentId.[i]
-            let parentViewport: NoobishRectangle =
-                if pcid = UIComponentId.empty then 
-                    {X = 0.0f; Y = 0.0f; Width = this.ScreenWidth; Height = this.ScreenHeight}
-                else 
-                    let padding = this.Components.Padding.[pcid.Index]
-                    let margin = this.Components.Margin.[pcid.Index]
-                    let bounds = this.Components.Bounds.[pcid.Index]
-                    {
-                        X = bounds.X + margin.Left + padding.Left
-                        Y = bounds.Y + margin.Top + padding.Top
-                        Width = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
-                        Height = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
-                    }
 
             let textureAtlas = content.Load(styleSheet.TextureAtlasId)
 
@@ -666,80 +664,83 @@ type Noobish2(maxCount: int) =
                     Width = contentWidth
                     Height = contentHeight
             })
-            let boundsWithMargin = boundsWithMargin.Clamp parentViewport
-
-            let boundsWithMarginAndPadding = {
-
-                    X = contentStartX + padding.Left
-                    Y = contentStartY + padding.Top
-                    Width = contentWidth - padding.Left - padding.Right
-                    Height = contentHeight - padding.Top - padding.Bottom
-            }
-            let boundsWithMarginAndPadding = boundsWithMarginAndPadding.Clamp parentViewport
-
-            let oldScissorRect = graphics.ScissorRectangle
-
-            graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMargin 
-            spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
-
-            this.DrawBackground styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i
-
-            if this.FocusedElementId = this.Components.Id.[i] then 
-                this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
-
-            this.DrawScrollBars styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i 
-            spriteBatch.End()
-
-            graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMarginAndPadding
-
-            this.DrawText content styleSheet textBatch parentScrollX parentScrollY i
+            let boundsWithMargin = boundsWithMargin.Clamp parentBounds
 
 
-            graphics.ScissorRectangle <- oldScissorRect
+            if boundsWithMargin.Width > 0f && boundsWithMargin.Height > 0f then 
+                let boundsWithMarginAndPadding = {
 
-            spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
-            if debug then
-                let pixel = content.Load<Texture2D> "Pixel"
-                let themeId = this.Components.ThemeId.[i]
-                let bounds = boundsWithMarginAndPadding
+                        X = contentStartX + padding.Left
+                        Y = contentStartY + padding.Top
+                        Width = contentWidth - padding.Left - padding.Right
+                        Height = contentHeight - padding.Top - padding.Bottom
+                }
+                let boundsWithMarginAndPadding = boundsWithMarginAndPadding.Clamp parentBounds
 
-                let debugColor =
-                    if themeId = "Scroll" then Color.Multiply(Color.Red, 0.1f)
-                    elif themeId = "Button" then Color.Multiply(Color.Green, 0.1f)
-                    elif themeId = "Paragraph" then Color.Multiply(Color.Purple, 0.1f)
-                    else Color.Multiply(Color.Yellow, 0.1f)
+                let oldScissorRect = graphics.ScissorRectangle
 
-                DrawUI.drawRectangle spriteBatch pixel debugColor (bounds.X + parentScrollX) (bounds.Y + parentScrollY) (bounds.Width) (bounds.Height)
-                if themeId = "Scroll" || themeId = "Slider" then
-                    let r = {
-                        X = float32 bounds.X
-                        Y = float32 bounds.Y
-                        Width =  float32 bounds.Width
-                        Height = float32 bounds.Height}
-                    DrawUI.debugDrawBorders spriteBatch pixel (Color.Multiply(Color.Red, 0.5f)) r
+                graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMargin 
+                spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
 
-                let text  = this.Components.Text.[i] 
-                let textWrap = this.Components.Textwrap.[i]
-                let textAlign = this.Components.TextAlign.[i]
-                if text <> "" then
+                this.DrawBackground styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i
 
-                    let fontId = styleSheet.GetFont themeId "default"
-                    let font = content.Load<NoobishFont>  fontId
-                    let fontSize = styleSheet.GetFontSize themeId "default"
+                if this.FocusedElementId = this.Components.Id.[i] then 
+                    this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
+
+                this.DrawScrollBars styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i 
+                spriteBatch.End()
+
+                graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMarginAndPadding
+
+                this.DrawText content styleSheet textBatch parentScrollX parentScrollY i
 
 
-                    let textBounds = NoobishFont.calculateBounds font fontSize textWrap bounds parentScrollX parentScrollX textAlign text
+                graphics.ScissorRectangle <- oldScissorRect
 
-                    DrawUI.drawRectangle spriteBatch pixel Color.Purple (textBounds.X) (textBounds.Y) (textBounds.Width) (textBounds.Height)
+                spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
+                if this.Debug then
+                    let pixel = content.Load<Texture2D> "Pixel"
+                    let themeId = this.Components.ThemeId.[i]
+                    let bounds = boundsWithMarginAndPadding
 
-            spriteBatch.End()
+                    let debugColor =
+                        if themeId = "Scroll" then Color.Multiply(Color.Red, 0.1f)
+                        elif themeId = "Button" then Color.Multiply(Color.Green, 0.1f)
+                        elif themeId = "Paragraph" then Color.Multiply(Color.Purple, 0.1f)
+                        else Color.Multiply(Color.Yellow, 0.1f)
 
-            let scrollX = parentScrollX + this.Components.ScrollX.[i]
-            let scrollY = parentScrollY + this.Components.ScrollY.[i]
+                    DrawUI.drawRectangle spriteBatch pixel debugColor (bounds.X + parentScrollX) (bounds.Y + parentScrollY) (bounds.Width) (bounds.Height)
+                    if themeId = "Scroll" || themeId = "Slider" then
+                        let r = {
+                            X = float32 bounds.X
+                            Y = float32 bounds.Y
+                            Width =  float32 bounds.Width
+                            Height = float32 bounds.Height}
+                        DrawUI.debugDrawBorders spriteBatch pixel (Color.Multiply(Color.Red, 0.5f)) r
 
-            let children = this.Components.Children.[i]
-            for j = 0 to children.Count - 1 do 
-                this.DrawComponent graphics content spriteBatch textBatch styleSheet debug scrollX scrollY children.[j].Index gameTime 
+                    let text  = this.Components.Text.[i] 
+                    let textWrap = this.Components.Textwrap.[i]
+                    let textAlign = this.Components.TextAlign.[i]
+                    if text <> "" then
+
+                        let fontId = styleSheet.GetFont themeId "default"
+                        let font = content.Load<NoobishFont>  fontId
+                        let fontSize = styleSheet.GetFontSize themeId "default"
+
+
+                        let textBounds = NoobishFont.calculateBounds font fontSize textWrap bounds parentScrollX parentScrollX textAlign text
+
+                        DrawUI.drawRectangle spriteBatch pixel Color.Purple (textBounds.X) (textBounds.Y) (textBounds.Width) (textBounds.Height)
+
+                spriteBatch.End()
+
+                let scrollX = parentScrollX + this.Components.ScrollX.[i]
+                let scrollY = parentScrollY + this.Components.ScrollY.[i]
+
+
+                let children = this.Components.Children.[i]
+                for j = 0 to children.Count - 1 do 
+                    this.DrawComponent graphics content spriteBatch textBatch styleSheet boundsWithMargin scrollX scrollY children.[j].Index gameTime 
     member this.Draw 
         (graphics: GraphicsDevice) 
         (content: ContentManager)
@@ -760,15 +761,33 @@ type Noobish2(maxCount: int) =
         let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
         if waitForLayout && this.Components.Count > 0 then 
 
+            let previousFrame = frames.[previousFrameIndex]
+            let mutable drift = (this.Components.Count <> previousFrame.Count)
+
+            let mutable j = 0
+            while not drift && j < this.Components.Count do 
+                if this.Components.ThemeId.[j] = previousFrame.ThemeId.[j] &&
+                   (this.Components.ContentSize.[j].Width - previousFrame.ContentSize.[j].Width) < Single.Epsilon &&
+                   (this.Components.ContentSize.[j].Height - previousFrame.ContentSize.[j].Height) < Single.Epsilon then 
+
+                    j <- j + 1
+                else 
+                    drift <- true
+
+            if not drift then 
+                for i = 0 to this.Components.Count do 
+                    this.Components.ScrollX.[i] <- previousFrame.ScrollX.[i]
+                    this.Components.ScrollY.[i] <- previousFrame.ScrollY.[i]
+
             for i = 0 to this.Components.Count - 1 do 
                 let themeId = this.Components.ThemeId.[i]
 
                 if not this.Components.MarginOverride.[i] then 
-                    let (top, left, bottom, right) = styleSheet.GetMargin themeId "default"
+                    let (top, right, bottom, left) = styleSheet.GetMargin themeId "default"
                     this.Components.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
                 if not this.Components.PaddingOverride.[i] then 
-                    let (top, left, bottom, right) = styleSheet.GetPadding themeId "default"
+                    let (top, right, bottom, left) = styleSheet.GetPadding themeId "default"
                     this.Components.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
                 (* Run layout only for root components. *)
@@ -797,7 +816,7 @@ type Noobish2(maxCount: int) =
         let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet> styleSheetId
         while drawQueue.Count > 0 do 
             let i = drawQueue.Dequeue()
-            this.DrawComponent graphics content spriteBatch textBatch styleSheet this.Debug 0f 0f i gameTime
+            this.DrawComponent graphics content spriteBatch textBatch styleSheet {X = 0f; Y = 0f; Width = this.ScreenWidth; Height = this.ScreenHeight} 0f 0f i gameTime
 
 
         graphics.RasterizerState <- oldRasterizerState
@@ -805,8 +824,12 @@ type Noobish2(maxCount: int) =
 
     member this.ComponentContains (x: float32) (y: float32) (scrollX: float32) (scrollY: float32) (i: int) = 
         let bounds = this.Components.Bounds.[i]
-
-        x > scrollX + bounds.X && x < scrollX + bounds.X + bounds.Width && scrollY + y > bounds.Y && y < scrollY + bounds.Y + bounds.Height
+        let left = scrollX + bounds.X 
+        let top = scrollY + bounds.Y 
+        let right = left + bounds.Width
+        let bottom = top + bounds.Height
+        
+        not (x < left || x > right || y < top || y > bottom)
 
     member this.Hover (x: float32) (y: float32) (gameTime: GameTime) (i: int)  =
         if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y 0f 0f i then 
@@ -819,16 +842,19 @@ type Noobish2(maxCount: int) =
                 for j = 0 to children.Count - 1 do 
                     this.Hover x y gameTime children.[j].Index
 
-    member this.Click (x: float32) (y: float32) (gameTime: GameTime) (i: int): bool  =
-        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y 0f 0f i then 
+    member this.Click (x: float32) (y: float32) (gameTime: GameTime) (parentScrollX: float32) (parentScrollY: float32) (i: int): bool  =
+
+        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y parentScrollX parentScrollY i then 
             Log.Logger.Debug ("Mouse click inside component {ComponentId}", i)
 
             let children = this.Components.Children.[i]
 
+            let scrollX = parentScrollX + this.Components.ScrollX.[i]
+            let scrollY = parentScrollY + this.Components.ScrollY.[i]
             let mutable found = false
             let mutable j = 0
             while not found && j < children.Count do 
-                if this.Click x y gameTime children.[j].Index then 
+                if this.Click x y gameTime scrollX scrollY  children.[j].Index then 
                     found <- true 
                 j <- j + 1
 
@@ -856,9 +882,10 @@ type Noobish2(maxCount: int) =
             this.Components.OnKeyTyped.[focusedIndex] {SourceId = this.Components.Id.[focusedIndex]} c
 
 
-    member this.Press (x: float32) (y: float32) (gameTime: GameTime) (i: int): bool =
+    member this.Press (x: float32) (y: float32) (gameTime: GameTime) (parentScrollX: float32) (parentScrollY: float32) (i: int): bool =
 
-        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y 0f 0f i then 
+
+        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y parentScrollX parentScrollY i then 
             Log.Logger.Debug ("Mouse press inside component {ComponentId}", i)
             let children = this.Components.Children.[i]
 
@@ -866,18 +893,19 @@ type Noobish2(maxCount: int) =
                 this.Components.LastPressTime.[i] <- gameTime.TotalGameTime
                 true 
             else 
+                let scrollX = parentScrollX + this.Components.ScrollX.[i]
+                let scrollY = parentScrollY + this.Components.ScrollY.[i]
+                let mutable handled = false
+                let mutable j = 0
 
-            let mutable handled = false
-            let mutable j = 0
+                while not handled && j < children.Count do
+                    let cid = children.[j]
 
-            while not handled && j < children.Count do
-                let cid = children.[j]
+                    if this.Press x y gameTime scrollX scrollY cid.Index then 
+                        handled <- true 
 
-                if this.Press x y gameTime cid.Index then 
-                    handled <- true 
-
-                j <- j + 1
-            handled
+                    j <- j + 1
+                handled
         else 
             false
 
@@ -951,7 +979,7 @@ type Noobish2(maxCount: int) =
 
             while toLayout.Count > 0 do 
                 let i = toLayout.Dequeue()
-                this.Press x y gameTime i |> ignore
+                this.Press x y gameTime 0f 0f i |> ignore
 
         elif mouseState.LeftButton = ButtonState.Released && previousMouseState.LeftButton = ButtonState.Pressed then 
             this.FocusedElementId <- UIComponentId.empty
@@ -961,7 +989,7 @@ type Noobish2(maxCount: int) =
 
             while toLayout.Count > 0 do 
                 let i = toLayout.Dequeue()
-                this.Click x y gameTime i |> ignore
+                this.Click x y gameTime 0f 0f i |> ignore
 
         let scrollWheelValue = mouseState.ScrollWheelValue - previousMouseState.ScrollWheelValue
         if scrollWheelValue <> 0 then
@@ -994,65 +1022,15 @@ type Noobish2(maxCount: int) =
         this.ProcessKeys(gameTime)
 
     member this.Clear() =
+
         this.FocusedElementId <- UIComponentId.empty
-        for i = 0 to this.Components.Count - 1 do 
-            free.Enqueue(i, i)
-            this.Components.Id.[i] <- UIComponentId.empty
-            this.Components.ThemeId.[i] <- ""
-
-            this.Components.ParentId.[i] <- UIComponentId.empty
-
-            this.Components.Visible.[i] <- true 
-            this.Components.Enabled.[i] <- true 
-            this.Components.Toggled.[i] <- false 
-            this.Components.Hovered.[i] <- false 
-
-            this.Components.Block.[i] <- false
-
-            this.Components.Text.[i] <- ""
-            this.Components.Textwrap.[i] <- false
-            this.Components.TextAlign.[i] <- NoobishTextAlignment.Left
-
-            this.Components.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
-            this.Components.MinSize.[i] <- {Width = 0f; Height = 0f}
-            this.Components.ContentSize.[i] <- {Width = 0f; Height = 0f}
-            this.Components.RelativePosition.[i] <- {X = 0f; Y = 0f}
-            this.Components.Fill.[i] <- {Horizontal = false; Vertical = false}
-            
-            this.Components.PaddingOverride.[i] <- false
-            this.Components.Padding.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
-
-            this.Components.MarginOverride.[i] <- false
-            this.Components.Margin.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
-
-            this.Components.Layer.[i] <- -1
-            this.Components.Layout.[i] <- Layout.None
-
-            this.Components.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
-
-            this.Components.WantsOnClick.[i] <- false
-            this.Components.OnClick.[i] <- ignore
-
-            this.Components.WantsKeyTyped.[i] <- false 
-            this.Components.OnKeyTyped.[i] <- (fun _ _ ->())
-
-            this.Components.WantsKeyPressed.[i] <- false 
-            this.Components.OnKeyPressed.[i] <- (fun _ _ ->())
-
-            this.Components.WantsFocus.[i] <- false 
-            this.Components.OnFocus.[i] <- (fun _ _ ->())
-
-            this.Components.Scroll.[i] <-  {Horizontal = false; Vertical = false}
-            this.Components.ScrollX.[i] <-  0f
-            this.Components.ScrollY.[i] <-  0f
-            this.Components.LastScrollTime.[i] <- TimeSpan.Zero
-
-            this.Components.LastPressTime.[i] <- TimeSpan.Zero
-            this.Components.LastHoverTime.[i] <- TimeSpan.Zero
-
-            this.Components.Children.[i].Clear()
-        this.Components.Count <- 0
-
+       
         waitForLayout <- true
+
+        previousFrameIndex <- frameIndex
+        frameIndex <- (frameIndex + 1) % frames.Length
+        this.Components.Clear()
+
+        Log.Logger.Information ("Previous frame {previousFrame} next frame {nextFrame}", previousFrameIndex, frameIndex)
 
 

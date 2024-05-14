@@ -179,11 +179,11 @@ module Text =
 
 
 module List =
-    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) _dispatch =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
         let ui = game.Noobish2
         ui.PanelWithGrid (2, 2) 
         |> ui.SetChildren [|
-            ui.List model.ListModel 0 (fun source value -> Log.Logger.Information ("Clicked {value}", value))
+            ui.List model.ListModel model.SelectedListItem (fun source value -> Log.Logger.Information ("Clicked {value}", value); dispatch (SelectListItem (model.ListModel |> Array.findIndex (fun v -> v = value))) )
         |]
     
 

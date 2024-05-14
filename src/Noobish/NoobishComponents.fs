@@ -285,7 +285,7 @@ type NoobishComponents(count) =
                             NoobishFont.measureSingleLine font fontSize text
                     else 
                         struct(minSize.Width, minSize.Height)
-                {Width = contentWidth; Height = contentHeight}
+                {Width = ceil contentWidth; Height = ceil contentHeight}
         this.ContentSize.[i] <- contentSize
 
 
@@ -314,6 +314,7 @@ type NoobishComponents(count) =
                 maxWidth - margin.Left - margin.Right - padding.Left - padding.Right
             else 
                 contentSize.Width
+
         let viewportHeight = 
             if fill.Vertical then 
                 maxHeight - margin.Top - margin.Bottom - padding.Top - padding.Bottom
@@ -390,7 +391,6 @@ type NoobishComponents(count) =
 
             let relativeBounds = this.Bounds.[rcid.Index]
             
-            
             let children = this.Children.[i]
             for i = 0 to children.Count - 1 do 
                 let ccid = children.[i]
@@ -403,3 +403,62 @@ type NoobishComponents(count) =
 
         Log.Logger.Information ("Exiting Layouting {ComponentId}", i)
             
+
+    member this.Clear() =
+
+        for i = 0 to this.Count - 1 do 
+            this.ThemeId.[i] <- ""
+
+            this.ParentId.[i] <- UIComponentId.empty
+
+            this.Visible.[i] <- true 
+            this.Enabled.[i] <- true 
+            this.Toggled.[i] <- false 
+            this.Hovered.[i] <- false 
+
+            this.Block.[i] <- false
+
+            this.Text.[i] <- ""
+            this.Textwrap.[i] <- false
+            this.TextAlign.[i] <- NoobishTextAlignment.Left
+
+            this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+            this.MinSize.[i] <- {Width = 0f; Height = 0f}
+            this.ContentSize.[i] <- {Width = 0f; Height = 0f}
+            this.RelativePosition.[i] <- {X = 0f; Y = 0f}
+            this.Fill.[i] <- {Horizontal = false; Vertical = false}
+            
+            this.PaddingOverride.[i] <- false
+            this.Padding.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+
+            this.MarginOverride.[i] <- false
+            this.Margin.[i] <- {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+
+            this.Layer.[i] <- -1
+            this.Layout.[i] <- Layout.None
+
+            this.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
+
+            this.WantsOnClick.[i] <- false
+            this.OnClick.[i] <- ignore
+
+            this.WantsKeyTyped.[i] <- false 
+            this.OnKeyTyped.[i] <- (fun _ _ ->())
+
+            this.WantsKeyPressed.[i] <- false 
+            this.OnKeyPressed.[i] <- (fun _ _ ->())
+
+            this.WantsFocus.[i] <- false 
+            this.OnFocus.[i] <- (fun _ _ ->())
+
+            this.Scroll.[i] <-  {Horizontal = false; Vertical = false}
+            this.ScrollX.[i] <-  0f
+            this.ScrollY.[i] <-  0f
+            this.LastScrollTime.[i] <- TimeSpan.Zero
+
+            this.LastPressTime.[i] <- TimeSpan.Zero
+            this.LastHoverTime.[i] <- TimeSpan.Zero
+
+            this.Children.[i].Clear()
+        this.Count <- 0
+    
