@@ -767,8 +767,15 @@ type Noobish2(maxCount: int) =
             let mutable j = 0
             while not drift && j < this.Components.Count do 
                 if this.Components.ThemeId.[j] = previousFrame.ThemeId.[j] &&
+                   (this.Components.ParentId.[j].Index = previousFrame.ParentId.[j].Index) &&
+                   (this.Components.Layer.[j] = previousFrame.Layer.[j]) &&
                    (this.Components.ContentSize.[j].Width - previousFrame.ContentSize.[j].Width) < Single.Epsilon &&
-                   (this.Components.ContentSize.[j].Height - previousFrame.ContentSize.[j].Height) < Single.Epsilon then 
+                   (this.Components.ContentSize.[j].Height - previousFrame.ContentSize.[j].Height) < Single.Epsilon && 
+                   (this.Components.Children.[j].Count = previousFrame.Children[j].Count) && 
+                   (this.Components.GridSpan.[j].Colspan = previousFrame.GridSpan.[j].Colspan) &&
+                   (this.Components.GridSpan.[j].Rowspan = previousFrame.GridSpan.[j].Rowspan)
+                   
+                    then 
 
                     j <- j + 1
                 else 
@@ -776,8 +783,14 @@ type Noobish2(maxCount: int) =
 
             if not drift then 
                 for i = 0 to this.Components.Count do 
+                    
+                    this.Components.Hovered.[i] <- previousFrame.Hovered.[i]
+                    this.Components.LastHoverTime.[i] <- previousFrame.LastHoverTime.[i]
+                    this.Components.LastPressTime.[i] <- previousFrame.LastPressTime.[i]
+
                     this.Components.ScrollX.[i] <- previousFrame.ScrollX.[i]
                     this.Components.ScrollY.[i] <- previousFrame.ScrollY.[i]
+                    this.Components.LastScrollTime.[i] <- previousFrame.LastScrollTime.[i]
 
             for i = 0 to this.Components.Count - 1 do 
                 let themeId = this.Components.ThemeId.[i]
@@ -1030,7 +1043,3 @@ type Noobish2(maxCount: int) =
         previousFrameIndex <- frameIndex
         frameIndex <- (frameIndex + 1) % frames.Length
         this.Components.Clear()
-
-        Log.Logger.Information ("Previous frame {previousFrame} next frame {nextFrame}", previousFrameIndex, frameIndex)
-
-
