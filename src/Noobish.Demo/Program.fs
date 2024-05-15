@@ -190,8 +190,42 @@ module List =
 module Containers =
 
 
-    let view model dispatch =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
 
+
+        let ui = game.Noobish2
+        let gridId =
+            ui.PanelWithGrid (2, 2) 
+            |> ui.SetChildren [|
+                ui.PanelVertical()
+                |> ui.SetChildren [|
+                    ui.DivVertical()
+                        |> ui.FillHorizontal
+                        |> ui.SetChildren [|
+                            ui.Header "Hello"
+                            ui.HorizontalRule()
+                        |]
+                    ui.Button "Continue" ignore |> ui.FillHorizontal |> ui.SetEnabled false
+                    ui.Button "Start" ignore |> ui.FillHorizontal
+                    ui.Button "Options" ignore |> ui.FillHorizontal
+
+
+                |]
+                ui.PanelVertical()
+                    |> ui.SetChildren [|
+                        ui.DivHorizontal() 
+                            |> ui.FillHorizontal
+                            |> ui.SetChildren [|
+                                ui.Label model.ComboboxValue
+                            |]
+                        ui.Canvas()
+                            |> ui.SetChildren [|
+                                ui.Button "0" ignore |> ui.SetRelativePosition (50, 50)
+                                ui.Button "1" ignore |> ui.SetRelativePosition (25, 75)
+                            |]
+
+                    |]
+            |]
         let createListLabel index =
             div
                 [
@@ -199,7 +233,7 @@ module Containers =
                 ]
                 [block; fillHorizontal; toggled (model.SelectedListItemIndex = index)]
                 |> themePrefix "List" |> themeSuffix (if index % 2 = 0 then "Even" else "Odd")
-        [
+        gridId, [
             grid 2 2
                 [
                 panel
@@ -527,8 +561,8 @@ let view game (model: DemoModel) dispatch =
             let content = Buttons.view game model dispatch
             "Buttons", content, []
         | Containers -> 
-            let content = Containers.view model dispatch
-            "Containers", UIComponentId.empty, content
+            let content2, content = Containers.view game model dispatch
+            "Containers", content2, content
         | Text -> 
             let content = Text.view game model dispatch
             "Labels", content, []

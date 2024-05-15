@@ -226,12 +226,20 @@ type Noobish2(maxCount: int) =
     member this.DivHorizontal () = 
         let cid = this.Create "Division"
         this.SetLayout (Layout.LinearHorizontal) cid.Index
+        this.Components.Block.[cid.Index] <- true 
         //this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.DivVertical () = 
         let cid = this.Create "Division"
         this.SetLayout (Layout.LinearVertical) cid.Index
+        this.Components.Block.[cid.Index] <- true 
+        //this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid   
+
+    member this.Canvas () = 
+        let cid = this.Create "Division"
+        this.SetLayout (Layout.Relative (cid)) cid.Index
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
@@ -243,6 +251,11 @@ type Noobish2(maxCount: int) =
         cid
 
 
+    member this.SetRelativePosition (x: int, y: int) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.RelativePosition.[index] <- {X = float32 x; Y = float32 y}
+        cid
 
     member this.SetThemeId (themeId: string) (cid: UIComponentId) = 
         let index = this.GetIndex cid 

@@ -32,7 +32,7 @@
         },
         "HorizontalRule": {
             "default": {
-                "padding": [0, 5, 0, 5],
+                "padding": [1, 5, 1, 5],
                 "drawables": [
                     ["hr-default.9"]
                 ]
