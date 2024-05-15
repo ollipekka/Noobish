@@ -16,7 +16,7 @@ type Noobish2 with
         cid |> this.SetChildren (
             items |> Array.mapi (
                 fun i item -> 
-                    this.DivHorizontal()
+                    this.Div()
                     |> this.SetThemeId (if i % 2 = 0 then "List-Division-Even" else "List-Division-Odd")
                     |> this.FillHorizontal
                     |> this.SetToggled (selectedIndex = i)

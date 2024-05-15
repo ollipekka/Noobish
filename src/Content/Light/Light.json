@@ -67,7 +67,7 @@
         },
         "Paragraph": {
             "default": {
-                "fontSize": 14
+                "fontSize": 16
             }
         },
         "TextBox": {

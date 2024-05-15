@@ -656,7 +656,7 @@ type Noobish2(maxCount: int) =
             let contentStartX = parentScrollX + bounds.X + margin.Left
             let contentStartY = parentScrollY + bounds.Y + margin.Top
             let contentWidth = bounds.Width - margin.Left - margin.Right
-            let contentHeight = bounds.Height - margin.Left - margin.Right
+            let contentHeight = bounds.Height - margin.Top - margin.Bottom
 
             let boundsWithMargin = ({
                     X = contentStartX
