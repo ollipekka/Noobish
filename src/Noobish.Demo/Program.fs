@@ -70,7 +70,7 @@ module Noobish2Demo =
                 nui2.Button "One" (fun _ -> ( Log.Logger.Information "One")) 
                     |> nui2.FillHorizontal
                 nui2.Button "Two" (fun _ -> ( Log.Logger.Information "Two"))
-                nui2.Button "Three" (fun _ -> (Log.Logger.Information "Three"))
+                nui2.Button "Three" (fun _-> (Log.Logger.Information "Three"))
             |]
         
         
@@ -183,7 +183,7 @@ module List =
         let ui = game.Noobish2
         ui.PanelWithGrid (2, 2) 
         |> ui.SetChildren [|
-            ui.List model.ListModel model.SelectedListItem (fun source value -> Log.Logger.Information ("Clicked {value}", value); dispatch (SelectListItem (model.ListModel |> Array.findIndex (fun v -> v = value))) )
+            ui.List model.ListModel model.SelectedListItem (fun value -> Log.Logger.Information ("Clicked {value}", value); dispatch (SelectListItem (model.ListModel |> Array.findIndex (fun v -> v = value))) )
         |]
     
 
@@ -202,9 +202,9 @@ module Containers =
                         ui.Header "Hello"
                         ui.HorizontalRule()
                     |]
-                ui.Button "Continue" ignore |> ui.FillHorizontal |> ui.SetEnabled false
-                ui.Button "Start" ignore |> ui.FillHorizontal
-                ui.Button "Options" ignore |> ui.FillHorizontal
+                ui.Button "Continue" ignore|> ui.FillHorizontal |> ui.SetEnabled false
+                ui.Button "Start" ignore|> ui.FillHorizontal
+                ui.Button "Options" ignore|> ui.FillHorizontal
 
 
             |]
@@ -217,8 +217,8 @@ module Containers =
                         |]
                     ui.Canvas()
                         |> ui.SetChildren [|
-                            ui.Button "0" ignore |> ui.SetRelativePosition (50, 50)
-                            ui.Button "1" ignore |> ui.SetRelativePosition (25, 75)
+                            ui.Button "0" ignore|> ui.SetRelativePosition (50, 50)
+                            ui.Button "1" ignore|> ui.SetRelativePosition (25, 75)
                         |]
 
                 |]
@@ -230,14 +230,14 @@ module Containers =
                             ui.Header $"Selected: {model.SelectedListItemIndex}"
                             ui.HorizontalRule()
                         |]
-                    ui.List model.ListModel model.SelectedListItemIndex (fun src item -> dispatch (SelectListItem (model.ListModel |> Array.findIndex(fun i -> i = item))))
+                    ui.List model.ListModel model.SelectedListItemIndex (fun item -> dispatch (SelectListItem (model.ListModel |> Array.findIndex(fun i -> i = item))))
                 |]
         |]
 
 
 
 module Buttons =
-    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model dispatch =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model (dispatch: DemoMessage -> unit) =
 
         let ui = game.Noobish2
 
@@ -271,9 +271,9 @@ module Buttons =
                 let selectedItemIndex = items |> Array.findIndex(fun item -> item = model.ComboboxValue)
                 ui.PanelVertical ()
                 |> ui.SetChildren [|
-                    ui.Combobox items selectedItemIndex (fun event value -> Log.Logger.Information("Value changed {Value}", value); dispatch (ComboboxValueChanged value))
-                    ui.Textbox model.FeatureText (fun event value -> Log.Logger.Information("Text changed {value}", value); dispatch (FeaturesChanged value))
-                    ui.Button "8" ignore 
+                    ui.Combobox items selectedItemIndex (fun value -> Log.Logger.Information("Value changed {Value}", value); dispatch (ComboboxValueChanged value))
+                    ui.Textbox model.FeatureText (fun value -> Log.Logger.Information("Text changed {value}", value); dispatch (FeaturesChanged value))
+                    ui.Button "8" ignore
                     ui.Button "9" ignore
                 |]
                 ui.PanelHorizontal ()
@@ -296,102 +296,18 @@ module Slider =
                 ui.PanelVertical() 
                 |> ui.SetChildren [|
                     ui.Header $"Slider A %g{model.SliderAValue}"
-                    ui.Slider (0f, 100f) 1f model.SliderAValue (fun evt value -> ())
+                    ui.Slider (0f, 100f) 1f model.SliderAValue (fun value -> dispatch (SliderValueChanged value))
                     ui.Header $"Slider B "
-                    ui.Slider (0f, 10f) 0.1f 5.5f (fun evt value -> ())
+                    ui.Slider (0f, 10f) 0.1f 5.5f (fun value-> ())
                     ui.Header $"Slider C"
-                    ui.Slider (50f, 100f) 2f 50f (fun evt value -> ())
+                    ui.Slider (50f, 100f) 2f 50f (fun value -> ())
                     ui.Header $"Slider D"
-                    ui.Slider (0f, 25f) 5f 25f (fun evt value -> ())
+                    ui.Slider (0f, 25f) 5f 25f (fun value -> ())
                     
                 |]
             |]
-        let option children =
-            div
-                children
-                [
-                    fillHorizontal
-                    block
-                ]
 
-        let content =
-            [
-                option
-                    [
-                        label [ text "OPTION 1"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 100.0f; sliderStep 1.0f; fillHorizontal; ];
-                    ];
-                option
-                    [
-                        label [ text "OPTION 2"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
-
-                    ];
-                 option
-                    [
-                        label [ text "OPTION 3"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
-
-                    ];
-                option
-                    [
-                        label [ text "OPTION 4"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
-
-                    ];
-                option
-                    [
-                        label [ text "OPTION 5"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
-
-                    ];
-                option
-                    [
-                        label [ text "OPTION 6"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
-                    ];
-                option
-                    [
-                        label [ text "OPTION 7"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
-
-                    ];
-                option
-                    [
-                        label [ text "OPTION 8"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
-
-                    ];
-            ]
-
-        gridId, [
-            grid 2 2
-                [
-                panel
-                    [
-                        label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
-                    ]
-                    []
-                panel
-                    [
-                    scroll
-                        content
-                        [
-                            fill
-                        ]
-                    ]
-
-                    []
-
-                ]
-                [
-
-                ]
-
-        ]
+        gridId
 
 
 
@@ -501,8 +417,8 @@ let view game (model: DemoModel) dispatch =
             let content = List.view game model dispatch
             "List", content, []
         | Slider -> 
-            let content, content2 = Slider.view game model dispatch
-            "Slider", content, content2
+            let content = Slider.view game model dispatch
+            "Slider", content, []
         | Github -> 
             let content = Github.view model dispatch
             "Github", UIComponentId.empty, content

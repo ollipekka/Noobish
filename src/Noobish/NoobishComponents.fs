@@ -154,6 +154,9 @@ type Layout =
 type NoobishComponents(count) = 
     
     let ignoreRelativePositionFunc (rcid: UIComponentId) (cid: UIComponentId) = {X = 0f; Y = 0f}
+
+    let ignoreClick (_source: UIComponentId) (_p: Position) = ()
+    let ignorePress (_source: UIComponentId) (_p: Position) = ()
     member val Count = 0 with get, set
     member val Id = Array.create count UIComponentId.empty
     member val ThemeId = Array.create count ""
@@ -181,8 +184,10 @@ type NoobishComponents(count) =
     member val Margin = Array.create<Margin> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val Layout = Array.create count Layout.None
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
+    member val WantsOnPress = Array.create count false
+    member val OnPress = Array.create<UIComponentId -> Position -> unit> count ignorePress
     member val WantsOnClick = Array.create count false
-    member val OnClick = Array.init<OnClickEvent -> unit> count (fun _event -> ignore)
+    member val OnClick = Array.create<UIComponentId -> Position-> unit> count ignoreClick
     member val LastPressTime = Array.create count TimeSpan.Zero
     member val LastHoverTime = Array.create count TimeSpan.Zero
     member val WantsKeyTyped = Array.create count false 
@@ -431,6 +436,7 @@ type NoobishComponents(count) =
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
             this.ContentSize.[i] <- {Width = 0f; Height = 0f}
+            this.RelativePositionFunc.[i] <- ignoreRelativePositionFunc
             this.RelativePosition.[i] <- {X = 0f; Y = 0f}
             this.Fill.[i] <- {Horizontal = false; Vertical = false}
             
@@ -445,8 +451,11 @@ type NoobishComponents(count) =
 
             this.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
 
+            this.WantsOnPress.[i] <- false
+            this.OnPress.[i] <- ignoreClick
+
             this.WantsOnClick.[i] <- false
-            this.OnClick.[i] <- ignore
+            this.OnClick.[i] <- ignorePress
 
             this.WantsKeyTyped.[i] <- false 
             this.OnKeyTyped.[i] <- (fun _ _ ->())

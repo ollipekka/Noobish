@@ -83,8 +83,6 @@ type Noobish2(maxCount: int) =
         this.Components.GridSpan.[i] <- {Colspan = 1; Rowspan = 1}
         this.Components.MinSize.[i] <- {Width = 0f; Height = 0f}
 
-        this.Components.WantsOnClick.[i] <- false 
-        this.Components.OnClick.[i] <- ignore
         this.Components.LastPressTime[i] <- TimeSpan.Zero
         
         this.Components.Count <- this.Components.Count + 1
@@ -132,7 +130,7 @@ type Noobish2(maxCount: int) =
         cid
 
 
-    member this.Textbox (t: string) (onTextChanged: (OnClickEvent)-> string-> unit) = 
+    member this.Textbox (t: string) (onTextChanged: string -> unit) = 
         let cid = this.Create "TextBox"
 
         this.Components.WantsFocus.[cid.Index] <- true 
@@ -150,7 +148,7 @@ type Noobish2(maxCount: int) =
                     this.Cursor <- this.Cursor - 1
             elif int typed = 13 || int typed = 10 then 
                 this.FocusedElementId <- UIComponentId.empty
-                onTextChanged {SourceId = cid} this.Components.Text[cid.Index]
+                onTextChanged (this.Components.Text[cid.Index])
                 this.Cursor <- 0
             elif int typed = 27 then
                 this.FocusedElementId <- UIComponentId.empty
@@ -180,11 +178,11 @@ type Noobish2(maxCount: int) =
 
         cid
 
-    member this.Button (t: string) (onClick: OnClickEvent -> unit) = 
+    member this.Button (t: string) (onClick: UIComponentId -> unit) = 
         let cid = this.Create "Button"
         this.Components.Text.[cid.Index] <- t
         this.Components.WantsOnClick.[cid.Index] <- true
-        this.Components.OnClick.[cid.Index] <- onClick
+        this.Components.OnClick.[cid.Index] <- (fun source _ -> onClick source)
         cid
 
     member this.Space () = 
@@ -442,7 +440,13 @@ type Noobish2(maxCount: int) =
             this.Components.Toggled.[index] <- t
         cid
 
-    member this.SetOnClick (onClick: OnClickEvent -> unit) (cid: UIComponentId) =
+    member this.SetOnPress (onPress: UIComponentId -> Position -> unit) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.WantsOnPress.[index] <- true
+            this.Components.OnPress.[index] <- onPress
+        cid
+    member this.SetOnClick (onClick: UIComponentId -> Position -> unit) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Components.WantsOnClick.[index] <- true
@@ -909,7 +913,7 @@ type Noobish2(maxCount: int) =
 
             if not found && this.Components.WantsOnClick.[i] then 
                 found <- true
-                this.Components.OnClick.[i] ({SourceId = this.Components.Id.[i]})
+                this.Components.OnClick.[i] (this.Components.Id.[i]) {X = x; Y = y}
             
             if not found  && this.Components.WantsFocus.[i] then
                 found <- true 
@@ -938,8 +942,9 @@ type Noobish2(maxCount: int) =
             Log.Logger.Debug ("Mouse press inside component {ComponentId}", i)
             let children = this.Components.Children.[i]
 
-            if children.Count = 0 then 
+            if this.Components.WantsOnPress.[i] || children.Count = 0 then 
                 this.Components.LastPressTime.[i] <- gameTime.TotalGameTime
+                this.Components.OnPress.[i] this.Components.Id.[i] {X = x; Y = y}
                 true 
             else 
                 let scrollX = parentScrollX + this.Components.ScrollX.[i]

@@ -120,8 +120,8 @@
         "SliderPin": {
             "default": {
                 "color": "df7126aa",
-                "width": 20,
-                "height": 8,
+                "width": 24,
+                "height": 2,
                 "padding": [4, 0, 4, 0],
                 "drawables": [ ["slider-pin.9"] ]
             }
@@ -129,7 +129,7 @@
         "Slider": {
             "default": {
                 "color": "5f6b80ff",
-                "height": 2,
+                "height": 3,
                 "padding": [0, 2, 0, 2],
                 "drawables": [ ["slider.9"] ]
             }

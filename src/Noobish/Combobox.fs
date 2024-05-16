@@ -6,14 +6,14 @@ open Noobish
 
 type Noobish2 with 
 
-    member this.Combobox<'T> (items: 'T[]) (selectedIndex: int) (onValueChanged: OnClickEvent -> 'T -> unit)= 
+    member this.Combobox<'T> (items: 'T[]) (selectedIndex: int) (onValueChanged: 'T -> unit) = 
         let cid = this.Create "Combobox"
         this.Components.Text.[cid.Index] <- items.[selectedIndex].ToString()
 
         let overlayPaneId =
             this.Overlaypane cid 
-            |> this.SetOnClick (fun event ->  
-                this.SetVisible false event.SourceId |> ignore)
+            |> this.SetOnClick (fun sourceId (_position: Position) ->  
+                this.SetVisible false sourceId |> ignore)
 
         let overlayWindowId =
             this.Window()
@@ -22,7 +22,7 @@ type Noobish2 with
                     fun i -> 
                         this.Button (i.ToString()) (
                             fun (event) -> 
-                                this.Components.Text.[cid.Index] <- i.ToString(); onValueChanged ({SourceId=cid}) i
+                                this.Components.Text.[cid.Index] <- i.ToString(); onValueChanged i
                         ) |> this.SetFillHorizontal
                 )
             )
@@ -35,7 +35,7 @@ type Noobish2 with
 
 
         this.Components.WantsOnClick.[cid.Index] <- true
-        this.Components.OnClick.[cid.Index] <- (fun event -> 
+        this.Components.OnClick.[cid.Index] <- (fun (event: UIComponentId) (position: Position)-> 
             this.SetVisible true overlayPaneId |> ignore
         )
 
