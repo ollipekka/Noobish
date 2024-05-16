@@ -5,7 +5,7 @@ open Noobish
 
 type NoobishComponents with 
 
-    member this.CalculatePinPosition (parentCid: UIComponentId) (pinCid: UIComponentId) (rangeStart: float32, rangeEnd: float32) (value: float32):Position =
+    member internal this.CalculatePinPosition (parentCid: UIComponentId) (pinCid: UIComponentId) (rangeStart: float32, rangeEnd: float32) (value: float32):Position =
         let pinSize = this.ContentSize.[pinCid.Index]
         let pinPadding = this.Padding.[pinCid.Index]
         let pinWidth = pinSize.Width + pinPadding.Left + pinPadding.Right
@@ -19,6 +19,17 @@ type NoobishComponents with
         let parentHeight = parentBounds.Height - parentMargin.Top - parentMargin.Bottom - parentPadding.Top - parentPadding.Bottom
 
         {X = parentWidth * pinPos - pinWidth / 2f; Y = parentHeight / 2f - parentMargin.Top - pinHeight / 2f}
+
+    member internal this.CalculatePinX(parentCid: UIComponentId) (pinCid: UIComponentId) (position: Position) : float32 =
+
+        let pinSize = this.ContentSize.[pinCid.Index]
+        let pinPadding = this.Padding.[pinCid.Index]
+        let pinWidth = pinSize.Width + pinPadding.Left + pinPadding.Right
+
+        let bounds = this.Bounds.[pinCid.Index]
+
+        (position.X - bounds.X - pinWidth / 2f)
+
 
 type Noobish2 with 
 
@@ -37,24 +48,28 @@ type Noobish2 with
         let cid = this.Create "Slider"
         this.Components.Layout[cid.Index] <- Layout.Relative(cid)
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = false}
-        this.Components.WantsOnPress.[cid.Index] <- true
-        this.Components.OnPress.[cid.Index] <- (fun cid position -> 
-            let v = calcaulateSliderValue cid position
-            onValueChanged v
-        )
+
         let sliderPin = 
             this.Create "SliderPin"
             |> this.SetConstrainToParentBounds false
             |> this.SetRelativePositionFunc (fun (rcid: UIComponentId) (ccid: UIComponentId) -> 
                 this.Components.CalculatePinPosition cid ccid (rangeStart, rangeEnd) value
-            ) (*
-            |> this.SetOnPress (fun pinCid position -> 
-                let pcid = this.Components.ParentId.[pinCid.Index]
-                let v = calcaulateSliderValue pcid position
-                onValueChanged v  )*)
-
+            )
 
 
         this.SetChildren [| sliderPin |] cid |> ignore
+
+
+        this.SetOnPress (fun (cid: UIComponentId) (position: Position) -> 
+            let v = calcaulateSliderValue cid position
+            let delta = v - value
+
+
+            let offset = this.Components.CalculatePinX cid sliderPin position
+
+            let bounds = this.Components.Bounds[sliderPin.Index]
+            this.Components.Bounds[sliderPin.Index] <- {bounds with X = bounds.X + offset}
+            onValueChanged v
+        ) cid |> ignore
 
         cid
