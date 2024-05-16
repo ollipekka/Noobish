@@ -27,6 +27,7 @@
     <Compile Include="Noobish2.fs" />
     <Compile Include="Combobox.fs" />
     <Compile Include="List.fs" />
+    <Compile Include="Slider.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

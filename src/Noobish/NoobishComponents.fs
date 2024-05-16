@@ -152,7 +152,8 @@ type Layout =
 | None
 
 type NoobishComponents(count) = 
-
+    
+    let ignoreRelativePositionFunc (rcid: UIComponentId) (cid: UIComponentId) = {X = 0f; Y = 0f}
     member val Count = 0 with get, set
     member val Id = Array.create count UIComponentId.empty
     member val ThemeId = Array.create count ""
@@ -165,10 +166,14 @@ type NoobishComponents(count) =
     member val TextAlign = Array.create count NoobishTextAlignment.Left
     member val Textwrap = Array.create count false
     member val Layer = Array.create count 0
+
+    member val ConstrainToParentBounds = Array.create count false
     member val Bounds = Array.create<Internal.NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
     member val ContentSize = Array.create count {Width = 0f; Height = 0f}
     member val RelativePosition = Array.create count {X = 0f; Y = 0f}
+
+    member val RelativePositionFunc = Array.init count (fun _ -> ignoreRelativePositionFunc)
     member val Fill = Array.create<Fill> count ({Horizontal = false; Vertical = false})
     member val PaddingOverride = Array.create count false
     member val Padding = Array.create<Padding> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
@@ -263,11 +268,9 @@ type NoobishComponents(count) =
                 let children = this.Children.[i]
                 for i = 0 to children.Count - 1 do
                     let cid = children.[i]
-
                     this.CalculateContentSize content styleSheet viewportWidth viewportHeight cid.Index
 
-
-                {Width = viewportHeight; Height = viewportHeight}
+                this.MinSize.[i]
             | Layout.None ->
                 let text = this.Text.[i]
                 let minSize = this.MinSize.[i]
@@ -395,8 +398,10 @@ type NoobishComponents(count) =
             for i = 0 to children.Count - 1 do 
                 let ccid = children.[i]
                 let relativePosition = this.RelativePosition.[ccid.Index]
-                let childStartX = relativeBounds.X + margin.Left + relativePosition.X 
-                let childStartY = relativeBounds.Y + margin.Top + relativePosition.Y 
+                let size = this.ContentSize.[ccid.Index]
+                let relativePosition2 = this.RelativePositionFunc.[ccid.Index] rcid ccid
+                let childStartX = relativeBounds.X + margin.Left + relativePosition.X + relativePosition2.X
+                let childStartY = relativeBounds.Y + margin.Top + relativePosition.Y + relativePosition2.Y
                 this.LayoutComponent content styleSheet childStartX childStartY parentBounds.Width parentBounds.Height ccid.Index
 
         | Layout.None -> ()
@@ -422,6 +427,7 @@ type NoobishComponents(count) =
             this.Textwrap.[i] <- false
             this.TextAlign.[i] <- NoobishTextAlignment.Left
 
+            this.ConstrainToParentBounds.[i] <- false
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
             this.ContentSize.[i] <- {Width = 0f; Height = 0f}

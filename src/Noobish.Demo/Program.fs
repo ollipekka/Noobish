@@ -191,137 +191,48 @@ module Containers =
 
 
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
-
-
         let ui = game.Noobish2
-        let gridId =
-            ui.PanelWithGrid (2, 2) 
+        ui.PanelWithGrid (2, 2) 
+        |> ui.SetChildren [|
+            ui.PanelVertical()
             |> ui.SetChildren [|
-                ui.PanelVertical()
+                ui.DivVertical()
+                    |> ui.FillHorizontal
+                    |> ui.SetChildren [|
+                        ui.Header "Hello"
+                        ui.HorizontalRule()
+                    |]
+                ui.Button "Continue" ignore |> ui.FillHorizontal |> ui.SetEnabled false
+                ui.Button "Start" ignore |> ui.FillHorizontal
+                ui.Button "Options" ignore |> ui.FillHorizontal
+
+
+            |]
+            ui.PanelVertical()
+                |> ui.SetChildren [|
+                    ui.DivHorizontal() 
+                        |> ui.FillHorizontal
+                        |> ui.SetChildren [|
+                            ui.Label model.ComboboxValue
+                        |]
+                    ui.Canvas()
+                        |> ui.SetChildren [|
+                            ui.Button "0" ignore |> ui.SetRelativePosition (50, 50)
+                            ui.Button "1" ignore |> ui.SetRelativePosition (25, 75)
+                        |]
+
+                |]
+            ui.PanelVertical() 
                 |> ui.SetChildren [|
                     ui.DivVertical()
                         |> ui.FillHorizontal
                         |> ui.SetChildren [|
-                            ui.Header "Hello"
+                            ui.Header $"Selected: {model.SelectedListItemIndex}"
                             ui.HorizontalRule()
                         |]
-                    ui.Button "Continue" ignore |> ui.FillHorizontal |> ui.SetEnabled false
-                    ui.Button "Start" ignore |> ui.FillHorizontal
-                    ui.Button "Options" ignore |> ui.FillHorizontal
-
-
+                    ui.List model.ListModel model.SelectedListItemIndex (fun src item -> dispatch (SelectListItem (model.ListModel |> Array.findIndex(fun i -> i = item))))
                 |]
-                ui.PanelVertical()
-                    |> ui.SetChildren [|
-                        ui.DivHorizontal() 
-                            |> ui.FillHorizontal
-                            |> ui.SetChildren [|
-                                ui.Label model.ComboboxValue
-                            |]
-                        ui.Canvas()
-                            |> ui.SetChildren [|
-                                ui.Button "0" ignore |> ui.SetRelativePosition (50, 50)
-                                ui.Button "1" ignore |> ui.SetRelativePosition (25, 75)
-                            |]
-
-                    |]
-            |]
-        let createListLabel index =
-            div
-                [
-                    label [ text $"Item %i{index}"; toggled (model.SelectedListItemIndex = index); fillHorizontal; onClick (fun _ -> dispatch (SelectListItem index))] |> themePrefix "List";
-                ]
-                [block; fillHorizontal; toggled (model.SelectedListItemIndex = index)]
-                |> themePrefix "List" |> themeSuffix (if index % 2 = 0 then "Even" else "Odd")
-        gridId, [
-            grid 2 2
-                [
-                panel
-                    [
-                        div [
-                                h2 [text "Hello"; ];
-                                hr []
-                            ] [fillHorizontal];
-                        button [ text "Continue"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; enabled false];
-                        button [ text "Start"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; ];
-                        button [ text "Options"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; ];
-                    ]
-                    [
-                        name "ButtonsPanel"
-                        padding model.Padding; margin model.Margin;
-
-                    ]
-                panel
-                    [
-                        canvas
-                            [
-                                image
-                                    [
-                                        name "Pixel Origin"
-                                        texture "Pixel"
-                                        textureBestFitMin
-                                        minSize 10 10
-                                        padding 0
-                                        margin 0
-                                        relativePosition -5 -5
-
-                                    ]
-                                image
-                                    [
-                                        name "Pixel 1"
-                                        texture "Pixel"
-                                        textureBestFitMin
-                                        minSize 10 10
-                                        padding 0
-                                        margin 0
-                                        relativePosition -25 15
-
-                                    ]
-                                button [ text "y"; relativePosition -30 -30 ]
-                                button [ text "o"; relativePosition 30 30 ]
-                                image [
-                                        name "Pixel 2"
-                                        texture "Pixel"
-                                        textureBestFitMin
-                                        minSize 10 10
-                                        padding 0
-                                        margin 0
-                                        relativePosition 15 -25
-
-                                    ]
-                            ]
-                            [
-                                fill
-                                text model.ComboboxValue; onTextChange (fun v -> dispatch (ComboboxValueChanged v))
-                            ]
-                    ]
-                    [
-
-                    ]
-                panel
-                    [
-                        h2 [text $"List: Item %i{model.SelectedListItem}"]
-                        hr []
-                        scroll
-                            (model.ListModel |> Array.map createListLabel |> Array.toList)
-                            []
-                    ]
-                    [
-
-                    ]
-                panelWithGrid 2 1
-                    [
-
-                    ]
-                    [
-
-                    ]
-                ]
-                [
-
-                ]
-
-        ]
+        |]
 
 
 
@@ -373,8 +284,21 @@ module Buttons =
 
 
 module Slider =
-    let view model dispatch =
 
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
+            
+            
+        let ui = game.Noobish2
+
+        let gridId
+            = ui.Grid(2,2)
+            |> ui.SetChildren [|
+                ui.PanelVertical() 
+                |> ui.SetChildren [|
+                    ui.Header $"Header %g{model.SliderAValue}"
+                    ui.Slider (0f, 100f) 1f model.SliderAValue (fun evt value -> ())
+                |]
+            |]
         let option children =
             div
                 children
@@ -433,7 +357,7 @@ module Slider =
                     ];
             ]
 
-        [
+        gridId, [
             grid 2 2
                 [
                 panel
@@ -561,8 +485,8 @@ let view game (model: DemoModel) dispatch =
             let content = Buttons.view game model dispatch
             "Buttons", content, []
         | Containers -> 
-            let content2, content = Containers.view game model dispatch
-            "Containers", content2, content
+            let content2 = Containers.view game model dispatch
+            "Containers", content2, []
         | Text -> 
             let content = Text.view game model dispatch
             "Labels", content, []
@@ -570,8 +494,8 @@ let view game (model: DemoModel) dispatch =
             let content = List.view game model dispatch
             "List", content, []
         | Slider -> 
-            let content = Slider.view model dispatch
-            "Slider", UIComponentId.empty, content
+            let content, content2 = Slider.view game model dispatch
+            "Slider", content, content2
         | Github -> 
             let content = Github.view model dispatch
             "Github", UIComponentId.empty, content

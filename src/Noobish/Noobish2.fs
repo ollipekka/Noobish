@@ -257,6 +257,19 @@ type Noobish2(maxCount: int) =
             this.Components.RelativePosition.[index] <- {X = float32 x; Y = float32 y}
         cid
 
+    member this.SetRelativePositionFunc (f: UIComponentId -> UIComponentId -> Position) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.RelativePositionFunc.[index] <- f
+        cid
+
+    member this.SetConstrainToParentBounds (v: bool) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.ConstrainToParentBounds.[index] <- v
+        cid
+
+
     member this.SetThemeId (themeId: string) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
@@ -660,6 +673,11 @@ type Noobish2(maxCount: int) =
 
         let visible = this.Components.Visible.[i]
         if visible then 
+            let parentBounds = 
+                if this.Components.ConstrainToParentBounds.[i] then 
+                    parentBounds
+                else 
+                    {X = 0f; Y = 0f; Width = this.ScreenWidth; Height = this.ScreenHeight}
 
             let textureAtlas = content.Load(styleSheet.TextureAtlasId)
 
@@ -752,8 +770,9 @@ type Noobish2(maxCount: int) =
 
 
                 let children = this.Components.Children.[i]
-                for j = 0 to children.Count - 1 do 
-                    this.DrawComponent graphics content spriteBatch textBatch styleSheet boundsWithMargin scrollX scrollY children.[j].Index gameTime 
+                if children.Count > 0 then 
+                    for j = 0 to children.Count - 1 do 
+                        this.DrawComponent graphics content spriteBatch textBatch styleSheet boundsWithMargin scrollX scrollY children.[j].Index gameTime 
     member this.Draw 
         (graphics: GraphicsDevice) 
         (content: ContentManager)
@@ -816,6 +835,12 @@ type Noobish2(maxCount: int) =
                     let (top, right, bottom, left) = styleSheet.GetPadding themeId "default"
                     this.Components.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
 
+                this.Components.MinSize.[i] <- {
+
+                    Width = styleSheet.GetWidth themeId "default"
+                    Height = styleSheet.GetHeight  themeId "default"
+                }
+
                 (* Run layout only for root components. *)
                 if this.Components.ParentId.[i] = UIComponentId.empty then 
                     toLayout.Enqueue(i, this.Components.Layer.[i])
@@ -827,8 +852,6 @@ type Noobish2(maxCount: int) =
                 this.Components.LayoutComponent content styleSheet 0f 0f screenWidth screenHeight i
 
             waitForLayout <- false
-
-
 
         for i = 0 to this.Components.Count - 1 do 
             let layer = this.Components.Layer.[i]
