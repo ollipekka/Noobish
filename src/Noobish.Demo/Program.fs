@@ -295,8 +295,15 @@ module Slider =
             |> ui.SetChildren [|
                 ui.PanelVertical() 
                 |> ui.SetChildren [|
-                    ui.Header $"Header %g{model.SliderAValue}"
+                    ui.Header $"Slider A %g{model.SliderAValue}"
                     ui.Slider (0f, 100f) 1f model.SliderAValue (fun evt value -> ())
+                    ui.Header $"Slider B "
+                    ui.Slider (0f, 10f) 0.1f 5.5f (fun evt value -> ())
+                    ui.Header $"Slider C"
+                    ui.Slider (50f, 100f) 2f 50f (fun evt value -> ())
+                    ui.Header $"Slider D"
+                    ui.Slider (0f, 25f) 5f 25f (fun evt value -> ())
+                    
                 |]
             |]
         let option children =
