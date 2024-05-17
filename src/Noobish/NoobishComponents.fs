@@ -170,7 +170,7 @@ type NoobishComponents(count) =
     member val Textwrap = Array.create count false
     member val Layer = Array.create count 0
 
-    member val ConstrainToParentBounds = Array.create count false
+    member val ConstrainToParentBounds = Array.create count true
     member val Bounds = Array.create<Internal.NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
     member val ContentSize = Array.create count {Width = 0f; Height = 0f}
@@ -344,9 +344,17 @@ type NoobishComponents(count) =
             let children = this.Children.[i]
             let childY = viewportStartY
             let mutable childX = viewportStartX
+
             for j = 0 to children.Count - 1 do 
                 let cid = children.[j]
-                this.LayoutComponent content styleSheet childX childY viewportWidth viewportHeight cid.Index
+
+                let remainingHeight = 
+                    if scroll.Horizontal then 
+                        viewportWidth
+                    else 
+                        (viewportWidth - (childX - viewportStartX))
+
+                this.LayoutComponent content styleSheet childX childY remainingHeight viewportHeight cid.Index
 
                 let childBounds = this.Bounds.[cid.Index]
                 childX <- childX + childBounds.Width
@@ -357,7 +365,13 @@ type NoobishComponents(count) =
             let childX = viewportStartX
             for j = 0 to children.Count - 1 do 
                 let cid = children.[j]
-                this.LayoutComponent content styleSheet childX childY viewportWidth viewportHeight cid.Index
+
+                let remainingHeight = 
+                    if scroll.Vertical then 
+                        viewportHeight
+                    else 
+                        (viewportHeight - (childY - viewportStartY))
+                this.LayoutComponent content styleSheet childX childY remainingHeight (viewportHeight - (childY - viewportStartY)) cid.Index
                 let childBounds = this.Bounds.[cid.Index]
                 childY <- childY + childBounds.Height
 
@@ -432,12 +446,13 @@ type NoobishComponents(count) =
             this.Textwrap.[i] <- false
             this.TextAlign.[i] <- NoobishTextAlignment.Left
 
-            this.ConstrainToParentBounds.[i] <- false
+            this.ConstrainToParentBounds.[i] <- true
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
             this.ContentSize.[i] <- {Width = 0f; Height = 0f}
             this.RelativePositionFunc.[i] <- ignoreRelativePositionFunc
             this.RelativePosition.[i] <- {X = 0f; Y = 0f}
+
             this.Fill.[i] <- {Horizontal = false; Vertical = false}
             
             this.PaddingOverride.[i] <- false
