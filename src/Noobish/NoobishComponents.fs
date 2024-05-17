@@ -371,7 +371,7 @@ type NoobishComponents(count) =
                         viewportHeight
                     else 
                         (viewportHeight - (childY - viewportStartY))
-                this.LayoutComponent content styleSheet childX childY remainingHeight (viewportHeight - (childY - viewportStartY)) cid.Index
+                this.LayoutComponent content styleSheet childX childY viewportWidth remainingHeight cid.Index
                 let childBounds = this.Bounds.[cid.Index]
                 childY <- childY + childBounds.Height
 
