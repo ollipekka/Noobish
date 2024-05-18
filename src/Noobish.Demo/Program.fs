@@ -33,6 +33,7 @@ type DemoMessage =
     | ChangePadding of int
     | ChangeMargin of int
     | ComboboxValueChanged of string
+    | CheckboxValueChanged of bool
     | FeaturesChanged of string
     | ToggleDebug
     | ToggleDarkMode
@@ -49,6 +50,7 @@ type DemoModel = {
     Padding: int
     Margin: int
     ComboboxValue: string
+    CheckboxValue: bool
     SliderAValue: float32
     FeatureText: string
     ListModel: int[]
@@ -232,6 +234,15 @@ module Containers =
                         |]
                     ui.List model.ListModel model.SelectedListItemIndex (fun item -> dispatch (SelectListItem (model.ListModel |> Array.findIndex(fun i -> i = item))))
                 |]
+            ui.PanelVertical() 
+                |> ui.SetChildren [|
+                    ui.DivVertical()
+                        |> ui.FillHorizontal
+                        |> ui.SetChildren [|
+                            ui.Checkbox "Option 1" model.CheckboxValue (fun v -> dispatch (CheckboxValueChanged v)) 
+                            ui.Checkbox "Option 2" true ignore 
+                        |]
+                |]
         |]
 
 
@@ -353,7 +364,7 @@ module Github =
         ]
 
 let init (game: NoobishGame<unit, DemoMessage, DemoModel>) () =
-    { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg(ShowButtons)
+    { State = Buttons; ComboboxValue = "Option 1"; CheckboxValue = false; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg(ShowButtons)
 
 let update (game: NoobishGame<unit, DemoMessage, DemoModel>) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
     match message with
@@ -375,6 +386,8 @@ let update (game: NoobishGame<unit, DemoMessage, DemoModel>) (message: DemoMessa
         {model with SliderAValue = v}, Cmd.none
     | ComboboxValueChanged v ->
         {model with ComboboxValue = v}, Cmd.none
+    | CheckboxValueChanged v ->
+        {model with CheckboxValue = v}, Cmd.none
     | ChangePadding padding ->
         {model with Padding = padding}, Cmd.none
     | ChangeMargin margin ->
