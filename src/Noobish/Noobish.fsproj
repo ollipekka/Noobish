@@ -20,11 +20,8 @@
     <Compile Include="NoobishFont.fs" />
     <Compile Include="MSDFFontReader.fs" />
     <Compile Include="State.fs" />
-    <Compile Include="Noobish.fs" />
-    <Compile Include="NoobishInput.fs" />
-    <Compile Include="NoobishMonoGame.fs" />
     <Compile Include="NoobishComponents.fs" />
-    <Compile Include="Noobish2.fs" />
+    <Compile Include="Noobish.fs" />
     <Compile Include="Combobox.fs" />
     <Compile Include="List.fs" />
     <Compile Include="Slider.fs" />

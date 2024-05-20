@@ -90,6 +90,47 @@ module DrawUI =
     let toRectangle (r: NoobishRectangle) =
         Rectangle (int (r.X), int (r.Y), int (r.Width), int (r.Height))
 
+    let calculateImageBounds (imageSize: NoobishImageSize) (imageAlign: NoobishTextAlignment) (bounds: NoobishRectangle) (textureWidth: int) (textureHeight: int) (scrollX: float32) (scrollY: float32) =
+        match imageSize with
+        | NoobishImageSize.Stretch ->
+            createRectangle
+                ((bounds.X + scrollX),
+                (bounds.Y + scrollY),
+                bounds.Width,
+                bounds.Height)
+
+        | NoobishImageSize.BestFitMax ->
+            let ratio = max (bounds.Width / float32 textureWidth) (bounds.Height / float32 textureHeight)
+            let width = ratio * float32 textureWidth
+            let height = ratio * float32 textureHeight
+            let padLeft = (bounds.Width - width) / 2.0f
+            let padTop = (bounds.Height - height) / 2.0f
+            createRectangle
+                ((bounds.X + scrollX + padLeft),
+                (bounds.Y + scrollY + padTop),
+                width,
+                height)
+
+        | NoobishImageSize.BestFitMin ->
+            let ratio = min (bounds.Width / float32 textureWidth) (bounds.Height / float32 textureHeight)
+            let width = ratio * float32 textureWidth
+            let height = ratio * float32 textureHeight
+            let padLeft = (bounds.Width - width) / 2.0f
+            let padTop = (bounds.Height - height) / 2.0f
+            createRectangle
+                ((bounds.X + scrollX + padLeft),
+                (bounds.Y + scrollY + padTop),
+                width,
+                height)
+
+        | NoobishImageSize.Original ->
+            createRectangle
+                ((bounds.X + scrollX),
+                (bounds.Y + scrollY),
+                bounds.Width,
+                bounds.Height)
+
+
     let drawDrawable (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (layer: float32) (color: Color) (drawables: NoobishDrawable[]) =
         for drawable in drawables do
             match drawable with
@@ -126,6 +167,14 @@ module DrawUI =
             SpriteEffects.None,
             1.0f)
 
+    let getTextureEfffect (t: NoobishTextureEffect) =
+        if t = NoobishTextureEffect.FlipHorizontally then
+            SpriteEffects.FlipHorizontally
+        else if t = NoobishTextureEffect.FlipVertically then
+            SpriteEffects.FlipVertically
+        else
+            SpriteEffects.None
+
     let debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
         let borderSize = 2f
         let widthWithoutBorders = float32 bounds.Width - borderSize
@@ -138,6 +187,9 @@ module DrawUI =
         drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) bounds.Y widthWithoutBorders borderSize
         // Bottom
         drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( bounds.Y + bounds.Height - borderSize) widthWithoutBorders borderSize
+
+
+
 
 type OnClickEvent = {
     SourceId: UIComponentId
@@ -153,7 +205,7 @@ type Layout =
 
 type NoobishComponents(count) = 
     
-    let ignoreRelativePositionFunc (rcid: UIComponentId) (cid: UIComponentId) = {X = 0f; Y = 0f}
+    let ignoreRelativePositionFunc (rcid: UIComponentId) (cid: UIComponentId) (x: float32) (y: float32 )= {X = 0f; Y = 0f}
 
     let ignoreClick (_source: UIComponentId) (_p: Position) = ()
     let ignorePress (_source: UIComponentId) (_p: Position) = ()
@@ -168,6 +220,14 @@ type NoobishComponents(count) =
     member val Text = Array.create count ""
     member val TextAlign = Array.create count NoobishTextAlignment.Left
     member val Textwrap = Array.create count false
+
+    member val Image = Array.create count ValueOption<NoobishTextureId>.None
+    member val ImageAlign = Array.create count NoobishTextAlignment.Left
+
+    member val ImageColorOverride = Array.create count false
+    member val ImageColor = Array.create count Color.White
+    member val ImageTextureEffect = Array.create count NoobishTextureEffect.None
+
     member val Layer = Array.create count 0
 
     member val ConstrainToParentBounds = Array.create count true
@@ -184,6 +244,7 @@ type NoobishComponents(count) =
     member val Margin = Array.create<Margin> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val Layout = Array.create count Layout.None
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
+    member val GridCellAlignment = Array.create count NoobishTextAlignment.Left
     member val WantsOnPress = Array.create count false
     member val OnPress = Array.create<UIComponentId -> Position -> unit> count ignorePress
     member val WantsOnClick = Array.create count false
@@ -308,7 +369,6 @@ type NoobishComponents(count) =
         let minSize = this.MinSize.[i]
         let contentSize = this.ContentSize.[i]
 
-
         let maxWidth = parentWidth
         let maxHeight = parentHeight
 
@@ -337,7 +397,6 @@ type NoobishComponents(count) =
             Width = viewportWidth + margin.Left + margin.Right + padding.Left + padding.Right
             Height = viewportHeight + margin.Top + margin.Bottom + padding.Top + padding.Bottom
         }
-
 
         match this.Layout.[i] with 
         | Layout.LinearHorizontal -> 
@@ -406,7 +465,13 @@ type NoobishComponents(count) =
                 let childHeight =  float32 gridSpan.Rowspan * rowHeight
              
                 this.LayoutComponent content styleSheet childStartX childStartY childWidth childHeight cid.Index
-
+                
+                match this.GridCellAlignment.[cid.Index] with 
+                | NoobishTextAlignment.Left ->
+                    let childBounds = this.Bounds.[cid.Index]
+                    this.Bounds.[cid.Index] <- {childBounds with Y = childStartY + childHeight / 2f - childBounds.Height / 2f }
+                | _ -> ()
+ 
         | Layout.Relative (rcid) -> 
             let pcid = this.ParentId.[rcid.Index]
             let parentBounds = this.Bounds.[pcid.Index]
@@ -418,7 +483,7 @@ type NoobishComponents(count) =
                 let ccid = children.[i]
                 let relativePosition = this.RelativePosition.[ccid.Index]
                 let size = this.ContentSize.[ccid.Index]
-                let relativePosition2 = this.RelativePositionFunc.[ccid.Index] rcid ccid
+                let relativePosition2 = this.RelativePositionFunc.[ccid.Index] rcid ccid relativeBounds.X relativeBounds.Y
                 let childStartX = relativeBounds.X + margin.Left + relativePosition.X + relativePosition2.X
                 let childStartY = relativeBounds.Y + margin.Top + relativePosition.Y + relativePosition2.Y
                 this.LayoutComponent content styleSheet childStartX childStartY parentBounds.Width parentBounds.Height ccid.Index
@@ -445,6 +510,13 @@ type NoobishComponents(count) =
             this.Text.[i] <- ""
             this.Textwrap.[i] <- false
             this.TextAlign.[i] <- NoobishTextAlignment.Left
+
+
+            this.Image.[i] <- ValueNone
+            this.ImageAlign.[i] <- NoobishTextAlignment.Left
+            this.ImageColorOverride.[i] <- false
+            this.ImageColor.[i] <- Color.White
+            this.ImageTextureEffect.[i] <- NoobishTextureEffect.None
 
             this.ConstrainToParentBounds.[i] <- true
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}

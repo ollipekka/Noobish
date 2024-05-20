@@ -23,7 +23,6 @@ let loremIpsum2 =
 
 type DemoMessage =
     | ShowContainers
-    | ShowNoobish2Demo
     | ShowButtons
     | ShowList
     | ShowText
@@ -42,7 +41,7 @@ type DemoMessage =
 
 type StyleMode = LightMode | DarkMode
 
-type ViewState = | Noobish2Demo | Containers | Buttons | Text | List | Slider | Github
+type ViewState = Containers | Buttons | Text | List | Slider | Github
 
 type DemoModel = {
     State: ViewState
@@ -324,52 +323,69 @@ module Slider =
 
 
 module Github =
-    let view model dispatch =
-        [
-            grid 10 8
-                [
-                    space [colspan 10; rowspan 2]
-                    space [colspan 2; rowspan 4]
-                    panel
-                        [
-                            h2 [text "Welcome to Noobish"; textCenter]
-                            hr []
-                            grid 6 4
-                                [
-                                    checkbox [text "FSharp"; toggled true; onCheckBoxValueChange(fun v -> printfn "Hello %b" v); colspan 2; rowspan 1]
-                                    checkbox [text "MonoGame"; toggled true; colspan 2; rowspan 1]
-                                    checkbox [text "Elmish"; toggled true; colspan 2; rowspan 1]
-                                    label [text "Coolness:"; colspan 1; rowspan 1; textLeft]
-                                    slider [sliderValue 80f; fillHorizontal; colspan 5; rowspan 1]
-                                    label [text "Features:"; colspan 1; rowspan 1; textLeft]
-                                    textbox [ text model.FeatureText; onTextChange (fun v -> dispatch (FeaturesChanged v)); textLeft; colspan 5; rowspan 1]
-                                    button [text "Report a bug"; colspan 2]
-                                    button [text "Contribute"; colspan 2]
-                                    button [text "Fork"; colspan 2]
-                                ]
-                                [
 
-                                ]
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
+        let ui = game.Noobish2
+        let gridId = 
+            ui.Grid(10, 8)
+            |> ui.SetChildren [|
+                ui.Space() 
+                    |> ui.SetColspan 10
+                    |> ui.SetRowspan 2
+                ui.Space() 
+                    |> ui.SetColspan 2
+                    |> ui.SetRowspan 4
+                ui.PanelVertical()
+                    |> ui.SetColspan 6
+                    |> ui.SetRowspan 4
+                    |> ui.SetChildren [|
+                        ui.Header "Welcome to Noobish" |> ui.AlignTextCenter
+                        ui.HorizontalRule()
+                        ui.Grid (6, 4)
+                            |> ui.SetChildren [|
+                                ui.Checkbox "FSharp" true ignore |> ui.SetColspan 2 
+                                ui.Checkbox "MonoGame" true ignore |> ui.SetColspan 2
+                                ui.Checkbox "Elmish" true ignore |> ui.SetColspan 2
+                                ui.Label "Coolness:"
+                                    |> ui.SetFill
+                                    |> ui.AlignTextLeft
+                                ui.Slider (0f, 100f) 1f 80f ignore 
+                                    |> ui.SetFillHorizontal
+                                    |> ui.SetColspan 5
+                                ui.Label "Features:"
+                                    |> ui.SetFill
+                                    |> ui.AlignTextLeft
+                                ui.Textbox model.FeatureText (fun v -> dispatch (FeaturesChanged v))
+                                    |> ui.SetFillHorizontal
+                                    |> ui.AlignTextLeft
+                                    |> ui.SetColspan 5
+                                ui.Button "Report a bug" ignore
+                                    |> ui.AlignTextCenter
+                                    |> ui.SetFillHorizontal
+                                    |> ui.SetColspan 2
+                                ui.Button "Contribute" ignore 
+                                    |> ui.AlignTextCenter
+                                    |> ui.SetFillHorizontal
+                                    |> ui.SetColspan 2
+                                ui.Button "Fork" ignore 
+                                    |> ui.AlignTextCenter
+                                    |> ui.SetFillHorizontal
+                                    |> ui.SetColspan 2
 
-                        ]
-                        [
-                            colspan 6; rowspan 4;
-                        ]
-                    space [colspan 2; rowspan 4]
-                    space [colspan 10; rowspan 2]
-                ]
-                [
 
-                ]
-        ]
+
+                            |]
+
+                    |]
+            |]
+
+        gridId
 
 let init (game: NoobishGame<unit, DemoMessage, DemoModel>) () =
     { State = Buttons; ComboboxValue = "Option 1"; CheckboxValue = false; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg(ShowButtons)
 
 let update (game: NoobishGame<unit, DemoMessage, DemoModel>) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
     match message with
-    | ShowNoobish2Demo ->
-        {model with State = Noobish2Demo}, Cmd.none
     | ShowButtons ->
         {model with State = Buttons}, Cmd.none
     | ShowContainers ->
@@ -395,163 +411,102 @@ let update (game: NoobishGame<unit, DemoMessage, DemoModel>) (message: DemoMessa
     | FeaturesChanged s ->
         {model with FeatureText = s}, Cmd.none
     | ToggleDebug ->
-        let nui = game.Services.GetService<NoobishUI>()
-        nui.Settings.Debug <- (not nui.Settings.Debug)
-        game.Noobish2.Debug <- nui.Settings.Debug
+        game.Noobish2.Debug <- not (game.Noobish2.Debug)
         model, Cmd.none
     | ToggleLightMode ->
-        let nui = game.Services.GetService<NoobishUI>()
-        nui.StyleSheetId <- "Light/Light"
+        game.StyleSheetId <- "Light/Light"
         {model with StyleMode = LightMode}, Cmd.none
     | ToggleDarkMode ->
-        let nui = game.Services.GetService<NoobishUI>()
-        nui.StyleSheetId <- "Dark/Dark"
+        game.StyleSheetId <- "Dark/Dark"
         {model with StyleMode = DarkMode}, Cmd.none
     | SelectListItem index ->
         {model with SelectedListItemIndex = index}, Cmd.none
 
 let view game (model: DemoModel) dispatch =
 
-    let title, content2, content  =
+    let title, content  =
         match model.State with
-        | Noobish2Demo ->
-            Noobish2Demo.view game model dispatch
-            "Noobish2Demo", UIComponentId.empty, []
         | Buttons ->
             let content = Buttons.view game model dispatch
-            "Buttons", content, []
+            "Buttons", content
         | Containers -> 
-            let content2 = Containers.view game model dispatch
-            "Containers", content2, []
+            let content = Containers.view game model dispatch
+            "Containers", content
         | Text -> 
             let content = Text.view game model dispatch
-            "Labels", content, []
+            "Labels", content
         | List -> 
             let content = List.view game model dispatch
-            "List", content, []
+            "List", content
         | Slider -> 
             let content = Slider.view game model dispatch
-            "Slider", content, []
+            "Slider", content
         | Github -> 
-            let content = Github.view model dispatch
-            "Github", UIComponentId.empty, content
+            let content = Github.view game model dispatch
+            "Github", content
 
     let ui = game.Noobish2
 
-    let contentId = 
-        if content2 = UIComponentId.empty then 
-            ui.Space()
-        else 
-            content2
-
-    let gridId = 
-        ui.Grid(12, 8)
+    ui.Grid(12, 8)
+    |> ui.SetChildren [|
+        ui.PanelHorizontal() 
+        |> ui.SetRowspan 1
+        |> ui.SetColspan 3
         |> ui.SetChildren [|
-            ui.PanelHorizontal() 
-            |> ui.SetRowspan 1
-            |> ui.SetColspan 3
-            |> ui.SetChildren [|
-                ui.Header "Noobish"
-            |]
-            ui.PanelWithGrid(12, 1)
-            |> ui.SetRowspan 1 
-            |> ui.SetColspan 9
-            |> ui.SetChildren [|
-                ui.Header title
-                |> ui.SetColspan 6
-                
-                ui.Button "Dark" (fun e -> dispatch ToggleDarkMode) 
-                |> ui.SetFill
-                |> ui.SetColspan 2     
-                |> ui.SetToggled (model.StyleMode = DarkMode )          
-                ui.Button "Light" (fun e -> dispatch ToggleLightMode) 
-                |> ui.SetFill
-                |> ui.SetToggled (model.StyleMode = LightMode )       
-                |> ui.SetColspan 2
-                ui.Button "Debug" (
-                    fun e -> 
-                        dispatch ToggleDebug
-                    ) 
-                |> ui.SetFill
-                |> ui.SetColspan 2
-                |> ui.SetToggled (ui.Debug)       
-                
-            |]
-            ui.PanelVertical() 
-            |> ui.SetRowspan 7
-            |> ui.SetColspan 3
-            |> ui.SetChildren [|
-                ui.Button "Buttons" (fun gameTime -> dispatch ShowButtons)
-                |> ui.FillHorizontal 
-                |> ui.SetToggled (model.State = Buttons)
-                ui.Button "Text" (fun gameTime -> dispatch ShowText)
-                |> ui.FillHorizontal 
-                |> ui.SetToggled (model.State = Text)
-                ui.Button "Containers" (fun gameTime -> dispatch ShowContainers)
-                |> ui.FillHorizontal 
-                |> ui.SetToggled (model.State = Containers)
-                ui.Button "List" (fun gameTime -> dispatch ShowList)
-                |> ui.FillHorizontal 
-                |> ui.SetToggled (model.State = List)
-                ui.Button "Slider" (fun gameTime -> dispatch ShowSliders)
-                |> ui.FillHorizontal 
-                |> ui.SetToggled (model.State = Slider)
-                ui.Button "Github" (fun gameTime -> dispatch ShowGithub)
-                |> ui.FillHorizontal 
-                |> ui.SetToggled (model.State = Github)
-            |]
-            contentId
-            |> ui.SetRowspan 7 
-            |> ui.SetColspan 9
+            ui.Header "Noobish"
         |]
+        ui.PanelWithGrid(12, 1)
+        |> ui.SetRowspan 1 
+        |> ui.SetColspan 9
+        |> ui.SetChildren [|
+            ui.Header title
+            |> ui.SetColspan 6
+            
+            ui.Button "Dark" (fun e -> dispatch ToggleDarkMode) 
+            |> ui.SetFill
+            |> ui.SetColspan 2     
+            |> ui.SetToggled (model.StyleMode = DarkMode )          
+            ui.Button "Light" (fun e -> dispatch ToggleLightMode) 
+            |> ui.SetFill
+            |> ui.SetToggled (model.StyleMode = LightMode )       
+            |> ui.SetColspan 2
+            ui.Button "Debug" (
+                fun e -> 
+                    dispatch ToggleDebug
+                ) 
+            |> ui.SetFill
+            |> ui.SetColspan 2
+            |> ui.SetToggled (ui.Debug)       
+            
+        |]
+        ui.PanelVertical() 
+        |> ui.SetRowspan 7
+        |> ui.SetColspan 3
+        |> ui.SetChildren [|
+            ui.Button "Buttons" (fun gameTime -> dispatch ShowButtons)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Buttons)
+            ui.Button "Text" (fun gameTime -> dispatch ShowText)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Text)
+            ui.Button "Containers" (fun gameTime -> dispatch ShowContainers)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Containers)
+            ui.Button "List" (fun gameTime -> dispatch ShowList)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = List)
+            ui.Button "Slider" (fun gameTime -> dispatch ShowSliders)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Slider)
+            ui.Button "Github" (fun gameTime -> dispatch ShowGithub)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Github)
+        |]
+        content
+        |> ui.SetRowspan 7 
+        |> ui.SetColspan 9
+    |]
 
-    [
-        [
-            grid 12 8
-                [
-                    panel [h1 [text "Noobish"; fill]] [colspan 3; rowspan 1]
-                    panelWithGrid 12 1
-                        [
-                            h1 [text title; fill; colspan 6];
-                            button
-                                [
-                                    localizedText ("Localization/TestBundle", "Dark");
-                                    toggled (model.StyleMode = DarkMode);
-                                    fill;
-                                    onClick (fun gameTime -> dispatch ToggleDarkMode)
-                                    keyboardShortcut (ctrl NoobishKeyId.B)
-                                    colspan 2
-                                ]
-                            button
-                                [
-                                    localizedText ("Localization/TestBundle", "Light");
-                                    toggled (model.StyleMode = LightMode);
-                                    fill;
-                                    onClick (fun gameTime -> dispatch ToggleLightMode)
-                                    keyboardShortcut (ctrl NoobishKeyId.L)
-                                    colspan 2
-                                ]
-                            button
-                                [
-                                    text "Debug";
-                                    toggled false; //model.UI.Settings.Debug;
-                                    fill;
-                                    keyboardShortcut (alt NoobishKeyId.D)
-                                    colspan 2
-                                ]
-                        ]
-                        [
-                            colspan 9;
-                            rowspan 1
-                        ]
-                    space [colspan 3; rowspan 7;]
-                    panel content [colspan 9; rowspan 7;]
-                ]
-                [
-                    padding 10
-                ]
-        ]
-    ]
 
 let tick game (model) (gameTime: GameTime) = ()
 let draw game (model) (gameTime: GameTime) = ()
@@ -568,7 +523,7 @@ let main argv =
     Log.Logger <- logger
     Program2.create ignore init update view tick draw
         |> Program2.withContentRoot "Content/"
-        |> Program2.withTheme "Dark/Dark"
+        |> Program2.withStyleSheet "Dark/Dark"
         |> Program2.withPreferHalfPixelOffset true
         |> Program2.withResolution 1280 720
         |> Program2.withMouseVisible true

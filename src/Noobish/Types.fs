@@ -11,7 +11,6 @@ type NoobishLayout =
 
 [<RequireQualifiedAccess>]
 type NoobishTextureId =
-    | None
     | NinePatch of atlasId: string * ninePatchId: string
     | Basic of string
     | Atlas of atlasId: string * textureId: string

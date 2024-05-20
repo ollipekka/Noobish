@@ -1,972 +1,1199 @@
-[<AutoOpen>]
-module Noobish.Components
-
+namespace Noobish
 
 open System
+open System.Collections.Generic
+
+open Serilog
 
 open Microsoft.Xna.Framework
+open Microsoft.Xna.Framework.Content
+open Microsoft.Xna.Framework.Graphics
+open Microsoft.Xna.Framework.Input
 
 open Noobish
 open Noobish.Styles
-open Noobish.Internal
-open Noobish.Localization
-
-
-module ZIndex =
-    let calculate (v: int) =
-        let v = clamp v 0 255
-        1f - (float32 v / 255f)
-
-type NoobishAttribute =
-
-    | Name of string
-    | Padding of left: int * right: int * top: int * bottom: int
-    | PaddingLeft of int
-    | PaddingRight of int
-    | PaddingTop of int
-    | PaddingBottom of int
-
-    | ColorOverride of Color
-    | DisabledColorOverride of Color
-
-    | Margin of left: int * right: int * top: int * bottom: int
-    | MarginLeft of int
-    | MarginRight of int
-    | MarginTop of int
-    | MarginBottom of int
-    | ZIndex of int
-    | Overlay
-
-    | Text of string
-    | ShowText
-    | LocalizedText of bundleId: string * localizationKey: string
-    | TextAlign of NoobishTextAlignment
-    | TextWrap
-
-    | SliderRange of min:float32 * max:float32
-    | SliderValue of float32
-    | SliderStep of float32
-    | SliderValueChanged of (float32 -> unit)
-
-    | Fill
-    | FillHorizontal
-    | FillVertical
-
-    | OnClick of (GameTime -> unit)
-    | OnClickInternal of (NoobishState -> NoobishLayoutElement -> unit)
-    | OnPress of (Vector2 -> GameTime -> unit)
-    | OnPressInternal of (NoobishState -> Vector2 -> NoobishLayoutElement -> unit)
-    | OnTextChange of (string -> unit)
-    | OnCheckboxValueChange of (bool -> unit)
-
-    | DoNotConsumeMouseInput
-
-    | Visible of bool
-    | Enabled of bool
-    | Toggled of bool
-    | Selected of bool
-    | Block
-    | MinSize of width: int * height: int
-    | Texture of NoobishTextureId
-    | TextureEffect of NoobishTextureEffect
-    | ImageSize of NoobishImageSize
-    | TextureRotation of int
-    | ScrollHorizontal
-    | ScrollVertical
-    | Scroll
-    | Layout of NoobishLayout
-    | RowSpan of int
-    | ColSpan of int
-    | RelativePosition of x: int * y: int
-    | KeyboardShortcut of NoobishKeyboardShortcut
-    | OnOpenKeyboard of ((string -> unit) -> unit)
-    | KeyTypedEnabled
-
-type NoobishElement = {
-    ThemeId: string
-    Children: list<NoobishElement>
-    Attributes: list<NoobishAttribute>
-}
-
-
-// Attributes
-let name n = Name n
-let text (t: string) = Text t
-let localizedText t = LocalizedText t
-
-let textAlign = TextAlign
-let textTopLeft = TextAlign NoobishTextAlignment.TopLeft
-let textTopCenter = TextAlign NoobishTextAlignment.TopCenter
-let textTopRight = TextAlign NoobishTextAlignment.TopRight
-let textLeft = TextAlign NoobishTextAlignment.Left
-let textCenter = TextAlign NoobishTextAlignment.Center
-let textRight = TextAlign NoobishTextAlignment.Right
-let textBottomLeft = TextAlign NoobishTextAlignment.BottomLeft
-let textBottomCenter = TextAlign NoobishTextAlignment.BottomCenter
-let textBottomRight = TextAlign NoobishTextAlignment.BottomRight
-let textWrap = TextWrap
-
-let private colorFromString (c: string): Color = 
-
-    let v =
-        if c.StartsWith "#" then
-            int(c.Replace("#", "0x"))
-        else
-            int(c.Insert(0, "0x"))
-    let r = (v >>> 24) &&& 255;
-    let g = (v >>> 16) &&& 255;
-    let b = (v >>> 8) &&& 255;
-    let a = v &&& 255;
-
-    (Color(r, g, b, a))
-
-let color (c: string) =
-    ColorOverride (colorFromString c)
-
-
-let disabledColor (c: string) =
-    DisabledColorOverride (colorFromString c)
-
-let sliderRange min max = SliderRange(min, max)
-let sliderValue v = SliderValue v
-let sliderStep v = SliderStep v
-let sliderOnValueChanged cb = SliderValueChanged cb
-
-let texture t = Texture (NoobishTextureId.Basic t)
-let ninePatch aid tid = Texture (NoobishTextureId.NinePatch(aid,tid))
-let atlasTexture aid tid = Texture(NoobishTextureId.Atlas (aid, tid))
-
-let imageSize s = ImageSize s
-let textureEffect s = TextureEffect s
-let textureFlipHorizontally = TextureEffect NoobishTextureEffect.FlipHorizontally
-let textureFlipVertically = TextureEffect NoobishTextureEffect.FlipVertically
-let textureBestFitMax = ImageSize NoobishImageSize.BestFitMax
-let textureBestFitMin = ImageSize NoobishImageSize.BestFitMin
-let textureStretch = ImageSize NoobishImageSize.Stretch
-let textureRotation t = TextureRotation t
-let paddingLeft lp = PaddingLeft lp
-let paddingRight rp = PaddingRight rp
-let paddingTop tp = PaddingTop tp
-let paddingBottom bp = PaddingBottom bp
-let padding value = Padding(value, value, value, value)
-let marginLeft lm = MarginLeft lm
-let marginRight rm = MarginRight rm
-let marginTop tm = MarginTop tm
-let marginBottom bm = MarginBottom bm
-let margin value = Margin(value, value, value, value)
-let block = Block
-let onClick action = OnClick(action)
-let onTextChange action = OnTextChange(action)
-let onCheckBoxValueChange action = OnCheckboxValueChange(action)
-let onPress action = OnPress(action)
-let toggled value = Toggled (value)
-let selected value = Selected (value)
-
-let fill = Fill
-let fillHorizontal = FillHorizontal
-let fillVertical = FillVertical
-
-let minSize w h = MinSize(w, h)
-let enabled v = Enabled(v)
-
-let visible v = Visible(v)
-
-let hidden = Visible(false)
-
-let scrollVertical = ScrollVertical
-let scrollHorizontal = ScrollHorizontal
-let scrollBoth = Scroll
-
-let absoluteLayout = Layout (NoobishLayout.Absolute)
-let gridLayout cols rows = Layout (NoobishLayout.Grid (cols, rows))
-let stackLayout = Layout (NoobishLayout.Default)
-let colspan s = ColSpan s
-let rowspan s = RowSpan s
-
-let relativePosition x y = RelativePosition(x, y)
-
-let ctrl (nk: NoobishKeyId) = NoobishKeyboardShortcut.CtrlKeyPressed nk
-let alt (nk: NoobishKeyId) = NoobishKeyboardShortcut.AltKeyPressed nk
-
-let key (nk: NoobishKeyId) = NoobishKeyboardShortcut.KeyPressed nk
-
-let keyboardShortcut k = KeyboardShortcut k
-
-let onOpenKeyboard cb = OnOpenKeyboard cb
-
-let private getText (attributes: list<NoobishAttribute>) =
-    let mutable text = ""
-    let mutable i = 0
-    while i < attributes.Length - 1 do
-        let a = attributes.[i]
-        match a with
-        | Text (text') ->
-            text <- text'
-            i <- attributes.Length
-        | _ -> ()
-        i <- i + 1
-    text
-
-let private isToggled (attributes: list<NoobishAttribute>) =
-    let mutable toggled = false
-    let mutable i = 0
-    while i < attributes.Length - 1 do
-        let a = attributes.[i]
-        match a with
-        | Toggled (t) ->
-            toggled <- t
-            i <- attributes.Length
-        | _ -> ()
-        i <- i + 1
-    toggled
-
-let themePrefix (prefix: string) (e: NoobishElement) =
-    {e with ThemeId = $"%s{prefix}-%s{e.ThemeId}"}
-
-let themeSuffix (suffix: string) (e: NoobishElement) =
-    {e with ThemeId = $"%s{e.ThemeId}-%s{suffix}"}
-
-// Components
-let hr attributes = { ThemeId = "HorizontalRule"; Children = []; Attributes = minSize 0 2 :: fillHorizontal :: block :: attributes }
-let label attributes = { ThemeId = "Label"; Children = []; Attributes = ShowText :: attributes }
-let h1 attributes = { ThemeId = "Header1"; Children = []; Attributes = block :: ShowText :: attributes }
-let h2 attributes = { ThemeId = "Header2"; Children = []; Attributes = block :: ShowText :: attributes }
-let h3 attributes = { ThemeId = "Header3"; Children = []; Attributes = block :: ShowText :: attributes }
-let textbox attributes = { ThemeId = "TextBox"; Children = []; Attributes = textAlign NoobishTextAlignment.TopLeft :: ShowText :: KeyTypedEnabled :: attributes }
-let paragraph attributes = { ThemeId = "Paragraph"; Children = []; Attributes = textWrap :: textAlign NoobishTextAlignment.TopLeft :: ShowText :: attributes }
-let header attributes = { ThemeId = "Header"; Children = []; Attributes = [fillHorizontal; block; ShowText] @ attributes }
-let button attributes =  { ThemeId = "Button"; Children = []; Attributes = attributes }
-let image attributes = { ThemeId = "Image"; Children = []; Attributes = attributes }
-let option t = {ThemeId = "Button"; Children = []; Attributes = [text t; ShowText; block] }
-let canvas children attributes = { ThemeId = "Canvas"; Children = children; Attributes = Layout(NoobishLayout.Absolute) :: attributes }
-let scroll children attributes =
-    { ThemeId = "Scroll"; Children = children; Attributes = [stackLayout; fill; scrollVertical; ] @ attributes}
-
-let space attributes = { ThemeId = "Space"; Children = []; Attributes = DoNotConsumeMouseInput :: fill :: attributes}
-
-let panel children attributes =
-    { ThemeId = "Panel"; Children = children; Attributes = stackLayout :: block :: attributes}
-let panelWithGrid cols rows children attributes = { ThemeId = "Panel"; Children = children; Attributes = gridLayout cols rows :: block :: fill :: attributes}
-let grid cols rows children attributes = { ThemeId = "Division"; Children = children; Attributes = gridLayout cols rows :: fill :: DoNotConsumeMouseInput :: attributes}
-let div children attributes = { ThemeId = "Division"; Children = children; Attributes = DoNotConsumeMouseInput :: stackLayout :: attributes}
-let window children attributes =
-    grid 12 8
-        [
-            space [colspan 12; rowspan 1]
-            space [colspan 3; rowspan 7]
-            panel children ([colspan 6; rowspan 6;] @ attributes)
-        ]
-        [
-
-        ]
-let tree attributes = { ThemeId = "Tree"; Children = []; Attributes = fill::attributes}
-
-let slider attributes =
-    let handlePress (state: NoobishState) (position: Vector2) (c: NoobishLayoutElement) =
-
-        let cs = state.ElementStateById.[c.Id]
-
-        cs.Model
-            |> Option.map(
-                fun m ->
-                    match m with
-                    | Slider s' ->
-                        let bounds = c.Content
-                        let relative = (position.X - bounds.X) / (bounds.Width)
-                        let newValue = s'.Min + (relative * s'.Max - s'.Min)
-                        let steppedNewValue = truncate(newValue / s'.Step) * s'.Step
-                        clamp steppedNewValue s'.Min s'.Max
-                    | _ -> failwith "Not a slider")
-            |> Option.iter (fun v ->
-                state.QueueEvent c.Id (ChangeSliderValue v)
-            )
-    {ThemeId = "Slider"; Children = []; Attributes = [(OnPressInternal handlePress)] @ attributes}
-
-
-let combobox children attributes =
-    let children' = children |> List.map(fun c' ->
-        let onClick = OnClickInternal (
-            fun state c ->
-                let cp = state.[c.ParentId]
-                state.QueueEvent c.ParentId Hide
-                state.QueueEvent cp.ParentId (InvokeTextChange c.Text)
-            )
-        {c' with Attributes = onClick :: c'.Attributes}
-    )
-
-    let dropdown = panel children' [ hidden; ZIndex(255); Overlay; Margin(0,0,0,0);]
-
-    let onClickInternal: NoobishAttribute = OnClickInternal(fun state c ->
-        for child in c.Children do
-            state.QueueEvent child.Id ToggleVisibility
-    )
-
-    {ThemeId = "Combobox"; Children = [dropdown]; Attributes = Layout(NoobishLayout.OverlaySource) :: onClickInternal :: attributes}
-
-let checkbox attributes =
-    let labelText = getText attributes
-    let isChecked = (isToggled attributes)
-
-    let onClickInternal = OnClickInternal(fun state e ->
-
-        state.QueueEvent e.Id Toggle
-        state.QueueEvent e.Id (InvokeCheckBoxValueChange)
-    )
-
-    let onCheckBoxValueChange =
-        attributes
-            |> List.tryFind(
-                function
-                | OnCheckboxValueChange(_) -> true
-                | _ -> false)
-            |> Option.defaultValue (OnCheckboxValueChange(ignore))
-
-    let check = { ThemeId = "CheckBox"; Children = []; Attributes = [toggled isChecked; onClickInternal; onCheckBoxValueChange] }
-
-    let attributes =
-        attributes
-            |> List.filter(
-                function
-                | Text(_) -> false
-                | Toggled(_) -> false
-                | OnCheckboxValueChange(_) -> false
-                | _ -> true
-            )
-    div
-        [
-            check; label [fillVertical; text labelText; textAlign NoobishTextAlignment.Left]
-        ]
-        (fill :: attributes)
-
-
-
-let largeWindowWithGrid cols rows children attributes =
-    grid 16 9
-        [
-            space [colspan 16; rowspan 1]
-            space [colspan 1; rowspan 7]
-            panelWithGrid cols rows children ([colspan 14; rowspan 7;] @ attributes)
-        ]
-        [
-
-        ]
-
-let windowWithGrid cols rows children attributes =
-    grid 12 8
-        [
-            space [colspan 12; rowspan 1]
-            space [colspan 3; rowspan 7]
-            panelWithGrid cols rows children ([colspan 6; rowspan 6;] @ attributes)
-        ]
-        [
-
-        ]
-
-module Logic =
-    open Noobish
-    open Noobish.Internal
-    open Microsoft.Xna.Framework.Content
-
-    let splitLines (measureString: string -> int * int) width (text: string) =
-
-        let sections = text.Split [|'\n'|]
-
-        let resultLines = ResizeArray<string>()
-
-        for section in sections do
-
-            let width = int width
-
-            let words = section.Split [|' ';|]
-
-            let mutable line = ""
-
-            let addLine () =
-                resultLines.Add(line.Trim())
-                line <- ""
-
-            for word in words do
-
-                let (lineWidth, _lineHeight) = measureString (line + word)
-
-                if (lineWidth > width) then
-                    addLine ()
-
-                line <- sprintf "%s%s " line word
-
-
-            if line.Length > 0 then
-                addLine()
-
-        String.Join("\n", resultLines)
-
-
-
-    let private createNoobishLayoutElement (styleSheet: NoobishStyleSheet) (content: ContentManager) (settings: NoobishSettings) (state: NoobishState) (zIndex: int) (parentId: string) (parentPath: string) (parentWidth: float32) (parentHeight: float32) (startX: float32) (startY: float32) (themeId: string) (attributes: list<NoobishAttribute>) =
-
-        let cid = $"%s{parentPath}/%s{themeId}-(%g{startX},%g{startY})"
-        let cstate = "default"
-
-        let toFloat (left, right, top, bottom) =
-            (float32 left, float32 right, float32 top, float32 bottom)
-
-        let mutable name = ""
-        let mutable elementState = NoobishElementState.Empty
-        let mutable zIndex = zIndex
-        let mutable overlay = false
-
-        let mutable textAlign = styleSheet.GetTextAlignment themeId cstate
-        let mutable text = ""
-        let mutable showText = false
-        let mutable textWrap = false
-        let mutable paddingTop, paddingRight, paddingBottom, paddingLeft = toFloat (styleSheet.GetPadding themeId cstate)
-        let mutable marginTop, marginRight, marginBottom, marginLeft = toFloat (styleSheet.GetMargin themeId cstate)
-
-        let mutable fillHorizontal = false
-        let mutable fillVertical = false
-
-        let mutable isBlock = false
-        let mutable onClick: GameTime -> unit = ignore
-        let mutable onClickInternal: NoobishState -> NoobishLayoutElement -> unit = (fun _ _ -> ())
-        let mutable consumedButtons = [|NoobishMouseButtonId.Left; NoobishMouseButtonId.Middle; NoobishMouseButtonId.Right|]
-        let mutable consumedKeys = ResizeArray<NoobishKeyId>()
-        let mutable keyTypedEnabled = false
-
-        let mutable onPress: Vector2 -> GameTime -> unit = (fun _ _ -> ())
-        let mutable onPressInternal: NoobishState -> Vector2 -> NoobishLayoutElement -> unit = (fun _ _ _ -> ())
-
-        let mutable onTextChange: string -> unit = ignore
-        let mutable onCheckboxValueChange: bool -> unit = ignore
-
-        let mutable color = styleSheet.GetColor cid cstate
-        let mutable disabledColor = styleSheet.GetColor cid "disabled"
-
-        let mutable texture = NoobishTextureId.None
-        let mutable textureEffect = NoobishTextureEffect.None
-        let mutable imageSize = NoobishImageSize.BestFitMax
-        let mutable textureRotation = 0
-
-        let mutable scrollHorizontal = false
-        let mutable scrollVertical = false
-
-        let mutable layout = NoobishLayout.None
-
-        let mutable rowspan = 1
-        let mutable colspan = 1
-
-        let mutable minWidth = 0f
-        let mutable minHeight = 0f
-
-        let mutable relativeX = 0.0f
-        let mutable relativeY = 0.0f
-
-        let mutable model: option<NoobishComponentModel> = None
-
-        let mutable keyboardShortcut = NoobishKeyboardShortcut.NoShortcut
-
-        for a in attributes do
-            match a with
-            | Name v ->
-                name <- v
-            | Padding (top, right, bottom, left) ->
-                paddingLeft <- float32 left
-                paddingRight <- float32 right
-                paddingTop <- float32 top
-                paddingBottom <- float32 bottom
-            | PaddingLeft left ->
-                paddingLeft <- float32 left
-            | PaddingRight right ->
-                paddingRight <- float32 right
-            | PaddingTop top ->
-                paddingTop <- float32 top
-            | PaddingBottom bottom ->
-                paddingBottom <- float32 bottom
-            | Margin (top, right, bottom, left) ->
-                marginLeft <- float32 left
-                marginRight <- float32 right
-                marginTop <- float32 top
-                marginBottom <- float32 bottom
-            | MarginLeft left ->
-                marginLeft <- float32 left
-            | MarginRight right ->
-                marginLeft <- float32 right
-            | MarginTop top ->
-                marginTop <- float32 top
-            | MarginBottom bottom ->
-                marginBottom <- float32 bottom
-
-            | ColorOverride c ->
-                color <- c
-            | DisabledColorOverride c ->
-                disabledColor <- c
-            | MinSize (width, height) ->
-                minWidth <- float32 width
-                minHeight <- float32 height
-            // Text
-            | Text(value) ->
-                text <- value
-            | ShowText -> 
-                showText <- true
-            | LocalizedText(bundleId, keyId) ->
-                let localBundleId = $"{bundleId}-{settings.Locale}"
-                let bundle = content.Load<NoobishLocalizationBundle> localBundleId
-
-                text <- bundle.GetLocalizedText keyId
-
-
-            | TextAlign (value) -> textAlign <- value
-            | TextWrap -> textWrap <- true
-            // Slider
-            | SliderRange (min, max) ->
-
-                if model.IsNone then
-                    model <- Some(Slider{ Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore})
-
-                model <- model
-                    |> Option.map(
-                        function
-                        | Slider(s) ->
-                            Slider ({s with Min = min; Max = max})
-                        | _ -> failwith "Model is not a slider."
-                    )
-            | SliderValue (v) ->
-                if model.IsNone then
-                    model <- Some (Slider{ Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore})
-
-                model <- model
-                    |> Option.map(
-                        function
-                        | Slider(s) ->
-                            Slider ({s with Value = v})
-                        | _ -> failwith "Model is not a slider."
-                    )
-            | SliderStep (v) ->
-                if model.IsNone then
-                    model <- Some (Slider{ Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore})
-
-                model <- model
-                    |> Option.map(
-                        function
-                        | Slider(s) ->
-                            Slider ({s with Step = v})
-                        | _ -> failwith "Model is not a slider."
-                    )
-            | SliderValueChanged (cb) ->
-                if model.IsNone then
-                    model <- Some (Slider{ Min = 0.0f; Max = 100.0f; Step = 0.1f; Value = 0.0f; OnValueChanged = ignore})
-
-                model <- model
-                    |> Option.map(
-                        function
-                        | Slider(s) ->
-                            Slider ({s with OnValueChanged = cb})
-                        | _ -> failwith "Model is not a slider."
-                    )
-            | OnClick(v) ->
-                onClick <- v
-            | OnClickInternal(v) ->
-                onClickInternal <- v
-            | OnPress(v) ->
-                onPress <- v
-            | OnPressInternal(v) ->
-                onPressInternal <- v
-            | OnTextChange(v) ->
-                onTextChange <- v
-            | OnCheckboxValueChange(v) ->
-                onCheckboxValueChange <- v
-            | DoNotConsumeMouseInput ->
-                consumedButtons <- [||]
-            | Enabled (value) ->
-                if (not value) && not (NoobishElementState.isSet elementState NoobishElementState.Disabled) then
-                    elementState <- NoobishElementState.disable elementState
-            | Visible (value) ->
-                if (not value) && not (NoobishElementState.isSet elementState NoobishElementState.Hidden) then
-                    elementState <- NoobishElementState.hide elementState
-            | Toggled(value) ->
-                if value && not (NoobishElementState.isSet elementState NoobishElementState.Toggled) then
-                    elementState <- NoobishElementState.toggle elementState
-            | Selected(value) ->
-                if value && not (NoobishElementState.isSet elementState NoobishElementState.Selected) then
-                    elementState <- NoobishElementState.select elementState
-            | ZIndex(value) ->
-                zIndex <- value
-            | Overlay ->
-                overlay <- true
-            | Fill ->
-                fillHorizontal <- true
-                fillVertical <- true
-            | FillHorizontal ->
-                fillHorizontal <- true
-            | FillVertical ->
-                fillVertical <- true
-            | Block -> isBlock <- true
-            | Texture (t) ->
-                texture <- t
-            | TextureEffect (t) ->
-                textureEffect <- t
-            | ImageSize (s) ->
-                imageSize <- s
-            | TextureRotation (t) ->
-                textureRotation <- t
-            | Scroll ->
-                scrollHorizontal <- true
-                scrollVertical <- true
-                // Scroll needs to fill the whole area.
-                fillHorizontal <- true
-                fillVertical <- true
-            | ScrollHorizontal ->
-                scrollHorizontal <- true
-            | ScrollVertical ->
-                scrollVertical <- true
-            | Layout (s) ->
-                layout <- s
-            | ColSpan (cs) ->
-                colspan <- cs
-                // Fill the whole cell. User has asked the component to fill the area.
-                fillHorizontal <- true
-                fillVertical <- true
-            | RowSpan (rs) ->
-                rowspan <- rs
-                // Fill the whole cell. User has asked the component to fill the area.
-                fillHorizontal <- true
-                fillVertical <- true
-            | RelativePosition (x, y) ->
-                relativeX <- float32 x
-                relativeY <- float32 y
-            | KeyboardShortcut k ->
-                keyboardShortcut <- k
-
-                let keyId =
-                    match k with
-                    | NoobishKeyboardShortcut.KeyPressed(k) -> k
-                    | NoobishKeyboardShortcut.CtrlKeyPressed(k) -> k
-                    | NoobishKeyboardShortcut.AltKeyPressed(k) -> k
-                    | NoobishKeyboardShortcut.NoShortcut -> failwith "User logic error. Can't have no shortcut here."
-
-                consumedKeys.Add keyId
-            | KeyTypedEnabled ->
-                keyTypedEnabled <- true
-                if model.IsNone then
-                    model <- Some(Textbox{ Text = ""; Cursor = 0; OnOpenKeyboard = fun _ -> ()})
-            | OnOpenKeyboard (o) ->
-                keyTypedEnabled <- true
-                if model.IsNone then
-                    model <- Some(Textbox{ Text = ""; Cursor = 0; OnOpenKeyboard = fun _ -> ()})
-
-                model <- model |> Option.map(
-                    fun model' ->
-                        match model' with
-                        | Textbox(model'') ->
-                            Textbox({model'' with OnOpenKeyboard = o})
-                        | _ -> model'
-                )
-
-
-
-        let maxWidth = parentWidth * float32 colspan
-
-        model |> Option.iter (fun model' ->
-            match model' with
-            | Slider (_s) ->
-                minWidth <- maxWidth - paddingLeft - paddingRight - marginLeft - marginRight
-                let pinHeight = styleSheet.GetHeight "SliderPin" "default"
-                let barHeight = styleSheet.GetHeight "Slider" "default"
-                minHeight <- minHeight + max pinHeight barHeight
-            | Combobox (_c) -> ()
-            | Textbox (_t) -> ()
+open Noobish.TextureAtlas
+open Internal
+
+
+
+
+
+
+type Noobish2(maxCount: int) =
+
+
+    let rasterizerState = 
+        let rasterizerState = new RasterizerState()
+        rasterizerState.ScissorTestEnable <- true
+        rasterizerState
+
+    let mutable previousMouseState: MouseState = Microsoft.Xna.Framework.Input.Mouse.GetState()
+
+    let mutable previousKeyState: KeyboardState = Microsoft.Xna.Framework.Input.Keyboard.GetState()
+    let mutable waitForLayout = true
+
+    let drawQueue = PriorityQueue<int, int>()
+
+    let toLayout = PriorityQueue<int, int>()
+
+    let frames = Array.init 2 (fun _ -> NoobishComponents(256))
+    
+    let mutable previousFrameIndex = 0
+    let mutable frameIndex = 1
+
+    member this.Components with get() = frames.[frameIndex]
+
+    member val Cursor = 0 with get, set 
+
+    member val FocusedElementId = UIComponentId.empty with get, set
+    member val FocusedTime = TimeSpan.Zero with get, set
+
+    member val ScreenWidth: float32 = 0f with get, set 
+    member val ScreenHeight: float32 = 0f with get, set
+
+    member val Debug = false with get, set
+
+    member this.IsActive(cid: UIComponentId) =
+        let index = cid.Index
+
+        if index <> -1 && this.Components.Id.[index].Id.Equals cid.Id then 
+            index
+        else 
+            -1
+    member this.GetIndex(cid: UIComponentId) =
+        let index = cid.Index
+
+        if index <> -1 && this.Components.Id.[index].Id.Equals cid.Id then 
+            index
+        else 
+            -1
+
+    member this.Create(themeId: string): UIComponentId =
+
+        let i = this.Components.Count
+        let cid: UIComponentId = {Index = i; Id = Guid.NewGuid()}
+        this.Components.Id.[i] <- cid
+        this.Components.ThemeId.[i] <- themeId
+        if this.Components.ParentId.[i] <> UIComponentId.empty then failwith "crap"
+        this.Components.Enabled.[i] <- true 
+        this.Components.Visible.[i] <- true 
+        this.Components.Layer.[i] <- 1
+        this.Components.Layout.[i] <- Layout.None
+        this.Components.GridSpan.[i] <- {Colspan = 1; Rowspan = 1}
+        this.Components.GridCellAlignment.[i] <- NoobishTextAlignment.Left
+        this.Components.MinSize.[i] <- {Width = 0f; Height = 0f}
+
+        this.Components.LastPressTime[i] <- TimeSpan.Zero
+        
+        this.Components.Count <- this.Components.Count + 1
+
+        cid
+
+    member this.Overlaypane(rcid: UIComponentId) =
+        let cid = this.Create "Overlay"
+        this.Components.Layout.[cid.Index] <- Layout.Relative rcid
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        
+        cid
+
+    member this.Window() =
+        let cid = this.Create "Panel"
+        this.Components.Layout.[cid.Index] <- Layout.LinearVertical
+        cid
+
+    member this.WindowWithGrid (cols: int, rows: int) =
+        let cid = this.Create "Window"
+        this.Components.Layout.[cid.Index] <- Layout.Grid(cols, rows)
+        cid
+
+    member this.Header (t: string) = 
+        let cid = this.Create "Header1"
+        this.Components.Text.[cid.Index] <- t
+        this.Components.Block.[cid.Index] <- true
+
+        cid
+
+    member this.Label (t: string) = 
+        let cid = this.Create "Label"
+        this.Components.Text.[cid.Index] <- t
+
+        cid
+
+    member this.Paragraph (t: string) = 
+        let cid = this.Create "Paragraph"
+        this.Components.Text.[cid.Index] <- t
+        this.Components.Textwrap.[cid.Index] <- true 
+        this.Components.TextAlign.[cid.Index] <- NoobishTextAlignment.TopLeft 
+        this.Components.Block.[cid.Index] <- true 
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = false}
+
+        cid
+
+
+    member this.Textbox (t: string) (onTextChanged: string -> unit) = 
+        let cid = this.Create "TextBox"
+
+        this.Components.WantsFocus.[cid.Index] <- true 
+        this.Components.OnFocus.[cid.Index] <- (
+            fun event focus -> ()
+                
         )
 
-        if showText || not (String.IsNullOrWhiteSpace(text)) then
-            model <- model |> Option.map(
-                fun model' ->
-                    match model' with
-                    | Textbox(model'') ->
-                        Textbox({model'' with Text = text; Cursor = text.Length})
-                    | _ -> model'
-            )
-
-        if showText || not (String.IsNullOrWhiteSpace text) then
-            let paddedWidth = maxWidth - marginLeft - marginRight - paddingLeft - paddingRight
-
-            let fontId = styleSheet.GetFont themeId "default"
-            let font = content.Load<NoobishFont> fontId
-            let fontSize = int(float32 (styleSheet.GetFontSize themeId "default"))
-
-            let struct (contentWidth, contentHeight) =
-                if textWrap then
-                    NoobishFont.measureMultiLine font fontSize paddedWidth text
-                else
-                    NoobishFont.measureSingleLine font fontSize text
-
-            minWidth <- float32 contentWidth
-            minHeight <- float32 contentHeight
-
-        let width =
-            if fillHorizontal then
-                parentWidth * float32 colspan
-            else minWidth + paddingLeft + paddingRight + marginLeft + marginRight
-        let height =
-            if fillVertical then
-                parentHeight * float32 rowspan
+        this.Components.WantsKeyTyped.[cid.Index] <- true 
+        this.Components.OnKeyTyped.[cid.Index] <- (fun event typed ->
+            let text = this.Components.Text.[cid.Index]
+            if int typed = 8 then // backspace
+                if text.Length > 0 && this.Cursor > 0 then
+                    this.Components.Text.[cid.Index] <- text.Remove(this.Cursor - 1, 1)
+                    this.Cursor <- this.Cursor - 1
+            elif int typed = 13 || int typed = 10 then 
+                this.FocusedElementId <- UIComponentId.empty
+                onTextChanged (this.Components.Text[cid.Index])
+                this.Cursor <- 0
+            elif int typed = 27 then
+                this.FocusedElementId <- UIComponentId.empty
+                this.Components.Text.[cid.Index] <- t
+                this.Cursor <- 0
+            elif int typed = 127 then // deleted
+                if text.Length > 0 && this.Cursor < text.Length then
+                    this.Components.Text.[cid.Index] <- text.Remove(this.Cursor, 1)
             else
-                minHeight + paddingTop + paddingBottom + marginTop + marginBottom
+                this.Components.Text.[cid.Index] <- text.Insert(this.Cursor, typed.ToString())
+                this.Cursor <- this.Cursor + 1
+        )
+        this.Components.WantsKeyPressed.[cid.Index] <- true 
+        this.Components.OnKeyPressed.[cid.Index] <- (fun event key ->
+            let text = this.Components.Text.[cid.Index]
+            if key = Microsoft.Xna.Framework.Input.Keys.Left then 
+                let newCursorPos = this.Cursor - 1 
+                this.Cursor <- max 0 newCursorPos
+            elif key = Microsoft.Xna.Framework.Input.Keys.Right then 
+                let newCursorPos = this.Cursor + 1 
+                this.Cursor <- min text.Length newCursorPos
+        )
 
-
-        let path = sprintf "%s/%s" parentPath themeId
-        //let text = if String.IsNullOrWhiteSpace textLines then [||] else textLines.Split '\n'
-
-        elementState, {
-            Id = cid
-            ParentId = parentId
-            Path = path
-            ThemeId = themeId
-            ZIndex = zIndex
-            Overlay = overlay
-
-            FillHorizontal = fillHorizontal
-            FillVertical = fillVertical
-
-            TextAlignment = textAlign
-
-            Text = text
-            TextWrap = textWrap
-
-            Model = model
-
-            KeyboardShortcut = keyboardShortcut
-
-            Image =
-                if texture <> NoobishTextureId.None then
-                    Some (
-                        {
-                            Texture = texture
-                            TextureEffect = textureEffect
-                            ImageSize = imageSize
-                            Rotation = textureRotation
-                        }
-                    )
-                else
-                    None
-
-            StartX = startX
-            StartY = startY
-            RelativeX = relativeX
-            RelativeY = relativeY
-            OuterWidth = width
-            OuterHeight = height
-            IsBlock = isBlock
-            PaddingLeft = paddingLeft
-            PaddingRight = paddingRight
-            PaddingTop = paddingTop
-            PaddingBottom = paddingBottom
-            MarginLeft = marginLeft
-            MarginRight = marginRight
-            MarginTop = marginTop
-            MarginBottom = marginBottom
-
-            OnClickInternal = (fun c gameTime ->
-                onClickInternal state c
-                onClick gameTime)
-
-            OnPressInternal = (fun mousePos c gameTime ->
-                onPressInternal state mousePos c
-                onPress mousePos gameTime)
-
-            OnTextChange = onTextChange
-            OnCheckBoxValueChange = onCheckboxValueChange
-            ConsumedMouseButtons = consumedButtons |> Seq.distinct |> Seq.toArray
-            ConsumedKeys = consumedKeys |> Seq.distinct |> Seq.toArray
-
-            KeyTypedEnabled = keyTypedEnabled
-
-            Layout = layout
-            ColSpan = colspan
-            RowSpan = rowspan
-
-            Color = color
-            ColorDisabled = disabledColor
-
-            ScrollHorizontal = scrollHorizontal
-            ScrollVertical = scrollVertical
-            OverflowWidth = width
-            OverflowHeight = height
-
-            Children = [||]
-        }
-
-    let isGrid (attributes: list<NoobishAttribute>) =
-        attributes
-            |> List.exists(
-                function
-                | Layout (l) ->
-                    match l with
-                    | NoobishLayout.Grid(_) -> true
-                    | _ -> false
-                | _ -> false)
+        this.Components.Text.[cid.Index] <- t
 
 
 
-    let rec private layoutElement
-        (content: ContentManager)
+        cid
+
+    member this.Button (t: string) (onClick: UIComponentId -> unit) = 
+        let cid = this.Create "Button"
+        this.Components.Text.[cid.Index] <- t
+        this.Components.WantsOnClick.[cid.Index] <- true
+        this.Components.OnClick.[cid.Index] <- (fun source _ -> onClick source)
+        cid
+
+    member this.Space () = 
+        let cid = this.Create "Space"
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid
+
+    member this.Div () = 
+        let cid = this.Create "Division"
+        this.Components.Block.[cid.Index] <- true
+        this.SetLayout (Layout.LinearVertical) cid.Index
+
+        cid
+
+    member this.Grid (cols: int, rows: int) = 
+        let cid = this.Create "Division"
+        this.SetLayout (Layout.Grid(cols, rows)) cid.Index
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid
+
+    member this.PanelWithGrid (cols: int, rows: int) = 
+        let cid = this.Create "Panel"
+        this.SetLayout (Layout.Grid(cols, rows)) cid.Index
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid   
+
+    member this.PanelHorizontal () = 
+        let cid = this.Create "Panel"
+        this.SetLayout (Layout.LinearHorizontal) cid.Index
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid   
+
+    member this.PanelVertical () = 
+        let cid = this.Create "Panel"
+        this.SetLayout (Layout.LinearVertical) cid.Index
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid   
+
+    member this.DivHorizontal () = 
+        let cid = this.Create "Division"
+        this.SetLayout (Layout.LinearHorizontal) cid.Index
+        this.Components.Block.[cid.Index] <- true 
+        //this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid   
+
+    member this.DivVertical () = 
+        let cid = this.Create "Division"
+        this.SetLayout (Layout.LinearVertical) cid.Index
+        this.Components.Block.[cid.Index] <- true 
+        //this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid   
+
+    member this.Canvas () = 
+        let cid = this.Create "Division"
+        this.SetLayout (Layout.Relative (cid)) cid.Index
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+        cid   
+
+    member this.HorizontalRule () = 
+        let cid = this.Create "HorizontalRule"
+        this.Components.Id.[cid.Index] <- cid
+        this.Components.Block.[cid.Index] <- true
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = false} 
+        cid
+
+
+    member this.SetRelativePosition (x: int, y: int) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.RelativePosition.[index] <- {X = float32 x; Y = float32 y}
+        cid
+
+    member this.SetRelativePositionFunc (f: UIComponentId -> UIComponentId -> float32 -> float32 -> Position) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.RelativePositionFunc.[index] <- f
+        cid
+
+    member this.SetConstrainToParentBounds (v: bool) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.ConstrainToParentBounds.[index] <- v
+        cid
+
+
+    member this.SetThemeId (themeId: string) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.ThemeId.[index] <- themeId
+        cid
+
+    member this.SetSize (width: int, height: int) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.MinSize.[index] <- {Width = float32 width; Height = float32 height}
+        cid
+
+    member this.SetLayer (layer: int) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+
+            let children = this.Components.Children.[cid.Index]
+            if children.Count > 0 then 
+                let previousLayer = this.Components.Layer.[index]
+
+                for j = 0 to children.Count - 1 do 
+                    let ccid = children.[j]
+                    let deltaLayer = this.Components.Layer.[ccid.Index] - previousLayer
+                    this.SetLayer (layer + deltaLayer) children.[j] |> ignore
+
+            this.Components.Layer.[index] <- layer
+        cid
+
+
+    member this.SetVisible (v: bool) (cid: UIComponentId): UIComponentId = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Visible.[index] <- v
+            
+            let children = this.Components.Children.[cid.Index]
+            for j = 0 to children.Count - 1 do 
+                this.SetVisible v children.[j] |> ignore
+        cid
+
+    member this.SetEnabled (v: bool) (cid: UIComponentId) = 
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Enabled.[index] <- v
+        cid
+
+    member this.SetPosition (x: int, y: int) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Bounds.[index] <- {this.Components.Bounds.[index] with X = float32 x; Y = float32 y}
+        cid
+
+    member private this.SetLayout (layout: Layout) (index: int) =
+        this.Components.Layout.[index] <- layout
+
+    member this.SetRowspan (rowspan: int) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.GridSpan.[index] <- {this.Components.GridSpan.[index] with Rowspan = rowspan}
+        cid
+
+    member this.SetColspan (colspan: int) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.GridSpan.[index] <- {this.Components.GridSpan.[index] with Colspan = colspan}
+        cid
+
+
+
+    member this.SetMargin (margin: int) (cid: UIComponentId) =
+        let margin = float32 margin
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.MarginOverride.[index] <- true
+            this.Components.Margin.[index] <- {Top = margin; Right = margin; Bottom = margin; Left = margin}
+        cid
+
+    member this.SetPadding (padding: int) (cid: UIComponentId) =
+        let padding = float32 padding
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.PaddingOverride.[index] <- true
+            this.Components.Padding.[index] <- {Top = padding; Right = padding; Bottom = padding; Left = padding}
+        cid
+
+
+    member this.FillHorizontal (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Fill.[index] <- {this.Components.Fill.[index] with Horizontal = true}
+        cid
+
+    member this.SetFillHorizontal (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Fill.[index] <- {this.Components.Fill.[index] with Horizontal = true}
+        cid
+
+    member this.FillVertical (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Fill.[index] <- {this.Components.Fill.[index] with Vertical = true}
+        cid
+    member this.SetFill (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Fill.[index] <- {Horizontal = true; Vertical = true}
+        cid
+
+    member this.SetScrollHorizontal (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            if this.Components.Layout.[index] = Layout.None then 
+                failwith "Layout can't be none when scroll is set."
+            this.Components.Scroll.[index] <- {this.Components.Scroll.[index] with Horizontal = true}
+        cid
+
+    member this.SetScrollVertical (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            if this.Components.Layout.[index] = Layout.None then 
+                failwith "Layout can't be none when scroll is set."
+            this.Components.Scroll.[index] <- {this.Components.Scroll.[index] with Vertical = true}
+        cid
+
+
+    member this.SetScroll (horizontal: bool) (vertical: bool) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            if this.Components.Layout.[index] = Layout.None then 
+                failwith "Layout can't be none when scroll is set."
+            this.Components.Scroll.[index] <- {this.Components.Scroll.[index] with Horizontal = horizontal; Vertical = vertical}
+        cid
+
+    member this.SetText (text: string) (cid: UIComponentId) =
+        let index: int = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Text.[index] <- text
+        cid
+
+    member this.SetTextAlign (align: NoobishTextAlignment) (cid: UIComponentId) =
+        let index: int = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.TextAlign.[index] <- align
+        cid
+
+    member this.AlignText (textAlignment: NoobishTextAlignment) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.TextAlign.[index] <- textAlignment
+        cid       
+
+    member this.AlignTextTopLeft (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.TopLeft cid
+
+    member this.AlignTextTop (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.TopCenter cid
+
+    member this.AlignTextTopRight (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.TopRight cid
+
+
+    member this.AlignTextLeft (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.Left cid
+
+    member this.AlignTextCenter (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.Center cid
+
+    member this.AlignTextRight (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.Right cid
+
+    member this.AlignTextBottomLeft (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.BottomLeft cid
+
+    member this.AlignTextBottomCenter (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.BottomCenter cid
+
+    member this.AlignTextBottomRight (cid: UIComponentId) = 
+        this.AlignText NoobishTextAlignment.BottomRight cid
+
+    member this.SetImage (textureId: NoobishTextureId) (cid: UIComponentId) =
+        let index: int = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Image.[index] <- ValueSome textureId
+        cid
+
+    member this.SetImageAlign (align: NoobishTextAlignment) (cid: UIComponentId) =
+        let index: int = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.ImageAlign.[index] <- align
+        cid
+
+
+  
+    member this.SetToggled (t: bool) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Toggled.[index] <- t
+        cid
+
+    member this.SetOnPress (onPress: UIComponentId -> Position -> unit) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.WantsOnPress.[index] <- true
+            this.Components.OnPress.[index] <- onPress
+        cid
+    member this.SetOnClick (onClick: UIComponentId -> Position -> unit) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.WantsOnClick.[index] <- true
+            this.Components.OnClick.[index] <- onClick
+        cid
+
+    member this.BumpLayer (layer: int) (children: IReadOnlyList<UIComponentId>) = 
+        for i = 0 to children.Count - 1 do 
+            let cid = children.[i]
+            let childLayer = this.Components.Layer.[cid.Index] + layer
+            this.Components.Layer.[cid.Index] <- childLayer
+            this.BumpLayer childLayer this.Components.Children.[cid.Index]
+
+
+    member this.SetChildren (cs: UIComponentId[]) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index > -1 then 
+            for i = 0 to cs.Length - 1 do 
+                let childId = cs[i]
+                if this.Components.ParentId.[childId.Index] <> UIComponentId.empty then failwith "what"
+                this.Components.ParentId.[childId.Index] <- cid
+            let childrenIds = this.Components.Children.[index]
+            childrenIds.AddRange cs
+
+            let layer = this.Components.Layer.[index]
+            this.BumpLayer layer (childrenIds :> IReadOnlyList<UIComponentId>)
+        cid
+
+
+
+    member this.DrawCursor
         (styleSheet: NoobishStyleSheet)
-        (settings: NoobishSettings)
-        (state: NoobishState)
-        (zIndex: int)
-        (parentId: string)
-        (parentPath: string)
-        (startX: float32)
-        (startY: float32)
-        (parentWidth: float32)
-        (parentHeight: float32)
-        (c: NoobishElement): NoobishLayoutElement  =
-
-        let parentComponentState, parentComponent = createNoobishLayoutElement styleSheet content settings state zIndex parentId parentPath parentWidth parentHeight startX startY c.ThemeId c.Attributes
+        (content: ContentManager)
+        (textureAtlas: NoobishTextureAtlas)
+        (spriteBatch: SpriteBatch)
+        (i: int)
+        (gameTime: GameTime)
+        (scrollX: float32)
+        (scrollY: float32) =
+        let time = float32 gameTime.TotalGameTime.Seconds
+        let themeId = this.Components.ThemeId.[i]
+        let layer = 1f - float32 (this.Components.Layer.[i] + 32) / 255f
 
 
-        let mutable offsetX = 0.0f
-        let mutable offsetY = 0.0f
+        let fontId = styleSheet.GetFont themeId "default"
+        let font = content.Load<NoobishFont>  fontId
+        let fontSize = styleSheet.GetFontSize themeId "default"
 
-        let newChildren = ResizeArray<NoobishLayoutElement>()
+        let bounds = this.Components.Bounds.[i]
+        let margin = this.Components.Margin.[i]
+        let padding = this.Components.Padding.[i]
+        let contentStartX = bounds.X + margin.Left + padding.Left
+        let contentStartY = bounds.Y +  margin.Top + padding.Top
+        let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
+        let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
+        let bounds: Internal.NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
 
-        let calculateChildHeight () =
-            let childHeight = newChildren |> Seq.fold (fun acc c -> acc + c.OuterHeight) 0.0f
-            childHeight
+        let text = this.Components.Text.[i]
+        let textAlign = this.Components.TextAlign.[i]
+        let textWrap = this.Components.Textwrap.[i]
 
-        let calculateChildWidth () =
-            if Seq.isEmpty newChildren then
-                0.0f
+        let textBounds = NoobishFont.calculateCursorPosition font fontSize textWrap bounds scrollX scrollY textAlign this.Cursor text
+
+
+        let timeFocused = gameTime.TotalGameTime - this.FocusedTime
+        let blinkProgress = Cursor.blink timeFocused
+
+        let cursorColor = styleSheet.GetColor "Cursor" "default"
+        let color = Color.Lerp(cursorColor, Color.Transparent, float32 blinkProgress)
+
+        let drawables = styleSheet.GetDrawables "Cursor" "default"
+        let position = Vector2(bounds.X + textBounds.Width, textBounds.Y)
+
+        let cursorWidth = styleSheet.GetWidth "Cursor" "default"
+        if cursorWidth = 0f then failwith "Cursor:defaul width is 0"
+        let size = Vector2(cursorWidth, textBounds.Height)
+        DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
+
+    member this.DrawBackground (styleSheet: NoobishStyleSheet) (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch) (gameTime: GameTime) (scrollX: float32) (scrollY: float32) (i: int)=
+
+        let cstate =
+            if this.Components.WantsFocus.[i] && this.FocusedElementId.Id = this.Components.Id.[i].Id then 
+                "focused"
+            elif not this.Components.Enabled.[i] then
+                "disabled"
+            elif this.Components.Toggled.[i] then
+                "toggled"
             else
-                newChildren |> Seq.map (fun c -> c.OuterWidth) |> Seq.max
+                "default"
+        let themeId = this.Components.ThemeId.[i]
+        let bounds = this.Components.Bounds.[i]
+        let margin = this.Components.Margin.[i]
+        let layer = this.Components.Layer.[i]
+        let contentStartX = bounds.X + margin.Left + scrollX
+        let contentStartY = bounds.Y +  margin.Top + scrollY
+        let contentWidth = bounds.Width - margin.Left - margin.Right
+        let contentHeight = bounds.Height - margin.Top - margin.Bottom
+
+        let color =
+            if this.Components.WantsFocus.[i] && this.FocusedElementId = this.Components.Id.[i] then
+                styleSheet.GetColor themeId "focused"
+            elif not this.Components.Enabled.[i] then
+                styleSheet.GetColor themeId "disabled"
+            elif this.Components.Toggled.[i] then
+                styleSheet.GetColor themeId "toggled"
+            else
+                let lastPressTime = this.Components.LastPressTime.[i]
+                let progress = 1.0 - min ((gameTime.TotalGameTime - lastPressTime).TotalSeconds / 0.05) 1.0
+
+                let color = styleSheet.GetColor themeId "default"
+                let pressedColor = styleSheet.GetColor themeId "toggled"
+                let finalColor = Color.Lerp(color, pressedColor, float32 progress)
+
+                finalColor
+
+        let drawables = styleSheet.GetDrawables themeId cstate
+
+        let position = Vector2(contentStartX, contentStartY)
+        let size = Vector2(contentWidth, contentHeight)
+
+        let layer = 1f - (float32 layer / 255f)
+
+        DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
+
+
+    member this.DrawScrollBars
+        (styleSheet: NoobishStyleSheet)
+        (textureAtlas: NoobishTextureAtlas)
+        (spriteBatch: SpriteBatch)
+        (gameTime: GameTime)
+        _scrollX
+        _scrollY
+        (i: int) =
+
+        let scroll = this.Components.Scroll.[i]
+        let lastScrollTime = this.Components.LastScrollTime.[i]
+        let delta = float32 (min (gameTime.TotalGameTime - lastScrollTime).TotalSeconds 0.3)
+        let progress = 1.0f - delta / 0.3f
+
+        let scrollBarWidth = styleSheet.GetWidth "ScrollBar" "default"
+        if scrollBarWidth = 0f then failwith "Missing width for styleSheet 'ScrollBar' mode 'default'."
+        if scroll.Vertical && progress > 0.0f then
+
+            let scrollBarColor = styleSheet.GetColor "ScrollBar" "default"
+            let scrollbarDrawable = styleSheet.GetDrawables "ScrollBar" "default"
+
+            let scrollbarPinColor = styleSheet.GetColor "ScrollBarPin" "default"
+            let scrollbarPinDrawable = styleSheet.GetDrawables "ScrollBar" "default"
+
+            let scrollY = this.Components.ScrollY.[i]
+            let contentSize = this.Components.ContentSize.[i]
+            let bounds = this.Components.Bounds.[i]
+            let padding = this.Components.Padding.[i]
+            let margin = this.Components.Margin.[i]
+            let contentX = bounds.X + margin.Left + padding.Left
+            let contentY = bounds.Y + margin.Top + padding.Top
+            let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
+            let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
+            let x = contentX + contentWidth - scrollBarWidth / 2f
+            let color = Color.Multiply(scrollBarColor, progress)
+
+            let layer = this.Components.Layer.[i]
+            let layer = 1f - float32 (layer + 5) / 255.0f
+
+            DrawUI.drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + 4f)) (Vector2(scrollBarWidth, bounds.Height - 8f)) layer color scrollbarDrawable
+
+            let pinPosition =  - ( scrollY / contentSize.Height) * bounds.Height
+            let pinHeight = ( contentHeight / contentSize.Height) * bounds.Height
+            let color = Color.Multiply(scrollbarPinColor, progress)
+
+            DrawUI.drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + pinPosition + 4f)) (Vector2(scrollBarWidth, pinHeight - 8f)) layer color scrollbarPinDrawable
+
+
+    member this.DrawText (content: ContentManager) (styleSheet: NoobishStyleSheet) (textBatch: TextBatch) (scrollX: float32) (scrollY: float32) (i: int) =
+        let text = this.Components.Text.[i]
+        if text.Length > 0 then 
+            let themeId = this.Components.ThemeId.[i]
+            let layer = this.Components.Layer.[i]
+
+            let layer = (1f - float32 (layer + 1) / 255.0f)
+
+            let state = 
+                if this.Components.WantsFocus.[i] && this.FocusedElementId = this.Components.Id.[i] then
+                    "focused"
+                elif not this.Components.Enabled.[i] then
+                    "disabled"
+                elif this.Components.Toggled.[i] then
+                    "toggled"
+                else
+                    "default"
+
+
+            let fontId = styleSheet.GetFont themeId state
+            let font = content.Load<NoobishFont> fontId
+
+            let fontSize = (styleSheet.GetFontSize themeId state)
+
+            let bounds = this.Components.Bounds.[i]
+            let margin = this.Components.Margin.[i]
+            let padding = this.Components.Padding.[i]
+            let contentStartX = scrollX + bounds.X + padding.Left + margin.Left
+            let contentStartY = scrollY + bounds.Y + padding.Top + margin.Top
+            let contentWidth = bounds.Width - padding.Left - padding.Right - margin.Left - margin.Right
+            let contentHeight = bounds.Height - padding.Top - padding.Bottom - margin.Left - margin.Right
+            let bounds: Internal.NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
+            let textWrap = this.Components.Textwrap.[i]
+            let textAlign = this.Components.TextAlign.[i]
+            let textBounds =
+                    NoobishFont.calculateBounds font fontSize false bounds 0f 0f textAlign text
+
+            let textColor = styleSheet.GetFontColor themeId state
+            if textWrap then
+                textBatch.DrawMultiLine font fontSize bounds.Width (Vector2(textBounds.X, textBounds.Y)) layer textColor text
+            else
+                textBatch.DrawSingleLine font fontSize (Vector2(textBounds.X, textBounds.Y)) layer textColor text
+
+
+    member this.DrawImage (content: ContentManager) (spriteBatch: SpriteBatch) (textureId: NoobishTextureId) (boundsWithMarginAndPadding: NoobishRectangle) (gameTime: GameTime) (scrollX: float32) (scrollY: float32) (i) =
+        
+        let layer = 1f - float32 this.Components.Layer.[i] / 255f
+
+        let textureEffect = DrawUI.getTextureEfffect this.Components.ImageTextureEffect.[i] 
+        let imageColor = this.Components.ImageColor.[i]
+        let imageAlign = this.Components.ImageAlign.[i]
+
+
+        match textureId with
+        | NoobishTextureId.Basic(textureId) ->
+            let texture = content.Load<Texture2D> textureId
+
+            let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
+            let rect = DrawUI.calculateImageBounds NoobishImageSize.Original imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
+
+            let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
+            let rotation = 0f
+
+            let startPos = Vector2(float32 rect.X + float32 rect.Width / 2.0f, float32 rect.Y + float32 rect.Height / 2.0f)
+            let scale = Vector2(float32 rect.Width / float32 texture.Width, float32 rect.Height / float32 texture.Height)
+
+            spriteBatch.Draw(
+                texture,
+                startPos,
+                sourceRect,
+                imageColor,
+                rotation,
+                origin,
+                scale,
+                textureEffect,
+                layer)
+        | NoobishTextureId.Atlas(aid, tid) ->
+
+            let atlas = content.Load<NoobishTextureAtlas> aid
+            let texture = atlas.[tid]
+
+            let rect = DrawUI.calculateImageBounds NoobishImageSize.Original imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
+
+            let origin = Vector2(float32 texture.Width / 2.0f, float32 texture.Height / 2.0f)
+            let rotation = 0f
+
+            let startPos = Vector2(float32 rect.X + float32 rect.Width / 2.0f, float32 rect.Y + float32 rect.Height / 2.0f)
+            let scale = Vector2(float32 rect.Width / float32 texture.Width, float32 rect.Height / float32 texture.Height)
+
+            spriteBatch.Draw(
+                texture.Atlas,
+                startPos,
+                texture.SourceRectangle,
+                imageColor,
+                rotation,
+                origin,
+                scale,
+                textureEffect,
+                layer)
+
+        | NoobishTextureId.NinePatch (aid, tid) ->
+
+            let atlas = content.Load<NoobishTextureAtlas> aid
+            let texture = atlas.[tid]
+
+            let rect = DrawUI.calculateImageBounds NoobishImageSize.Original imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
+
+
+            spriteBatch.DrawAtlasNinePatch(
+                texture,
+                Vector2(float32 rect.X, float32 rect.Y),
+                (float32) rect.Width,
+                (float32) rect.Height,
+                imageColor,
+                0.0f,
+                Vector2.One,
+                textureEffect,
+                layer)
+
+
+    member this.DrawComponent 
+        (graphics: GraphicsDevice) 
+        (content: ContentManager)
+        (spriteBatch: SpriteBatch)
+        (textBatch: TextBatch)
+        (styleSheet: NoobishStyleSheet)
+        (parentBounds: NoobishRectangle)
+        (parentScrollX: float32)
+        (parentScrollY: float32)
+        (i: int)
+        (gameTime: GameTime) =
+
+        let visible = this.Components.Visible.[i]
+        if visible then 
+            let parentBounds = 
+                if this.Components.ConstrainToParentBounds.[i] then 
+                    parentBounds
+                else 
+                    {X = 0f; Y = 0f; Width = this.ScreenWidth; Height = this.ScreenHeight}
+
+            let textureAtlas = content.Load(styleSheet.TextureAtlasId)
+
+            let bounds = this.Components.Bounds.[i]
+            let margin = this.Components.Margin.[i]
+            let padding = this.Components.Padding.[i]
+            let contentStartX = parentScrollX + bounds.X + margin.Left
+            let contentStartY = parentScrollY + bounds.Y + margin.Top
+            let contentWidth = bounds.Width - margin.Left - margin.Right
+            let contentHeight = bounds.Height - margin.Top - margin.Bottom
+
+            let boundsWithMargin = ({
+                    X = contentStartX
+                    Y = contentStartY
+                    Width = contentWidth
+                    Height = contentHeight
+            })
+            let boundsWithMargin = boundsWithMargin.Clamp parentBounds
+
+
+            if boundsWithMargin.Width > 0f && boundsWithMargin.Height > 0f then 
+                let boundsWithMarginAndPadding = {
+
+                        X = contentStartX + padding.Left
+                        Y = contentStartY + padding.Top
+                        Width = contentWidth - padding.Left - padding.Right
+                        Height = contentHeight - padding.Top - padding.Bottom
+                }
+                let boundsWithMarginAndPadding = boundsWithMarginAndPadding.Clamp parentBounds
+
+                let oldScissorRect = graphics.ScissorRectangle
+
+                graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMargin 
+                spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
+
+                this.DrawBackground styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i
+
+                match this.Components.Image.[i] with 
+                | ValueSome (t) ->
+                    this.DrawImage content spriteBatch t boundsWithMarginAndPadding gameTime parentScrollX parentScrollY i 
+                | ValueNone -> ()
+
+
+                if this.FocusedElementId = this.Components.Id.[i] then 
+                    this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
+
+                this.DrawScrollBars styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i 
+                spriteBatch.End()
+
+                graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMarginAndPadding
+
+                this.DrawText content styleSheet textBatch parentScrollX parentScrollY i
+
+
+                graphics.ScissorRectangle <- oldScissorRect
+
+                spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
+                if this.Debug then
+                    let pixel = content.Load<Texture2D> "Pixel"
+                    let themeId = this.Components.ThemeId.[i]
+                    let bounds = boundsWithMarginAndPadding
+
+                    let debugColor =
+                        if themeId = "Scroll" then Color.Multiply(Color.Red, 0.1f)
+                        elif themeId = "Button" then Color.Multiply(Color.Green, 0.1f)
+                        elif themeId = "Paragraph" then Color.Multiply(Color.Purple, 0.1f)
+                        else Color.Multiply(Color.Yellow, 0.1f)
+
+                    DrawUI.drawRectangle spriteBatch pixel debugColor (bounds.X + parentScrollX) (bounds.Y + parentScrollY) (bounds.Width) (bounds.Height)
+                    if themeId = "Scroll" || themeId = "Slider" then
+                        let r = {
+                            X = float32 bounds.X
+                            Y = float32 bounds.Y
+                            Width =  float32 bounds.Width
+                            Height = float32 bounds.Height}
+                        DrawUI.debugDrawBorders spriteBatch pixel (Color.Multiply(Color.Red, 0.5f)) r
+
+                    let text  = this.Components.Text.[i] 
+                    let textWrap = this.Components.Textwrap.[i]
+                    let textAlign = this.Components.TextAlign.[i]
+                    if text <> "" then
+
+                        let fontId = styleSheet.GetFont themeId "default"
+                        let font = content.Load<NoobishFont>  fontId
+                        let fontSize = styleSheet.GetFontSize themeId "default"
+
+
+                        let textBounds = NoobishFont.calculateBounds font fontSize textWrap bounds parentScrollX parentScrollX textAlign text
+
+                        DrawUI.drawRectangle spriteBatch pixel Color.Purple (textBounds.X) (textBounds.Y) (textBounds.Width) (textBounds.Height)
+
+                spriteBatch.End()
+
+                let scrollX = parentScrollX + this.Components.ScrollX.[i]
+                let scrollY = parentScrollY + this.Components.ScrollY.[i]
+
+
+                let children = this.Components.Children.[i]
+                if children.Count > 0 then 
+                    for j = 0 to children.Count - 1 do 
+                        this.DrawComponent graphics content spriteBatch textBatch styleSheet boundsWithMargin scrollX scrollY children.[j].Index gameTime 
+    member this.Draw 
+        (graphics: GraphicsDevice) 
+        (content: ContentManager)
+        (spriteBatch: SpriteBatch)
+        (textBatch: TextBatch)
+        (styleSheetId: string)
+        (debug: bool)
+        (gameTime: GameTime) = 
+
+        let screenWidth = float32 graphics.Viewport.Width
+        let screenHeight = float32 graphics.Viewport.Height
+        if abs (this.ScreenWidth - screenWidth) > Single.Epsilon || abs (this.ScreenHeight - screenHeight )> Single.Epsilon then
+            this.ScreenWidth <- screenWidth
+            this.ScreenHeight <- screenHeight
+            // Relayout
+            waitForLayout <- true 
+
+        let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
+        if waitForLayout && this.Components.Count > 0 then 
+
+            let previousFrame = frames.[previousFrameIndex]
+            let mutable drift = (this.Components.Count <> previousFrame.Count)
+
+            let mutable j = 0
+            while not drift && j < this.Components.Count do 
+                if this.Components.ThemeId.[j] = previousFrame.ThemeId.[j] &&
+                   (this.Components.ParentId.[j].Index = previousFrame.ParentId.[j].Index) &&
+                   (this.Components.Layer.[j] = previousFrame.Layer.[j]) &&
+                   (this.Components.ContentSize.[j].Width - previousFrame.ContentSize.[j].Width) < Single.Epsilon &&
+                   (this.Components.ContentSize.[j].Height - previousFrame.ContentSize.[j].Height) < Single.Epsilon && 
+                   (this.Components.Children.[j].Count = previousFrame.Children[j].Count) && 
+                   (this.Components.GridSpan.[j].Colspan = previousFrame.GridSpan.[j].Colspan) &&
+                   (this.Components.GridSpan.[j].Rowspan = previousFrame.GridSpan.[j].Rowspan)
+                   
+                    then 
+
+                    j <- j + 1
+                else 
+                    drift <- true
+
+            if not drift then 
+                for i = 0 to this.Components.Count do 
+                    
+                    this.Components.Hovered.[i] <- previousFrame.Hovered.[i]
+                    this.Components.LastHoverTime.[i] <- previousFrame.LastHoverTime.[i]
+                    this.Components.LastPressTime.[i] <- previousFrame.LastPressTime.[i]
+
+                    this.Components.ScrollX.[i] <- previousFrame.ScrollX.[i]
+                    this.Components.ScrollY.[i] <- previousFrame.ScrollY.[i]
+                    this.Components.LastScrollTime.[i] <- previousFrame.LastScrollTime.[i]
+
+            for i = 0 to this.Components.Count - 1 do 
+                let themeId = this.Components.ThemeId.[i]
+
+                if not this.Components.MarginOverride.[i] then 
+                    let (top, right, bottom, left) = styleSheet.GetMargin themeId "default"
+                    this.Components.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+
+                if not this.Components.PaddingOverride.[i] then 
+                    let (top, right, bottom, left) = styleSheet.GetPadding themeId "default"
+                    this.Components.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+
+                this.Components.MinSize.[i] <- {
+                    Width = styleSheet.GetWidth themeId "default"
+                    Height = styleSheet.GetHeight  themeId "default"
+                }
+
+                if not this.Components.ImageColorOverride.[i] then 
+                    this.Components.ImageColor.[i] <- styleSheet.GetColor themeId "default"
+
+                (* Run layout only for root components. *)
+                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                    toLayout.Enqueue(i, this.Components.Layer.[i])
+
+
+            while toLayout.Count > 0 do 
+                let i = toLayout.Dequeue()
+                this.Components.CalculateContentSize content styleSheet screenWidth screenHeight i
+                this.Components.LayoutComponent content styleSheet 0f 0f screenWidth screenHeight i
+
+            waitForLayout <- false
+
+        for i = 0 to this.Components.Count - 1 do 
+            let layer = this.Components.Layer.[i]
+
+            if this.Components.ParentId.[i] = UIComponentId.empty then 
+                drawQueue.Enqueue(i, layer)
+
+        let oldRasterizerState = graphics.RasterizerState
+        graphics.RasterizerState <- rasterizerState
+
+        let styleSheet = content.Load<Noobish.Styles.NoobishStyleSheet> styleSheetId
+        while drawQueue.Count > 0 do 
+            let i = drawQueue.Dequeue()
+            this.DrawComponent graphics content spriteBatch textBatch styleSheet {X = 0f; Y = 0f; Width = this.ScreenWidth; Height = this.ScreenHeight} 0f 0f i gameTime
+
+
+        graphics.RasterizerState <- oldRasterizerState
+
+
+    member this.ComponentContains (x: float32) (y: float32) (scrollX: float32) (scrollY: float32) (i: int) = 
+        let bounds = this.Components.Bounds.[i]
+        let left = scrollX + bounds.X 
+        let top = scrollY + bounds.Y 
+        let right = left + bounds.Width
+        let bottom = top + bounds.Height
+        
+        not (x < left || x > right || y < top || y > bottom)
+
+    member this.Hover (x: float32) (y: float32) (gameTime: GameTime) (i: int)  =
+        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y 0f 0f i then 
+            Log.Logger.Debug ("Mouse hover inside component {ComponentId}", i)
+
+            let children = this.Components.Children.[i]
+            if children.Count = 0 then 
+                this.Components.LastHoverTime.[i] <- gameTime.TotalGameTime
+            else 
+                for j = 0 to children.Count - 1 do 
+                    this.Hover x y gameTime children.[j].Index
+
+    member this.Click (x: float32) (y: float32) (gameTime: GameTime) (parentScrollX: float32) (parentScrollY: float32) (i: int): bool  =
+
+        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y parentScrollX parentScrollY i then 
+            Log.Logger.Debug ("Mouse click inside component {ComponentId}", i)
+
+            let children = this.Components.Children.[i]
+
+            let scrollX = parentScrollX + this.Components.ScrollX.[i]
+            let scrollY = parentScrollY + this.Components.ScrollY.[i]
+            let mutable found = false
+            let mutable j = 0
+            while not found && j < children.Count do 
+                if this.Click x y gameTime scrollX scrollY  children.[j].Index then 
+                    found <- true 
+                j <- j + 1
+
+            if not found && this.Components.WantsOnClick.[i] then 
+                found <- true
+                this.Components.OnClick.[i] (this.Components.Id.[i]) {X = x; Y = y}
+            
+            if not found  && this.Components.WantsFocus.[i] then
+                found <- true 
+                this.FocusedElementId <- this.Components.Id.[i]
+                this.Cursor <- this.Components.Text.[i].Length
+                this.FocusedTime <- gameTime.TotalGameTime
+                this.Components.OnFocus.[i] ({SourceId = this.Components.Id.[i]}) true
+            
+            found
+
+        else 
+            false
+
+
+    member this.KeyTyped (c: char) = 
+        let focusedIndex = this.GetIndex this.FocusedElementId
+        if focusedIndex <> -1 && this.Components.WantsKeyTyped.[focusedIndex] then 
+            Log.Logger.Debug ("Key typed {Key} for component {Component}", c, focusedIndex)
+            this.Components.OnKeyTyped.[focusedIndex] {SourceId = this.Components.Id.[focusedIndex]} c
+
+
+    member this.Press (x: float32) (y: float32) (gameTime: GameTime) (parentScrollX: float32) (parentScrollY: float32) (i: int): bool =
+
+
+        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y parentScrollX parentScrollY i then 
+            Log.Logger.Debug ("Mouse press inside component {ComponentId}", i)
+            let children = this.Components.Children.[i]
+
+            if this.Components.WantsOnPress.[i] || children.Count = 0 then 
+                this.Components.LastPressTime.[i] <- gameTime.TotalGameTime
+                this.Components.OnPress.[i] this.Components.Id.[i] {X = x; Y = y}
+                true 
+            else 
+                let scrollX = parentScrollX + this.Components.ScrollX.[i]
+                let scrollY = parentScrollY + this.Components.ScrollY.[i]
+                let mutable handled = false
+                let mutable j = 0
+
+                while not handled && j < children.Count do
+                    let cid = children.[j]
+
+                    if this.Press x y gameTime scrollX scrollY cid.Index then 
+                        handled <- true 
+
+                    j <- j + 1
+                handled
+        else 
+            false
+
+    member this.Scroll
+        (positionX: float32)
+        (positionY: float32)
+        (scale: float32)
+        (time: TimeSpan)
+        (scrollX: float32)
+        (scrollY: float32)
+        (i: int): bool =
+
+        let scaleValue v = v * scale
+
+        let mutable handled = false
+
+        if this.Components.Enabled.[i] && this.Components.Visible.[i] && this.ComponentContains positionX positionY scrollX scrollY i then
+            let handledByChild =
+                let children = this.Components.Children.[i]
+                let mutable handledByChild = false 
+                for j = 0 to children.Count - 1 do 
+                    if this.Scroll positionX positionY scale time scrollX scrollY children.[j].Index then 
+                        handledByChild <- true 
+                    else 
+                        handledByChild <- false 
+                handledByChild
+
+            if not handledByChild then
+                let contentSize = this.Components.ContentSize.[i]
+                let bounds = this.Components.Bounds.[i]
+                let scroll = this.Components.Scroll.[i]
+                let padding = this.Components.Padding.[i]
+                let margin = this.Components.Margin.[i]
                 
+                let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
+                let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
 
-        let parentComponent =
-            match parentComponent.Layout with
-            | NoobishLayout.Default ->
-
-                // In this layout, actual parent component height might be zero at this point. We don't know. Use available height.
-                let availableWidth  = (parentWidth * float32 parentComponent.ColSpan) - parentComponent.MarginHorizontal - parentComponent.PaddingHorizontal
-                let availableHeight = (parentHeight * float32 parentComponent.RowSpan) - parentComponent.MarginVertical - parentComponent.PaddingVertical
-
-                let parentBounds = parentComponent.Content
-                for i = 0 to c.Children.Length - 1 do
-                    let child = c.Children.[i]
-                    let childStartX = parentBounds.X + offsetX
-                    let childStartY = parentBounds.Y + offsetY
-                    let childWidth = if parentComponent.ScrollHorizontal then availableWidth else availableWidth - offsetX
-                    let childHeight = if parentComponent.ScrollVertical then availableHeight else availableHeight - offsetY
+                if scroll.Horizontal && contentSize.Width > contentWidth then
+                    this.Components.ScrollX.[i] <- this.Components.ScrollX.[i] + scrollX
+                    this.Components.LastScrollTime.[i] <- time
+                    handled <- true
+                if scroll.Vertical && contentSize.Height > contentHeight then
+                    let scaledScroll = scaleValue scrollY
+                    let nextScroll = this.Components.ScrollY.[i] + scaledScroll
+                    let minScroll = contentHeight - contentSize.Height
 
 
+                    this.Components.ScrollY.[i] <- clamp nextScroll minScroll 0.0f
+                    this.Components.LastScrollTime.[i] <- time
+                    handled <- true
+            else
+                handled <- true
 
-                    let path = sprintf "%s:%i" parentComponent.Path i
-                    let childComponent = layoutElement content styleSheet settings state zIndex parentComponent.Id path childStartX childStartY childWidth childHeight child
-
-                    newChildren.Add(childComponent)
-
-                    let childEndX = (offsetX + childComponent.OuterWidth)
-                    if childComponent.IsBlock || (childEndX + parentComponent.PaddingHorizontal) >= parentBounds.Width then
-                        offsetX <- 0.0f
-                        offsetY <- offsetY + childComponent.OuterHeight
-                    else
-                        offsetX <- childEndX
-
-                let width =
-                    if parentComponent.FillHorizontal then
-                        availableWidth + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
-                    else
-                        let childWidth = calculateChildWidth() + parentComponent.PaddingHorizontal + parentComponent.MarginHorizontal
-                        clamp childWidth 0f availableWidth
-
-                let overflowHeight = calculateChildHeight()
-                let height =
-                    if parentComponent.FillVertical then
-                        availableHeight + parentComponent.PaddingVertical + parentComponent.MarginVertical
-                    else
-                        let childHeight = overflowHeight + parentComponent.PaddingVertical + parentComponent.MarginVertical
-                        clamp childHeight 0f availableHeight
-
-                let overflowWidth = if parentComponent.ScrollHorizontal then offsetX else parentComponent.ContentWidth
-
-                {parentComponent with
-                    OuterWidth = width
-                    OuterHeight = height
-                    OverflowWidth = overflowWidth
-                    OverflowHeight = overflowHeight
-                    Children = newChildren.ToArray()}
-            | NoobishLayout.Grid (cols, rows) ->
-
-                let parentBounds = parentComponent.Content
-                let colWidth = parentBounds.Width / float32 cols
-                let rowHeight = parentBounds.Height / float32 rows
-                let mutable col = 0
-                let mutable row = 0
-
-                let bump colspan rowspan =
-                    col <- col + colspan
-
-                    if (col >= cols) then
-                        col <- 0
-                        row <- row + rowspan
+        handled
 
 
-                let cellUsed = Array2D.create cols rows false
 
-                for child in c.Children do
-                    let childStartX = (parentBounds.X + (float32 col) * (colWidth))
-                    let childStartY = (parentBounds.Y + (float32 row) * (rowHeight))
-                    let path = sprintf "%s:grid(%i,%i)" parentComponent.Path col row
-                    let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path childStartX childStartY colWidth rowHeight child
+    member this.ProcessMouse(gameTime: GameTime) =
+        let mouseState =  Microsoft.Xna.Framework.Input.Mouse.GetState()
 
-                    newChildren.Add({
-                        childComponent with
-                            OuterWidth = (colWidth * float32 childComponent.ColSpan)
-                            OuterHeight = (rowHeight * float32 childComponent.RowSpan)
-                            })
+        let x = float32 mouseState.X
+        let y = float32 mouseState.Y
+        for i = 0 to this.Components.Count - 1 do 
+            if this.Components.ParentId.[i] = UIComponentId.empty then 
+                this.Hover x y gameTime i 
 
-                    for c = col to col + childComponent.ColSpan - 1 do
-                        for r = row to row + childComponent.RowSpan - 1 do
-                            cellUsed.[c, r] <- true
+        if mouseState.LeftButton = ButtonState.Pressed then 
+            for i = 0 to this.Components.Count - 1 do 
+                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                    toLayout.Enqueue(i, -this.Components.Layer.[i])
 
-                    while row < rows && cellUsed.[col, row] do
-                        bump childComponent.ColSpan childComponent.RowSpan
+            while toLayout.Count > 0 do 
+                let i = toLayout.Dequeue()
+                this.Press x y gameTime 0f 0f i |> ignore
 
-                {parentComponent with
-                    Children = newChildren.ToArray()
-                    OverflowWidth = parentComponent.ContentWidth
-                    OverflowHeight = parentComponent.ContentHeight}
-            | NoobishLayout.OverlaySource ->
+        elif mouseState.LeftButton = ButtonState.Released && previousMouseState.LeftButton = ButtonState.Pressed then 
+            this.FocusedElementId <- UIComponentId.empty
+            for i = 0 to this.Components.Count - 1 do 
+                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                    toLayout.Enqueue(i, -this.Components.Layer.[i])
 
-                if c.Children.Length <> 1 then failwith "Can only pop open one at a time."
+            while toLayout.Count > 0 do 
+                let i = toLayout.Dequeue()
+                this.Click x y gameTime 0f 0f i |> ignore
 
-                let path = sprintf "%s:overlay" parentComponent.Path
-                let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path parentComponent.X parentComponent.Y 800f 600f c.Children.[0]
+        let scrollWheelValue = mouseState.ScrollWheelValue - previousMouseState.ScrollWheelValue
+        if scrollWheelValue <> 0 then
+            let scroll = float32 scrollWheelValue / 2.0f
+            let absScroll = abs scroll
+            let sign = sign scroll |> float32
+            let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
 
-                {parentComponent with Children = [|childComponent|]}
-            | NoobishLayout.Absolute ->
-                let parentBounds = parentComponent.Content
+            for i = 0 to this.Components.Count - 1 do 
+                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                    this.Scroll x y 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) i |> ignore
 
-                for i = 0 to c.Children.Length - 1 do
-                    let childStartX = parentBounds.X + parentBounds.Width / 2.0f
-                    let childStartY = parentBounds.Y + parentBounds.Height / 2.0f
+        previousMouseState <- mouseState
 
-                    let childWidth = parentBounds.Width
-                    let childHeight = parentBounds.Height
+    member this.ProcessKeys (gameTime: GameTime) = 
+        let keyState = Keyboard.GetState()
 
-                    let path = sprintf "%s:absolute:%i" parentComponent.Path i
-                    let childComponent = layoutElement content styleSheet settings state (zIndex + 1) parentComponent.Id path childStartX childStartY childWidth childHeight c.Children.[i]
-                    newChildren.Add({ childComponent with StartX = childComponent.StartX; StartY = childComponent.StartY })
+        let index = this.GetIndex(this.FocusedElementId)
+        if index <> -1 && this.Components.WantsKeyPressed.[index] then 
+            if previousKeyState.IsKeyDown(Keys.Left) && keyState.IsKeyUp (Keys.Left) then 
+                this.Components.OnKeyPressed.[index] {SourceId = this.Components.Id.[index]} Keys.Left
 
-                {parentComponent with Children = newChildren.ToArray()}
-            | NoobishLayout.None ->
-                parentComponent
-        state.UpdateState parentComponent parentComponentState
-        parentComponent
+            if previousKeyState.IsKeyDown(Keys.Right) && keyState.IsKeyUp (Keys.Right) then 
+                this.Components.OnKeyPressed.[index] {SourceId = this.Components.Id.[index]} Keys.Right
 
-    let layout (content: ContentManager) (styleSheet: NoobishStyleSheet) (settings: NoobishSettings) (state: NoobishState) (layer: int) (width: float32) (height: float32) (elements: list<NoobishElement>) =
+        previousKeyState <- keyState
 
-        let path = sprintf "layer-%i" layer
-        elements
-            |> List.map(fun c ->
-                layoutElement content styleSheet settings state (layer * 64) "" path 0.0f 0.0f width height c
-            ) |> List.toArray
+    member this.Update (gameTime: GameTime) = 
+        this.ProcessMouse(gameTime)
+        this.ProcessKeys(gameTime)
 
+    member this.Clear() =
 
+        this.FocusedElementId <- UIComponentId.empty
+       
+        waitForLayout <- true
+
+        previousFrameIndex <- frameIndex
+        frameIndex <- (frameIndex + 1) % frames.Length
+        this.Components.Clear()

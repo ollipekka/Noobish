@@ -5,8 +5,9 @@ open Noobish
 
 type NoobishComponents with 
 
-    member internal this.CalculatePinPosition (parentCid: UIComponentId) (pinCid: UIComponentId) (rangeStart: float32, rangeEnd: float32) (value: float32):Position =
+    member internal this.CalculatePinPosition (parentCid: UIComponentId) (pinCid: UIComponentId) (relativeX: float32) (relativeY: float32) (rangeStart: float32, rangeEnd: float32) (value: float32):Position =
         let pinSize = this.ContentSize.[pinCid.Index]
+        let pinBounds = this.Bounds.[pinCid.Index]
         let pinPadding = this.Padding.[pinCid.Index]
         let pinWidth = pinSize.Width + pinPadding.Left + pinPadding.Right
         let pinHeight = pinSize.Height + pinPadding.Top + pinPadding.Bottom
@@ -14,11 +15,32 @@ type NoobishComponents with
         let parentBounds = this.Bounds.[parentCid.Index]
         let parentMargin = this.Margin.[parentCid.Index]
         let parentPadding = this.Padding.[parentCid.Index]
+
+
+
+
         
         let parentWidth = parentBounds.Width - parentMargin.Left - parentMargin.Right - parentPadding.Left - parentPadding.Right
         let parentHeight = parentBounds.Height - parentMargin.Top - parentMargin.Bottom - parentPadding.Top - parentPadding.Bottom
 
-        {X = parentWidth * pinPos - pinWidth / 2f; Y = parentHeight / 2f - parentMargin.Top - pinHeight / 2f}
+        let x, y = 
+            let parentContainerId = this.ParentId.[parentCid.Index]
+        
+            if parentContainerId <> UIComponentId.empty then 
+                let parentContainerBounds = this.Bounds.[parentContainerId.Index]
+                match this.Layout.[parentContainerId.Index] with 
+                | Layout.Grid(cols, rows) ->
+                    match this.GridCellAlignment.[parentCid.Index] with 
+                    | NoobishTextAlignment.Left -> 
+                    
+                        0f, (parentContainerBounds.Height / float32 rows) / 2f - parentHeight / 2f - pinHeight / 2f
+
+                    | _ -> 0f, 0f
+                | _ -> 0f, 0f
+            else 
+                0f, 0f
+
+        {X = x + parentWidth * pinPos - pinWidth / 2f; Y = y + parentHeight /2f - parentMargin.Top - pinHeight / 2f}
 
     member internal this.CalculatePinX(parentCid: UIComponentId) (pinCid: UIComponentId) (position: Position) : float32 =
 
@@ -48,12 +70,11 @@ type Noobish2 with
         let cid = this.Create "Slider"
         this.Components.Layout[cid.Index] <- Layout.Relative(cid)
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = false}
-
         let sliderPin = 
             this.Create "SliderPin"
             |> this.SetConstrainToParentBounds false
-            |> this.SetRelativePositionFunc (fun (rcid: UIComponentId) (ccid: UIComponentId) -> 
-                this.Components.CalculatePinPosition cid ccid (rangeStart, rangeEnd) value
+            |> this.SetRelativePositionFunc (fun (rcid: UIComponentId) (ccid: UIComponentId) (relativeX: float32) (relativeY: float32) -> 
+                this.Components.CalculatePinPosition cid ccid relativeX relativeY (rangeStart, rangeEnd) value
             )
 
 
