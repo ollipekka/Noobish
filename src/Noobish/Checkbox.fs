@@ -4,7 +4,7 @@ module Noobish.Checkbox
 open Noobish
 
 
-type Noobish2 with 
+type Noobish with 
 
     member this.Checkbox (text: string) (toggled: bool) (onValueChanged: bool -> unit) =
 

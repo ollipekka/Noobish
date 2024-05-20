@@ -131,7 +131,7 @@ type StyleSheetReader () =
 
     let readTextAlignments (reader: ContentReader)  =
 
-        let dict = Dictionary<string, Dictionary<string, NoobishTextAlignment>>()
+        let dict = Dictionary<string, Dictionary<string, NoobishAlignment>>()
         let count = reader.ReadInt32()
 
         for i = 0 to count - 1 do
@@ -146,15 +146,15 @@ type StyleSheetReader () =
 
                 dict2.[state] <-
                     match v with
-                    | "TopLeft" | "topLeft" | "top_left" -> NoobishTextAlignment.TopLeft
-                    | "TopCenter" | "topCenter" | "top_center" -> NoobishTextAlignment.TopCenter
-                    | "TopRight" | "topRight" | "top_right" -> NoobishTextAlignment.TopRight
-                    | "Left" | "left" -> NoobishTextAlignment.Left
-                    | "Center" | "center" -> NoobishTextAlignment.Center
-                    | "Right" | "right" -> NoobishTextAlignment.Right
-                    | "BottomLeft" | "bottomLeft" | "bottom_left" -> NoobishTextAlignment.BottomLeft
-                    | "BottomCenter" | "bottomCenter" | "bottom_center" -> NoobishTextAlignment.BottomCenter
-                    | "BottomRight" | "bottomRight" | "bottom_right" -> NoobishTextAlignment.BottomRight
+                    | "TopLeft" | "topLeft" | "top_left" -> NoobishAlignment.TopLeft
+                    | "TopCenter" | "topCenter" | "top_center" -> NoobishAlignment.TopCenter
+                    | "TopRight" | "topRight" | "top_right" -> NoobishAlignment.TopRight
+                    | "Left" | "left" -> NoobishAlignment.Left
+                    | "Center" | "center" -> NoobishAlignment.Center
+                    | "Right" | "right" -> NoobishAlignment.Right
+                    | "BottomLeft" | "bottomLeft" | "bottom_left" -> NoobishAlignment.BottomLeft
+                    | "BottomCenter" | "bottomCenter" | "bottom_center" -> NoobishAlignment.BottomCenter
+                    | "BottomRight" | "bottomRight" | "bottom_right" -> NoobishAlignment.BottomRight
                     | _ -> failwith "Cannot parse text alignment"
 
         toReadOnlyDictionary dict

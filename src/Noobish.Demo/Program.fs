@@ -57,10 +57,10 @@ type DemoModel = {
 } with
     member m.SelectedListItem with get() = m.ListModel.[m.SelectedListItemIndex]
 
-module Noobish2Demo = 
+module NoobishDemo = 
 
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model dispatch =
-        let nui2 = game.Noobish2
+        let nui2 = game.Noobish
         
         let window2 = 
             nui2.Window()
@@ -110,7 +110,7 @@ module Noobish2Demo =
 module Text =
 
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model _dispatch =
-        let ui = game.Noobish2
+        let ui = game.Noobish
         ui.PanelWithGrid (2, 2) 
         |> ui.SetChildren [|
             ui.PanelWithGrid(3, 3)
@@ -181,7 +181,7 @@ module Text =
 
 module List =
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
-        let ui = game.Noobish2
+        let ui = game.Noobish
         ui.PanelWithGrid (2, 2) 
         |> ui.SetChildren [|
             ui.List model.ListModel model.SelectedListItem (fun value -> Log.Logger.Information ("Clicked {value}", value); dispatch (SelectListItem (model.ListModel |> Array.findIndex (fun v -> v = value))) )
@@ -192,7 +192,7 @@ module Containers =
 
 
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
-        let ui = game.Noobish2
+        let ui = game.Noobish
         ui.PanelWithGrid (2, 2) 
         |> ui.SetChildren [|
             ui.PanelVertical()
@@ -249,7 +249,7 @@ module Containers =
 module Buttons =
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model (dispatch: DemoMessage -> unit) =
 
-        let ui = game.Noobish2
+        let ui = game.Noobish
 
     
         ui.Grid(2, 2)
@@ -298,7 +298,7 @@ module Slider =
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
             
             
-        let ui = game.Noobish2
+        let ui = game.Noobish
 
         let gridId
             = ui.Grid(2,2)
@@ -325,7 +325,7 @@ module Slider =
 module Github =
 
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
-        let ui = game.Noobish2
+        let ui = game.Noobish
         let gridId = 
             ui.Grid(10, 8)
             |> ui.SetChildren [|
@@ -411,7 +411,7 @@ let update (game: NoobishGame<unit, DemoMessage, DemoModel>) (message: DemoMessa
     | FeaturesChanged s ->
         {model with FeatureText = s}, Cmd.none
     | ToggleDebug ->
-        game.Noobish2.Debug <- not (game.Noobish2.Debug)
+        game.Noobish.Debug <- not (game.Noobish.Debug)
         model, Cmd.none
     | ToggleLightMode ->
         game.StyleSheetId <- "Light/Light"
@@ -445,7 +445,7 @@ let view game (model: DemoModel) dispatch =
             let content = Github.view game model dispatch
             "Github", content
 
-    let ui = game.Noobish2
+    let ui = game.Noobish
 
     ui.Grid(12, 8)
     |> ui.SetChildren [|

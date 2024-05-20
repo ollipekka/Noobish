@@ -25,7 +25,7 @@ type NoobishTextureEffect =
 type NoobishImageSize = Stretch | BestFitMax | BestFitMin | Original
 
 [<RequireQualifiedAccess>]
-type NoobishTextAlignment =
+type NoobishAlignment =
 | TopLeft | TopCenter | TopRight
 | Left  | Center | Right
 | BottomLeft | BottomCenter | BottomRight

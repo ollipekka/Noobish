@@ -4,7 +4,7 @@ module Noobish.Combobox
 open Noobish
 
 
-type Noobish2 with 
+type Noobish with 
 
     member this.Combobox<'T> (items: 'T[]) (selectedIndex: int) (onValueChanged: 'T -> unit) = 
         let cid = this.Create "Combobox"

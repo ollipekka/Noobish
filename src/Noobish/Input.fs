@@ -11,7 +11,7 @@ open Microsoft.Xna.Framework.Input
 
 open Noobish.Internal
 
-type Noobish2 with 
+type Noobish with 
 
 
     member this.ComponentContains (x: float32) (y: float32) (scrollX: float32) (scrollY: float32) (i: int) = 

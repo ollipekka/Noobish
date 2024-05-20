@@ -90,7 +90,7 @@ module DrawUI =
     let toRectangle (r: NoobishRectangle) =
         Rectangle (int (r.X), int (r.Y), int (r.Width), int (r.Height))
 
-    let calculateImageBounds (imageSize: NoobishImageSize) (imageAlign: NoobishTextAlignment) (bounds: NoobishRectangle) (textureWidth: int) (textureHeight: int) (scrollX: float32) (scrollY: float32) =
+    let calculateImageBounds (imageSize: NoobishImageSize) (imageAlign: NoobishAlignment) (bounds: NoobishRectangle) (textureWidth: int) (textureHeight: int) (scrollX: float32) (scrollY: float32) =
         match imageSize with
         | NoobishImageSize.Stretch ->
             createRectangle
@@ -218,11 +218,11 @@ type NoobishComponents(count) =
     member val Enabled = Array.create count true 
     member val Block = Array.create count false
     member val Text = Array.create count ""
-    member val TextAlign = Array.create count NoobishTextAlignment.Left
+    member val TextAlign = Array.create count NoobishAlignment.Left
     member val Textwrap = Array.create count false
 
     member val Image = Array.create count ValueOption<NoobishTextureId>.None
-    member val ImageAlign = Array.create count NoobishTextAlignment.Left
+    member val ImageAlign = Array.create count NoobishAlignment.Left
 
     member val ImageColorOverride = Array.create count false
     member val ImageColor = Array.create count Color.White
@@ -244,7 +244,7 @@ type NoobishComponents(count) =
     member val Margin = Array.create<Margin> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val Layout = Array.create count Layout.None
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
-    member val GridCellAlignment = Array.create count NoobishTextAlignment.Left
+    member val GridCellAlignment = Array.create count NoobishAlignment.Left
     member val WantsOnPress = Array.create count false
     member val OnPress = Array.create<UIComponentId -> Position -> unit> count ignorePress
     member val WantsOnClick = Array.create count false
@@ -467,7 +467,7 @@ type NoobishComponents(count) =
                 this.LayoutComponent content styleSheet childStartX childStartY childWidth childHeight cid.Index
                 
                 match this.GridCellAlignment.[cid.Index] with 
-                | NoobishTextAlignment.Left ->
+                | NoobishAlignment.Left ->
                     let childBounds = this.Bounds.[cid.Index]
                     this.Bounds.[cid.Index] <- {childBounds with Y = childStartY + childHeight / 2f - childBounds.Height / 2f }
                 | _ -> ()
@@ -509,11 +509,11 @@ type NoobishComponents(count) =
 
             this.Text.[i] <- ""
             this.Textwrap.[i] <- false
-            this.TextAlign.[i] <- NoobishTextAlignment.Left
+            this.TextAlign.[i] <- NoobishAlignment.Left
 
 
             this.Image.[i] <- ValueNone
-            this.ImageAlign.[i] <- NoobishTextAlignment.Left
+            this.ImageAlign.[i] <- NoobishAlignment.Left
             this.ImageColorOverride.[i] <- false
             this.ImageColor.[i] <- Color.White
             this.ImageTextureEffect.[i] <- NoobishTextureEffect.None

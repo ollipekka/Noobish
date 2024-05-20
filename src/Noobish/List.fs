@@ -4,7 +4,7 @@ module Noobish.List
 open Noobish
 
 
-type Noobish2 with 
+type Noobish with 
 
     member this.List<'T> (items: 'T[]) (selectedIndex: int) (onValueChanged: 'T -> unit) =
 

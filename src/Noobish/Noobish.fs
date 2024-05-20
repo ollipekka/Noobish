@@ -19,7 +19,7 @@ open Internal
 
 
 
-type Noobish2(maxCount: int) =
+type Noobish(maxCount: int) =
 
 
     let rasterizerState = 
@@ -83,7 +83,7 @@ type Noobish2(maxCount: int) =
         this.Components.Layer.[i] <- 1
         this.Components.Layout.[i] <- Layout.None
         this.Components.GridSpan.[i] <- {Colspan = 1; Rowspan = 1}
-        this.Components.GridCellAlignment.[i] <- NoobishTextAlignment.Left
+        this.Components.GridCellAlignment.[i] <- NoobishAlignment.Left
         this.Components.MinSize.[i] <- {Width = 0f; Height = 0f}
 
         this.Components.LastPressTime[i] <- TimeSpan.Zero
@@ -126,7 +126,7 @@ type Noobish2(maxCount: int) =
         let cid = this.Create "Paragraph"
         this.Components.Text.[cid.Index] <- t
         this.Components.Textwrap.[cid.Index] <- true 
-        this.Components.TextAlign.[cid.Index] <- NoobishTextAlignment.TopLeft 
+        this.Components.TextAlign.[cid.Index] <- NoobishAlignment.TopLeft 
         this.Components.Block.[cid.Index] <- true 
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = false}
 
@@ -270,7 +270,6 @@ type Noobish2(maxCount: int) =
             this.Components.ConstrainToParentBounds.[index] <- v
         cid
 
-
     member this.SetThemeId (themeId: string) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
@@ -298,7 +297,6 @@ type Noobish2(maxCount: int) =
 
             this.Components.Layer.[index] <- layer
         cid
-
 
     member this.SetVisible (v: bool) (cid: UIComponentId): UIComponentId = 
         let index = this.GetIndex cid 
@@ -373,6 +371,7 @@ type Noobish2(maxCount: int) =
         if index <> -1 then 
             this.Components.Fill.[index] <- {this.Components.Fill.[index] with Vertical = true}
         cid
+
     member this.SetFill (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
@@ -410,45 +409,44 @@ type Noobish2(maxCount: int) =
             this.Components.Text.[index] <- text
         cid
 
-    member this.SetTextAlign (align: NoobishTextAlignment) (cid: UIComponentId) =
+    member this.SetTextAlign (align: NoobishAlignment) (cid: UIComponentId) =
         let index: int = this.GetIndex cid 
         if index <> -1 then 
             this.Components.TextAlign.[index] <- align
         cid
 
-    member this.AlignText (textAlignment: NoobishTextAlignment) (cid: UIComponentId) =
+    member this.AlignText (textAlignment: NoobishAlignment) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Components.TextAlign.[index] <- textAlignment
         cid       
 
     member this.AlignTextTopLeft (cid: UIComponentId) = 
-        this.AlignText NoobishTextAlignment.TopLeft cid
+        this.AlignText NoobishAlignment.TopLeft cid
 
     member this.AlignTextTop (cid: UIComponentId) = 
-        this.AlignText NoobishTextAlignment.TopCenter cid
+        this.AlignText NoobishAlignment.TopCenter cid
 
     member this.AlignTextTopRight (cid: UIComponentId) = 
-        this.AlignText NoobishTextAlignment.TopRight cid
-
+        this.AlignText NoobishAlignment.TopRight cid
 
     member this.AlignTextLeft (cid: UIComponentId) = 
-        this.AlignText NoobishTextAlignment.Left cid
+        this.AlignText NoobishAlignment.Left cid
 
     member this.AlignTextCenter (cid: UIComponentId) = 
-        this.AlignText NoobishTextAlignment.Center cid
+        this.AlignText NoobishAlignment.Center cid
 
     member this.AlignTextRight (cid: UIComponentId) = 
-        this.AlignText NoobishTextAlignment.Right cid
+        this.AlignText NoobishAlignment.Right cid
 
     member this.AlignTextBottomLeft (cid: UIComponentId) = 
-        this.AlignText NoobishTextAlignment.BottomLeft cid
+        this.AlignText NoobishAlignment.BottomLeft cid
 
     member this.AlignTextBottomCenter (cid: UIComponentId) = 
-        this.AlignText NoobishTextAlignment.BottomCenter cid
+        this.AlignText NoobishAlignment.BottomCenter cid
 
     member this.AlignTextBottomRight (cid: UIComponentId) = 
-        this.AlignText NoobishTextAlignment.BottomRight cid
+        this.AlignText NoobishAlignment.BottomRight cid
 
     member this.SetImage (textureId: NoobishTextureId) (cid: UIComponentId) =
         let index: int = this.GetIndex cid 
@@ -456,13 +454,11 @@ type Noobish2(maxCount: int) =
             this.Components.Image.[index] <- ValueSome textureId
         cid
 
-    member this.SetImageAlign (align: NoobishTextAlignment) (cid: UIComponentId) =
+    member this.SetImageAlign (align: NoobishAlignment) (cid: UIComponentId) =
         let index: int = this.GetIndex cid 
         if index <> -1 then 
             this.Components.ImageAlign.[index] <- align
         cid
-
-
   
     member this.SetToggled (t: bool) (cid: UIComponentId) =
         let index = this.GetIndex cid 
@@ -476,6 +472,7 @@ type Noobish2(maxCount: int) =
             this.Components.WantsOnPress.[index] <- true
             this.Components.OnPress.[index] <- onPress
         cid
+
     member this.SetOnClick (onClick: UIComponentId -> Position -> unit) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 

@@ -213,7 +213,7 @@ module NoobishFont =
         (bounds: NoobishRectangle)
         (scrollX: float32)
         (scrollY: float32)
-        (textAlign: NoobishTextAlignment)
+        (textAlign: NoobishAlignment)
         (cursorPosition: int)
         (text: string) =
 
@@ -235,15 +235,15 @@ module NoobishFont =
 
         let struct(textStartX, textStartY) =
             match textAlign with
-            | NoobishTextAlignment.TopLeft -> struct(leftX(), topY())
-            | NoobishTextAlignment.TopCenter -> struct(centerX(), topY())
-            | NoobishTextAlignment.TopRight -> struct(rightX(), topY())
-            | NoobishTextAlignment.Left -> struct(leftX(), centerY())
-            | NoobishTextAlignment.Center -> struct(centerX(), centerY())
-            | NoobishTextAlignment.Right -> struct(rightX(), centerY())
-            | NoobishTextAlignment.BottomLeft -> struct(leftX(), bottomY())
-            | NoobishTextAlignment.BottomCenter -> struct(centerX(), bottomY())
-            | NoobishTextAlignment.BottomRight -> struct(rightX(), bottomY())
+            | NoobishAlignment.TopLeft -> struct(leftX(), topY())
+            | NoobishAlignment.TopCenter -> struct(centerX(), topY())
+            | NoobishAlignment.TopRight -> struct(rightX(), topY())
+            | NoobishAlignment.Left -> struct(leftX(), centerY())
+            | NoobishAlignment.Center -> struct(centerX(), centerY())
+            | NoobishAlignment.Right -> struct(rightX(), centerY())
+            | NoobishAlignment.BottomLeft -> struct(leftX(), bottomY())
+            | NoobishAlignment.BottomCenter -> struct(centerX(), bottomY())
+            | NoobishAlignment.BottomRight -> struct(rightX(), bottomY())
 
         {X = (textStartX + scrollX); Y = (textStartY + scrollY); Width = textSizeX; Height = textSizeY}
 
@@ -256,7 +256,7 @@ module NoobishFont =
         (bounds: NoobishRectangle)
         (scrollX: float32)
         (scrollY: float32)
-        (textAlign: NoobishTextAlignment)
+        (textAlign: NoobishAlignment)
         (relativeX: float32)
         (relativeY: float32)
         (text: string) =
@@ -276,15 +276,15 @@ module NoobishFont =
 
         let struct(textStartX, _textStartY) =
             match textAlign with
-            | NoobishTextAlignment.TopLeft -> struct(leftX(), topY())
-            | NoobishTextAlignment.TopCenter -> struct(centerX(), topY())
-            | NoobishTextAlignment.TopRight -> struct(rightX(), topY())
-            | NoobishTextAlignment.Left -> struct(leftX(), centerY())
-            | NoobishTextAlignment.Center -> struct(centerX(), centerY())
-            | NoobishTextAlignment.Right -> struct(rightX(), centerY())
-            | NoobishTextAlignment.BottomLeft -> struct(leftX(), bottomY())
-            | NoobishTextAlignment.BottomCenter -> struct(centerX(), bottomY())
-            | NoobishTextAlignment.BottomRight -> struct(rightX(), bottomY())
+            | NoobishAlignment.TopLeft -> struct(leftX(), topY())
+            | NoobishAlignment.TopCenter -> struct(centerX(), topY())
+            | NoobishAlignment.TopRight -> struct(rightX(), topY())
+            | NoobishAlignment.Left -> struct(leftX(), centerY())
+            | NoobishAlignment.Center -> struct(centerX(), centerY())
+            | NoobishAlignment.Right -> struct(rightX(), centerY())
+            | NoobishAlignment.BottomLeft -> struct(leftX(), bottomY())
+            | NoobishAlignment.BottomCenter -> struct(centerX(), bottomY())
+            | NoobishAlignment.BottomRight -> struct(rightX(), bottomY())
 
         let mutable width = textStartX
         let mutable i = 0
@@ -312,7 +312,7 @@ module NoobishFont =
         (bounds: NoobishRectangle)
         (scrollX: float32)
         (scrollY: float32)
-        (textAlign: NoobishTextAlignment)
+        (textAlign: NoobishAlignment)
         (text: string) =
 
         let struct(textSizeX, textSizeY) =
@@ -325,15 +325,15 @@ module NoobishFont =
 
         let struct(textStartX, textStartY) =
             match textAlign with
-            | NoobishTextAlignment.TopLeft -> struct(leftX bounds, topY(bounds))
-            | NoobishTextAlignment.TopCenter -> struct(centerX(bounds) textSizeX, topY(bounds))
-            | NoobishTextAlignment.TopRight -> struct(rightX bounds textSizeX, topY(bounds))
-            | NoobishTextAlignment.Left -> struct(leftX bounds, centerY bounds textSizeY)
-            | NoobishTextAlignment.Center -> struct(centerX bounds textSizeX, centerY bounds textSizeY)
-            | NoobishTextAlignment.Right -> struct(rightX bounds textSizeX, centerY bounds textSizeY)
-            | NoobishTextAlignment.BottomLeft -> struct(leftX bounds, bottomY bounds textSizeY)
-            | NoobishTextAlignment.BottomCenter -> struct(centerX(bounds) textSizeX, bottomY bounds textSizeY)
-            | NoobishTextAlignment.BottomRight -> struct(rightX bounds textSizeX, bottomY bounds textSizeY)
+            | NoobishAlignment.TopLeft -> struct(leftX bounds, topY(bounds))
+            | NoobishAlignment.TopCenter -> struct(centerX(bounds) textSizeX, topY(bounds))
+            | NoobishAlignment.TopRight -> struct(rightX bounds textSizeX, topY(bounds))
+            | NoobishAlignment.Left -> struct(leftX bounds, centerY bounds textSizeY)
+            | NoobishAlignment.Center -> struct(centerX bounds textSizeX, centerY bounds textSizeY)
+            | NoobishAlignment.Right -> struct(rightX bounds textSizeX, centerY bounds textSizeY)
+            | NoobishAlignment.BottomLeft -> struct(leftX bounds, bottomY bounds textSizeY)
+            | NoobishAlignment.BottomCenter -> struct(centerX(bounds) textSizeX, bottomY bounds textSizeY)
+            | NoobishAlignment.BottomRight -> struct(rightX bounds textSizeX, bottomY bounds textSizeY)
 
         {X = (textStartX + scrollX); Y = (textStartY + scrollY); Width = textSizeX; Height = textSizeY}
 

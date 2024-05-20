@@ -40,7 +40,7 @@ type NoobishStyleSheet = {
     Fonts: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>
     FontSizes: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>
     FontColors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, Color>>
-    TextAlignments: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishTextAlignment>>
+    TextAlignments: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishAlignment>>
     Drawables: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishDrawable[]>>
 } with
 
@@ -96,7 +96,7 @@ type NoobishStyleSheet = {
         NoobishStyleSheet.GetValue t.Margins cid state (0, 0, 0, 0)
 
     member t.GetTextAlignment (cid: string) (state: string) =
-        NoobishStyleSheet.GetValue t.TextAlignments cid state NoobishTextAlignment.TopLeft
+        NoobishStyleSheet.GetValue t.TextAlignments cid state NoobishAlignment.TopLeft
 
     member t.GetDrawables (cid: string) (state: string) =
         NoobishStyleSheet.GetValue t.Drawables cid state [||]

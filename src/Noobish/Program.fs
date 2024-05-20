@@ -92,7 +92,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     abstract member DrawInternal: 'model -> GameTime -> unit
 
-    member val Noobish2 = Noobish2(1024)
+    member val Noobish = Noobish(1024)
     member _this.TextBatch with get() = textBatch
     member _this.State with get() = state
 
@@ -153,7 +153,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
 
         this.Window.TextInput.Add(fun e ->
-            this.Noobish2.KeyTyped (e.Character)
+            this.Noobish.KeyTyped (e.Character)
         )
 
 
@@ -184,7 +184,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
             Touch = NoobishInputState.updateDevice (TouchPanel.GetState()) this.Input.Touch
         }
 
-        this.Noobish2.Update gameTime
+        this.Noobish.Update gameTime
 
         this.TickInternal state gameTime
 
@@ -204,7 +204,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
             tempMessages.Clear()
 
-            this.Noobish2.Clear()
+            this.Noobish.Clear()
 
             this.ViewInternal state this.Dispatch |> ignore
 
@@ -216,7 +216,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         this.GraphicsDevice.SetRenderTarget(renderTarget)
         this.GraphicsDevice.Clear(Color.Transparent)
-        this.Noobish2.Draw game.GraphicsDevice game.Content spriteBatch textBatch game.StyleSheetId this.Debug gameTime 
+        this.Noobish.Draw game.GraphicsDevice game.Content spriteBatch textBatch game.StyleSheetId this.Debug gameTime 
         this.GraphicsDevice.SetRenderTarget(null)
 
         this.GraphicsDevice.Clear(Color.Black)
@@ -296,7 +296,7 @@ module Program2 =
 
     let withTextInput<'msg, 'model, 'T when 'T :> NoobishGame<unit, 'msg, 'model>> (game: 'T) =
         game.Window.TextInput.Add(fun e ->
-            game.Noobish2.KeyTyped e.Character
+            game.Noobish.KeyTyped e.Character
         )
         game
 

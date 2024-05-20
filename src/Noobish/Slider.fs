@@ -31,7 +31,7 @@ type NoobishComponents with
                 match this.Layout.[parentContainerId.Index] with 
                 | Layout.Grid(cols, rows) ->
                     match this.GridCellAlignment.[parentCid.Index] with 
-                    | NoobishTextAlignment.Left -> 
+                    | NoobishAlignment.Left -> 
                     
                         0f, (parentContainerBounds.Height / float32 rows) / 2f - parentHeight / 2f - pinHeight / 2f
 
@@ -53,7 +53,7 @@ type NoobishComponents with
         (position.X - bounds.X - pinWidth / 2f)
 
 
-type Noobish2 with 
+type Noobish with 
 
     member this.Slider<'T> (rangeStart: float32, rangeEnd: float32) (step: float32) (value: float32) (onValueChanged: float32 -> unit) =
 
