@@ -112,50 +112,6 @@ module Internal =
                 Height = max 0f (bottom - y)
             }
 
-    type SliderModel = {
-        Min: float32
-        Max: float32
-        Step: float32
-        OnValueChanged: float32 -> unit
-        Value: float32
-    }
-
-    type ComboboxModel = {
-        Values: string[]
-        Value: string
-    }
-
-    type TextboxModel = {
-        Text: string
-        Cursor: int
-        OnOpenKeyboard: (string -> unit) -> unit
-    }
-
-    type NoobishComponentModel =
-        | Slider of SliderModel
-        | Combobox of ComboboxModel
-        | Textbox of TextboxModel
-
-    module NoobishComponentModel =
-        let isTextbox (m: option<NoobishComponentModel>) =
-            m |> Option.exists(
-                function
-                | Textbox (_) -> true
-                | _ -> false
-            )
-        let isSlider (m: option<NoobishComponentModel>) =
-            m |> Option.exists(
-                function
-                | Slider (_) -> true
-                | _ -> false
-            )
-
-        let isCombobox (m: option<NoobishComponentModel>) =
-            m |> Option.exists(
-                function
-                | Combobox (_) -> true
-                | _ -> false
-            )
     let pi = float32 System.Math.PI
     let clamp n minVal maxVal = max (min n maxVal) minVal
     let inline toDegrees angle = (float32 angle) * 180.0f / pi
