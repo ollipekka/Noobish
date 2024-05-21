@@ -3,6 +3,8 @@ module Noobish.Combobox
 
 open Noobish
 
+open Microsoft.Xna.Framework
+
 
 type Noobish with 
 
@@ -12,7 +14,7 @@ type Noobish with
 
         let overlayPaneId =
             this.Overlaypane cid 
-            |> this.SetOnClick (fun sourceId (_position: Position) ->  
+            |> this.SetOnClick (fun sourceId (_position: Position) (_gameTime: GameTime) ->  
                 this.SetVisible false sourceId |> ignore)
 
         let overlayWindowId =
@@ -21,7 +23,7 @@ type Noobish with
                 items |> Array.map (
                     fun i -> 
                         this.Button (i.ToString()) (
-                            fun (event) -> 
+                            fun (event) (gameTime: GameTime) -> 
                                 this.Components.Text.[cid.Index] <- i.ToString(); onValueChanged i
                         ) |> this.SetFillHorizontal
                 )
@@ -35,7 +37,7 @@ type Noobish with
 
 
         this.Components.WantsOnClick.[cid.Index] <- true
-        this.Components.OnClick.[cid.Index] <- (fun (event: UIComponentId) (position: Position)-> 
+        this.Components.OnClick.[cid.Index] <- (fun (event: UIComponentId) (position: Position) (gameTime: GameTime) -> 
             this.SetVisible true overlayPaneId |> ignore
         )
 

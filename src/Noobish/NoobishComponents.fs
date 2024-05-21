@@ -207,8 +207,8 @@ type NoobishComponents(count) =
     
     let ignoreRelativePositionFunc (rcid: UIComponentId) (cid: UIComponentId) (x: float32) (y: float32 )= {X = 0f; Y = 0f}
 
-    let ignoreClick (_source: UIComponentId) (_p: Position) = ()
-    let ignorePress (_source: UIComponentId) (_p: Position) = ()
+    let ignoreClick (_source: UIComponentId) (_p: Position) (_gameTime: GameTime) = ()
+    let ignorePress (_source: UIComponentId) (_p: Position) (_gameTime: GameTime) = ()
     member val Count = 0 with get, set
     member val Id = Array.create count UIComponentId.empty
     member val ThemeId = Array.create count ""
@@ -246,9 +246,9 @@ type NoobishComponents(count) =
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
     member val GridCellAlignment = Array.create count NoobishAlignment.Left
     member val WantsOnPress = Array.create count false
-    member val OnPress = Array.create<UIComponentId -> Position -> unit> count ignorePress
+    member val OnPress = Array.create<UIComponentId -> Position -> GameTime -> unit> count ignorePress
     member val WantsOnClick = Array.create count false
-    member val OnClick = Array.create<UIComponentId -> Position-> unit> count ignoreClick
+    member val OnClick = Array.create<UIComponentId -> Position -> GameTime -> unit> count ignoreClick
     member val LastPressTime = Array.create count TimeSpan.Zero
     member val LastHoverTime = Array.create count TimeSpan.Zero
     member val WantsKeyTyped = Array.create count false 

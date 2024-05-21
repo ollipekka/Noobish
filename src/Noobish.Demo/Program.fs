@@ -68,10 +68,10 @@ module NoobishDemo =
             |> nui2.SetChildren [|
                 nui2.Header "Hello"
                 nui2.HorizontalRule()
-                nui2.Button "One" (fun _ -> ( Log.Logger.Information "One")) 
+                nui2.Button "One" (fun _ _ -> ( Log.Logger.Information "One")) 
                     |> nui2.FillHorizontal
-                nui2.Button "Two" (fun _ -> ( Log.Logger.Information "Two"))
-                nui2.Button "Three" (fun _-> (Log.Logger.Information "Three"))
+                nui2.Button "Two" (fun _ _-> ( Log.Logger.Information "Two"))
+                nui2.Button "Three" (fun _ _-> (Log.Logger.Information "Three"))
             |]
         
         
@@ -81,26 +81,26 @@ module NoobishDemo =
             |> nui2.SetChildren [|
                 nui2.Header "Hello 2"
                 nui2.HorizontalRule()
-                nui2.Button "One 2" (fun _ -> (Log.Logger.Information "One 2"))
-                nui2.Button "Two 2" (fun _ -> (Log.Logger.Information "Two 2"))
-                nui2.Button "Three 2" (fun _ -> (Log.Logger.Information "Three 2"))
+                nui2.Button "One 2" (fun _ _ -> (Log.Logger.Information "One 2"))
+                nui2.Button "Two 2" (fun _ _ -> (Log.Logger.Information "Two 2"))
+                nui2.Button "Three 2" (fun _ _ -> (Log.Logger.Information "Three 2"))
             |] 
 
         let window3 = 
             nui2.WindowWithGrid(2, 2)
             |> nui2.SetPosition (0, 200)
             |> nui2.SetChildren [|
-                nui2.Button "1" (fun _ -> (Log.Logger.Information "1"))
+                nui2.Button "1" (fun _ _ -> (Log.Logger.Information "1"))
                     |> nui2.SetColspan 1 
                     |> nui2.SetRowspan 1 
                     |> nui2.SetFill
-                nui2.Button "2" (fun _ -> (Log.Logger.Information "2"))
+                nui2.Button "2" (fun _ _ -> (Log.Logger.Information "2"))
                     |>nui2.SetColspan 1 
                     |> nui2.SetRowspan 1
-                nui2.Button "3" (fun _ -> (Log.Logger.Information "3"))
+                nui2.Button "3" (fun _ _ -> (Log.Logger.Information "3"))
                     |>nui2.SetColspan 1 
                     |> nui2.SetRowspan 1
-                nui2.Button "44444" (fun _ -> (Log.Logger.Information "4444"))
+                nui2.Button "44444" (fun _ _ -> (Log.Logger.Information "4444"))
                     |>nui2.SetColspan 1 
                     |> nui2.SetRowspan 1
             |] 
@@ -203,9 +203,9 @@ module Containers =
                         ui.Header "Hello"
                         ui.HorizontalRule()
                     |]
-                ui.Button "Continue" ignore|> ui.FillHorizontal |> ui.SetEnabled false
-                ui.Button "Start" ignore|> ui.FillHorizontal
-                ui.Button "Options" ignore|> ui.FillHorizontal
+                ui.Button "Continue" (fun _ _ -> ()) |> ui.FillHorizontal |> ui.SetEnabled false
+                ui.Button "Start" (fun _ _ -> ()) |> ui.FillHorizontal
+                ui.Button "Options" (fun _ _ -> ()) |> ui.FillHorizontal
 
 
             |]
@@ -218,8 +218,8 @@ module Containers =
                         |]
                     ui.Canvas()
                         |> ui.SetChildren [|
-                            ui.Button "0" ignore|> ui.SetRelativePosition (50, 50)
-                            ui.Button "1" ignore|> ui.SetRelativePosition (25, 75)
+                            ui.Button "0" (fun _ _ -> ()) |> ui.SetRelativePosition (50, 50)
+                            ui.Button "1" (fun _ _ -> ()) |> ui.SetRelativePosition (25, 75)
                         |]
 
                 |]
@@ -257,24 +257,24 @@ module Buttons =
             [|
                 ui.PanelVertical ()
                 |> ui.SetChildren [|
-                    ui.Button "Padding 0" (fun gameTime -> dispatch (ChangePadding 0))
+                    ui.Button "Padding 0" (fun _ gameTime -> dispatch (ChangePadding 0))
                         |> ui.SetFillHorizontal
-                    ui.Button "Padding 5" (fun gameTime -> dispatch (ChangePadding 5)) 
+                    ui.Button "Padding 5" (fun _ gameTime -> dispatch (ChangePadding 5)) 
                         |> ui.SetFillHorizontal
-                    ui.Button "Padding 10" (fun gameTime -> dispatch (ChangePadding 10))
+                    ui.Button "Padding 10" (fun _ gameTime -> dispatch (ChangePadding 10))
                         |> ui.SetFillHorizontal
-                    ui.Button "Padding 15" (fun gameTime -> dispatch (ChangePadding 15))
+                    ui.Button "Padding 15" (fun _ gameTime -> dispatch (ChangePadding 15))
                         |> ui.SetFillHorizontal
                 |]
                 ui.PanelVertical ()
                 |> ui.SetChildren [|
-                    ui.Button "Margin 0" (fun gameTime -> dispatch (ChangeMargin 0))
+                    ui.Button "Margin 0" (fun _ gameTime -> dispatch (ChangeMargin 0))
                         |> ui.SetFillHorizontal
-                    ui.Button "Margin 5" (fun gameTime -> dispatch (ChangeMargin 5)) 
+                    ui.Button "Margin 5" (fun _ gameTime -> dispatch (ChangeMargin 5)) 
                         |> ui.SetFillHorizontal
-                    ui.Button "Margin 10" (fun gameTime -> dispatch (ChangeMargin 10))
+                    ui.Button "Margin 10" (fun _ gameTime -> dispatch (ChangeMargin 10))
                         |> ui.SetFillHorizontal
-                    ui.Button "Margin 15" (fun gameTime -> dispatch (ChangeMargin 15))
+                    ui.Button "Margin 15" (fun _ gameTime -> dispatch (ChangeMargin 15))
                         |> ui.SetFillHorizontal
                 |]
                 let items = [| "Option 1"; "Option 2"; "Option 3" |]
@@ -283,8 +283,8 @@ module Buttons =
                 |> ui.SetChildren [|
                     ui.Combobox items selectedItemIndex (fun value -> Log.Logger.Information("Value changed {Value}", value); dispatch (ComboboxValueChanged value))
                     ui.Textbox model.FeatureText (fun value -> Log.Logger.Information("Text changed {value}", value); dispatch (FeaturesChanged value))
-                    ui.Button "8" ignore
-                    ui.Button "9" ignore
+                    ui.Button "8" (fun _ _ -> ())
+                    ui.Button "9" (fun _ _ -> ())
                 |]
                 ui.PanelHorizontal ()
                 |> ui.SetChildren [|
@@ -359,15 +359,15 @@ module Github =
                                     |> ui.SetFillHorizontal
                                     |> ui.AlignTextLeft
                                     |> ui.SetColspan 5
-                                ui.Button "Report a bug" ignore
+                                ui.Button "Report a bug" (fun _ _ -> ())
                                     |> ui.AlignTextCenter
                                     |> ui.SetFillHorizontal
                                     |> ui.SetColspan 2
-                                ui.Button "Contribute" ignore 
+                                ui.Button "Contribute" (fun _ _ -> ()) 
                                     |> ui.AlignTextCenter
                                     |> ui.SetFillHorizontal
                                     |> ui.SetColspan 2
-                                ui.Button "Fork" ignore 
+                                ui.Button "Fork" (fun _ _ -> ()) 
                                     |> ui.AlignTextCenter
                                     |> ui.SetFillHorizontal
                                     |> ui.SetColspan 2
@@ -462,16 +462,16 @@ let view game (model: DemoModel) dispatch =
             ui.Header title
             |> ui.SetColspan 6
             
-            ui.Button "Dark" (fun e -> dispatch ToggleDarkMode) 
+            ui.Button "Dark" (fun e _ -> dispatch ToggleDarkMode) 
             |> ui.SetFill
             |> ui.SetColspan 2     
             |> ui.SetToggled (model.StyleMode = DarkMode )          
-            ui.Button "Light" (fun e -> dispatch ToggleLightMode) 
+            ui.Button "Light" (fun e _ -> dispatch ToggleLightMode) 
             |> ui.SetFill
             |> ui.SetToggled (model.StyleMode = LightMode )       
             |> ui.SetColspan 2
             ui.Button "Debug" (
-                fun e -> 
+                fun e _ -> 
                     dispatch ToggleDebug
                 ) 
             |> ui.SetFill
@@ -483,22 +483,22 @@ let view game (model: DemoModel) dispatch =
         |> ui.SetRowspan 7
         |> ui.SetColspan 3
         |> ui.SetChildren [|
-            ui.Button "Buttons" (fun gameTime -> dispatch ShowButtons)
+            ui.Button "Buttons" (fun gameTime _ -> dispatch ShowButtons)
             |> ui.FillHorizontal 
             |> ui.SetToggled (model.State = Buttons)
-            ui.Button "Text" (fun gameTime -> dispatch ShowText)
+            ui.Button "Text" (fun gameTime _ -> dispatch ShowText)
             |> ui.FillHorizontal 
             |> ui.SetToggled (model.State = Text)
-            ui.Button "Containers" (fun gameTime -> dispatch ShowContainers)
+            ui.Button "Containers" (fun gameTime _ -> dispatch ShowContainers)
             |> ui.FillHorizontal 
             |> ui.SetToggled (model.State = Containers)
-            ui.Button "List" (fun gameTime -> dispatch ShowList)
+            ui.Button "List" (fun gameTime _ -> dispatch ShowList)
             |> ui.FillHorizontal 
             |> ui.SetToggled (model.State = List)
-            ui.Button "Slider" (fun gameTime -> dispatch ShowSliders)
+            ui.Button "Slider" (fun gameTime _ -> dispatch ShowSliders)
             |> ui.FillHorizontal 
             |> ui.SetToggled (model.State = Slider)
-            ui.Button "Github" (fun gameTime -> dispatch ShowGithub)
+            ui.Button "Github" (fun gameTime _ -> dispatch ShowGithub)
             |> ui.FillHorizontal 
             |> ui.SetToggled (model.State = Github)
         |]

@@ -20,13 +20,13 @@ type Noobish with
                     |> this.SetThemeId (if i % 2 = 0 then "List-Division-Even" else "List-Division-Odd")
                     |> this.FillHorizontal
                     |> this.SetToggled (selectedIndex = i)
-                    |> this.SetOnClick(fun src position -> onValueChanged item)
+                    |> this.SetOnClick(fun _src _position _gameTime -> onValueChanged item)
                     |> this.SetChildren [|
                         this.Label (item.ToString())
                         |> this.SetThemeId ("List-Label")
                         |> this.FillHorizontal
                         |> this.SetToggled (selectedIndex = i)
-                        |> this.SetOnClick (fun src position -> onValueChanged item)
+                        |> this.SetOnClick (fun _src _position _gameTime -> onValueChanged item)
                     |]
 
             ))

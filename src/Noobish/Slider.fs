@@ -3,6 +3,8 @@ module Noobish.Slider
 
 open Noobish
 
+open Microsoft.Xna.Framework
+
 type NoobishComponents with 
 
     member internal this.CalculatePinPosition (parentCid: UIComponentId) (pinCid: UIComponentId) (relativeX: float32) (relativeY: float32) (rangeStart: float32, rangeEnd: float32) (value: float32):Position =
@@ -81,7 +83,7 @@ type Noobish with
         this.SetChildren [| sliderPin |] cid |> ignore
 
 
-        this.SetOnPress (fun (cid: UIComponentId) (position: Position) -> 
+        this.SetOnPress (fun (cid: UIComponentId) (position: Position) (_gameTime: GameTime) -> 
             let v = calcaulateSliderValue cid position
             let delta = v - value
 

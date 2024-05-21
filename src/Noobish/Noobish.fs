@@ -181,11 +181,11 @@ type Noobish(maxCount: int) =
 
         cid
 
-    member this.Button (t: string) (onClick: UIComponentId -> unit) = 
+    member this.Button (t: string) (onClick: UIComponentId -> GameTime -> unit) = 
         let cid = this.Create "Button"
         this.Components.Text.[cid.Index] <- t
         this.Components.WantsOnClick.[cid.Index] <- true
-        this.Components.OnClick.[cid.Index] <- (fun source _ -> onClick source)
+        this.Components.OnClick.[cid.Index] <- (fun source _ gameTime -> onClick source gameTime)
         cid
 
     member this.Space () = 
@@ -466,14 +466,14 @@ type Noobish(maxCount: int) =
             this.Components.Toggled.[index] <- t
         cid
 
-    member this.SetOnPress (onPress: UIComponentId -> Position -> unit) (cid: UIComponentId) =
+    member this.SetOnPress (onPress: UIComponentId -> Position -> GameTime -> unit) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Components.WantsOnPress.[index] <- true
             this.Components.OnPress.[index] <- onPress
         cid
 
-    member this.SetOnClick (onClick: UIComponentId -> Position -> unit) (cid: UIComponentId) =
+    member this.SetOnClick (onClick: UIComponentId -> Position -> GameTime -> unit) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Components.WantsOnClick.[index] <- true

@@ -1,5 +1,4 @@
 namespace Noobish
-open Microsoft.Xna.Framework.Graphics
 
 [<RequireQualifiedAccess>]
 type NoobishLayout =
@@ -76,11 +75,6 @@ type NoobishKeyboardShortcut =
 | CtrlKeyPressed of pressed: NoobishKeyId
 | AltKeyPressed of pressed: NoobishKeyId
 | NoShortcut
-
-type NoobishSettings = {
-    mutable Locale: string
-    mutable Debug: bool
-}
 
 module Internal =
 

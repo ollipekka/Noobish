@@ -52,7 +52,7 @@ type Noobish with
 
             if not found && this.Components.WantsOnClick.[i] then 
                 found <- true
-                this.Components.OnClick.[i] (this.Components.Id.[i]) {X = x; Y = y}
+                this.Components.OnClick.[i] (this.Components.Id.[i]) {X = x; Y = y} gameTime
             
             if not found  && this.Components.WantsFocus.[i] then
                 found <- true 
@@ -83,7 +83,7 @@ type Noobish with
 
             if this.Components.WantsOnPress.[i] || children.Count = 0 then 
                 this.Components.LastPressTime.[i] <- gameTime.TotalGameTime
-                this.Components.OnPress.[i] this.Components.Id.[i] {X = x; Y = y}
+                this.Components.OnPress.[i] this.Components.Id.[i] {X = x; Y = y} gameTime
                 true 
             else 
                 let scrollX = parentScrollX + this.Components.ScrollX.[i]
