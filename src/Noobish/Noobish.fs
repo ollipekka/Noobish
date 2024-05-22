@@ -109,6 +109,18 @@ type Noobish(maxCount: int) =
         this.Components.Layout.[cid.Index] <- Layout.Grid(cols, rows)
         cid
 
+    member this.LargeWindowWithGrid (cols: int, rows: int) (children: UIComponentId[])=
+        let cid = this.Create "Window"
+        this.Components.Layout.[cid.Index] <- Layout.Grid(cols, rows)
+
+        this.SetChildren [|
+            this.Space() |> this.SetColspan 16 |> this.SetRowspan 1
+            this.Space() |> this.SetColspan 1 |> this.SetRowspan 7
+            this.PanelWithGrid(cols, rows)
+                |> this.SetColspan 14 |> this.SetRowspan 7
+                |> this.SetChildren children
+        |] cid 
+
     member this.Header (t: string) = 
         let cid = this.Create "Header1"
         this.Components.Text.[cid.Index] <- t
@@ -452,6 +464,13 @@ type Noobish(maxCount: int) =
         let index: int = this.GetIndex cid 
         if index <> -1 then 
             this.Components.Image.[index] <- ValueSome textureId
+        cid
+
+    member this.SetImageColor (color: Color) (cid: UIComponentId) =
+        let index: int = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.ImageColorOverride.[index] <- true
+            this.Components.ImageColor.[index] <- color
         cid
 
     member this.SetImageAlign (align: NoobishAlignment) (cid: UIComponentId) =
