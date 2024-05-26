@@ -102,24 +102,33 @@ type Noobish(maxCount: int) =
     member this.Window() =
         let cid = this.Create "Panel"
         this.Components.Layout.[cid.Index] <- Layout.LinearVertical
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid
 
     member this.WindowWithGrid (cols: int, rows: int) =
-        let cid = this.Create "Window"
+        let cid = this.Window()
         this.Components.Layout.[cid.Index] <- Layout.Grid(cols, rows)
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid
 
     member this.LargeWindowWithGrid (cols: int, rows: int) (children: UIComponentId[])=
-        let cid = this.Create "Window"
-        this.Components.Layout.[cid.Index] <- Layout.Grid(cols, rows)
+        let cid = this.Create "Space"
+        this.Components.Layout.[cid.Index] <- Layout.Grid(16, 9)
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+
+        let windowId = 
+            this.PanelWithGrid(cols, rows)
+                |> this.SetColspan 14 |> this.SetRowspan 7
+                |> this.SetChildren children
+                |> this.SetFill
 
         this.SetChildren [|
             this.Space() |> this.SetColspan 16 |> this.SetRowspan 1
             this.Space() |> this.SetColspan 1 |> this.SetRowspan 7
-            this.PanelWithGrid(cols, rows)
-                |> this.SetColspan 14 |> this.SetRowspan 7
-                |> this.SetChildren children
-        |] cid 
+            windowId 
+        |] cid |> ignore
+
+        windowId
 
     member this.Header (t: string) = 
         let cid = this.Create "Header1"
@@ -424,6 +433,7 @@ type Noobish(maxCount: int) =
     member this.SetTextAlign (align: NoobishAlignment) (cid: UIComponentId) =
         let index: int = this.GetIndex cid 
         if index <> -1 then 
+            this.Components.TextAlignOverride.[index] <- true 
             this.Components.TextAlign.[index] <- align
         cid
 
@@ -980,6 +990,10 @@ type Noobish(maxCount: int) =
 
             for i = 0 to this.Components.Count - 1 do 
                 let themeId = this.Components.ThemeId.[i]
+
+                if not this.Components.TextAlignOverride.[i] then 
+                    let textAlign = styleSheet.GetTextAlignment themeId "default"
+                    this.Components.TextAlign.[i] <- textAlign
 
                 if not this.Components.MarginOverride.[i] then 
                     let (top, right, bottom, left) = styleSheet.GetMargin themeId "default"

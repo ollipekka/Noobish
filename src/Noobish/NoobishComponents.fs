@@ -218,6 +218,7 @@ type NoobishComponents(count) =
     member val Enabled = Array.create count true 
     member val Block = Array.create count false
     member val Text = Array.create count ""
+    member val TextAlignOverride = Array.create count false
     member val TextAlign = Array.create count NoobishAlignment.Left
     member val Textwrap = Array.create count false
 
@@ -510,6 +511,7 @@ type NoobishComponents(count) =
 
             this.Text.[i] <- ""
             this.Textwrap.[i] <- false
+            this.TextAlignOverride.[i] <- false 
             this.TextAlign.[i] <- NoobishAlignment.Left
 
 
