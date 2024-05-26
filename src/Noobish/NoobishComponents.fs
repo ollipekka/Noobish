@@ -226,6 +226,7 @@ type NoobishComponents(count) =
 
     member val ImageColorOverride = Array.create count false
     member val ImageColor = Array.create count Color.White
+    member val ImageSize = Array.create count NoobishImageSize.Stretch
     member val ImageTextureEffect = Array.create count NoobishTextureEffect.None
 
     member val Layer = Array.create count 0
@@ -516,6 +517,7 @@ type NoobishComponents(count) =
             this.ImageAlign.[i] <- NoobishAlignment.Left
             this.ImageColorOverride.[i] <- false
             this.ImageColor.[i] <- Color.White
+            this.ImageSize.[i] <- NoobishImageSize.Stretch
             this.ImageTextureEffect.[i] <- NoobishTextureEffect.None
 
             this.ConstrainToParentBounds.[i] <- true

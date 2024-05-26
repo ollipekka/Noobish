@@ -460,17 +460,38 @@ type Noobish(maxCount: int) =
     member this.AlignTextBottomRight (cid: UIComponentId) = 
         this.AlignText NoobishAlignment.BottomRight cid
 
+    member this.Image(): UIComponentId = 
+        let cid = this.Create "Image"
+
+        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
+
+
+        cid 
+
     member this.SetImage (textureId: NoobishTextureId) (cid: UIComponentId) =
         let index: int = this.GetIndex cid 
         if index <> -1 then 
             this.Components.Image.[index] <- ValueSome textureId
         cid
 
+    member this.SetImageSize (imageSize: NoobishImageSize) (cid: UIComponentId) =
+        let index: int = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.ImageSize.[index] <- imageSize
+        cid
+
+
     member this.SetImageColor (color: Color) (cid: UIComponentId) =
         let index: int = this.GetIndex cid 
         if index <> -1 then 
             this.Components.ImageColorOverride.[index] <- true
             this.Components.ImageColor.[index] <- color
+        cid
+
+    member this.SetImageTextureEffect (t: NoobishTextureEffect) (cid: UIComponentId) =
+        let index: int = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.ImageTextureEffect.[index] <- t
         cid
 
     member this.SetImageAlign (align: NoobishAlignment) (cid: UIComponentId) =
