@@ -217,6 +217,7 @@ type NoobishComponents(count) =
     member val Visible = Array.create count true 
     member val Enabled = Array.create count true 
     member val Block = Array.create count false
+    member val WantsText = Array.create count false 
     member val Text = Array.create count ""
     member val TextAlignOverride = Array.create count false
     member val TextAlign = Array.create count NoobishAlignment.Left
@@ -343,7 +344,7 @@ type NoobishComponents(count) =
                 let text = this.Text.[i]
                 let minSize = this.MinSize.[i]
                 let struct(contentWidth, contentHeight) = 
-                    if not (String.IsNullOrWhiteSpace text) then
+                    if not (String.IsNullOrWhiteSpace text) || this.WantsText.[i] then
                         let themeId = this.ThemeId.[i]
 
                         let fontId = styleSheet.GetFont themeId "default"
@@ -509,6 +510,7 @@ type NoobishComponents(count) =
 
             this.Block.[i] <- false
 
+            this.WantsText.[i] <- false
             this.Text.[i] <- ""
             this.Textwrap.[i] <- false
             this.TextAlignOverride.[i] <- false 

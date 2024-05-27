@@ -132,6 +132,7 @@ type Noobish(maxCount: int) =
 
     member this.Header (t: string) = 
         let cid = this.Create "Header1"
+        this.Components.WantsText.[cid.Index] <- true
         this.Components.Text.[cid.Index] <- t
         this.Components.Block.[cid.Index] <- true
 
@@ -196,6 +197,7 @@ type Noobish(maxCount: int) =
                 this.Cursor <- min text.Length newCursorPos
         )
 
+        this.Components.WantsText.[cid.Index] <- true
         this.Components.Text.[cid.Index] <- t
 
 
@@ -204,6 +206,8 @@ type Noobish(maxCount: int) =
 
     member this.Button (t: string) (onClick: UIComponentId -> GameTime -> unit) = 
         let cid = this.Create "Button"
+
+        this.Components.WantsText.[cid.Index] <- true
         this.Components.Text.[cid.Index] <- t
         this.Components.WantsOnClick.[cid.Index] <- true
         this.Components.OnClick.[cid.Index] <- (fun source _ gameTime -> onClick source gameTime)
@@ -427,6 +431,7 @@ type Noobish(maxCount: int) =
     member this.SetText (text: string) (cid: UIComponentId) =
         let index: int = this.GetIndex cid 
         if index <> -1 then 
+            this.Components.WantsText.[cid.Index] <- true
             this.Components.Text.[index] <- text
         cid
 
