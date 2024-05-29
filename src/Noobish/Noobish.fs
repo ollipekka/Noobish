@@ -100,16 +100,40 @@ type Noobish(maxCount: int) =
         cid
 
     member this.Window() =
-        let cid = this.Create "Panel"
-        this.Components.Layout.[cid.Index] <- Layout.LinearVertical
+        let cid = this.Create "Space"
+        this.Components.Layout.[cid.Index] <- Layout.Grid(16, 9)
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
-        cid
+
+        let windowId = 
+            this.PanelVertical()
+                |> this.SetColspan 8 |> this.SetRowspan 7
+                |> this.SetFill
+
+        this.SetChildren [|
+            this.Space() |> this.SetColspan 16 |> this.SetRowspan 1
+            this.Space() |> this.SetColspan 4 |> this.SetRowspan 8
+            windowId 
+        |] cid |> ignore
+
+        windowId
 
     member this.WindowWithGrid (cols: int, rows: int) =
-        let cid = this.Window()
-        this.Components.Layout.[cid.Index] <- Layout.Grid(cols, rows)
+        let cid = this.Create "Space"
+        this.Components.Layout.[cid.Index] <- Layout.Grid(16, 9)
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
-        cid
+
+        let windowId = 
+            this.PanelWithGrid(cols, rows)
+                |> this.SetColspan 14 |> this.SetRowspan 5
+                |> this.SetFill
+
+        this.SetChildren [|
+            this.Space() |> this.SetColspan 16 |> this.SetRowspan 1
+            this.Space() |> this.SetColspan 2 |> this.SetRowspan 7
+            windowId 
+        |] cid |> ignore
+
+        windowId
 
     member this.LargeWindowWithGrid (cols: int, rows: int) (children: UIComponentId[])=
         let cid = this.Create "Space"
@@ -347,6 +371,26 @@ type Noobish(maxCount: int) =
 
     member private this.SetLayout (layout: Layout) (index: int) =
         this.Components.Layout.[index] <- layout
+
+
+    member this.SetVerticalLayout (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Layout.[index] <- Layout.LinearVertical
+        cid 
+    member this.SetHorizontalLayout (cid: UIComponentId) =
+
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Layout.[index] <- Layout.LinearHorizontal
+        cid 
+
+    member this.SetGridLayout (cols: int, rows: int) (cid: UIComponentId) =
+
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.Layout.[index] <- Layout.Grid(cols, rows)
+        cid
 
     member this.SetRowspan (rowspan: int) (cid: UIComponentId) =
         let index = this.GetIndex cid 
