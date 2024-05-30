@@ -11,7 +11,8 @@ type Noobish with
         let divId = this.DivHorizontal()
 
         let check = 
-            this.Button "" (fun _ _ -> onValueChanged (not toggled ))
+            this.Div()
+            |> this.SetOnClick (fun _ _ _ -> onValueChanged (not toggled ))
             |> this.SetThemeId "CheckBox"
             |> this.SetToggled toggled 
 

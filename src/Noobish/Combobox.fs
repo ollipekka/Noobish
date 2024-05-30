@@ -18,7 +18,8 @@ type Noobish with
                 this.SetVisible false sourceId |> ignore)
 
         let overlayWindowId =
-            this.Window()
+            this.Panel()
+            |> this.SetVerticalLayout
             |> this.SetChildren (
                 items |> Array.map (
                     fun i -> 

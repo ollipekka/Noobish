@@ -15,19 +15,9 @@
                 "color": "524b24ff"
             }
         },
-        "Header1": {
-            "default": {
-                "fontSize": 24
-            }
-        },
-        "Header2": {
+        "Header": {
             "default": {
                 "fontSize": 20
-            }
-        },
-        "Header3": {
-            "default": {
-                "fontSize": 16
             }
         },
         "HorizontalRule": {
