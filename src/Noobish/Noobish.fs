@@ -155,7 +155,7 @@ type Noobish(maxCount: int) =
         windowId
 
     member this.Header (t: string) = 
-        let cid = this.Create "Header1"
+        let cid = this.Create "Header"
         this.Components.WantsText.[cid.Index] <- true
         this.Components.Text.[cid.Index] <- t
         this.Components.Block.[cid.Index] <- true
@@ -254,6 +254,10 @@ type Noobish(maxCount: int) =
         this.SetLayout (Layout.Grid(cols, rows)) cid.Index
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid
+
+    member this.Panel () = 
+        let cid = this.Create "Panel"
+        cid   
 
     member this.PanelWithGrid (cols: int, rows: int) = 
         let cid = this.Create "Panel"
