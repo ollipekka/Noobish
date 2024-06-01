@@ -43,15 +43,6 @@ type NoobishComponents with
 
         {X = x + parentWidth * pinPos - pinWidth / 2f; Y = y}
 
-    member internal this.CalculatePinX(parentCid: UIComponentId) (pinCid: UIComponentId) (position: Position) : float32 =
-
-        let pinSize = this.ContentSize.[pinCid.Index]
-        let pinPadding = this.Padding.[pinCid.Index]
-        let pinWidth = pinSize.Width + pinPadding.Left + pinPadding.Right
-
-        let bounds = this.Bounds.[pinCid.Index]
-
-        (position.X - bounds.X - pinWidth / 2f)
 
 
 type Noobish with 
@@ -59,7 +50,7 @@ type Noobish with
     member this.Slider<'T> (rangeStart: float32, rangeEnd: float32) (step: float32) (value: float32) (onValueChanged: float32 -> unit) =
 
         let calcaulateSliderValue (cid: UIComponentId) (position: Position) = 
-            let bounds = this.Components.Bounds.[cid.Index]
+            let bounds: Internal.NoobishRectangle = this.Components.Bounds.[cid.Index]
 
             let relative = (position.X - bounds.X) / (bounds.Width)
             let newValue = rangeStart + (relative * (rangeEnd - rangeStart))
@@ -84,13 +75,11 @@ type Noobish with
 
         this.SetOnPress (fun (cid: UIComponentId) (position: Position) (_gameTime: GameTime) -> 
             let v = calcaulateSliderValue cid position
-            let delta = v - value
 
-
-            let offset = this.Components.CalculatePinX cid sliderPin position
+            let offset = this.Components.CalculatePinPosition cid sliderPin 0f 0f (rangeStart,rangeEnd) v
 
             let bounds = this.Components.Bounds[sliderPin.Index]
-            this.Components.Bounds[sliderPin.Index] <- {bounds with X = bounds.X + offset}
+            this.Components.Bounds[sliderPin.Index] <- {bounds with X = offset.X}
             onValueChanged v
         ) cid |> ignore
 
