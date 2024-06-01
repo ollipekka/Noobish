@@ -18,8 +18,8 @@ type NoobishComponents with
         let parentMargin = this.Margin.[parentCid.Index]
         let parentPadding = this.Padding.[parentCid.Index]
         
-        let parentWidth = parentBounds.Width - parentMargin.Left - parentMargin.Right - parentPadding.Left - parentPadding.Right
-        let parentHeight = parentBounds.Height - parentMargin.Top - parentMargin.Bottom - parentPadding.Top - parentPadding.Bottom
+        let parentWidth = parentBounds.Width - parentMargin.Left - parentMargin.Right
+        let parentHeight = parentBounds.Height - parentMargin.Top - parentMargin.Bottom
 
         let x, y = 
             let parentContainerId = this.ParentId.[parentCid.Index]
@@ -35,13 +35,13 @@ type NoobishComponents with
                     let rowHeight = (parentContainerHeight / float32 rows)
                     match this.GridCellAlignment.[parentCid.Index] with 
                     | NoobishAlignment.Left -> 
-                        parentBounds.X + parentMargin.Left, parentBounds.Y + rowHeight / 2f - parentMargin.Top - pinHeight / 2f
+                        parentBounds.X, parentBounds.Y + rowHeight / 2f - parentMargin.Top - parentMargin.Bottom - pinHeight / 2f
                     | _ -> 0f, 0f
-                | _ -> parentBounds.X + parentMargin.Left, parentBounds.Y + parentHeight / 2f - pinHeight / 2f
+                | _ -> parentBounds.X, parentBounds.Y + parentHeight / 2f - parentMargin.Top - pinHeight / 2f
             else 
                 0f, 0f
 
-        {X = x + parentWidth * pinPos - pinWidth / 2f; Y = y}
+        {X = x + parentMargin.Left + parentWidth * pinPos - pinWidth / 2f; Y = y}
 
 
 

@@ -112,8 +112,8 @@
             "default": {
                 "color": "df7126aa",
                 "width": 24,
-                "height": 16,
-                "padding": [4, 0, 4, 0],
+                "height": 32,
+                "padding": [0, 0, 0, 0],
                 "drawables": [ ["slider-pin.9"] ]
             }
         },
@@ -121,7 +121,8 @@
             "default": {
                 "color": "5f6b80ff",
                 "height": 3,
-                "padding": [0, 4, 0, 4],
+                "padding": [0, 0, 0, 0],
+                "margin": [2, 0, 2, 0],
                 "drawables": [ ["slider.9"] ]
             }
         },
