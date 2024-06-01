@@ -303,18 +303,53 @@ module Slider =
         let gridId
             = ui.Grid(2,2)
             |> ui.SetChildren [|
+                
                 ui.PanelVertical() 
-                |> ui.SetChildren [|
-                    ui.Header $"Slider A %g{model.SliderAValue}"
-                    ui.Slider (0f, 100f) 1f model.SliderAValue (fun value -> dispatch (SliderValueChanged value))
-                    ui.Header $"Slider B "
-                    ui.Slider (0f, 10f) 0.1f 5.5f (fun value-> ())
-                    ui.Header $"Slider C"
-                    ui.Slider (50f, 100f) 2f 50f (fun value -> ())
-                    ui.Header $"Slider D"
-                    ui.Slider (0f, 25f) 5f 25f (fun value -> ())
-                    
-                |]
+                    |> ui.SetChildren [|
+                        ui.Header $"Slider A %g{model.SliderAValue}"
+                        ui.Slider (0f, 100f) 1f model.SliderAValue (fun value -> dispatch (SliderValueChanged value))
+                        ui.Header $"Slider B "
+                        ui.Slider (0f, 10f) 0.1f 5.5f (fun value-> ())
+                        ui.Header $"Slider C"
+                        ui.Slider (50f, 100f) 2f 50f (fun value -> ())
+                        ui.Header $"Slider D"
+                        ui.Slider (0f, 25f) 5f 25f (fun value -> ())
+                    |]
+                ui.Panel ()
+                    |> ui.SetGridLayout(1, 9)
+                    |> ui.SetFill
+                    |> ui.SetChildren [|
+                        ui.DivVertical() 
+                            |> ui.SetRowspan 2
+                            |> ui.SetFill
+                            |> ui.SetChildren [|
+                                ui.Header ("Audio")
+                                ui.HorizontalRule() 
+                            |]
+                        ui.Label ("Music") |> ui.FillHorizontal
+                        ui.Slider (0f, 100f) 1.0f 50f (fun v -> ())
+                            |> ui.SetFill
+
+                        ui.Label ("Sounds") |> ui.FillHorizontal
+                        ui.Slider (0f, 100f) 1.0f 75f (fun v -> ())
+                            |> ui.FillHorizontal
+                            
+
+                        ui.Space() 
+
+                        ui.Button ("Back") (fun _ _ -> ()) |> ui.SetFill |> ui.SetRowspan 2
+
+
+                    |]
+    
+                ui.Panel() 
+                    |> ui.SetFill
+                    |> ui.SetGridLayout(1, 1)
+                    |> ui.SetChildren[|
+                        ui.Slider (0f, 100f) 1.0f 35f (fun v -> ())
+                            |> ui.FillHorizontal
+                    |]
+
             |]
 
         gridId
@@ -347,14 +382,14 @@ module Github =
                                 ui.Checkbox "MonoGame" true ignore |> ui.SetColspan 2
                                 ui.Checkbox "Elmish" true ignore |> ui.SetColspan 2
                                 ui.Label "Coolness:"
+                                    |> ui.SetTextAlign NoobishAlignment.Left 
                                     |> ui.SetFill
-                                    |> ui.AlignTextLeft
                                 ui.Slider (0f, 100f) 1f 80f ignore 
                                     |> ui.SetFillHorizontal
                                     |> ui.SetColspan 5
                                 ui.Label "Features:"
+                                    |> ui.SetTextAlign NoobishAlignment.Left 
                                     |> ui.SetFill
-                                    |> ui.AlignTextLeft
                                 ui.Textbox model.FeatureText (fun v -> dispatch (FeaturesChanged v))
                                     |> ui.SetFillHorizontal
                                     |> ui.AlignTextLeft

@@ -489,6 +489,9 @@ type NoobishComponents(count) =
                 let relativePosition2 = this.RelativePositionFunc.[ccid.Index] rcid ccid relativeBounds.X relativeBounds.Y
                 let childStartX = relativeBounds.X + margin.Left + relativePosition.X + relativePosition2.X
                 let childStartY = relativeBounds.Y + margin.Top + relativePosition.Y + relativePosition2.Y
+                let childStartX = relativePosition.X + relativePosition2.X
+                let childStartY = relativePosition.Y + relativePosition2.Y
+                
                 this.LayoutComponent content styleSheet childStartX childStartY parentBounds.Width parentBounds.Height ccid.Index
 
         | Layout.None -> ()
@@ -543,6 +546,7 @@ type NoobishComponents(count) =
             this.Layout.[i] <- Layout.None
 
             this.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
+            this.GridCellAlignment.[i] <- NoobishAlignment.Left
 
             this.WantsOnPress.[i] <- false
             this.OnPress.[i] <- ignoreClick
