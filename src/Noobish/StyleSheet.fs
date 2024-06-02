@@ -15,27 +15,36 @@ type NoobishDrawable=
 | NinePatchWithColor of string*Color
 | Texture of string
 
-[<RequireQualifiedAccess>]
-type NoobishStyle =
-| Width of int
-| Height of int
 
-// Text related styles.
-| Font of string
-| FontColor of Color
+[<Struct>]
+type NoobishMargin = {
+    Top: float32
+    Right: float32
+    Bottom: float32
+    Left: float32
+}
 
-| Color of int
-| Drawables of list<NoobishDrawable>
-| Padding of (int*int*int*int)
-| Margin of (int*int*int*int)
+module NoobishMargin = 
+    let empty: NoobishMargin = {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+
+[<Struct>]
+type NoobishPadding = {
+    Top: float32
+    Right: float32
+    Bottom: float32
+    Left: float32
+}
+
+module NoobishPadding = 
+    let empty: NoobishPadding = {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
 
 type NoobishStyleSheet = {
     Name: string
     TextureAtlasId: string
     Widths: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
     Heights: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
-    Paddings: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int*int*int*int>>
-    Margins: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int*int*int*int>>
+    Paddings: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishPadding>>
+    Margins: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishMargin>>
     Colors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, Color>>
     Fonts: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>
     FontSizes: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>
@@ -90,10 +99,10 @@ type NoobishStyleSheet = {
         NoobishStyleSheet.GetValue t.Colors cid state Color.White
 
     member t.GetPadding (cid: string) (state: string) =
-        NoobishStyleSheet.GetValue t.Paddings cid state (0, 0, 0, 0)
+        NoobishStyleSheet.GetValue t.Paddings cid state NoobishPadding.empty
 
     member t.GetMargin (cid: string) (state: string) =
-        NoobishStyleSheet.GetValue t.Margins cid state (0, 0, 0, 0)
+        NoobishStyleSheet.GetValue t.Margins cid state NoobishMargin.empty
 
     member t.GetTextAlignment (cid: string) (state: string) =
         NoobishStyleSheet.GetValue t.TextAlignments cid state NoobishAlignment.TopLeft

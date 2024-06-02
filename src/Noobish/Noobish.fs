@@ -1048,13 +1048,11 @@ type Noobish(maxCount: int) =
                     let textAlign = styleSheet.GetTextAlignment themeId "default"
                     this.Components.TextAlign.[i] <- textAlign
 
-                if not this.Components.MarginOverride.[i] then 
-                    let (top, right, bottom, left) = styleSheet.GetMargin themeId "default"
-                    this.Components.Margin.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+                if not this.Components.MarginOverride.[i] the
+                    this.Components.Margin.[i] <- styleSheet.GetMargin themeId "default"
 
                 if not this.Components.PaddingOverride.[i] then 
-                    let (top, right, bottom, left) = styleSheet.GetPadding themeId "default"
-                    this.Components.Padding.[i] <- {Top = float32 top; Left = float32 left;  Bottom = float32 bottom; Right = float32 right;}
+                    this.Components.Padding.[i] <- styleSheet.GetPadding themeId "default"
 
                 this.Components.MinSize.[i] <- {
                     Width = styleSheet.GetWidth themeId "default"

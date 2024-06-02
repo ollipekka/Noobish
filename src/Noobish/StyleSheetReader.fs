@@ -159,9 +159,9 @@ type StyleSheetReader () =
 
         toReadOnlyDictionary dict
 
-    let readIntTuple4Array (reader: ContentReader)  =
+    let readIntTuple4Array (reader: ContentReader)  (mapper: int->int->int->int -> 'T)=
 
-        let dict = Dictionary<string, Dictionary<string, (int*int*int*int)>>()
+        let dict = Dictionary<string, Dictionary<string, 'T>>()
         let count = reader.ReadInt32()
 
         for i = 0 to count - 1 do
@@ -176,7 +176,7 @@ type StyleSheetReader () =
                 let r = reader.ReadInt32()
                 let b = reader.ReadInt32()
                 let l = reader.ReadInt32()
-                dict2.[state] <- (t, r, b, l)
+                dict2.[state] <- mapper t r b l
 
         toReadOnlyDictionary dict
 
@@ -193,6 +193,6 @@ type StyleSheetReader () =
             Colors = readColorArrays reader
             Drawables = readDrawables reader
             TextAlignments = readTextAlignments reader
-            Margins = readIntTuple4Array reader
-            Paddings = readIntTuple4Array reader
+            Margins = readIntTuple4Array reader (fun top right bottom left -> {Top = float32 top; Right = float32 right; Bottom = float32 bottom; Left = float32 left })
+            Paddings = readIntTuple4Array reader (fun top right bottom left -> {Top = float32 top; Right = float32 right; Bottom = float32 bottom; Left = float32 left })
         }

@@ -49,21 +49,7 @@ type Fill = {
     Vertical: bool
 }
 
-[<Struct>]
-type Margin = {
-    Top: float32
-    Right: float32
-    Bottom: float32
-    Left: float32
-}
 
-[<Struct>]
-type Padding = {
-    Top: float32
-    Right: float32
-    Bottom: float32
-    Left: float32
-}
 
 [<Struct>]
 type Scroll = {
@@ -242,9 +228,9 @@ type NoobishComponents(count) =
     member val RelativePositionFunc = Array.init count (fun _ -> ignoreRelativePositionFunc)
     member val Fill = Array.create<Fill> count ({Horizontal = false; Vertical = false})
     member val PaddingOverride = Array.create count false
-    member val Padding = Array.create<Padding> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+    member val Padding = Array.create<NoobishPadding> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val MarginOverride = Array.create count false
-    member val Margin = Array.create<Margin> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+    member val Margin = Array.create<NoobishMargin> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val Layout = Array.create count Layout.None
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
     member val GridCellAlignment = Array.create count NoobishAlignment.Left
@@ -518,7 +504,6 @@ type NoobishComponents(count) =
             this.Textwrap.[i] <- false
             this.TextAlignOverride.[i] <- false 
             this.TextAlign.[i] <- NoobishAlignment.Left
-
 
             this.Image.[i] <- ValueNone
             this.ImageAlign.[i] <- NoobishAlignment.Left
