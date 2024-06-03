@@ -332,6 +332,7 @@ type Noobish(maxCount: int) =
     member this.SetSize (width: int, height: int) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
+            this.Components.MinSizeOverride.[index] <- true
             this.Components.MinSize.[index] <- {Width = float32 width; Height = float32 height}
         cid
 
@@ -395,6 +396,14 @@ type Noobish(maxCount: int) =
         if index <> -1 then 
             this.Components.Layout.[index] <- Layout.Grid(cols, rows)
         cid
+
+
+    member this.SetGridCellAlignment (a: NoobishAlignment) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.GridCellAlignment.[index] <- a
+        cid
+
 
     member this.SetRowspan (rowspan: int) (cid: UIComponentId) =
         let index = this.GetIndex cid 
@@ -525,10 +534,7 @@ type Noobish(maxCount: int) =
 
     member this.Image(): UIComponentId = 
         let cid = this.Create "Image"
-
-        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
-
-
+        this.Components.Layout.[cid.Index] <- Layout.Relative cid
         cid 
 
     member this.SetImage (textureId: NoobishTextureId) (cid: UIComponentId) =
@@ -542,7 +548,6 @@ type Noobish(maxCount: int) =
         if index <> -1 then 
             this.Components.ImageSize.[index] <- imageSize
         cid
-
 
     member this.SetImageColor (color: Color) (cid: UIComponentId) =
         let index: int = this.GetIndex cid 
@@ -589,7 +594,6 @@ type Noobish(maxCount: int) =
             let childLayer = this.Components.Layer.[cid.Index] + layer
             this.Components.Layer.[cid.Index] <- childLayer
             this.BumpLayer childLayer this.Components.Children.[cid.Index]
-
 
     member this.SetChildren (cs: UIComponentId[]) (cid: UIComponentId) =
         let index = this.GetIndex cid 
@@ -801,6 +805,7 @@ type Noobish(maxCount: int) =
         let textureEffect = DrawUI.getTextureEfffect this.Components.ImageTextureEffect.[i] 
         let imageColor = this.Components.ImageColor.[i]
         let imageAlign = this.Components.ImageAlign.[i]
+        let imageSize = this.Components.ImageSize.[i]
 
 
         match textureId with
@@ -808,7 +813,7 @@ type Noobish(maxCount: int) =
             let texture = content.Load<Texture2D> textureId
 
             let sourceRect = Rectangle(0, 0, texture.Width, texture.Height)
-            let rect = DrawUI.calculateImageBounds NoobishImageSize.Original imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
+            let rect = DrawUI.calculateImageBounds imageSize imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
 
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
             let rotation = 0f
@@ -831,7 +836,7 @@ type Noobish(maxCount: int) =
             let atlas = content.Load<NoobishTextureAtlas> aid
             let texture = atlas.[tid]
 
-            let rect = DrawUI.calculateImageBounds NoobishImageSize.Original imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
+            let rect = DrawUI.calculateImageBounds imageSize imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
 
             let origin = Vector2(float32 texture.Width / 2.0f, float32 texture.Height / 2.0f)
             let rotation = 0f
@@ -855,7 +860,7 @@ type Noobish(maxCount: int) =
             let atlas = content.Load<NoobishTextureAtlas> aid
             let texture = atlas.[tid]
 
-            let rect = DrawUI.calculateImageBounds NoobishImageSize.Original imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
+            let rect = DrawUI.calculateImageBounds imageSize imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
 
 
             spriteBatch.DrawAtlasNinePatch(
@@ -1048,16 +1053,18 @@ type Noobish(maxCount: int) =
                     let textAlign = styleSheet.GetTextAlignment themeId "default"
                     this.Components.TextAlign.[i] <- textAlign
 
-                if not this.Components.MarginOverride.[i] the
+                if not this.Components.MarginOverride.[i] then
                     this.Components.Margin.[i] <- styleSheet.GetMargin themeId "default"
 
                 if not this.Components.PaddingOverride.[i] then 
                     this.Components.Padding.[i] <- styleSheet.GetPadding themeId "default"
 
-                this.Components.MinSize.[i] <- {
-                    Width = styleSheet.GetWidth themeId "default"
-                    Height = styleSheet.GetHeight  themeId "default"
-                }
+
+                if not this.Components.MinSizeOverride.[i] then 
+                    this.Components.MinSize.[i] <- {
+                        Width = styleSheet.GetWidth themeId "default"
+                        Height = styleSheet.GetHeight  themeId "default"
+                    }
 
                 if not this.Components.ImageColorOverride.[i] then 
                     this.Components.ImageColor.[i] <- styleSheet.GetColor themeId "default"

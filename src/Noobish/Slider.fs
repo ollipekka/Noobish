@@ -32,10 +32,13 @@ type NoobishComponents with
                 let parentContainerHeight = parentContainerBounds.Height - parentContainerMargin.Top - parentContainerMargin.Bottom - parentContainerPadding.Top - parentContainerPadding.Bottom      
                 match this.Layout.[parentContainerId.Index] with 
                 | Layout.Grid(cols, rows) ->
+                    let rowWidth = (parentContainerWidth / float32 cols)
                     let rowHeight = (parentContainerHeight / float32 rows)
                     match this.GridCellAlignment.[parentCid.Index] with 
                     | NoobishAlignment.Left -> 
                         parentBounds.X, parentBounds.Y + rowHeight / 2f - parentMargin.Top - parentMargin.Bottom - pinHeight / 2f
+                    | NoobishAlignment.Center -> 
+                        parentBounds.X + rowWidth / 2f - parentMargin.Left - parentMargin.Right - pinHeight / 2f, parentBounds.Y + rowHeight / 2f - parentMargin.Top - parentMargin.Bottom - pinHeight / 2f
                     | _ -> 0f, 0f
                 | _ -> parentBounds.X, parentBounds.Y + parentHeight / 2f - parentMargin.Top - pinHeight / 2f
             else 

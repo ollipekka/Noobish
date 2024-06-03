@@ -221,6 +221,7 @@ type NoobishComponents(count) =
 
     member val ConstrainToParentBounds = Array.create count true
     member val Bounds = Array.create<Internal.NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+    member val MinSizeOverride = Array.create count false
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
     member val ContentSize = Array.create count {Width = 0f; Height = 0f}
     member val RelativePosition = Array.create count {X = 0f; Y = 0f}
@@ -459,6 +460,14 @@ type NoobishComponents(count) =
                 | NoobishAlignment.Left ->
                     let childBounds = this.Bounds.[cid.Index]
                     this.Bounds.[cid.Index] <- {childBounds with Y = childStartY + childHeight / 2f - childBounds.Height / 2f }
+                    
+                | NoobishAlignment.Center ->
+                    let childBounds = this.Bounds.[cid.Index]
+                    this.Bounds.[cid.Index] <- {
+                        childBounds with 
+                            X = childStartX + childWidth /2f - childBounds.Width / 2f; 
+                            Y = childStartY + childHeight / 2f - childBounds.Height / 2f }
+                    
                 | _ -> ()
  
         | Layout.Relative (rcid) -> 
@@ -514,6 +523,7 @@ type NoobishComponents(count) =
 
             this.ConstrainToParentBounds.[i] <- true
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+            this.MinSizeOverride.[i] <- false
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
             this.ContentSize.[i] <- {Width = 0f; Height = 0f}
             this.RelativePositionFunc.[i] <- ignoreRelativePositionFunc
