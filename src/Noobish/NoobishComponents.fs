@@ -63,6 +63,19 @@ type Size = {Width: float32; Height: float32}
 [<Struct>]
 type Position = {X: float32; Y: float32}
 
+[<RequireQualifiedAccess>]
+type RelativePosition = 
+| None
+| Func of pcid: (UIComponentId -> UIComponentId -> float32 -> float32 -> Position)
+| Position of p: Position
+
+
+[<RequireQualifiedAccess>]
+type ViewConstraint = 
+| None
+| Parent
+| ParentOfParent
+
 
 
 module DrawUI = 
@@ -191,7 +204,6 @@ type Layout =
 
 type NoobishComponents(count) = 
     
-    let ignoreRelativePositionFunc (rcid: UIComponentId) (cid: UIComponentId) (x: float32) (y: float32 )= {X = 0f; Y = 0f}
 
     let ignoreClick (_source: UIComponentId) (_p: Position) (_gameTime: GameTime) = ()
     let ignorePress (_source: UIComponentId) (_p: Position) (_gameTime: GameTime) = ()
@@ -224,9 +236,8 @@ type NoobishComponents(count) =
     member val MinSizeOverride = Array.create count false
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
     member val ContentSize = Array.create count {Width = 0f; Height = 0f}
-    member val RelativePosition = Array.create count {X = 0f; Y = 0f}
+    member val RelativePosition = Array.create count RelativePosition.None
 
-    member val RelativePositionFunc = Array.init count (fun _ -> ignoreRelativePositionFunc)
     member val Fill = Array.create<Fill> count ({Horizontal = false; Vertical = false})
     member val PaddingOverride = Array.create count false
     member val Padding = Array.create<NoobishPadding> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
@@ -234,7 +245,7 @@ type NoobishComponents(count) =
     member val Margin = Array.create<NoobishMargin> count {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val Layout = Array.create count Layout.None
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
-    member val GridCellAlignment = Array.create count NoobishAlignment.Left
+    member val GridCellAlignment = Array.create count NoobishAlignment.None
     member val WantsOnPress = Array.create count false
     member val OnPress = Array.create<UIComponentId -> Position -> GameTime -> unit> count ignorePress
     member val WantsOnClick = Array.create count false
@@ -348,15 +359,17 @@ type NoobishComponents(count) =
         this.ContentSize.[i] <- contentSize
 
 
+    member private this.IsGridLayout(i) = 
+        match this.Layout.[i] with 
+        | Layout.Grid (_, _) -> true 
+        | _ -> false
 
     member this.LayoutComponent (content: ContentManager) (styleSheet: NoobishStyleSheet) (startX: float32) (startY: float32) (parentWidth: float32) (parentHeight: float32) (i: int) = 
         Log.Logger.Information ("Entering Layouting {ComponentId}", i)
         let fill = this.Fill.[i]
         let scroll = this.Scroll.[i]
-        let text = this.Text.[i]
         let margin = this.Margin.[i]
         let padding = this.Padding.[i]
-        let minSize = this.MinSize.[i]
         let contentSize = this.ContentSize.[i]
 
         let maxWidth = parentWidth
@@ -387,6 +400,24 @@ type NoobishComponents(count) =
             Width = viewportWidth + margin.Left + margin.Right + padding.Left + padding.Right
             Height = viewportHeight + margin.Top + margin.Bottom + padding.Top + padding.Bottom
         }
+
+        let parentId = this.ParentId.[i]
+        if parentId <> UIComponentId.empty && (this.IsGridLayout parentId.Index) then 
+            match this.GridCellAlignment.[i] with 
+            | NoobishAlignment.None -> ()
+            | NoobishAlignment.Left ->
+                let childBounds = this.Bounds.[i]
+                this.Bounds.[i] <- {childBounds with Y = startY + parentHeight / 2f - childBounds.Height / 2f }
+                
+            | NoobishAlignment.Center ->
+                let childBounds = this.Bounds.[i]
+                this.Bounds.[i] <- {
+                    childBounds with 
+                        X = startX + parentWidth /2f - childBounds.Width / 2f; 
+                        Y = startY + parentHeight / 2f - childBounds.Height / 2f }
+                
+            | _ -> ()
+
 
         match this.Layout.[i] with 
         | Layout.LinearHorizontal -> 
@@ -436,10 +467,14 @@ type NoobishComponents(count) =
 
             for i = 0 to children.Count - 1 do
                 let cid = children.[i]
+
+                let gridSpan = this.GridSpan.[cid.Index]
                 let childStartX = (viewportStartX + (float32 col) * (colWidth))
                 let childStartY = (viewportStartY + (float32 row) * (rowHeight))
 
-                let gridSpan = this.GridSpan.[cid.Index]
+                let childWidth = float32 gridSpan.Colspan * colWidth 
+                let childHeight =  float32 gridSpan.Rowspan * rowHeight
+             
 
                 for c = col to col + gridSpan.Colspan - 1 do
                     for r = row to row + gridSpan.Rowspan - 1 do
@@ -451,24 +486,9 @@ type NoobishComponents(count) =
                         col <- 0
                         row <- row + gridSpan.Rowspan
 
-                let childWidth = float32 gridSpan.Colspan * colWidth 
-                let childHeight =  float32 gridSpan.Rowspan * rowHeight
-             
+
                 this.LayoutComponent content styleSheet childStartX childStartY childWidth childHeight cid.Index
-                
-                match this.GridCellAlignment.[cid.Index] with 
-                | NoobishAlignment.Left ->
-                    let childBounds = this.Bounds.[cid.Index]
-                    this.Bounds.[cid.Index] <- {childBounds with Y = childStartY + childHeight / 2f - childBounds.Height / 2f }
-                    
-                | NoobishAlignment.Center ->
-                    let childBounds = this.Bounds.[cid.Index]
-                    this.Bounds.[cid.Index] <- {
-                        childBounds with 
-                            X = childStartX + childWidth /2f - childBounds.Width / 2f; 
-                            Y = childStartY + childHeight / 2f - childBounds.Height / 2f }
-                    
-                | _ -> ()
+    
  
         | Layout.Relative (rcid) -> 
             let pcid = this.ParentId.[rcid.Index]
@@ -479,15 +499,16 @@ type NoobishComponents(count) =
             let children = this.Children.[i]
             for i = 0 to children.Count - 1 do 
                 let ccid = children.[i]
-                let relativePosition = this.RelativePosition.[ccid.Index]
-                let size = this.ContentSize.[ccid.Index]
-                let relativePosition2 = this.RelativePositionFunc.[ccid.Index] rcid ccid relativeBounds.X relativeBounds.Y
-                let childStartX = relativeBounds.X + margin.Left + relativePosition.X + relativePosition2.X
-                let childStartY = relativeBounds.Y + margin.Top + relativePosition.Y + relativePosition2.Y
-                let childStartX = relativePosition.X + relativePosition2.X
-                let childStartY = relativePosition.Y + relativePosition2.Y
-                
-                this.LayoutComponent content styleSheet childStartX childStartY parentBounds.Width parentBounds.Height ccid.Index
+
+                let childStart =
+                    match this.RelativePosition.[ccid.Index] with 
+                    | RelativePosition.None -> {X = relativeBounds.X + margin.Left; Y = relativeBounds.Y + margin.Top }
+                    | RelativePosition.Position(relativePosition) -> 
+                        {X = (relativeBounds.X + margin.Left + relativePosition.X); Y = (relativeBounds.Y + margin.Top + relativePosition.Y)}
+                    | RelativePosition.Func(f) ->
+                        f rcid ccid (relativeBounds.X + margin.Left) (relativeBounds.Y + margin.Top)
+                    
+                this.LayoutComponent content styleSheet childStart.X childStart.Y parentBounds.Width parentBounds.Height ccid.Index
 
         | Layout.None -> ()
 
@@ -526,8 +547,7 @@ type NoobishComponents(count) =
             this.MinSizeOverride.[i] <- false
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
             this.ContentSize.[i] <- {Width = 0f; Height = 0f}
-            this.RelativePositionFunc.[i] <- ignoreRelativePositionFunc
-            this.RelativePosition.[i] <- {X = 0f; Y = 0f}
+            this.RelativePosition.[i] <- RelativePosition.None
 
             this.Fill.[i] <- {Horizontal = false; Vertical = false}
             
@@ -541,7 +561,7 @@ type NoobishComponents(count) =
             this.Layout.[i] <- Layout.None
 
             this.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
-            this.GridCellAlignment.[i] <- NoobishAlignment.Left
+            this.GridCellAlignment.[i] <- NoobishAlignment.None
 
             this.WantsOnPress.[i] <- false
             this.OnPress.[i] <- ignoreClick

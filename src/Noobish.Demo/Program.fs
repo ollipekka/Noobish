@@ -328,7 +328,7 @@ module Slider =
                             |]
                         ui.Label ("Music") |> ui.FillHorizontal
                         ui.Slider (0f, 100f) 1.0f 50f (fun v -> ())
-                            |> ui.SetFill
+                            |> ui.FillHorizontal
 
                         ui.Label ("Sounds") |> ui.FillHorizontal
                         ui.Slider (0f, 100f) 1.0f 75f (fun v -> ())

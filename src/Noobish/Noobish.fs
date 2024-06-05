@@ -83,7 +83,7 @@ type Noobish(maxCount: int) =
         this.Components.Layer.[i] <- 1
         this.Components.Layout.[i] <- Layout.None
         this.Components.GridSpan.[i] <- {Colspan = 1; Rowspan = 1}
-        this.Components.GridCellAlignment.[i] <- NoobishAlignment.Left
+        this.Components.GridCellAlignment.[i] <- NoobishAlignment.None
         this.Components.MinSize.[i] <- {Width = 0f; Height = 0f}
 
         this.Components.LastPressTime[i] <- TimeSpan.Zero
@@ -308,13 +308,13 @@ type Noobish(maxCount: int) =
     member this.SetRelativePosition (x: int, y: int) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Components.RelativePosition.[index] <- {X = float32 x; Y = float32 y}
+            this.Components.RelativePosition.[index] <- (RelativePosition.Position {X = float32 x; Y = float32 y})
         cid
 
     member this.SetRelativePositionFunc (f: UIComponentId -> UIComponentId -> float32 -> float32 -> Position) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Components.RelativePositionFunc.[index] <- f
+            this.Components.RelativePosition.[index] <- (RelativePosition.Func f)
         cid
 
     member this.SetConstrainToParentBounds (v: bool) (cid: UIComponentId) = 

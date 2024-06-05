@@ -36,10 +36,10 @@ type NoobishComponents with
                     let rowHeight = (parentContainerHeight / float32 rows)
                     match this.GridCellAlignment.[parentCid.Index] with 
                     | NoobishAlignment.Left -> 
-                        parentBounds.X, parentBounds.Y + rowHeight / 2f - parentMargin.Top - parentMargin.Bottom - pinHeight / 2f
+                        parentBounds.X, parentBounds.Y  + parentMargin.Top + parentMargin.Bottom - pinHeight / 2f
                     | NoobishAlignment.Center -> 
-                        parentBounds.X + rowWidth / 2f - parentMargin.Left - parentMargin.Right - pinHeight / 2f, parentBounds.Y + rowHeight / 2f - parentMargin.Top - parentMargin.Bottom - pinHeight / 2f
-                    | _ -> 0f, 0f
+                        parentBounds.X, parentBounds.Y + parentMargin.Top + parentMargin.Bottom - pinHeight / 2f
+                    | _ -> 0f, 0f//parentBounds.X, parentBounds.Y + rowHeight / 2f - parentMargin.Top - parentMargin.Bottom - pinHeight / 2f
                 | _ -> parentBounds.X, parentBounds.Y + parentHeight / 2f - parentMargin.Top - pinHeight / 2f
             else 
                 0f, 0f
@@ -65,6 +65,7 @@ type Noobish with
         let cid = this.Create "Slider"
         this.Components.Layout[cid.Index] <- Layout.Relative(cid)
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = false}
+        this.Components.GridCellAlignment.[cid.Index] <- NoobishAlignment.Center
         let sliderPin = 
             this.Create "SliderPin"
             |> this.SetConstrainToParentBounds false

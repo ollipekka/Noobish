@@ -120,7 +120,7 @@
         "Slider": {
             "default": {
                 "color": "5f6b80ff",
-                "height": 3,
+                "height": 14,
                 "padding": [0, 0, 0, 0],
                 "margin": [2, 0, 2, 0],
                 "drawables": [ ["slider.9"] ]
@@ -128,7 +128,7 @@
         },
         "ScrollBarPin": {
             "default": {
-                "width": 8,
+                "width": 12,
                 "color": "df7126aa",
                 "drawables": [ ["scrollbar-pin.9"] ]
             }

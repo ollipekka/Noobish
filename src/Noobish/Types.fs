@@ -25,6 +25,7 @@ type NoobishImageSize = Stretch | BestFitMax | BestFitMin | Original
 
 [<RequireQualifiedAccess>]
 type NoobishAlignment =
+| None
 | TopLeft | TopCenter | TopRight
 | Left  | Center | Right
 | BottomLeft | BottomCenter | BottomRight

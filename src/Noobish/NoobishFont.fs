@@ -244,6 +244,7 @@ module NoobishFont =
             | NoobishAlignment.BottomLeft -> struct(leftX(), bottomY())
             | NoobishAlignment.BottomCenter -> struct(centerX(), bottomY())
             | NoobishAlignment.BottomRight -> struct(rightX(), bottomY())
+            | NoobishAlignment.None -> failwith "Can't be none here."
 
         {X = (textStartX + scrollX); Y = (textStartY + scrollY); Width = textSizeX; Height = textSizeY}
 
@@ -285,6 +286,7 @@ module NoobishFont =
             | NoobishAlignment.BottomLeft -> struct(leftX(), bottomY())
             | NoobishAlignment.BottomCenter -> struct(centerX(), bottomY())
             | NoobishAlignment.BottomRight -> struct(rightX(), bottomY())
+            | NoobishAlignment.None -> failwith "Can't be none here."
 
         let mutable width = textStartX
         let mutable i = 0
@@ -334,6 +336,7 @@ module NoobishFont =
             | NoobishAlignment.BottomLeft -> struct(leftX bounds, bottomY bounds textSizeY)
             | NoobishAlignment.BottomCenter -> struct(centerX(bounds) textSizeX, bottomY bounds textSizeY)
             | NoobishAlignment.BottomRight -> struct(rightX bounds textSizeX, bottomY bounds textSizeY)
+            | NoobishAlignment.None -> failwith "Can't be none here."
 
         {X = (textStartX + scrollX); Y = (textStartY + scrollY); Width = textSizeX; Height = textSizeY}
 
