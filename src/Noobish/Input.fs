@@ -36,7 +36,7 @@ type Noobish with
 
     member this.Click (x: float32) (y: float32) (gameTime: GameTime) (parentScrollX: float32) (parentScrollY: float32) (i: int): bool  =
 
-        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y parentScrollX parentScrollY i then 
+        if this.Components.Visible.[i] && this.Components.Enabled.[i] && this.ComponentContains x y parentScrollX parentScrollY i then 
             Log.Logger.Debug ("Mouse click inside component {ComponentId}", i)
 
             let children = this.Components.Children.[i]
@@ -46,7 +46,7 @@ type Noobish with
             let mutable found = false
             let mutable j = 0
             while not found && j < children.Count do 
-                if this.Click x y gameTime scrollX scrollY  children.[j].Index then 
+                if this.Components.ConstrainToParentBounds.[j] && this.Click x y gameTime scrollX scrollY  children.[j].Index then 
                     found <- true 
                 j <- j + 1
 
@@ -75,31 +75,27 @@ type Noobish with
 
 
     member this.Press (x: float32) (y: float32) (gameTime: GameTime) (parentScrollX: float32) (parentScrollY: float32) (i: int): bool =
-
-
-        if this.Components.Visible.[i] && this.Components.Enabled.[i]&& this.ComponentContains x y parentScrollX parentScrollY i then 
+        if this.Components.Visible.[i] && this.Components.Enabled.[i] && this.ComponentContains x y parentScrollX parentScrollY i then 
             Log.Logger.Debug ("Mouse press inside component {ComponentId}", i)
+
             let children = this.Components.Children.[i]
 
-            if this.Components.WantsOnPress.[i] || children.Count = 0 then 
+            let scrollX = parentScrollX + this.Components.ScrollX.[i]
+            let scrollY = parentScrollY + this.Components.ScrollY.[i]
+            let mutable found = false
+            let mutable j = 0
+            while not found && j < children.Count do 
+                if this.Press x y gameTime scrollX scrollY  children.[j].Index then 
+                    found <- true 
+                j <- j + 1
+
+            if not found && this.Components.WantsOnPress.[i] then 
+                found <- true
                 this.Components.LastPressTime.[i] <- gameTime.TotalGameTime
-                this.Components.OnPress.[i] this.Components.Id.[i] {X = x; Y = y} gameTime
-                true 
-            else 
-                let scrollX = parentScrollX + this.Components.ScrollX.[i]
-                let scrollY = parentScrollY + this.Components.ScrollY.[i]
-                let mutable handled = false
-                let mutable j = 0
-
-                while not handled && j < children.Count do
-                    let cid = children.[j]
-
-                    if this.Press x y gameTime scrollX scrollY cid.Index then 
-                        handled <- true 
-
-                    j <- j + 1
-                handled
-        else 
+                this.Components.OnPress.[i] (this.Components.Id.[i]) {X = x; Y = y} gameTime
+            
+            found
+        else
             false
 
     member this.Scroll
@@ -167,7 +163,7 @@ type Noobish with
 
         if mouseState.LeftButton = ButtonState.Pressed then 
             for i = 0 to this.Components.Count - 1 do 
-                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                if this.Components.ParentId.[i] = UIComponentId.empty || not this.Components.ConstrainToParentBounds.[i] then 
                     this.ToProcess.Enqueue(i, -this.Components.Layer.[i])
 
             while this.ToProcess.Count > 0 do 
@@ -177,7 +173,7 @@ type Noobish with
         elif mouseState.LeftButton = ButtonState.Released && this.PreviousMouseState.LeftButton = ButtonState.Pressed then 
             this.FocusedElementId <- UIComponentId.empty
             for i = 0 to this.Components.Count - 1 do 
-                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                if this.Components.ParentId.[i] = UIComponentId.empty || not this.Components.ConstrainToParentBounds.[i] then 
                     this.ToProcess.Enqueue(i, -this.Components.Layer.[i])
 
             while this.ToProcess.Count > 0 do 

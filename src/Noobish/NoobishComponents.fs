@@ -58,20 +58,20 @@ type Scroll = {
 }
 
 [<Struct>]
-type Size = {Width: float32; Height: float32}
+type NoobishSize = {Width: float32; Height: float32}
 
 [<Struct>]
-type Position = {X: float32; Y: float32}
+type NoobishPosition = {X: float32; Y: float32}
 
 [<RequireQualifiedAccess>]
 type RelativePosition = 
 | None
-| Func of pcid: (UIComponentId -> UIComponentId -> float32 -> float32 -> Position)
-| Position of p: Position
+| Func of pcid: (UIComponentId -> UIComponentId -> float32 -> float32 -> NoobishPosition)
+| Position of p: NoobishPosition
 
 
 [<RequireQualifiedAccess>]
-type ViewConstraint = 
+type NoobishViewConstraint = 
 | None
 | Parent
 | ParentOfParent
@@ -205,8 +205,8 @@ type Layout =
 type NoobishComponents(count) = 
     
 
-    let ignoreClick (_source: UIComponentId) (_p: Position) (_gameTime: GameTime) = ()
-    let ignorePress (_source: UIComponentId) (_p: Position) (_gameTime: GameTime) = ()
+    let ignoreClick (_source: UIComponentId) (_p: NoobishPosition) (_gameTime: GameTime) = ()
+    let ignorePress (_source: UIComponentId) (_p: NoobishPosition) (_gameTime: GameTime) = ()
     member val Count = 0 with get, set
     member val Id = Array.create count UIComponentId.empty
     member val ThemeId = Array.create count ""
@@ -247,9 +247,9 @@ type NoobishComponents(count) =
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
     member val GridCellAlignment = Array.create count NoobishAlignment.None
     member val WantsOnPress = Array.create count false
-    member val OnPress = Array.create<UIComponentId -> Position -> GameTime -> unit> count ignorePress
+    member val OnPress = Array.create<UIComponentId -> NoobishPosition -> GameTime -> unit> count ignorePress
     member val WantsOnClick = Array.create count false
-    member val OnClick = Array.create<UIComponentId -> Position -> GameTime -> unit> count ignoreClick
+    member val OnClick = Array.create<UIComponentId -> NoobishPosition -> GameTime -> unit> count ignoreClick
     member val LastPressTime = Array.create count TimeSpan.Zero
     member val LastHoverTime = Array.create count TimeSpan.Zero
     member val WantsKeyTyped = Array.create count false 
@@ -504,7 +504,8 @@ type NoobishComponents(count) =
                     match this.RelativePosition.[ccid.Index] with 
                     | RelativePosition.None -> {X = relativeBounds.X + margin.Left; Y = relativeBounds.Y + margin.Top }
                     | RelativePosition.Position(relativePosition) -> 
-                        {X = (relativeBounds.X + margin.Left + relativePosition.X); Y = (relativeBounds.Y + margin.Top + relativePosition.Y)}
+                        
+                        {X = (relativeBounds.X + relativePosition.X); Y = (relativeBounds.Y + relativePosition.Y)}
                     | RelativePosition.Func(f) ->
                         f rcid ccid (relativeBounds.X + margin.Left) (relativeBounds.Y + margin.Top)
                     

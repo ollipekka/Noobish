@@ -14,7 +14,7 @@ type Noobish with
 
         let overlayPaneId =
             this.Overlaypane cid 
-            |> this.SetOnClick (fun sourceId (_position: Position) (_gameTime: GameTime) ->  
+            |> this.SetOnClick (fun sourceId (_position: NoobishPosition) (_gameTime: GameTime) ->  
                 this.SetVisible false sourceId |> ignore)
 
         let overlayWindowId =
@@ -38,7 +38,7 @@ type Noobish with
 
 
         this.Components.WantsOnClick.[cid.Index] <- true
-        this.Components.OnClick.[cid.Index] <- (fun (event: UIComponentId) (position: Position) (gameTime: GameTime) -> 
+        this.Components.OnClick.[cid.Index] <- (fun (event: UIComponentId) (position: NoobishPosition) (gameTime: GameTime) -> 
             this.SetVisible true overlayPaneId |> ignore
         )
 

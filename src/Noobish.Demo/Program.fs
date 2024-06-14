@@ -64,7 +64,7 @@ module NoobishDemo =
         
         let window2 = 
             nui2.Window()
-            |> nui2.SetSize (150, 200)
+            |> nui2.SetSize (Vector2(150f, 200f))
             |> nui2.SetChildren [|
                 nui2.Header "Hello"
                 nui2.HorizontalRule()
@@ -77,7 +77,7 @@ module NoobishDemo =
         
         let window3 = 
             nui2.Window()
-            |> nui2.SetPosition (200, 0)
+            |> nui2.SetPosition (Vector2(200f, 0f))
             |> nui2.SetChildren [|
                 nui2.Header "Hello 2"
                 nui2.HorizontalRule()
@@ -88,7 +88,7 @@ module NoobishDemo =
 
         let window3 = 
             nui2.WindowWithGrid(2, 2)
-            |> nui2.SetPosition (0, 200)
+            |> nui2.SetPosition (Vector2(0f, 200f))
             |> nui2.SetChildren [|
                 nui2.Button "1" (fun _ _ -> (Log.Logger.Information "1"))
                     |> nui2.SetColspan 1 
@@ -209,6 +209,17 @@ module Containers =
 
 
             |]
+
+            let image (color: Color) (s: Vector2) (p: Vector2) (c: UIComponentId[]): UIComponentId=
+                ui.Image()
+                    |> ui.SetImage (NoobishTextureId.Basic("Pixel"))
+                    |> ui.SetConstrainToParentBounds false
+                    |> ui.SetGridCellAlignment NoobishAlignment.Center
+                    |> ui.SetSize s
+                    |> ui.SetRelativePosition {X = p.X; Y = p.Y}
+                    |> ui.SetImageColor color
+                    |> ui.SetChildren c
+
             ui.PanelVertical()
                 |> ui.SetChildren [|
                     ui.DivHorizontal() 
@@ -216,10 +227,21 @@ module Containers =
                         |> ui.SetChildren [|
                             ui.Label model.ComboboxValue
                         |]
-                    ui.Canvas()
+                    ui.Div()
+                        |> ui.SetFill
+                        |> ui.SetGridLayout(1,1)
                         |> ui.SetChildren [|
-                            ui.Button "0" (fun _ _ -> ()) |> ui.SetRelativePosition (50, 50)
-                            ui.Button "1" (fun _ _ -> ()) |> ui.SetRelativePosition (25, 75)
+                            image Color.Red (Vector2(20f, 10f)) (Vector2(10f, 0f))
+                                [|
+                                    image Color.Orange (Vector2(10f, 10f)) (Vector2(-10f, 10f)) [||]
+                                    image Color.Blue (Vector2(10f, 10f)) (Vector2(10f, -10f)) [||]
+                                    image Color.Green (Vector2(10f, 10f)) (Vector2(-10f, -10f)) [||]
+                                    image Color.Yellow (Vector2(10f, 10f)) (Vector2(10f, 10f)) [||]
+                                    image Color.CornflowerBlue (Vector2(10f, 10f)) (Vector2(20f, 0f)) [||]
+                                    image Color.Purple (Vector2(10f, 10f)) (Vector2(-10f, 0f)) [||]
+                                    image Color.Gold (Vector2(10f, 10f)) (Vector2(0f, 10f)) [||]
+                                    image Color.BlanchedAlmond (Vector2(10f, 10f)) (Vector2(0f, -10f)) [||]
+                                |]
                         |]
 
                 |]

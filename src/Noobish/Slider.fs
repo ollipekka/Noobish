@@ -7,7 +7,7 @@ open Microsoft.Xna.Framework
 
 type NoobishComponents with 
 
-    member internal this.CalculatePinPosition (parentCid: UIComponentId) (pinCid: UIComponentId) (relativeX: float32) (relativeY: float32) (rangeStart: float32, rangeEnd: float32) (value: float32):Position =
+    member internal this.CalculatePinPosition (parentCid: UIComponentId) (pinCid: UIComponentId) (relativeX: float32) (relativeY: float32) (rangeStart: float32, rangeEnd: float32) (value: float32):NoobishPosition =
         let pinSize = this.ContentSize.[pinCid.Index]
         let pinBounds = this.Bounds.[pinCid.Index]
         let pinPadding = this.Padding.[pinCid.Index]
@@ -52,7 +52,7 @@ type Noobish with
 
     member this.Slider<'T> (rangeStart: float32, rangeEnd: float32) (step: float32) (value: float32) (onValueChanged: float32 -> unit) =
 
-        let calcaulateSliderValue (cid: UIComponentId) (position: Position) = 
+        let calcaulateSliderValue (cid: UIComponentId) (position: NoobishPosition) = 
             let bounds: Internal.NoobishRectangle = this.Components.Bounds.[cid.Index]
 
             let relative = (position.X - bounds.X) / (bounds.Width)
@@ -77,7 +77,7 @@ type Noobish with
         this.SetChildren [| sliderPin |] cid |> ignore
 
 
-        this.SetOnPress (fun (cid: UIComponentId) (position: Position) (_gameTime: GameTime) -> 
+        this.SetOnPress (fun (cid: UIComponentId) (position: NoobishPosition) (_gameTime: GameTime) -> 
             let v = calcaulateSliderValue cid position
 
             let offset = this.Components.CalculatePinPosition cid sliderPin 0f 0f (rangeStart,rangeEnd) v

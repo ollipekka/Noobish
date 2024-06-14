@@ -235,6 +235,7 @@ type Noobish(maxCount: int) =
         this.Components.Text.[cid.Index] <- t
         this.Components.WantsOnClick.[cid.Index] <- true
         this.Components.OnClick.[cid.Index] <- (fun source _ gameTime -> onClick source gameTime)
+        this.Components.WantsOnPress.[cid.Index] <- true 
         cid
 
     member this.Space () = 
@@ -305,13 +306,13 @@ type Noobish(maxCount: int) =
         cid
 
 
-    member this.SetRelativePosition (x: int, y: int) (cid: UIComponentId) = 
+    member this.SetRelativePosition (p: NoobishPosition) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Components.RelativePosition.[index] <- (RelativePosition.Position {X = float32 x; Y = float32 y})
+            this.Components.RelativePosition.[index] <- (RelativePosition.Position {X = p.X; Y = p.Y})
         cid
 
-    member this.SetRelativePositionFunc (f: UIComponentId -> UIComponentId -> float32 -> float32 -> Position) (cid: UIComponentId) = 
+    member this.SetRelativePositionFunc (f: UIComponentId -> UIComponentId -> float32 -> float32 -> NoobishPosition) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Components.RelativePosition.[index] <- (RelativePosition.Func f)
@@ -329,11 +330,11 @@ type Noobish(maxCount: int) =
             this.Components.ThemeId.[index] <- themeId
         cid
 
-    member this.SetSize (width: int, height: int) (cid: UIComponentId) = 
+    member this.SetSize (s: Vector2) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Components.MinSizeOverride.[index] <- true
-            this.Components.MinSize.[index] <- {Width = float32 width; Height = float32 height}
+            this.Components.MinSize.[index] <- {Width = s.X; Height = s.Y}
         cid
 
     member this.SetLayer (layer: int) (cid: UIComponentId) = 
@@ -368,10 +369,10 @@ type Noobish(maxCount: int) =
             this.Components.Enabled.[index] <- v
         cid
 
-    member this.SetPosition (x: int, y: int) (cid: UIComponentId) =
+    member this.SetPosition (p: Vector2) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Components.Bounds.[index] <- {this.Components.Bounds.[index] with X = float32 x; Y = float32 y}
+            this.Components.Bounds.[index] <- {this.Components.Bounds.[index] with X = p.X; Y = p.Y}
         cid
 
     member private this.SetLayout (layout: Layout) (index: int) =
@@ -574,14 +575,14 @@ type Noobish(maxCount: int) =
             this.Components.Toggled.[index] <- t
         cid
 
-    member this.SetOnPress (onPress: UIComponentId -> Position -> GameTime -> unit) (cid: UIComponentId) =
+    member this.SetOnPress (onPress: UIComponentId -> NoobishPosition -> GameTime -> unit) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Components.WantsOnPress.[index] <- true
             this.Components.OnPress.[index] <- onPress
         cid
 
-    member this.SetOnClick (onClick: UIComponentId -> Position -> GameTime -> unit) (cid: UIComponentId) =
+    member this.SetOnClick (onClick: UIComponentId -> NoobishPosition -> GameTime -> unit) (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Components.WantsOnClick.[index] <- true
@@ -743,7 +744,7 @@ type Noobish(maxCount: int) =
             let color = Color.Multiply(scrollBarColor, progress)
 
             let layer = this.Components.Layer.[i]
-            let layer = 1f - float32 (layer + 5) / 255.0f
+            let layer = 1f - float32 (layer + 5) / 32768.0f
 
             DrawUI.drawDrawable textureAtlas spriteBatch (Vector2(x, bounds.Y + 4f)) (Vector2(scrollBarWidth, bounds.Height - 8f)) layer color scrollbarDrawable
 
@@ -760,7 +761,7 @@ type Noobish(maxCount: int) =
             let themeId = this.Components.ThemeId.[i]
             let layer = this.Components.Layer.[i]
 
-            let layer = (1f - float32 (layer + 1) / 255.0f)
+            let layer = (1f - float32 (layer + 1) / 32768.0f)
 
             let state = 
                 if this.Components.WantsFocus.[i] && this.FocusedElementId = this.Components.Id.[i] then
@@ -800,7 +801,7 @@ type Noobish(maxCount: int) =
 
     member this.DrawImage (content: ContentManager) (spriteBatch: SpriteBatch) (textureId: NoobishTextureId) (boundsWithMarginAndPadding: NoobishRectangle) (gameTime: GameTime) (scrollX: float32) (scrollY: float32) (i) =
         
-        let layer = 1f - float32 this.Components.Layer.[i] / 255f
+        let layer = 1f - float32 this.Components.Layer.[i] / 32768.0f
 
         let textureEffect = DrawUI.getTextureEfffect this.Components.ImageTextureEffect.[i] 
         let imageColor = this.Components.ImageColor.[i]
