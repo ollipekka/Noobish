@@ -15,9 +15,11 @@ type Noobish with
 
 
     member this.ComponentContains (x: float32) (y: float32) (scrollX: float32) (scrollY: float32) (i: int) = 
+        let x = x - scrollX 
+        let y = y - scrollY
         let bounds = this.Components.Bounds.[i]
-        let left = scrollX + bounds.X 
-        let top = scrollY + bounds.Y 
+        let left = bounds.X 
+        let top = bounds.Y 
         let right = left + bounds.Width
         let bottom = top + bounds.Height
         
@@ -43,10 +45,12 @@ type Noobish with
 
             let scrollX = parentScrollX + this.Components.ScrollX.[i]
             let scrollY = parentScrollY + this.Components.ScrollY.[i]
+
             let mutable found = false
             let mutable j = 0
             while not found && j < children.Count do 
-                if this.Components.ConstrainToParentBounds.[j] && this.Click x y gameTime scrollX scrollY  children.[j].Index then 
+                let childIndex = children.[j].Index
+                if this.Components.ConstrainToParentBounds.[childIndex] && this.Click x y gameTime scrollX scrollY childIndex then 
                     found <- true 
                 j <- j + 1
 
