@@ -38,7 +38,7 @@ type Noobish with
 
     member this.Click (x: float32) (y: float32) (gameTime: GameTime) (parentScrollX: float32) (parentScrollY: float32) (i: int): bool  =
 
-        if this.Components.Visible.[i] && this.Components.Enabled.[i] && this.ComponentContains x y parentScrollX parentScrollY i then 
+        if this.Components.Visible.[i] && this.Components.Enabled.[i] then 
             Log.Logger.Debug ("Mouse click inside component {ComponentId}", i)
 
             let children = this.Components.Children.[i]
@@ -46,19 +46,25 @@ type Noobish with
             let scrollX = parentScrollX + this.Components.ScrollX.[i]
             let scrollY = parentScrollY + this.Components.ScrollY.[i]
 
+            let contains = this.ComponentContains x y parentScrollX parentScrollY i
+
             let mutable found = false
             let mutable j = 0
             while not found && j < children.Count do 
                 let childIndex = children.[j].Index
-                if this.Components.ConstrainToParentBounds.[childIndex] && this.Click x y gameTime scrollX scrollY childIndex then 
-                    found <- true 
+                if this.Components.ConstrainToParentBounds.[childIndex] then
+                    if contains && this.Click x y gameTime scrollX scrollY childIndex then 
+                        found <- true 
+                else 
+                    if this.Click x y gameTime scrollX scrollY childIndex  then 
+                        found <- true
                 j <- j + 1
 
-            if not found && this.Components.WantsOnClick.[i] then 
+            if contains && not found && this.Components.WantsOnClick.[i] then 
                 found <- true
                 this.Components.OnClick.[i] (this.Components.Id.[i]) {X = x; Y = y} gameTime
             
-            if not found  && this.Components.WantsFocus.[i] then
+            if contains && not found  && this.Components.WantsFocus.[i] then
                 found <- true 
                 this.FocusedElementId <- this.Components.Id.[i]
                 this.Cursor <- this.Components.Text.[i].Length
@@ -79,7 +85,7 @@ type Noobish with
 
 
     member this.Press (x: float32) (y: float32) (gameTime: GameTime) (parentScrollX: float32) (parentScrollY: float32) (i: int): bool =
-        if this.Components.Visible.[i] && this.Components.Enabled.[i] && this.ComponentContains x y parentScrollX parentScrollY i then 
+        if this.Components.Visible.[i] && this.Components.Enabled.[i] then 
             Log.Logger.Debug ("Mouse press inside component {ComponentId}", i)
 
             let children = this.Components.Children.[i]
@@ -89,11 +95,11 @@ type Noobish with
             let mutable found = false
             let mutable j = 0
             while not found && j < children.Count do 
-                if this.Press x y gameTime scrollX scrollY  children.[j].Index then 
+                if this.Press x y gameTime scrollX scrollY children.[j].Index then 
                     found <- true 
                 j <- j + 1
 
-            if not found && this.Components.WantsOnPress.[i] then 
+            if not found && this.Components.WantsOnPress.[i] && this.ComponentContains x y parentScrollX parentScrollY i then 
                 found <- true
                 this.Components.LastPressTime.[i] <- gameTime.TotalGameTime
                 this.Components.OnPress.[i] (this.Components.Id.[i]) {X = x; Y = y} gameTime
@@ -177,7 +183,7 @@ type Noobish with
         elif mouseState.LeftButton = ButtonState.Released && this.PreviousMouseState.LeftButton = ButtonState.Pressed then 
             this.FocusedElementId <- UIComponentId.empty
             for i = 0 to this.Components.Count - 1 do 
-                if this.Components.ParentId.[i] = UIComponentId.empty || not this.Components.ConstrainToParentBounds.[i] then 
+                if this.Components.ParentId.[i] = UIComponentId.empty then 
                     this.ToProcess.Enqueue(i, -this.Components.Layer.[i])
 
             while this.ToProcess.Count > 0 do 

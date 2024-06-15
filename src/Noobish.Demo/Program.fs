@@ -64,7 +64,7 @@ module NoobishDemo =
         
         let window2 = 
             nui2.Window()
-            |> nui2.SetSize (Vector2(150f, 200f))
+            |> nui2.SetSize ({Width=150f; Height=200f})
             |> nui2.SetChildren [|
                 nui2.Header "Hello"
                 nui2.HorizontalRule()
@@ -215,7 +215,7 @@ module Containers =
                     |> ui.SetImage (NoobishTextureId.Basic("Pixel"))
                     |> ui.SetConstrainToParentBounds false
                     |> ui.SetGridCellAlignment NoobishAlignment.Center
-                    |> ui.SetSize s
+                    |> ui.SetSize {Width = s.X; Height = s.Y}
                     |> ui.SetRelativePosition {X = p.X; Y = p.Y}
                     |> ui.SetImageColor color
                     |> ui.SetChildren c

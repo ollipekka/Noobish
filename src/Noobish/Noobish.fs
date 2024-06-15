@@ -330,11 +330,11 @@ type Noobish(maxCount: int) =
             this.Components.ThemeId.[index] <- themeId
         cid
 
-    member this.SetSize (s: Vector2) (cid: UIComponentId) = 
+    member this.SetSize (s: NoobishSize) (cid: UIComponentId) = 
         let index = this.GetIndex cid 
         if index <> -1 then 
             this.Components.MinSizeOverride.[index] <- true
-            this.Components.MinSize.[index] <- {Width = s.X; Height = s.Y}
+            this.Components.MinSize.[index] <- s
         cid
 
     member this.SetLayer (layer: int) (cid: UIComponentId) = 
