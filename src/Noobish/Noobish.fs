@@ -568,6 +568,12 @@ type Noobish(maxCount: int) =
         if index <> -1 then 
             this.Components.ImageAlign.[index] <- align
         cid
+
+    member this.SetImageRotation (phi: float32) (cid: UIComponentId) =
+        let index: int = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.ImageRotation.[index] <- phi
+        cid
   
     member this.SetToggled (t: bool) (cid: UIComponentId) =
         let index = this.GetIndex cid 
@@ -799,14 +805,18 @@ type Noobish(maxCount: int) =
                 textBatch.DrawSingleLine font fontSize (Vector2(textBounds.X, textBounds.Y)) layer textColor text
 
 
-    member this.DrawImage (content: ContentManager) (spriteBatch: SpriteBatch) (textureId: NoobishTextureId) (boundsWithMarginAndPadding: NoobishRectangle) (gameTime: GameTime) (scrollX: float32) (scrollY: float32) (i) =
-        
+    member this.DrawImage (graphics: GraphicsDevice) (content: ContentManager) (spriteBatch: SpriteBatch) (textureId: NoobishTextureId) (boundsWithMarginAndPadding: NoobishRectangle) (gameTime: GameTime) (scrollX: float32) (scrollY: float32) (i) =
+        let old = graphics.ScissorRectangle
+        let rotatedBoundnds = DrawUI.toRotatedRectangle boundsWithMarginAndPadding this.Components.ImageRotation.[i]
+        graphics.ScissorRectangle <- rotatedBoundnds
+        spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)    
         let layer = 1f - float32 this.Components.Layer.[i] / 32768.0f
 
         let textureEffect = DrawUI.getTextureEfffect this.Components.ImageTextureEffect.[i] 
         let imageColor = this.Components.ImageColor.[i]
         let imageAlign = this.Components.ImageAlign.[i]
         let imageSize = this.Components.ImageSize.[i]
+        let imageRotation = this.Components.ImageRotation.[i]
 
 
         match textureId with
@@ -817,7 +827,6 @@ type Noobish(maxCount: int) =
             let rect = DrawUI.calculateImageBounds imageSize imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
 
             let origin = Vector2(float32 sourceRect.Width / 2.0f, float32 sourceRect.Height / 2.0f)
-            let rotation = 0f
 
             let startPos = Vector2(float32 rect.X + float32 rect.Width / 2.0f, float32 rect.Y + float32 rect.Height / 2.0f)
             let scale = Vector2(float32 rect.Width / float32 texture.Width, float32 rect.Height / float32 texture.Height)
@@ -827,7 +836,7 @@ type Noobish(maxCount: int) =
                 startPos,
                 sourceRect,
                 imageColor,
-                rotation,
+                imageRotation,
                 origin,
                 scale,
                 textureEffect,
@@ -840,7 +849,7 @@ type Noobish(maxCount: int) =
             let rect = DrawUI.calculateImageBounds imageSize imageAlign boundsWithMarginAndPadding texture.Width texture.Height scrollX scrollY
 
             let origin = Vector2(float32 texture.Width / 2.0f, float32 texture.Height / 2.0f)
-            let rotation = 0f
+
 
             let startPos = Vector2(float32 rect.X + float32 rect.Width / 2.0f, float32 rect.Y + float32 rect.Height / 2.0f)
             let scale = Vector2(float32 rect.Width / float32 texture.Width, float32 rect.Height / float32 texture.Height)
@@ -850,7 +859,7 @@ type Noobish(maxCount: int) =
                 startPos,
                 texture.SourceRectangle,
                 imageColor,
-                rotation,
+                imageRotation,
                 origin,
                 scale,
                 textureEffect,
@@ -870,11 +879,12 @@ type Noobish(maxCount: int) =
                 (float32) rect.Width,
                 (float32) rect.Height,
                 imageColor,
-                0.0f,
+                imageRotation,
                 Vector2.One,
                 textureEffect,
                 layer)
-
+        spriteBatch.End()
+        graphics.ScissorRectangle <- old
 
     member this.DrawComponent 
         (graphics: GraphicsDevice) 
@@ -932,20 +942,18 @@ type Noobish(maxCount: int) =
 
                 this.DrawBackground styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i
 
-                match this.Components.Image.[i] with 
-                | ValueSome (t) ->
-                    this.DrawImage content spriteBatch t boundsWithMarginAndPadding gameTime parentScrollX parentScrollY i 
-                | ValueNone -> ()
-
-
                 if this.FocusedElementId = this.Components.Id.[i] then 
                     this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
 
                 this.DrawScrollBars styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i 
                 spriteBatch.End()
 
-                graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMarginAndPadding
+                match this.Components.Image.[i] with 
+                | ValueSome (t) ->
+                    this.DrawImage graphics content spriteBatch t boundsWithMarginAndPadding gameTime parentScrollX parentScrollY i 
+                | ValueNone -> ()
 
+                graphics.ScissorRectangle <- DrawUI.toRectangle boundsWithMarginAndPadding
                 this.DrawText content styleSheet textBatch parentScrollX parentScrollY i
 
 
@@ -985,6 +993,12 @@ type Noobish(maxCount: int) =
                         let textBounds = NoobishFont.calculateBounds font fontSize textWrap bounds parentScrollX parentScrollX textAlign text
 
                         DrawUI.drawRectangle spriteBatch pixel Color.Purple (textBounds.X) (textBounds.Y) (textBounds.Width) (textBounds.Height)
+
+                    match this.Components.Image.[i] with 
+                    | ValueSome (t) ->
+                        let b = DrawUI.toRotatedRectangle bounds this.Components.ImageRotation.[i]
+                        DrawUI.drawRectangle spriteBatch pixel (Color.Multiply(Color.Purple, 0.5f)) (float32 b.X) (float32 b.Y) (float32 b.Width) (float32 b.Height)
+                    | ValueNone -> ()
 
                 spriteBatch.End()
 

@@ -89,6 +89,26 @@ module DrawUI =
     let toRectangle (r: NoobishRectangle) =
         Rectangle (int (r.X), int (r.Y), int (r.Width), int (r.Height))
 
+
+    let toRotatedRectangle (r: NoobishRectangle) (phi: float32) = 
+        if abs (phi) >= Single.Epsilon then 
+            let rotation = Matrix.CreateRotationZ phi
+            let halfWidth = r.Width / 2f
+            let halfHeight = r.Height / 2f
+            let center = Vector2(r.X + halfWidth, r.Y + halfHeight)
+            let p1 = Vector2.Transform(Vector2(-halfWidth, -halfHeight), rotation)
+            let p2 = Vector2.Transform(Vector2( halfWidth, -halfHeight), rotation)
+            let p3 = Vector2.Transform(Vector2( halfWidth,  halfHeight), rotation)
+            let p4 = Vector2.Transform(Vector2(-halfWidth,  halfHeight), rotation)
+
+            let minX = min p1.X (min p2.X (min p3.X p4.X))
+            let minY = min p1.Y (min p2.Y (min p3.Y p4.Y))
+            let maxX = max p1.X (max p2.X (max p3.X p4.X))
+            let maxY = max p1.Y (max p2.Y (max p3.Y p4.Y))
+            Rectangle (int (round (center.X + minX)), int (round(center.Y + minY)), int (round(maxX - minX)), int (round(maxY - minY)))
+        else 
+            toRectangle r
+
     let calculateImageBounds (imageSize: NoobishImageSize) (imageAlign: NoobishAlignment) (bounds: NoobishRectangle) (textureWidth: int) (textureHeight: int) (scrollX: float32) (scrollY: float32) =
         match imageSize with
         | NoobishImageSize.Stretch ->
@@ -228,6 +248,7 @@ type NoobishComponents(count) =
     member val ImageColor = Array.create count Color.White
     member val ImageSize = Array.create count NoobishImageSize.Stretch
     member val ImageTextureEffect = Array.create count NoobishTextureEffect.None
+    member val ImageRotation = Array.create count 0.0f
 
     member val Layer = Array.create count 0
 
@@ -539,6 +560,7 @@ type NoobishComponents(count) =
             this.ImageColor.[i] <- Color.White
             this.ImageSize.[i] <- NoobishImageSize.Stretch
             this.ImageTextureEffect.[i] <- NoobishTextureEffect.None
+            this.ImageRotation.[i] <- 0.0f
 
             this.ConstrainToParentBounds.[i] <- true
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}

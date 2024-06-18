@@ -210,13 +210,14 @@ module Containers =
 
             |]
 
-            let image (color: Color) (s: Vector2) (p: Vector2) (c: UIComponentId[]): UIComponentId=
+            let image (color: Color) (s: Vector2) (p: Vector2) (r: float32) (c: UIComponentId[]): UIComponentId=
                 ui.Image()
                     |> ui.SetImage (NoobishTextureId.Basic("Pixel"))
                     |> ui.SetConstrainToParentBounds false
                     |> ui.SetGridCellAlignment NoobishAlignment.Center
                     |> ui.SetSize {Width = s.X; Height = s.Y}
                     |> ui.SetRelativePosition {X = p.X; Y = p.Y}
+                    |> ui.SetImageRotation r
                     |> ui.SetImageColor color
                     |> ui.SetChildren c
 
@@ -231,16 +232,16 @@ module Containers =
                         |> ui.SetFill
                         |> ui.SetGridLayout(1,1)
                         |> ui.SetChildren [|
-                            image Color.Red (Vector2(20f, 10f)) (Vector2(10f, 0f))
+                            image Color.Red (Vector2(20f, 10f)) (Vector2(10f, 0f)) (-MathHelper.Pi / 3f)
                                 [|
-                                    image Color.Orange (Vector2(10f, 10f)) (Vector2(-10f, 10f)) [||]
-                                    image Color.Blue (Vector2(10f, 10f)) (Vector2(10f, -10f)) [||]
-                                    image Color.Green (Vector2(10f, 10f)) (Vector2(-10f, -10f)) [||]
-                                    image Color.Yellow (Vector2(10f, 10f)) (Vector2(10f, 10f)) [||]
-                                    image Color.CornflowerBlue (Vector2(10f, 10f)) (Vector2(20f, 0f)) [||]
-                                    image Color.Purple (Vector2(10f, 10f)) (Vector2(-10f, 0f)) [||]
-                                    image Color.Gold (Vector2(10f, 10f)) (Vector2(0f, 10f)) [||]
-                                    image Color.BlanchedAlmond (Vector2(10f, 10f)) (Vector2(0f, -10f)) [||]
+                                    //image Color.Orange (Vector2(10f, 10f)) (Vector2(-10f, 10f)) 0f [||]
+                                    //image Color.Blue (Vector2(10f, 10f)) (Vector2(10f, -10f)) MathHelper.Pi [||]
+                                    //image Color.Green (Vector2(10f, 10f)) (Vector2(-10f, -10f)) MathHelper.PiOver2 [||]
+                                    //image Color.Yellow (Vector2(10f, 10f)) (Vector2(10f, 10f)) 0f [||]
+                                    //image Color.CornflowerBlue (Vector2(10f, 10f)) (Vector2(20f, 0f)) 0f [||]
+                                    //image Color.Purple (Vector2(10f, 10f)) (Vector2(-10f, 0f)) 0f [||]
+                                    //image Color.Gold (Vector2(10f, 10f)) (Vector2(0f, 10f)) 0f [||]
+                                    //image Color.BlanchedAlmond (Vector2(10f, 10f)) (Vector2(0f, -10f)) 0f [||]
                                 |]
                         |]
 
