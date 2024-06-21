@@ -234,14 +234,14 @@ module Containers =
                         |> ui.SetChildren [|
                             image Color.Red (Vector2(20f, 10f)) (Vector2(10f, 0f)) (-MathHelper.Pi / 3f)
                                 [|
-                                    //image Color.Orange (Vector2(10f, 10f)) (Vector2(-10f, 10f)) 0f [||]
-                                    //image Color.Blue (Vector2(10f, 10f)) (Vector2(10f, -10f)) MathHelper.Pi [||]
-                                    //image Color.Green (Vector2(10f, 10f)) (Vector2(-10f, -10f)) MathHelper.PiOver2 [||]
-                                    //image Color.Yellow (Vector2(10f, 10f)) (Vector2(10f, 10f)) 0f [||]
-                                    //image Color.CornflowerBlue (Vector2(10f, 10f)) (Vector2(20f, 0f)) 0f [||]
-                                    //image Color.Purple (Vector2(10f, 10f)) (Vector2(-10f, 0f)) 0f [||]
-                                    //image Color.Gold (Vector2(10f, 10f)) (Vector2(0f, 10f)) 0f [||]
-                                    //image Color.BlanchedAlmond (Vector2(10f, 10f)) (Vector2(0f, -10f)) 0f [||]
+                                    image Color.Orange (Vector2(10f, 10f)) (Vector2(-10f, 10f)) 0f [||]
+                                    image Color.Blue (Vector2(10f, 10f)) (Vector2(10f, -10f)) MathHelper.Pi [||]
+                                    image Color.Green (Vector2(10f, 10f)) (Vector2(-10f, -10f)) MathHelper.PiOver2 [||]
+                                    image Color.Yellow (Vector2(10f, 10f)) (Vector2(10f, 10f)) 0f [||]
+                                    image Color.CornflowerBlue (Vector2(10f, 10f)) (Vector2(20f, 0f)) 0f [||]
+                                    image Color.Purple (Vector2(10f, 10f)) (Vector2(-10f, 0f)) 0f [||]
+                                    image Color.Gold (Vector2(10f, 10f)) (Vector2(0f, 10f)) 0f [||]
+                                    image Color.BlanchedAlmond (Vector2(10f, 10f)) (Vector2(0f, -10f)) 0f [||]
                                 |]
                         |]
 
@@ -384,8 +384,7 @@ module Github =
 
     let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
         let ui = game.Noobish
-        let gridId = 
-            ui.Grid(10, 8)
+        ui.Grid(10, 8)
             |> ui.SetChildren [|
                 ui.Space() 
                     |> ui.SetColspan 10
@@ -437,7 +436,6 @@ module Github =
                     |]
             |]
 
-        gridId
 
 let init (game: NoobishGame<unit, DemoMessage, DemoModel>) () =
     { State = Buttons; ComboboxValue = "Option 1"; CheckboxValue = false; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg(ShowButtons)
