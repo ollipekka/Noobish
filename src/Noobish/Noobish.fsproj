@@ -20,13 +20,18 @@
     <Compile Include="NoobishFont.fs" />
     <Compile Include="MSDFFontReader.fs" />
     <Compile Include="State.fs" />
+    <Compile Include="NoobishComponents.fs" />
     <Compile Include="Noobish.fs" />
-    <Compile Include="NoobishInput.fs" />
-    <Compile Include="NoobishMonoGame.fs" />
+    <Compile Include="Input.fs" />
+    <Compile Include="Combobox.fs" />
+    <Compile Include="List.fs" />
+    <Compile Include="Slider.fs" />
+    <Compile Include="Checkbox.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Serilog" Version="3.1.1" />
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
   </ItemGroup>
 

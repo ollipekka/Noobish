@@ -1,5 +1,6 @@
 namespace Noobish
 
+open Serilog 
 open System
 open System.Collections.Generic
 
@@ -7,6 +8,7 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
 open Microsoft.Xna.Framework.Input.Touch
+open Noobish.Styles
 
 type Dispatch2<'msg> = 'msg -> unit
 
@@ -76,7 +78,6 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
     let mutable textBatch = Unchecked.defaultof<TextBatch>
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
 
-    let mutable nui = Unchecked.defaultof<NoobishUI>
     let mutable renderTarget = Unchecked.defaultof<RenderTarget2D>
 
     abstract member ServiceInit: Game -> unit
@@ -85,15 +86,21 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     abstract member UpdateInternal: 'msg -> 'model -> GameTime -> ('model*Cmd<'msg>)
 
-    abstract member ViewInternal: 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>
+    abstract member ViewInternal: 'model -> Dispatch2<'msg> -> UIComponentId
 
     abstract member TickInternal: 'model -> GameTime -> unit
 
     abstract member DrawInternal: 'model -> GameTime -> unit
 
-
+    member val Noobish = Noobish(1024)
+    member _this.TextBatch with get() = textBatch
     member _this.State with get() = state
-    member _this.UI with get() = nui
+
+
+    member val StyleSheetId = "Invalid" with get, set
+
+    member val Debug = false with get, set
+
     member this.VirtualResolution with get() =
         match virtualResolution with
         | ValueSome(virtualResolution) -> virtualResolution
@@ -114,8 +121,6 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     member _s.ScreenWidth with get() = game.GraphicsDevice.Viewport.Width
     member _s.ScreenHeight with get() = game.GraphicsDevice.Viewport.Height
-
-    member val Theme = "" with get, set
 
     member val FontEffectId = "MSDFFontEffect" with get, set
 
@@ -138,6 +143,8 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         base.Initialize()
 
+
+
         this.GraphicsDevice.PresentationParameters.MultiSampleCount <- 4
         this.GraphicsDevice.PresentationParameters.RenderTargetUsage <- RenderTargetUsage.PreserveContents
         this.GraphicsDeviceManager.ApplyChanges();
@@ -146,22 +153,15 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
 
         this.Window.TextInput.Add(fun e ->
-            NoobishMonoGame.keyTyped nui e.Character
+            this.Noobish.KeyTyped (e.Character)
         )
 
-        let settings: NoobishSettings = {
-            Locale = "en"
-            Debug = false
-        }
 
         let pixel = new Texture2D(this.GraphicsDevice, 1, 1)
         pixel.SetData<Color> [|Color.White|]
 
         let struct(virtualWidth, virtualHeight) = this.VirtualResolution
 
-        let viewportSize = (struct(this.GraphicsDevice.Viewport.Width, this.GraphicsDevice.Viewport.Height))
-        nui <- NoobishMonoGame.create game.Content this.Theme pixel this.VirtualResolution viewportSize settings
-        game.Services.AddService nui
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
 
         let fontEffect = this.Content.Load<Effect>(this.FontEffectId)
@@ -184,12 +184,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
             Touch = NoobishInputState.updateDevice (TouchPanel.GetState()) this.Input.Touch
         }
 
-        #if __MOBILE__
-        NoobishMonoGame.updateMobile nui this.Input.Touch.Previous this.Input.Touch.Current gameTime
-        #else
-        NoobishMonoGame.updateMouse nui this.Input.Mouse.Previous this.Input.Mouse.Current gameTime
-        NoobishMonoGame.updateKeyboard nui this.Input.Keyboard.Previous this.Input.Keyboard.Current gameTime
-        #endif
+        this.Noobish.Update gameTime
 
         this.TickInternal state gameTime
 
@@ -204,39 +199,15 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
                 Cmd.unpack this.Messages cmd
 
+
         if tempMessages.Count > 0 then
 
             tempMessages.Clear()
 
-            let rec getElements (elements: Dictionary<string, NoobishLayoutElement>) (overlays: ResizeArray<NoobishLayoutElement>) (e: NoobishLayoutElement) =
-                elements.[e.Id] <- e
+            this.Noobish.Clear()
 
-                if e.Overlay then
-                    overlays.Add e
+            this.ViewInternal state this.Dispatch |> ignore
 
-                for e2 in e.Children do
-                    getElements elements overlays e2
-
-            let dispatch = this.Dispatch
-            let layers = this.ViewInternal state dispatch
-
-            let struct(width, height) = nui.VirtualResolution
-
-            nui.State.BeginUpdate()
-            nui.Layers <- layers |> List.mapi (fun i components -> Logic.layout nui.Content nui.StyleSheet nui.Settings nui.State (i + 1) (float32 width) (float32 height) components) |> List.toArray
-            nui.State.EndUpdate()
-
-            nui.Elements.Clear()
-
-            let overlays = ResizeArray<NoobishLayoutElement>()
-
-            for layer in nui.Layers do
-                for e in layer do
-                    getElements nui.Elements overlays e
-
-            nui.Layers <- Array.concat [nui.Layers; [| overlays.ToArray() |]]
-
-        nui.State.ProcessEvents gameTime
 
 
 
@@ -245,7 +216,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
         this.GraphicsDevice.SetRenderTarget(renderTarget)
         this.GraphicsDevice.Clear(Color.Transparent)
-        NoobishMonoGame.draw game.Content game.GraphicsDevice spriteBatch textBatch nui gameTime.TotalGameTime
+        this.Noobish.Draw game.GraphicsDevice game.Content spriteBatch textBatch game.StyleSheetId this.Debug gameTime 
         this.GraphicsDevice.SetRenderTarget(null)
 
         this.GraphicsDevice.Clear(Color.Black)
@@ -261,7 +232,7 @@ type SimpleNoobishGame<'arg, 'msg, 'model>(
     serviceInit: Game -> unit,
     init: SimpleNoobishGame<'arg, 'msg, 'model> ->'arg -> ('model * Cmd<'msg>),
     update: SimpleNoobishGame<'arg, 'msg, 'model> -> 'msg -> 'model -> GameTime -> ('model * Cmd<'msg>),
-    view: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> Dispatch2<'msg> -> list<list<NoobishElement>>,
+    view: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> Dispatch2<'msg> -> UIComponentId,
     tick: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> GameTime -> unit,
     draw: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> GameTime -> unit) =
     inherit NoobishGame<'arg, 'msg, 'model>()
@@ -293,10 +264,9 @@ module Program2 =
         game.Content.RootDirectory <- root
         game
 
-    let withTheme<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> theme (game: 'T) =
-        game.Theme <- theme
+    let withStyleSheet<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> (styleSheetId: string) (game: 'T) =
+        game.StyleSheetId <- styleSheetId
         game
-
 
     let withFontEffectId<'arg, 'msg, 'model, 'T when 'T :> NoobishGame<'arg, 'msg, 'model>> fontEffectId (game: 'T) =
         game.FontEffectId <- fontEffectId
@@ -326,7 +296,7 @@ module Program2 =
 
     let withTextInput<'msg, 'model, 'T when 'T :> NoobishGame<unit, 'msg, 'model>> (game: 'T) =
         game.Window.TextInput.Add(fun e ->
-            NoobishMonoGame.keyTyped game.UI e.Character
+            game.Noobish.KeyTyped e.Character
         )
         game
 

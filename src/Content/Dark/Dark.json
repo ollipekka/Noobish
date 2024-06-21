@@ -15,24 +15,14 @@
                 "color": "524b24ff"
             }
         },
-        "Header1": {
-            "default": {
-                "fontSize": 24
-            }
-        },
-        "Header2": {
+        "Header": {
             "default": {
                 "fontSize": 20
             }
         },
-        "Header3": {
-            "default": {
-                "fontSize": 16
-            }
-        },
         "HorizontalRule": {
             "default": {
-                "padding": [0, 5, 0, 5],
+                "padding": [1, 5, 1, 5],
                 "drawables": [
                     ["hr-default.9"]
                 ]
@@ -47,6 +37,11 @@
         },
         "Division": {
 
+        },
+        "Overlay": {
+            "default": {
+                "margin": [0, 0, 0, 0]
+            }
         },
         "Button": {
             "default": {
@@ -70,6 +65,7 @@
         },
         "Combobox": {
             "default": {
+                "padding": [10, 10, 10, 10],
                 "drawables": [
                     ["button-default.9"]
                 ]
@@ -91,6 +87,7 @@
         },
         "TextBox": {
             "default": {
+                "padding": [8, 8, 8, 4],
                 "drawables": [
                     ["textbox-default.9"]
                 ]
@@ -114,20 +111,24 @@
         "SliderPin": {
             "default": {
                 "color": "df7126aa",
-                "height": 16,
+                "width": 24,
+                "height": 32,
+                "padding": [0, 0, 0, 0],
                 "drawables": [ ["slider-pin.9"] ]
             }
         },
         "Slider": {
             "default": {
                 "color": "5f6b80ff",
-                "height": 4,
+                "height": 14,
+                "padding": [0, 0, 0, 0],
+                "margin": [2, 0, 2, 0],
                 "drawables": [ ["slider.9"] ]
             }
         },
         "ScrollBarPin": {
             "default": {
-                "width": 8,
+                "width": 12,
                 "color": "df7126aa",
                 "drawables": [ ["scrollbar-pin.9"] ]
             }
@@ -151,7 +152,7 @@
         },
         "List-Division-Even": {
             "default": {
-                "margin": [0, 5, 0, 0],
+                "margin": [1, 5, 1, 0],
                 "padding": [0, 0, 0, 0]
 
             },
@@ -161,7 +162,7 @@
         },
         "List-Division-Odd": {
             "default": {
-                "margin": [0, 5, 0, 0],
+                "margin": [1, 5, 1, 0],
                 "padding": [0, 0, 0, 0],
                 "drawables": [ ["list-item-default.9", "1d2026cc"] ]
 

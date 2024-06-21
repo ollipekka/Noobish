@@ -31,28 +31,57 @@ Since Noobish is initially designed for Elmish, the element tree is rebuilt on e
 Noobish views are built as code with a DSL. Each view is a list of NoobishElements.
 
 ```fsharp
+ui.Grid(10, 8)
+    |> ui.SetChildren [|
+        ui.Space() 
+            |> ui.SetColspan 10
+            |> ui.SetRowspan 2
+        ui.Space() 
+            |> ui.SetColspan 2
+            |> ui.SetRowspan 4
+        ui.PanelVertical()
+            |> ui.SetColspan 6
+            |> ui.SetRowspan 4
+            |> ui.SetChildren [|
+                ui.Header "Welcome to Noobish" |> ui.AlignTextCenter
+                ui.HorizontalRule()
+                ui.Grid (6, 4)
+                    |> ui.SetChildren [|
+                        ui.Checkbox "FSharp" true ignore |> ui.SetColspan 2 
+                        ui.Checkbox "MonoGame" true ignore |> ui.SetColspan 2
+                        ui.Checkbox "Elmish" true ignore |> ui.SetColspan 2
+                        ui.Label "Coolness:"
+                            |> ui.SetTextAlign NoobishAlignment.Left 
+                            |> ui.SetFill
+                        ui.Slider (0f, 100f) 1f 80f ignore 
+                            |> ui.SetFillHorizontal
+                            |> ui.SetColspan 5
+                        ui.Label "Features:"
+                            |> ui.SetTextAlign NoobishAlignment.Left 
+                            |> ui.SetFill
+                        ui.Textbox model.FeatureText (fun v -> dispatch (FeaturesChanged v))
+                            |> ui.SetFillHorizontal
+                            |> ui.AlignTextLeft
+                            |> ui.SetColspan 5
+                        ui.Button "Report a bug" (fun _ _ -> ())
+                            |> ui.AlignTextCenter
+                            |> ui.SetFillHorizontal
+                            |> ui.SetColspan 2
+                        ui.Button "Contribute" (fun _ _ -> ()) 
+                            |> ui.AlignTextCenter
+                            |> ui.SetFillHorizontal
+                            |> ui.SetColspan 2
+                        ui.Button "Fork" (fun _ _ -> ()) 
+                            |> ui.AlignTextCenter
+                            |> ui.SetFillHorizontal
+                            |> ui.SetColspan 2
 
-panel
-    [
-        h2 [text "Welcome to Noobish"; textCenter]
-        hr []
-        grid 6 4
-            [
-                checkbox [text "FSharp"; toggled true; colspan 2; rowspan 1]
-                checkbox [text "MonoGame"; toggled true; colspan 2; rowspan 1]
-                checkbox [text "Elmish"; toggled false; disabled; colspan 2; rowspan 1]
-                label [text "Coolness:"; colspan 1; rowspan 1; textLeft]
-                slider [sliderValue 80f; fillHorizontal; colspan 5; rowspan 1]
-                label [text "Features:"; colspan 1; rowspan 1; textLeft]
-                textbox [ text "extendable, functional, net6.0 and cross-platform"; textLeft; colspan 5; rowspan 1]
-                button [text "Report a bug"; colspan 2]
-                button [text "Contribute"; colspan 2]
-                button [text "Fork"; colspan 2]
-            ]
-            [
 
-            ]
-    ]
+
+                    |]
+
+            |]
+    |]
 ```
 
 ## Style Sheets
@@ -125,6 +154,3 @@ Noobish tracks identity of a component by its location. Noobish doesn't handle p
   * Three places for Text: Element, ElementState Model, Element Model.
 * Memoize support.
 * API stabilization.
-* Study utilizing generic models in components.
-  * ```combobox<SwordSelectionModel>```
-  * ```list<ListItem>```

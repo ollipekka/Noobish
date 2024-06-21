@@ -1,5 +1,4 @@
 namespace Noobish
-open Microsoft.Xna.Framework.Graphics
 
 [<RequireQualifiedAccess>]
 type NoobishLayout =
@@ -11,7 +10,6 @@ type NoobishLayout =
 
 [<RequireQualifiedAccess>]
 type NoobishTextureId =
-    | None
     | NinePatch of atlasId: string * ninePatchId: string
     | Basic of string
     | Atlas of atlasId: string * textureId: string
@@ -26,7 +24,8 @@ type NoobishTextureEffect =
 type NoobishImageSize = Stretch | BestFitMax | BestFitMin | Original
 
 [<RequireQualifiedAccess>]
-type NoobishTextAlignment =
+type NoobishAlignment =
+| None
 | TopLeft | TopCenter | TopRight
 | Left  | Center | Right
 | BottomLeft | BottomCenter | BottomRight
@@ -78,11 +77,6 @@ type NoobishKeyboardShortcut =
 | AltKeyPressed of pressed: NoobishKeyId
 | NoShortcut
 
-type NoobishSettings = {
-    mutable Locale: string
-    mutable Debug: bool
-}
-
 module Internal =
 
     [<Struct>]
@@ -97,50 +91,22 @@ module Internal =
         member r.Top with get() = r.Y
         member r.Bottom with get() = r.Y + r.Height
 
-    type SliderModel = {
-        Min: float32
-        Max: float32
-        Step: float32
-        OnValueChanged: float32 -> unit
-        Value: float32
-    }
+        member this.Clamp (bounds: NoobishRectangle) =
+            let x = 
+                if this.X < bounds.X then bounds.X else this.X
+            let y = 
+                if this.Y < bounds.Y then bounds.Y else this.Y
 
-    type ComboboxModel = {
-        Values: string[]
-        Value: string
-    }
+            let right = if this.Right > bounds.Right then bounds.Right else this.Right
+            let bottom = if this.Bottom > bounds.Bottom then bounds.Bottom else this.Bottom
 
-    type TextboxModel = {
-        Text: string
-        Cursor: int
-        OnOpenKeyboard: (string -> unit) -> unit
-    }
+            {
+                X = x 
+                Y = y
+                Width = max 0f (right - x)
+                Height = max 0f (bottom - y)
+            }
 
-    type NoobishComponentModel =
-        | Slider of SliderModel
-        | Combobox of ComboboxModel
-        | Textbox of TextboxModel
-
-    module NoobishComponentModel =
-        let isTextbox (m: option<NoobishComponentModel>) =
-            m |> Option.exists(
-                function
-                | Textbox (_) -> true
-                | _ -> false
-            )
-        let isSlider (m: option<NoobishComponentModel>) =
-            m |> Option.exists(
-                function
-                | Slider (_) -> true
-                | _ -> false
-            )
-
-        let isCombobox (m: option<NoobishComponentModel>) =
-            m |> Option.exists(
-                function
-                | Combobox (_) -> true
-                | _ -> false
-            )
     let pi = float32 System.Math.PI
     let clamp n minVal maxVal = max (min n maxVal) minVal
     let inline toDegrees angle = (float32 angle) * 180.0f / pi

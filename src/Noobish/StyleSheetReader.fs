@@ -131,7 +131,7 @@ type StyleSheetReader () =
 
     let readTextAlignments (reader: ContentReader)  =
 
-        let dict = Dictionary<string, Dictionary<string, NoobishTextAlignment>>()
+        let dict = Dictionary<string, Dictionary<string, NoobishAlignment>>()
         let count = reader.ReadInt32()
 
         for i = 0 to count - 1 do
@@ -146,22 +146,22 @@ type StyleSheetReader () =
 
                 dict2.[state] <-
                     match v with
-                    | "TopLeft" | "topLeft" | "top_left" -> NoobishTextAlignment.TopLeft
-                    | "TopCenter" | "topCenter" | "top_center" -> NoobishTextAlignment.TopCenter
-                    | "TopRight" | "topRight" | "top_right" -> NoobishTextAlignment.TopRight
-                    | "Left" | "left" -> NoobishTextAlignment.Left
-                    | "Center" | "center" -> NoobishTextAlignment.Center
-                    | "Right" | "right" -> NoobishTextAlignment.Right
-                    | "BottomLeft" | "bottomLeft" | "bottom_left" -> NoobishTextAlignment.BottomLeft
-                    | "BottomCenter" | "bottomCenter" | "bottom_center" -> NoobishTextAlignment.BottomCenter
-                    | "BottomRight" | "bottomRight" | "bottom_right" -> NoobishTextAlignment.BottomRight
+                    | "TopLeft" | "topLeft" | "top_left" -> NoobishAlignment.TopLeft
+                    | "TopCenter" | "topCenter" | "top_center" -> NoobishAlignment.TopCenter
+                    | "TopRight" | "topRight" | "top_right" -> NoobishAlignment.TopRight
+                    | "Left" | "left" -> NoobishAlignment.Left
+                    | "Center" | "center" -> NoobishAlignment.Center
+                    | "Right" | "right" -> NoobishAlignment.Right
+                    | "BottomLeft" | "bottomLeft" | "bottom_left" -> NoobishAlignment.BottomLeft
+                    | "BottomCenter" | "bottomCenter" | "bottom_center" -> NoobishAlignment.BottomCenter
+                    | "BottomRight" | "bottomRight" | "bottom_right" -> NoobishAlignment.BottomRight
                     | _ -> failwith "Cannot parse text alignment"
 
         toReadOnlyDictionary dict
 
-    let readIntTuple4Array (reader: ContentReader)  =
+    let readIntTuple4Array (reader: ContentReader)  (mapper: int->int->int->int -> 'T)=
 
-        let dict = Dictionary<string, Dictionary<string, (int*int*int*int)>>()
+        let dict = Dictionary<string, Dictionary<string, 'T>>()
         let count = reader.ReadInt32()
 
         for i = 0 to count - 1 do
@@ -176,7 +176,7 @@ type StyleSheetReader () =
                 let r = reader.ReadInt32()
                 let b = reader.ReadInt32()
                 let l = reader.ReadInt32()
-                dict2.[state] <- (t, r, b, l)
+                dict2.[state] <- mapper t r b l
 
         toReadOnlyDictionary dict
 
@@ -193,6 +193,6 @@ type StyleSheetReader () =
             Colors = readColorArrays reader
             Drawables = readDrawables reader
             TextAlignments = readTextAlignments reader
-            Margins = readIntTuple4Array reader
-            Paddings = readIntTuple4Array reader
+            Margins = readIntTuple4Array reader (fun top right bottom left -> {Top = float32 top; Right = float32 right; Bottom = float32 bottom; Left = float32 left })
+            Paddings = readIntTuple4Array reader (fun top right bottom left -> {Top = float32 top; Right = float32 right; Bottom = float32 bottom; Left = float32 left })
         }

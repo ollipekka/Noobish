@@ -2,6 +2,10 @@
 
 open System
 
+open Serilog
+open Serilog.Configuration
+open Serilog.Sinks
+
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
@@ -20,6 +24,7 @@ let loremIpsum2 =
 type DemoMessage =
     | ShowContainers
     | ShowButtons
+    | ShowList
     | ShowText
     | ShowSliders
     | ShowGithub
@@ -27,6 +32,7 @@ type DemoMessage =
     | ChangePadding of int
     | ChangeMargin of int
     | ComboboxValueChanged of string
+    | CheckboxValueChanged of bool
     | FeaturesChanged of string
     | ToggleDebug
     | ToggleDarkMode
@@ -35,7 +41,7 @@ type DemoMessage =
 
 type StyleMode = LightMode | DarkMode
 
-type ViewState = | Containers | Buttons | Text | Slider | Github
+type ViewState = Containers | Buttons | Text | List | Slider | Github
 
 type DemoModel = {
     State: ViewState
@@ -43,6 +49,7 @@ type DemoModel = {
     Padding: int
     Margin: int
     ComboboxValue: string
+    CheckboxValue: bool
     SliderAValue: float32
     FeatureText: string
     ListModel: int[]
@@ -50,419 +57,390 @@ type DemoModel = {
 } with
     member m.SelectedListItem with get() = m.ListModel.[m.SelectedListItemIndex]
 
+module NoobishDemo = 
+
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model dispatch =
+        let nui2 = game.Noobish
+        
+        let window2 = 
+            nui2.Window()
+            |> nui2.SetSize ({Width=150f; Height=200f})
+            |> nui2.SetChildren [|
+                nui2.Header "Hello"
+                nui2.HorizontalRule()
+                nui2.Button "One" (fun _ _ -> ( Log.Logger.Information "One")) 
+                    |> nui2.FillHorizontal
+                nui2.Button "Two" (fun _ _-> ( Log.Logger.Information "Two"))
+                nui2.Button "Three" (fun _ _-> (Log.Logger.Information "Three"))
+            |]
+        
+        
+        let window3 = 
+            nui2.Window()
+            |> nui2.SetPosition (Vector2(200f, 0f))
+            |> nui2.SetChildren [|
+                nui2.Header "Hello 2"
+                nui2.HorizontalRule()
+                nui2.Button "One 2" (fun _ _ -> (Log.Logger.Information "One 2"))
+                nui2.Button "Two 2" (fun _ _ -> (Log.Logger.Information "Two 2"))
+                nui2.Button "Three 2" (fun _ _ -> (Log.Logger.Information "Three 2"))
+            |] 
+
+        let window3 = 
+            nui2.WindowWithGrid(2, 2)
+            |> nui2.SetPosition (Vector2(0f, 200f))
+            |> nui2.SetChildren [|
+                nui2.Button "1" (fun _ _ -> (Log.Logger.Information "1"))
+                    |> nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1 
+                    |> nui2.SetFill
+                nui2.Button "2" (fun _ _ -> (Log.Logger.Information "2"))
+                    |>nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1
+                nui2.Button "3" (fun _ _ -> (Log.Logger.Information "3"))
+                    |>nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1
+                nui2.Button "44444" (fun _ _ -> (Log.Logger.Information "4444"))
+                    |>nui2.SetColspan 1 
+                    |> nui2.SetRowspan 1
+            |] 
+        ()
+
 
 module Text =
 
-    let view model _dispatch =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model _dispatch =
+        let ui = game.Noobish
+        ui.PanelWithGrid (2, 2) 
+        |> ui.SetChildren [|
+            ui.PanelWithGrid(3, 3)
+            |> ui.SetChildren [|
+                ui.Label "Top Left"
+                    |> ui.SetFill
+                    |> ui.AlignTextTopLeft
+                ui.Label "Top"
+                    |> ui.SetFill
+                    |> ui.AlignTextTop
+                ui.Label "Top Right"
+                    |> ui.SetFill
+                    |> ui.AlignTextTopRight
+                ui.Label "Left"
+                    |> ui.SetFill
+                    |> ui.AlignTextLeft
+                ui.Label "Center"
+                    |> ui.SetFill
+                    |> ui.AlignTextCenter
+                ui.Label "Right"
+                    |> ui.SetFill
+                    |> ui.AlignTextRight
+                ui.Label "Bottom Left"
+                    |> ui.SetFill
+                    |> ui.AlignTextBottomLeft
+                ui.Label "Bottom Center"
+                    |> ui.SetFill
+                    |> ui.AlignTextBottomCenter
+                ui.Label "Bottom Right"
+                    |> ui.SetFill
+                    |> ui.AlignTextBottomRight
 
-        [
-            grid 2 2
-                [
-                panelWithGrid 3 3
-                    [
-                        label [text "Top Left"; textTopLeft; fill]
-                        label [text "Top"; textTopCenter; fill]
-                        label [text "Top Right"; textTopRight; fill]
-                        label [text "Left"; textLeft; fill]
-                        label [text "Center"; textCenter; fill]
-                        label [text "Right"; textRight; fill]
-                        label [text "Bottom Left"; textBottomLeft; fill]
-                        label [text "Bottom Center"; textBottomCenter; fill]
-                        label [text "Bottom Right"; textBottomRight; fill]
-                    ]
-                    [
+            |]
+            ui.PanelVertical()
+                |> ui.SetScrollVertical
+                |> ui.SetChildren [|
+                    ui.Paragraph loremIpsum1
+                    ui.Paragraph loremIpsum2
+                |]  
+            ui.PanelWithGrid (3, 1)
+                |> ui.SetChildren [|
+                    ui.Paragraph loremIpsum2 |> ui.AlignTextTopLeft |> ui.SetFill
+                    ui.PanelVertical()
+                        |> ui.SetScrollVertical
+                        |> ui.SetChildren [|
+                            ui.Paragraph loremIpsum1
+                            |> ui.SetMargin 0 
+                            |> ui.SetPadding 0
+                        |]
+                    ui.Paragraph $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}" |> ui.SetFill
+                |]
+            ui.PanelWithGrid (1, 3)
+                |> ui.SetChildren [|
+                    ui.Paragraph loremIpsum2 |> ui.AlignTextTopLeft |> ui.SetFill
+                    ui.DivVertical()
+                        |> ui.SetScrollVertical
+                        |> ui.SetChildren [|
+                            ui.Paragraph loremIpsum1
+                            |> ui.SetMargin 0 
+                            |> ui.SetPadding 0
+                        |]
+                    ui.Paragraph $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}" |> ui.SetFill
+                |]
+        |]
+    
 
-                    ]
-                panel
-                    [
-                        scroll
-                            [
-                                paragraph [text loremIpsum1; block; name "FailedLorem1"]
-                                paragraph [text loremIpsum2; block; name "FailedLorem2"]
-                            ]
-                            [
-                                name "FailedScroll"
-                                scrollVertical
-                            ]
-                    ]
-                    [
 
-                    ]
-                panelWithGrid 1 3
-                    [
-                        paragraph [text loremIpsum2; textTopCenter; rowspan 1; ]
-                        scroll
-                            [
-                                paragraph [text loremIpsum2; textTopCenter;]
-                            ]
-                            [
-                                rowspan 1
-                            ]
-                        scroll
-                            [
-                                paragraph [text $"Could scroll, but won't.\n Here's the Noobish manifesto:\n %s{model.FeatureText}"]
 
-                            ]
-                            [
-                                name "DebugScroll"
-                                scrollVertical
-                                rowspan 1
-                            ]
-                    ]
-                    [
-                        name "ParentPanel"
-                    ]
-
-                panelWithGrid 2 1
-                    [
-                        div
-                            [
-                                h1 [text "Header 1"; block]
-                                h2 [text "Header 2"; block]
-                                h3 [text "Header 3"; block]
-                            ]
-                            [
-
-                            ]
-                        div
-                            [
-                                label [text "Font size 16"; block]
-                                label [text "Regular"; block]
-                                label [text "Bold"; block]
-                                label [text "Italic"; block]
-                            ]
-                            [
-
-                            ]
-
-                    ]
-                    [
-
-                    ]
-                ]
-                [
-
-                ]
-
-        ]
+module List =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
+        let ui = game.Noobish
+        ui.PanelWithGrid (2, 2) 
+        |> ui.SetChildren [|
+            ui.List model.ListModel model.SelectedListItem (fun value -> Log.Logger.Information ("Clicked {value}", value); dispatch (SelectListItem (model.ListModel |> Array.findIndex (fun v -> v = value))) )
+        |]
+    
 
 module Containers =
 
 
-    let view model dispatch =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
+        let ui = game.Noobish
+        ui.PanelWithGrid (2, 2) 
+        |> ui.SetChildren [|
+            ui.PanelVertical()
+            |> ui.SetChildren [|
+                ui.DivVertical()
+                    |> ui.FillHorizontal
+                    |> ui.SetChildren [|
+                        ui.Header "Hello"
+                        ui.HorizontalRule()
+                    |]
+                ui.Button "Continue" (fun _ _ -> ()) |> ui.FillHorizontal |> ui.SetEnabled false
+                ui.Button "Start" (fun _ _ -> ()) |> ui.FillHorizontal
+                ui.Button "Options" (fun _ _ -> ()) |> ui.FillHorizontal
 
-        let createListLabel index =
-            div
-                [
-                    label [ text $"Item %i{index}"; toggled (model.SelectedListItemIndex = index); fillHorizontal; onClick (fun _ -> dispatch (SelectListItem index))] |> themePrefix "List";
-                ]
-                [block; fillHorizontal; toggled (model.SelectedListItemIndex = index)]
-                |> themePrefix "List" |> themeSuffix (if index % 2 = 0 then "Even" else "Odd")
-        [
-            grid 2 2
-                [
-                panel
-                    [
-                        div [
-                                h2 [text "Hello"; ];
-                                hr []
-                            ] [fillHorizontal];
-                        button [ text "Continue"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; enabled false];
-                        button [ text "Start"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; ];
-                        button [ text "Options"; onClick ignore; padding model.Padding; margin model.Margin; fillHorizontal; ];
-                    ]
-                    [
-                        name "ButtonsPanel"
-                        padding model.Padding; margin model.Margin;
 
-                    ]
-                panel
-                    [
-                        canvas
-                            [
-                                image
-                                    [
-                                        name "Pixel Origin"
-                                        texture "Pixel"
-                                        textureBestFitMin
-                                        minSize 10 10
-                                        padding 0
-                                        margin 0
-                                        relativePosition -5 -5
+            |]
 
-                                    ]
-                                image
-                                    [
-                                        name "Pixel 1"
-                                        texture "Pixel"
-                                        textureBestFitMin
-                                        minSize 10 10
-                                        padding 0
-                                        margin 0
-                                        relativePosition -25 15
+            let image (color: Color) (s: Vector2) (p: Vector2) (r: float32) (c: UIComponentId[]): UIComponentId=
+                ui.Image()
+                    |> ui.SetImage (NoobishTextureId.Basic("Pixel"))
+                    |> ui.SetConstrainToParentBounds false
+                    |> ui.SetGridCellAlignment NoobishAlignment.Center
+                    |> ui.SetSize {Width = s.X; Height = s.Y}
+                    |> ui.SetRelativePosition {X = p.X; Y = p.Y}
+                    |> ui.SetImageRotation r
+                    |> ui.SetImageColor color
+                    |> ui.SetChildren c
 
-                                    ]
-                                button [ text "y"; relativePosition -30 -30 ]
-                                button [ text "o"; relativePosition 30 30 ]
-                                image [
-                                        name "Pixel 2"
-                                        texture "Pixel"
-                                        textureBestFitMin
-                                        minSize 10 10
-                                        padding 0
-                                        margin 0
-                                        relativePosition 15 -25
+            ui.PanelVertical()
+                |> ui.SetChildren [|
+                    ui.DivHorizontal() 
+                        |> ui.FillHorizontal
+                        |> ui.SetChildren [|
+                            ui.Label model.ComboboxValue
+                        |]
+                    ui.Div()
+                        |> ui.SetFill
+                        |> ui.SetGridLayout(1,1)
+                        |> ui.SetChildren [|
+                            image Color.Red (Vector2(20f, 10f)) (Vector2(10f, 0f)) (-MathHelper.Pi / 3f)
+                                [|
+                                    image Color.Orange (Vector2(10f, 10f)) (Vector2(-10f, 10f)) 0f [||]
+                                    image Color.Blue (Vector2(10f, 10f)) (Vector2(10f, -10f)) MathHelper.Pi [||]
+                                    image Color.Green (Vector2(10f, 10f)) (Vector2(-10f, -10f)) MathHelper.PiOver2 [||]
+                                    image Color.Yellow (Vector2(10f, 10f)) (Vector2(10f, 10f)) 0f [||]
+                                    image Color.CornflowerBlue (Vector2(10f, 10f)) (Vector2(20f, 0f)) 0f [||]
+                                    image Color.Purple (Vector2(10f, 10f)) (Vector2(-10f, 0f)) 0f [||]
+                                    image Color.Gold (Vector2(10f, 10f)) (Vector2(0f, 10f)) 0f [||]
+                                    image Color.BlanchedAlmond (Vector2(10f, 10f)) (Vector2(0f, -10f)) 0f [||]
+                                |]
+                        |]
 
-                                    ]
-                            ]
-                            [
-                                fill
-                                text model.ComboboxValue; onTextChange (fun v -> dispatch (ComboboxValueChanged v))
-                            ]
-                    ]
-                    [
-
-                    ]
-                panel
-                    [
-                        h2 [text $"List: Item %i{model.SelectedListItem}"]
-                        hr []
-                        scroll
-                            (model.ListModel |> Array.map createListLabel |> Array.toList)
-                            []
-                    ]
-                    [
-
-                    ]
-                panelWithGrid 2 1
-                    [
-
-                    ]
-                    [
-
-                    ]
-                ]
-                [
-
-                ]
-
-        ]
+                |]
+            ui.PanelVertical() 
+                |> ui.SetChildren [|
+                    ui.DivVertical()
+                        |> ui.FillHorizontal
+                        |> ui.SetChildren [|
+                            ui.Header $"Selected: {model.SelectedListItemIndex}"
+                            ui.HorizontalRule()
+                        |]
+                    ui.List model.ListModel model.SelectedListItemIndex (fun item -> dispatch (SelectListItem (model.ListModel |> Array.findIndex(fun i -> i = item))))
+                |]
+            ui.PanelVertical() 
+                |> ui.SetChildren [|
+                    ui.DivVertical()
+                        |> ui.FillHorizontal
+                        |> ui.SetChildren [|
+                            ui.Checkbox "Option 1" model.CheckboxValue (fun v -> dispatch (CheckboxValueChanged v)) 
+                            ui.Checkbox "Option 2" true ignore 
+                        |]
+                |]
+        |]
 
 
 
 module Buttons =
-    let view model dispatch =
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) model (dispatch: DemoMessage -> unit) =
 
-        [
-            grid 2 2
-                [
-                panel
-                    [
-                        button [text "Padding 0"; onClick (fun gameTime -> dispatch (ChangePadding 0)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Padding 5"; onClick (fun gameTime -> dispatch (ChangePadding 5)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Padding 10"; onClick (fun gameTime -> dispatch (ChangePadding 10));  padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Padding 15"; onClick (fun gameTime -> dispatch (ChangePadding 15)); padding model.Padding; margin model.Margin; fillHorizontal]
-                    ]
-                    [
-                        name "ButtonsPanel"
-                        padding model.Padding; margin model.Margin;
-                    ]
-                panel
-                    [
-                        combobox
-                            [
-                                option "Value 1"
-                                option "Value 2"
-                                option "Value 3"
-                            ]
-                            [
-                                text model.ComboboxValue;
-                                onTextChange (fun v -> dispatch (ComboboxValueChanged v))
-                                block;
-                            ]
-                        textbox [
-                            text "Please insert coin"
-                            //onOpenKeyboard (fun setText -> setText "opened")
-                        ]
-                    ]
-                    [
+        let ui = game.Noobish
 
-                    ]
-                panel
-                    [
-                        button [text "Margin 0"; onClick (fun gameTime -> dispatch (ChangeMargin 0)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Margin 2"; onClick (fun gameTime -> dispatch (ChangeMargin 2)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Margin 4"; onClick (fun gameTime -> dispatch (ChangeMargin 4)); padding model.Padding; margin model.Margin; fillHorizontal]
-                        button [text "Margin 6"; onClick (fun gameTime -> dispatch (ChangeMargin 6)); padding model.Padding; margin model.Margin; fillHorizontal]
-                    ]
-                    [
-                        name "MarginPanel"
-
-                    ]
-                panel
-                    [
-                        scroll
-                            [
-                                button [text "Button 1"; fillHorizontal]
-                                button [text "Button 2"; fillHorizontal]
-                                button [text "Button 3"; fillHorizontal]
-                                button [text "Button 4"; fillHorizontal]
-                                button [text "Button 5"; fillHorizontal]
-                                button [text "Button 6"; fillHorizontal]
-                                button [text "Button 7"; fillHorizontal]
-                            ]
-                            [
-
-                            ]
-                    ]
-                    [
-
-                    ]
-                ]
-                [
-
-                ]
-
-        ]
+    
+        ui.Grid(2, 2)
+        |> ui.SetChildren 
+            [|
+                ui.PanelVertical ()
+                |> ui.SetChildren [|
+                    ui.Button "Padding 0" (fun _ gameTime -> dispatch (ChangePadding 0))
+                        |> ui.SetFillHorizontal
+                    ui.Button "Padding 5" (fun _ gameTime -> dispatch (ChangePadding 5)) 
+                        |> ui.SetFillHorizontal
+                    ui.Button "Padding 10" (fun _ gameTime -> dispatch (ChangePadding 10))
+                        |> ui.SetFillHorizontal
+                    ui.Button "Padding 15" (fun _ gameTime -> dispatch (ChangePadding 15))
+                        |> ui.SetFillHorizontal
+                |]
+                ui.PanelVertical ()
+                |> ui.SetChildren [|
+                    ui.Button "Margin 0" (fun _ gameTime -> dispatch (ChangeMargin 0))
+                        |> ui.SetFillHorizontal
+                    ui.Button "Margin 5" (fun _ gameTime -> dispatch (ChangeMargin 5)) 
+                        |> ui.SetFillHorizontal
+                    ui.Button "Margin 10" (fun _ gameTime -> dispatch (ChangeMargin 10))
+                        |> ui.SetFillHorizontal
+                    ui.Button "Margin 15" (fun _ gameTime -> dispatch (ChangeMargin 15))
+                        |> ui.SetFillHorizontal
+                |]
+                let items = [| "Option 1"; "Option 2"; "Option 3" |]
+                let selectedItemIndex = items |> Array.findIndex(fun item -> item = model.ComboboxValue)
+                ui.PanelVertical ()
+                |> ui.SetChildren [|
+                    ui.Combobox items selectedItemIndex (fun value -> Log.Logger.Information("Value changed {Value}", value); dispatch (ComboboxValueChanged value))
+                    ui.Textbox model.FeatureText (fun value -> Log.Logger.Information("Text changed {value}", value); dispatch (FeaturesChanged value))
+                    ui.Button "8" (fun _ _ -> ())
+                    ui.Button "9" (fun _ _ -> ())
+                |]
+                ui.PanelHorizontal ()
+                |> ui.SetChildren [|
+                        ui.Header "Three"
+                    |]
+            |]
 
 
 module Slider =
-    let view model dispatch =
 
-        let option children =
-            div
-                children
-                [
-                    fillHorizontal
-                    block
-                ]
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
+            
+            
+        let ui = game.Noobish
 
-        let content =
-            [
-                option
-                    [
-                        label [ text "OPTION 1"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 100.0f; sliderStep 1.0f; fillHorizontal; ];
-                    ];
-                option
-                    [
-                        label [ text "OPTION 2"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+        let gridId
+            = ui.Grid(2,2)
+            |> ui.SetChildren [|
+                
+                ui.PanelVertical() 
+                    |> ui.SetChildren [|
+                        ui.Header $"Slider A %g{model.SliderAValue}"
+                        ui.Slider (0f, 100f) 1f model.SliderAValue (fun value -> dispatch (SliderValueChanged value))
+                        ui.Header $"Slider B "
+                        ui.Slider (0f, 10f) 0.1f 5.5f (fun value-> ())
+                        ui.Header $"Slider C"
+                        ui.Slider (50f, 100f) 2f 50f (fun value -> ())
+                        ui.Header $"Slider D"
+                        ui.Slider (0f, 25f) 5f 25f (fun value -> ())
+                    |]
+                ui.Panel ()
+                    |> ui.SetGridLayout(1, 9)
+                    |> ui.SetFill
+                    |> ui.SetChildren [|
+                        ui.DivVertical() 
+                            |> ui.SetRowspan 2
+                            |> ui.SetFill
+                            |> ui.SetChildren [|
+                                ui.Header ("Audio")
+                                ui.HorizontalRule() 
+                            |]
+                        ui.Label ("Music") |> ui.FillHorizontal
+                        ui.Slider (0f, 100f) 1.0f 50f (fun v -> ())
+                            |> ui.FillHorizontal
 
-                    ];
-                 option
-                    [
-                        label [ text "OPTION 3"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+                        ui.Label ("Sounds") |> ui.FillHorizontal
+                        ui.Slider (0f, 100f) 1.0f 75f (fun v -> ())
+                            |> ui.FillHorizontal
+                            
 
-                    ];
-                option
-                    [
-                        label [ text "OPTION 4"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+                        ui.Space() 
 
-                    ];
-                option
-                    [
-                        label [ text "OPTION 5"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+                        ui.Button ("Back") (fun _ _ -> ()) |> ui.SetFill |> ui.SetRowspan 2
 
-                    ];
-                option
-                    [
-                        label [ text "OPTION 6"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
-                    ];
-                option
-                    [
-                        label [ text "OPTION 7"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
 
-                    ];
-                option
-                    [
-                        label [ text "OPTION 8"; fillHorizontal; ];
-                        slider [ sliderRange 0.0f 10.0f; sliderStep 1.0f; fillHorizontal; ];
+                    |]
+    
+                ui.Panel() 
+                    |> ui.SetFill
+                    |> ui.SetGridLayout(1, 1)
+                    |> ui.SetChildren[|
+                        ui.Slider (0f, 100f) 1.0f 35f (fun v -> ())
+                            |> ui.FillHorizontal
+                    |]
 
-                    ];
-            ]
+            |]
 
-        [
-            grid 2 2
-                [
-                panel
-                    [
-                        label [text (sprintf "Slider A Value: %f" model.SliderAValue); fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue model.SliderAValue; sliderOnValueChanged (fun v -> dispatch (SliderValueChanged v)); padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 50.0f; padding model.Padding; fillHorizontal]
-                        slider [sliderRange 0.0f 100.0f; sliderValue 90.0f; padding model.Padding; fillHorizontal]
-                    ]
-                    []
-                panel
-                    [
-                    scroll
-                        content
-                        [
-                            fill
-                        ]
-                    ]
-
-                    []
-
-                ]
-                [
-
-                ]
-
-        ]
+        gridId
 
 
 
 
 module Github =
-    let view model dispatch =
-        [
-            grid 10 8
-                [
-                    space [colspan 10; rowspan 2]
-                    space [colspan 2; rowspan 4]
-                    panel
-                        [
-                            h2 [text "Welcome to Noobish"; textCenter]
-                            hr []
-                            grid 6 4
-                                [
-                                    checkbox [text "FSharp"; toggled true; onCheckBoxValueChange(fun v -> printfn "Hello %b" v); colspan 2; rowspan 1]
-                                    checkbox [text "MonoGame"; toggled true; colspan 2; rowspan 1]
-                                    checkbox [text "Elmish"; toggled true; colspan 2; rowspan 1]
-                                    label [text "Coolness:"; colspan 1; rowspan 1; textLeft]
-                                    slider [sliderValue 80f; fillHorizontal; colspan 5; rowspan 1]
-                                    label [text "Features:"; colspan 1; rowspan 1; textLeft]
-                                    textbox [ text model.FeatureText; onTextChange (fun v -> dispatch (FeaturesChanged v)); textLeft; colspan 5; rowspan 1]
-                                    button [text "Report a bug"; colspan 2]
-                                    button [text "Contribute"; colspan 2]
-                                    button [text "Fork"; colspan 2]
-                                ]
-                                [
 
-                                ]
+    let view (game: NoobishGame<unit, DemoMessage, DemoModel>) (model: DemoModel) dispatch =
+        let ui = game.Noobish
+        ui.Grid(10, 8)
+            |> ui.SetChildren [|
+                ui.Space() 
+                    |> ui.SetColspan 10
+                    |> ui.SetRowspan 2
+                ui.Space() 
+                    |> ui.SetColspan 2
+                    |> ui.SetRowspan 4
+                ui.PanelVertical()
+                    |> ui.SetColspan 6
+                    |> ui.SetRowspan 4
+                    |> ui.SetChildren [|
+                        ui.Header "Welcome to Noobish" |> ui.AlignTextCenter
+                        ui.HorizontalRule()
+                        ui.Grid (6, 4)
+                            |> ui.SetChildren [|
+                                ui.Checkbox "FSharp" true ignore |> ui.SetColspan 2 
+                                ui.Checkbox "MonoGame" true ignore |> ui.SetColspan 2
+                                ui.Checkbox "Elmish" true ignore |> ui.SetColspan 2
+                                ui.Label "Coolness:"
+                                    |> ui.SetTextAlign NoobishAlignment.Left 
+                                    |> ui.SetFill
+                                ui.Slider (0f, 100f) 1f 80f ignore 
+                                    |> ui.SetFillHorizontal
+                                    |> ui.SetColspan 5
+                                ui.Label "Features:"
+                                    |> ui.SetTextAlign NoobishAlignment.Left 
+                                    |> ui.SetFill
+                                ui.Textbox model.FeatureText (fun v -> dispatch (FeaturesChanged v))
+                                    |> ui.SetFillHorizontal
+                                    |> ui.AlignTextLeft
+                                    |> ui.SetColspan 5
+                                ui.Button "Report a bug" (fun _ _ -> ())
+                                    |> ui.AlignTextCenter
+                                    |> ui.SetFillHorizontal
+                                    |> ui.SetColspan 2
+                                ui.Button "Contribute" (fun _ _ -> ()) 
+                                    |> ui.AlignTextCenter
+                                    |> ui.SetFillHorizontal
+                                    |> ui.SetColspan 2
+                                ui.Button "Fork" (fun _ _ -> ()) 
+                                    |> ui.AlignTextCenter
+                                    |> ui.SetFillHorizontal
+                                    |> ui.SetColspan 2
 
-                        ]
-                        [
-                            colspan 6; rowspan 4;
-                        ]
-                    space [colspan 2; rowspan 4]
-                    space [colspan 10; rowspan 2]
-                ]
-                [
 
-                ]
-        ]
 
-let init _game () =
-    { State = Buttons; ComboboxValue = "Option 1"; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg(ShowButtons)
+                            |]
 
-let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
+                    |]
+            |]
+
+
+let init (game: NoobishGame<unit, DemoMessage, DemoModel>) () =
+    { State = Buttons; ComboboxValue = "Option 1"; CheckboxValue = false; Padding = 5; Margin = 5; SliderAValue = 25.0f; StyleMode = DarkMode; FeatureText = "functional, extendable, net6.0 and cross-platform."; ListModel = Array.init 21 id; SelectedListItemIndex = 0}, Cmd.ofMsg(ShowButtons)
+
+let update (game: NoobishGame<unit, DemoMessage, DemoModel>) (message: DemoMessage) (model: DemoModel) (gameTime: GameTime)=
     match message with
     | ShowButtons ->
         {model with State = Buttons}, Cmd.none
@@ -470,6 +448,8 @@ let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: Gam
         {model with State = Containers}, Cmd.none
     | ShowText ->
         {model with State = Text}, Cmd.none
+    | ShowList ->
+        {model with State = List}, Cmd.none
     | ShowSliders ->
         {model with State = Slider}, Cmd.none
     | ShowGithub ->
@@ -478,6 +458,8 @@ let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: Gam
         {model with SliderAValue = v}, Cmd.none
     | ComboboxValueChanged v ->
         {model with ComboboxValue = v}, Cmd.none
+    | CheckboxValueChanged v ->
+        {model with CheckboxValue = v}, Cmd.none
     | ChangePadding padding ->
         {model with Padding = padding}, Cmd.none
     | ChangeMargin margin ->
@@ -485,87 +467,102 @@ let update (game: Game) (message: DemoMessage) (model: DemoModel) (gameTime: Gam
     | FeaturesChanged s ->
         {model with FeatureText = s}, Cmd.none
     | ToggleDebug ->
-        let nui = game.Services.GetService<NoobishUI>()
-        nui.Settings.Debug <- (not nui.Settings.Debug)
+        game.Noobish.Debug <- not (game.Noobish.Debug)
         model, Cmd.none
     | ToggleLightMode ->
-        let nui = game.Services.GetService<NoobishUI>()
-        nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Light/Light"
+        game.StyleSheetId <- "Light/Light"
         {model with StyleMode = LightMode}, Cmd.none
     | ToggleDarkMode ->
-        let nui = game.Services.GetService<NoobishUI>()
-        nui.StyleSheet <- game.Content.Load<NoobishStyleSheet> "Dark/Dark"
+        game.StyleSheetId <- "Dark/Dark"
         {model with StyleMode = DarkMode}, Cmd.none
     | SelectListItem index ->
         {model with SelectedListItemIndex = index}, Cmd.none
 
 let view game (model: DemoModel) dispatch =
 
-    let scrollItems =
-        [
-            button [text "Buttons"; onClick (fun gameTime -> dispatch ShowButtons); fillHorizontal; toggled (model.State = Buttons); padding model.Padding; margin model.Margin; ]
-            button [text "Text"; onClick (fun gameTime -> dispatch ShowText); fillHorizontal; toggled (model.State = Text); padding model.Padding; margin model.Margin; ]
-            button [text "Containers"; onClick (fun gameTime -> dispatch ShowContainers); fillHorizontal; toggled (model.State = Containers); padding model.Padding; margin model.Margin; ]
-            button [text "Slider"; onClick (fun gameTime -> dispatch ShowSliders); fillHorizontal; toggled (model.State = Slider); padding model.Padding; margin model.Margin; ]
-            button [text "Github"; onClick (fun gameTime -> dispatch ShowGithub); fillHorizontal; toggled (model.State = Github); padding model.Padding; margin model.Margin; ]
-        ]
-
     let title, content  =
         match model.State with
-        | Buttons -> "Buttons", Buttons.view model dispatch
-        | Containers -> "Containers", Containers.view model dispatch
-        | Text -> "Labels", Text.view model dispatch
-        | Slider -> "Slider", Slider.view model dispatch
-        | Github -> "Github", Github.view model dispatch
+        | Buttons ->
+            let content = Buttons.view game model dispatch
+            "Buttons", content
+        | Containers -> 
+            let content = Containers.view game model dispatch
+            "Containers", content
+        | Text -> 
+            let content = Text.view game model dispatch
+            "Labels", content
+        | List -> 
+            let content = List.view game model dispatch
+            "List", content
+        | Slider -> 
+            let content = Slider.view game model dispatch
+            "Slider", content
+        | Github -> 
+            let content = Github.view game model dispatch
+            "Github", content
 
-    [
-        [
-            grid 12 8
-                [
-                    panel [h1 [text "Noobish"; fill]] [colspan 3; rowspan 1]
-                    panelWithGrid 12 1
-                        [
-                            h1 [text title; fill; colspan 6];
-                            button
-                                [
-                                    localizedText ("Localization/TestBundle", "Dark");
-                                    toggled (model.StyleMode = DarkMode);
-                                    fill;
-                                    onClick (fun gameTime -> dispatch ToggleDarkMode)
-                                    keyboardShortcut (ctrl NoobishKeyId.B)
-                                    colspan 2
-                                ]
-                            button
-                                [
-                                    localizedText ("Localization/TestBundle", "Light");
-                                    toggled (model.StyleMode = LightMode);
-                                    fill;
-                                    onClick (fun gameTime -> dispatch ToggleLightMode)
-                                    keyboardShortcut (ctrl NoobishKeyId.L)
-                                    colspan 2
-                                ]
-                            button
-                                [
-                                    text "Debug";
-                                    toggled false; //model.UI.Settings.Debug;
-                                    fill;
-                                    onClick (fun gameTime -> dispatch ToggleDebug)
-                                    keyboardShortcut (alt NoobishKeyId.D)
-                                    colspan 2
-                                ]
-                        ]
-                        [
-                            colspan 9;
-                            rowspan 1
-                        ]
-                    panel [scroll scrollItems [name "LeftMenu";]] [colspan 3; rowspan 7;]
-                    panel content [colspan 9; rowspan 7;]
-                ]
-                [
-                    padding 10
-                ]
-        ]
-    ]
+    let ui = game.Noobish
+
+    ui.Grid(12, 8)
+    |> ui.SetChildren [|
+        ui.PanelHorizontal() 
+        |> ui.SetRowspan 1
+        |> ui.SetColspan 3
+        |> ui.SetChildren [|
+            ui.Header "Noobish"
+        |]
+        ui.PanelWithGrid(12, 1)
+        |> ui.SetRowspan 1 
+        |> ui.SetColspan 9
+        |> ui.SetChildren [|
+            ui.Header title
+            |> ui.SetColspan 6
+            
+            ui.Button "Dark" (fun e _ -> dispatch ToggleDarkMode) 
+            |> ui.SetFill
+            |> ui.SetColspan 2     
+            |> ui.SetToggled (model.StyleMode = DarkMode )          
+            ui.Button "Light" (fun e _ -> dispatch ToggleLightMode) 
+            |> ui.SetFill
+            |> ui.SetToggled (model.StyleMode = LightMode )       
+            |> ui.SetColspan 2
+            ui.Button "Debug" (
+                fun e _ -> 
+                    dispatch ToggleDebug
+                ) 
+            |> ui.SetFill
+            |> ui.SetColspan 2
+            |> ui.SetToggled (ui.Debug)       
+            
+        |]
+        ui.PanelVertical() 
+        |> ui.SetRowspan 7
+        |> ui.SetColspan 3
+        |> ui.SetChildren [|
+            ui.Button "Buttons" (fun gameTime _ -> dispatch ShowButtons)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Buttons)
+            ui.Button "Text" (fun gameTime _ -> dispatch ShowText)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Text)
+            ui.Button "Containers" (fun gameTime _ -> dispatch ShowContainers)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Containers)
+            ui.Button "List" (fun gameTime _ -> dispatch ShowList)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = List)
+            ui.Button "Slider" (fun gameTime _ -> dispatch ShowSliders)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Slider)
+            ui.Button "Github" (fun gameTime _ -> dispatch ShowGithub)
+            |> ui.FillHorizontal 
+            |> ui.SetToggled (model.State = Github)
+        |]
+        content
+        |> ui.SetRowspan 7 
+        |> ui.SetColspan 9
+    |]
+
 
 let tick game (model) (gameTime: GameTime) = ()
 let draw game (model) (gameTime: GameTime) = ()
@@ -573,10 +570,16 @@ let draw game (model) (gameTime: GameTime) = ()
 
 [<EntryPoint>]
 let main argv =
+    let logger =
+        LoggerConfiguration()
+            .WriteTo.Console()
+            .MinimumLevel.Debug()
+            .CreateLogger()
 
+    Log.Logger <- logger
     Program2.create ignore init update view tick draw
         |> Program2.withContentRoot "Content/"
-        |> Program2.withTheme "Dark/Dark"
+        |> Program2.withStyleSheet "Dark/Dark"
         |> Program2.withPreferHalfPixelOffset true
         |> Program2.withResolution 1280 720
         |> Program2.withMouseVisible true

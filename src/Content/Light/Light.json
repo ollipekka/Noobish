@@ -50,17 +50,12 @@
                 ]
             }
         },
-        "H1": {
-            "default": {
-                "fontSize": 26
-            }
-        },
-        "H2": {
+        "Header": {
             "default": {
                 "fontSize": 20
             }
         },
-        "H3": {
+        "Paragraph": {
             "default": {
                 "fontSize": 16
             }
