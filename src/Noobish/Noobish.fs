@@ -48,10 +48,8 @@ type Noobish(maxCount: int) =
     member val ScreenWidth: float32 = 0f with get, set 
     member val ScreenHeight: float32 = 0f with get, set
 
-
     member val ToProcess = PriorityQueue<int, int>() with get
     member val PreviousMouseState = Microsoft.Xna.Framework.Input.Mouse.GetState() with get, set
-
     member val PreviousKeyState = Microsoft.Xna.Framework.Input.Keyboard.GetState() with get, set
 
     member val Debug = false with get, set
@@ -101,25 +99,24 @@ type Noobish(maxCount: int) =
 
     member this.Window() =
         let cid = this.Create "Space"
-        this.Components.Layout.[cid.Index] <- Layout.Grid(16, 9)
+        this.SetGridLayout (16, 9) cid |> ignore
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
 
         let windowId = 
             this.PanelVertical()
-                |> this.SetColspan 8 |> this.SetRowspan 7
                 |> this.SetFill
 
         this.SetChildren [|
             this.Space() |> this.SetColspan 16 |> this.SetRowspan 1
             this.Space() |> this.SetColspan 4 |> this.SetRowspan 8
-            windowId 
+            windowId |> this.SetColspan 8 |> this.SetRowspan 7
         |] cid |> ignore
 
         windowId
 
     member this.WindowWithGrid (cols: int, rows: int) =
         let cid = this.Create "Space"
-        this.Components.Layout.[cid.Index] <- Layout.Grid(16, 9)
+        this.SetGridLayout (16, 9) cid |> ignore
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
 
         let windowId = 
@@ -137,7 +134,7 @@ type Noobish(maxCount: int) =
 
     member this.LargeWindowWithGrid (cols: int, rows: int) (children: UIComponentId[])=
         let cid = this.Create "Space"
-        this.Components.Layout.[cid.Index] <- Layout.Grid(16, 9)
+        this.SetGridLayout (16, 9) cid |> ignore
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
 
         let windowId = 
@@ -246,13 +243,13 @@ type Noobish(maxCount: int) =
     member this.Div () = 
         let cid = this.Create "Division"
         this.Components.Block.[cid.Index] <- true
-        this.SetLayout (Layout.LinearVertical) cid.Index
+        this.Components.Layout.[cid.Index] <- (Layout.LinearVertical) 
 
         cid
 
     member this.Grid (cols: int, rows: int) = 
         let cid = this.Create "Division"
-        this.SetLayout (Layout.Grid(cols, rows)) cid.Index
+        this.SetGridLayout (cols, rows) cid |> ignore
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid
 
@@ -262,39 +259,39 @@ type Noobish(maxCount: int) =
 
     member this.PanelWithGrid (cols: int, rows: int) = 
         let cid = this.Create "Panel"
-        this.SetLayout (Layout.Grid(cols, rows)) cid.Index
+        this.SetGridLayout (cols, rows) cid |> ignore
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.PanelHorizontal () = 
         let cid = this.Create "Panel"
-        this.SetLayout (Layout.LinearHorizontal) cid.Index
+        this.Components.Layout.[cid.Index] <- (Layout.LinearHorizontal) 
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.PanelVertical () = 
         let cid = this.Create "Panel"
-        this.SetLayout (Layout.LinearVertical) cid.Index
+        this.Components.Layout.[cid.Index] <- (Layout.LinearVertical) 
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.DivHorizontal () = 
         let cid = this.Create "Division"
-        this.SetLayout (Layout.LinearHorizontal) cid.Index
+        this.Components.Layout.[cid.Index] <- (Layout.LinearHorizontal) 
         this.Components.Block.[cid.Index] <- true 
         //this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.DivVertical () = 
         let cid = this.Create "Division"
-        this.SetLayout (Layout.LinearVertical) cid.Index
+        this.Components.Layout.[cid.Index] <- (Layout.LinearVertical) 
         this.Components.Block.[cid.Index] <- true 
         //this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.Canvas () = 
         let cid = this.Create "Division"
-        this.SetLayout (Layout.Relative (cid)) cid.Index
+        this.Components.Layout.[cid.Index] <- (Layout.Relative (cid)) 
         this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
         cid   
 
@@ -375,10 +372,6 @@ type Noobish(maxCount: int) =
             this.Components.Bounds.[index] <- {this.Components.Bounds.[index] with X = p.X; Y = p.Y}
         cid
 
-    member private this.SetLayout (layout: Layout) (index: int) =
-        this.Components.Layout.[index] <- layout
-
-
     member this.SetVerticalLayout (cid: UIComponentId) =
         let index = this.GetIndex cid 
         if index <> -1 then 
@@ -391,11 +384,14 @@ type Noobish(maxCount: int) =
             this.Components.Layout.[index] <- Layout.LinearHorizontal
         cid 
 
-    member this.SetGridLayout (cols: int, rows: int) (cid: UIComponentId) =
+    member this.SetGridLayout (cols: int, rows: int) (cid: UIComponentId): UIComponentId =
 
         let index = this.GetIndex cid 
         if index <> -1 then 
-            this.Components.Layout.[index] <- Layout.Grid(cols, rows)
+            this.Components.Layout[cid.Index] <- Layout.Grid (cols, rows)
+
+            let gridCells = this.Components.GridCells.[index]
+            gridCells.Clear()
         cid
 
 
@@ -615,6 +611,12 @@ type Noobish(maxCount: int) =
             let layer = this.Components.Layer.[index]
             this.BumpLayer layer (childrenIds :> IReadOnlyList<UIComponentId>)
         cid
+
+(*
+    member this.AddGridChild (rowspan: int) (colsapawn: int) (cid: UIComponentId) =
+        let index = this.GetIndex cid 
+        if index > -1 then 
+*)
 
 
 

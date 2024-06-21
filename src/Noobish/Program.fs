@@ -178,13 +178,14 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
     override this.Update gameTime =
         base.Update(gameTime)
 
-        this.Input <- {
-            Keyboard = NoobishInputState.updateDevice (Keyboard.GetState()) this.Input.Keyboard
-            Mouse = NoobishInputState.updateDevice (Mouse.GetState()) this.Input.Mouse
-            Touch = NoobishInputState.updateDevice (TouchPanel.GetState()) this.Input.Touch
-        }
+        if this.IsActive then 
+            this.Input <- {
+                Keyboard = NoobishInputState.updateDevice (Keyboard.GetState()) this.Input.Keyboard
+                Mouse = NoobishInputState.updateDevice (Mouse.GetState()) this.Input.Mouse
+                Touch = NoobishInputState.updateDevice (TouchPanel.GetState()) this.Input.Touch
+            }
 
-        this.Noobish.Update gameTime
+            this.Noobish.Update gameTime
 
         this.TickInternal state gameTime
 
@@ -199,16 +200,10 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
                 Cmd.unpack this.Messages cmd
 
-
         if tempMessages.Count > 0 then
-
             tempMessages.Clear()
-
             this.Noobish.Clear()
-
             this.ViewInternal state this.Dispatch |> ignore
-
-
 
 
     override this.Draw (gameTime) =

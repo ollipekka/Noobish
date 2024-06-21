@@ -267,6 +267,8 @@ type NoobishComponents(count) =
     member val Layout = Array.create count Layout.None
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
     member val GridCellAlignment = Array.create count NoobishAlignment.None
+    member val GridCells = Array.init count (fun _i -> ResizeArray<bool>(128))
+
     member val WantsOnPress = Array.create count false
     member val OnPress = Array.create<UIComponentId -> NoobishPosition -> GameTime -> unit> count ignorePress
     member val WantsOnClick = Array.create count false
@@ -483,7 +485,9 @@ type NoobishComponents(count) =
             let mutable col = 0
             let mutable row = 0
 
-            let cellUsed = Array2D.create cols rows false
+            let gridCells = this.GridCells.[i]
+            gridCells.Clear()
+            for _i = 0 to cols * rows - 1 do gridCells.Add false 
 
             for i = 0 to children.Count - 1 do
                 let cid = children.[i]
@@ -496,11 +500,11 @@ type NoobishComponents(count) =
                 let childHeight =  float32 gridSpan.Rowspan * rowHeight
              
 
-                for c = col to col + gridSpan.Colspan - 1 do
-                    for r = row to row + gridSpan.Rowspan - 1 do
-                        cellUsed.[c, r] <- true
+                for r = row to row + gridSpan.Rowspan - 1 do
+                    for c = col to col + gridSpan.Colspan - 1 do
+                        gridCells.[r * cols  + c] <- true
 
-                while row < rows && cellUsed.[col, row] do
+                while row < rows && gridCells.[row * cols + col] do
                     col <- col + gridSpan.Colspan
                     if (col >= cols) then
                         col <- 0
@@ -582,6 +586,7 @@ type NoobishComponents(count) =
 
             this.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
             this.GridCellAlignment.[i] <- NoobishAlignment.None
+            this.GridCells.[i].Clear()
 
             this.WantsOnPress.[i] <- false
             this.OnPress.[i] <- ignoreClick
