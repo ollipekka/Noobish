@@ -75,7 +75,6 @@ type Noobish(maxCount: int) =
         let cid: UIComponentId = {Index = i; Id = Guid.NewGuid()}
         this.Components.Id.[i] <- cid
         this.Components.ThemeId.[i] <- themeId
-        if this.Components.ParentId.[i] <> UIComponentId.empty then failwith "crap"
         this.Components.Enabled.[i] <- true 
         this.Components.Visible.[i] <- true 
         this.Components.Layer.[i] <- 1
@@ -603,7 +602,7 @@ type Noobish(maxCount: int) =
         if index > -1 then 
             for i = 0 to cs.Length - 1 do 
                 let childId = cs[i]
-                if this.Components.ParentId.[childId.Index] <> UIComponentId.empty then failwith "what"
+                if this.Components.ParentId.[childId.Index].Index <> -1 then failwith "what"
                 this.Components.ParentId.[childId.Index] <- cid
             let childrenIds = this.Components.Children.[index]
             childrenIds.AddRange cs
@@ -944,7 +943,7 @@ type Noobish(maxCount: int) =
 
                 this.DrawBackground styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i
 
-                if this.FocusedElementId = this.Components.Id.[i] then 
+                if this.FocusedElementId.Id.Equals this.Components.Id.[i].Id then 
                     this.DrawCursor styleSheet content textureAtlas spriteBatch i gameTime 0f 0f
 
                 this.DrawScrollBars styleSheet textureAtlas spriteBatch gameTime parentScrollX parentScrollY i 
@@ -1087,7 +1086,7 @@ type Noobish(maxCount: int) =
                     this.Components.ImageColor.[i] <- styleSheet.GetColor themeId "default"
 
                 (* Run layout only for root components. *)
-                if this.Components.ParentId.[i] = UIComponentId.empty then 
+                if this.Components.ParentId.[i].Index = -1 then 
                     toLayout.Enqueue(i, this.Components.Layer.[i])
 
 
@@ -1101,7 +1100,7 @@ type Noobish(maxCount: int) =
         for i = 0 to this.Components.Count - 1 do 
             let layer = this.Components.Layer.[i]
 
-            if this.Components.ParentId.[i] = UIComponentId.empty then 
+            if this.Components.ParentId.[i].Index = -1 then 
                 drawQueue.Enqueue(i, layer)
 
         let oldRasterizerState = graphics.RasterizerState

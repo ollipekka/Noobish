@@ -24,7 +24,7 @@ type NoobishComponents with
         let x, y = 
             let parentContainerId = this.ParentId.[parentCid.Index]
         
-            if parentContainerId <> UIComponentId.empty then 
+            if parentContainerId.Index = -1 then 
                 let parentContainerMargin = this.Margin.[parentContainerId.Index]
                 let parentContainerPadding = this.Padding.[parentContainerId.Index]
                 let parentContainerBounds = this.Bounds.[parentContainerId.Index]

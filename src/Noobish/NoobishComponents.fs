@@ -424,7 +424,7 @@ type NoobishComponents(count) =
         }
 
         let parentId = this.ParentId.[i]
-        if parentId <> UIComponentId.empty && (this.IsGridLayout parentId.Index) then 
+        if parentId.Index <> -1 && (this.IsGridLayout parentId.Index) then 
             match this.GridCellAlignment.[i] with 
             | NoobishAlignment.None -> ()
             | NoobishAlignment.Left ->
