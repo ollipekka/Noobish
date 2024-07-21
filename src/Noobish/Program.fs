@@ -86,7 +86,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
 
     abstract member UpdateInternal: 'msg -> 'model -> GameTime -> ('model*Cmd<'msg>)
 
-    abstract member ViewInternal: 'model -> Dispatch2<'msg> -> UIComponentId
+    abstract member ViewInternal: 'model -> Dispatch2<'msg> -> int<UIComponentId>
 
     abstract member TickInternal: 'model -> GameTime -> unit
 
@@ -227,7 +227,7 @@ type SimpleNoobishGame<'arg, 'msg, 'model>(
     serviceInit: Game -> unit,
     init: SimpleNoobishGame<'arg, 'msg, 'model> ->'arg -> ('model * Cmd<'msg>),
     update: SimpleNoobishGame<'arg, 'msg, 'model> -> 'msg -> 'model -> GameTime -> ('model * Cmd<'msg>),
-    view: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> Dispatch2<'msg> -> UIComponentId,
+    view: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> Dispatch2<'msg> -> int<UIComponentId>,
     tick: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> GameTime -> unit,
     draw: SimpleNoobishGame<'arg, 'msg, 'model> -> 'model -> GameTime -> unit) =
     inherit NoobishGame<'arg, 'msg, 'model>()

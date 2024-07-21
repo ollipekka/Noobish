@@ -34,7 +34,7 @@ type Noobish with
                 this.Components.LastHoverTime.[i] <- gameTime.TotalGameTime
             else 
                 for j = 0 to children.Count - 1 do 
-                    this.Hover x y gameTime children.[j].Index
+                    this.Hover x y gameTime (children.[j] |> UIComponentId.index)
 
     member this.Click (x: float32) (y: float32) (gameTime: GameTime) (parentScrollX: float32) (parentScrollY: float32) (i: int): bool  =
 
@@ -51,7 +51,7 @@ type Noobish with
             let mutable found = false
             let mutable j = 0
             while not found && j < children.Count do 
-                let childIndex = children.[j].Index
+                let childIndex = children.[j] |> UIComponentId.index
                 if this.Components.ConstrainToParentBounds.[childIndex] then
                     if contains && this.Click x y gameTime scrollX scrollY childIndex then 
                         found <- true 
@@ -95,7 +95,7 @@ type Noobish with
             let mutable found = false
             let mutable j = 0
             while not found && j < children.Count do 
-                if this.Press x y gameTime scrollX scrollY children.[j].Index then 
+                if this.Press x y gameTime scrollX scrollY (children.[j] |> UIComponentId.index) then 
                     found <- true 
                 j <- j + 1
 
@@ -126,7 +126,7 @@ type Noobish with
                 let children = this.Components.Children.[i]
                 let mutable handledByChild = false 
                 for j = 0 to children.Count - 1 do 
-                    if this.Scroll positionX positionY scale time scrollX scrollY children.[j].Index then 
+                    if this.Scroll positionX positionY scale time scrollX scrollY (children.[j] |> UIComponentId.index) then 
                         handledByChild <- true 
                     else 
                         handledByChild <- false 
@@ -168,12 +168,12 @@ type Noobish with
         let x = float32 mouseState.X
         let y = float32 mouseState.Y
         for i = 0 to this.Components.Count - 1 do 
-            if this.Components.ParentId.[i].Index = -1 then 
+            if this.Components.ParentId.[i] = UIComponentId.empty then 
                 this.Hover x y gameTime i 
 
         if mouseState.LeftButton = ButtonState.Pressed then 
             for i = 0 to this.Components.Count - 1 do 
-                if this.Components.ParentId.[i].Index = -1 || not this.Components.ConstrainToParentBounds.[i] then 
+                if this.Components.ParentId.[i] = UIComponentId.empty || not this.Components.ConstrainToParentBounds.[i] then 
                     this.ToProcess.Enqueue(i, -this.Components.Layer.[i])
 
             while this.ToProcess.Count > 0 do 
@@ -183,7 +183,7 @@ type Noobish with
         elif mouseState.LeftButton = ButtonState.Released && this.PreviousMouseState.LeftButton = ButtonState.Pressed then 
             this.FocusedElementId <- UIComponentId.empty
             for i = 0 to this.Components.Count - 1 do 
-                if this.Components.ParentId.[i].Index = -1 then 
+                if this.Components.ParentId.[i] = UIComponentId.empty  then 
                     this.ToProcess.Enqueue(i, -this.Components.Layer.[i])
 
             while this.ToProcess.Count > 0 do 
@@ -198,7 +198,7 @@ type Noobish with
             let absScrollAmount = min absScroll (absScroll * float32 gameTime.ElapsedGameTime.TotalSeconds * 10.0f)
 
             for i = 0 to this.Components.Count - 1 do 
-                if this.Components.ParentId.[i].Index = -1 then 
+                if this.Components.ParentId.[i]  = UIComponentId.empty  then 
                     this.Scroll x y 1.0f gameTime.TotalGameTime 0.0f (- absScrollAmount * sign) i |> ignore
 
         this.PreviousMouseState <- mouseState

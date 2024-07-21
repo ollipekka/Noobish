@@ -9,9 +9,9 @@ type Noobish with
     member this.List<'T> (items: 'T[]) (selectedIndex: int) (onValueChanged: 'T -> unit) =
 
         let cid = this.Create "Panel"
-        this.Components.Fill.[cid.Index] <- {Horizontal = true; Vertical = true}
-        this.Components.Scroll.[cid.Index] <- {Horizontal = false; Vertical = true}
-        this.Components.Layout.[cid.Index] <- Layout.LinearVertical
+        this.Components.Fill.[cid |> UIComponentId.index] <- {Horizontal = true; Vertical = true}
+        this.Components.Scroll.[cid |> UIComponentId.index] <- {Horizontal = false; Vertical = true}
+        this.Components.Layout.[cid |> UIComponentId.index] <- Layout.LinearVertical
 
         cid |> this.SetChildren (
             items |> Array.mapi (

@@ -210,7 +210,7 @@ module Containers =
 
             |]
 
-            let image (color: Color) (s: Vector2) (p: Vector2) (r: float32) (c: UIComponentId[]): UIComponentId=
+            let image (color: Color) (s: Vector2) (p: Vector2) (r: float32) (c: int<UIComponentId>[]): int<UIComponentId>=
                 ui.Image()
                     |> ui.SetImage (NoobishTextureId.Basic("Pixel"))
                     |> ui.SetConstrainToParentBounds false

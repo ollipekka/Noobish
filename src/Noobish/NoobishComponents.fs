@@ -12,29 +12,21 @@ open Noobish
 open Noobish.Styles
 open Noobish.TextureAtlas
 
-
-[<Struct>]
-[<CustomEquality; NoComparison>]
-type UIComponentId = {
-    Index: int
-    Id: Guid
-} with 
-    override this.Equals other =
-        match other with
-        | :? UIComponentId as p -> (this :> IEquatable<UIComponentId>).Equals p
-        | _ -> false   
-        
-    override this.GetHashCode () = this.Id.GetHashCode() 
-
-    static member op_Equality(this : UIComponentId, other : UIComponentId) =
-        this.Id.Equals other.Id
-    
-    interface IEquatable<UIComponentId> with 
-        member this.Equals (other: UIComponentId) =
-            this.Id.Equals other.Id
+[<Measure>]
+type UIComponentId 
 
 module UIComponentId =
-    let empty: UIComponentId = { Index = -1; Id = Guid.Empty }
+    let create (index: uint16) (id: uint16): int<UIComponentId> = 
+        let indexShifted = (int index) <<< 16
+        let packed = indexShifted ||| (int id)
+        LanguagePrimitives.Int32WithMeasure<UIComponentId> packed
+
+    let index (packed: int<UIComponentId>) = 
+        let packed = (int) packed
+        int (packed >>> 16)
+
+    let empty = LanguagePrimitives.Int32WithMeasure<UIComponentId> 0xFFFFFFFF
+
 
 
 [<Struct>]
@@ -66,7 +58,7 @@ type NoobishPosition = {X: float32; Y: float32}
 [<RequireQualifiedAccess>]
 type RelativePosition = 
 | None
-| Func of pcid: (UIComponentId -> UIComponentId -> float32 -> float32 -> NoobishPosition)
+| Func of pcid: (int<UIComponentId> -> int<UIComponentId> -> float32 -> float32 -> NoobishPosition)
 | Position of p: NoobishPosition
 
 
@@ -211,7 +203,7 @@ module DrawUI =
 
 
 type OnClickEvent = {
-    SourceId: UIComponentId
+    SourceId: int<UIComponentId>
 }
 
 [<RequireQualifiedAccess>]
@@ -219,19 +211,20 @@ type Layout =
 | LinearHorizontal 
 | LinearVertical
 | Grid of cols: int * rows: int
-| Relative of UIComponentId
+| Relative of int<UIComponentId>
 | None
 
 type NoobishComponents(count) = 
     
 
-    let ignoreClick (_source: UIComponentId) (_p: NoobishPosition) (_gameTime: GameTime) = ()
-    let ignorePress (_source: UIComponentId) (_p: NoobishPosition) (_gameTime: GameTime) = ()
+    let ignoreClick (_source: int<UIComponentId>) (_p: NoobishPosition) (_gameTime: GameTime) = ()
+    let ignorePress (_source: int<UIComponentId>) (_p: NoobishPosition) (_gameTime: GameTime) = ()
     member val Count = 0 with get, set
+    member val RunningId = 0 with get, set
     member val Id = Array.create count UIComponentId.empty
     member val ThemeId = Array.create count ""
     member val ParentId = Array.create count UIComponentId.empty
-    member val Children = Array.init count (fun _ -> ResizeArray<UIComponentId>())
+    member val Children = Array.init count (fun _ -> ResizeArray<int<UIComponentId>>())
     member val Visible = Array.create count true 
     member val Enabled = Array.create count true 
     member val Block = Array.create count false
@@ -270,9 +263,9 @@ type NoobishComponents(count) =
     member val GridCells = Array.init count (fun _i -> ResizeArray<bool>(128))
 
     member val WantsOnPress = Array.create count false
-    member val OnPress = Array.create<UIComponentId -> NoobishPosition -> GameTime -> unit> count ignorePress
+    member val OnPress = Array.create<int<UIComponentId> -> NoobishPosition -> GameTime -> unit> count ignorePress
     member val WantsOnClick = Array.create count false
-    member val OnClick = Array.create<UIComponentId -> NoobishPosition -> GameTime -> unit> count ignoreClick
+    member val OnClick = Array.create<int<UIComponentId> -> NoobishPosition -> GameTime -> unit> count ignoreClick
     member val LastPressTime = Array.create count TimeSpan.Zero
     member val LastHoverTime = Array.create count TimeSpan.Zero
     member val WantsKeyTyped = Array.create count false 
@@ -306,11 +299,11 @@ type NoobishComponents(count) =
                     let cid = children.[j]
 
 
-                    this.CalculateContentSize content styleSheet viewportWidth viewportHeight cid.Index
+                    this.CalculateContentSize content styleSheet viewportWidth viewportHeight (cid |> UIComponentId.index)
 
-                    let childPadding = this.Padding.[cid.Index]
-                    let childMargin = this.Margin.[cid.Index]
-                    let childSize = this.ContentSize.[cid.Index]
+                    let childPadding = this.Padding.[cid |> UIComponentId.index]
+                    let childMargin = this.Margin.[cid |> UIComponentId.index]
+                    let childSize = this.ContentSize.[cid |> UIComponentId.index]
                     width <- width + (childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right)
                     height <- max height (childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom)
                 {Width = width; Height = height}
@@ -321,11 +314,11 @@ type NoobishComponents(count) =
                 for j = 0 to children.Count - 1 do 
                     let cid = children.[j]
 
-                    this.CalculateContentSize content styleSheet viewportWidth viewportHeight cid.Index
+                    this.CalculateContentSize content styleSheet viewportWidth viewportHeight (cid |> UIComponentId.index)
 
-                    let childPadding = this.Padding.[cid.Index]
-                    let childMargin = this.Margin.[cid.Index]
-                    let childSize = this.ContentSize.[cid.Index]
+                    let childPadding = this.Padding.[cid |> UIComponentId.index]
+                    let childMargin = this.Margin.[cid |> UIComponentId.index]
+                    let childSize = this.ContentSize.[cid |> UIComponentId.index]
                     width <- max width (childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right)
                     height <- height + (childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom)
                 {Width = width; Height = height}
@@ -341,24 +334,22 @@ type NoobishComponents(count) =
 
                 for i = 0 to children.Count - 1 do
                     let cid = children.[i]
-                    let cellspan = this.GridSpan.[cid.Index]
-                    this.CalculateContentSize content styleSheet (cellWidth * float32 cellspan.Colspan) (cellHeight * float32 cellspan.Rowspan) cid.Index
+                    let cellspan = this.GridSpan.[cid |> UIComponentId.index]
+                    this.CalculateContentSize content styleSheet (cellWidth * float32 cellspan.Colspan) (cellHeight * float32 cellspan.Rowspan) (cid |> UIComponentId.index)
 
-                    let gridSpan = this.GridSpan.[cid.Index]
-                    let childPadding = this.Padding.[cid.Index]
-                    let childMargin = this.Margin.[cid.Index]
-                    let childSize = this.ContentSize.[cid.Index]
+                    let gridSpan = this.GridSpan.[cid |> UIComponentId.index]
+                    let childPadding = this.Padding.[cid |> UIComponentId.index]
+                    let childMargin = this.Margin.[cid |> UIComponentId.index]
+                    let childSize = this.ContentSize.[cid |> UIComponentId.index]
                     maxColWidth <- max maxColWidth ((childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right) / float32 gridSpan.Colspan)
                     maxRowHeight <- max maxRowHeight ((childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom) / float32 gridSpan.Rowspan)
 
                 {Width = maxColWidth * float32 cols; Height = maxRowHeight * float32 rows}
             | Layout.Relative (rcid) -> 
-                let pcid = this.ParentId.[rcid.Index]
-                
                 let children = this.Children.[i]
                 for i = 0 to children.Count - 1 do
                     let cid = children.[i]
-                    this.CalculateContentSize content styleSheet viewportWidth viewportHeight cid.Index
+                    this.CalculateContentSize content styleSheet viewportWidth viewportHeight (cid |> UIComponentId.index)
 
                 this.MinSize.[i]
             | Layout.None ->
@@ -424,7 +415,7 @@ type NoobishComponents(count) =
         }
 
         let parentId = this.ParentId.[i]
-        if parentId.Index <> -1 && (this.IsGridLayout parentId.Index) then 
+        if parentId <> UIComponentId.empty && (this.IsGridLayout (parentId |> UIComponentId.index)) then 
             match this.GridCellAlignment.[i] with 
             | NoobishAlignment.None -> ()
             | NoobishAlignment.Left ->
@@ -456,9 +447,9 @@ type NoobishComponents(count) =
                     else 
                         (viewportWidth - (childX - viewportStartX))
 
-                this.LayoutComponent content styleSheet childX childY remainingHeight viewportHeight cid.Index
+                this.LayoutComponent content styleSheet childX childY remainingHeight viewportHeight (cid |> UIComponentId.index)
 
-                let childBounds = this.Bounds.[cid.Index]
+                let childBounds = this.Bounds.[cid |> UIComponentId.index]
                 childX <- childX + childBounds.Width
 
         | Layout.LinearVertical -> 
@@ -473,8 +464,8 @@ type NoobishComponents(count) =
                         viewportHeight
                     else 
                         (viewportHeight - (childY - viewportStartY))
-                this.LayoutComponent content styleSheet childX childY viewportWidth remainingHeight cid.Index
-                let childBounds = this.Bounds.[cid.Index]
+                this.LayoutComponent content styleSheet childX childY viewportWidth remainingHeight (cid |> UIComponentId.index)
+                let childBounds = this.Bounds.[cid |> UIComponentId.index]
                 childY <- childY + childBounds.Height
 
         | Layout.Grid(cols, rows) -> 
@@ -492,7 +483,7 @@ type NoobishComponents(count) =
             for i = 0 to children.Count - 1 do
                 let cid = children.[i]
 
-                let gridSpan = this.GridSpan.[cid.Index]
+                let gridSpan = this.GridSpan.[cid |> UIComponentId.index]
                 let childStartX = (viewportStartX + (float32 col) * (colWidth))
                 let childStartY = (viewportStartY + (float32 row) * (rowHeight))
 
@@ -511,21 +502,21 @@ type NoobishComponents(count) =
                         row <- row + gridSpan.Rowspan
 
 
-                this.LayoutComponent content styleSheet childStartX childStartY childWidth childHeight cid.Index
+                this.LayoutComponent content styleSheet childStartX childStartY childWidth childHeight (cid |> UIComponentId.index)
     
  
         | Layout.Relative (rcid) -> 
-            let pcid = this.ParentId.[rcid.Index]
-            let parentBounds = this.Bounds.[pcid.Index]
+            let pcid = this.ParentId.[rcid |> UIComponentId.index]
+            let parentBounds = this.Bounds.[pcid |> UIComponentId.index]
 
-            let relativeBounds = this.Bounds.[rcid.Index]
+            let relativeBounds = this.Bounds.[rcid |> UIComponentId.index]
             
             let children = this.Children.[i]
             for i = 0 to children.Count - 1 do 
                 let ccid = children.[i]
 
                 let childStart =
-                    match this.RelativePosition.[ccid.Index] with 
+                    match this.RelativePosition.[ccid |> UIComponentId.index] with 
                     | RelativePosition.None -> {X = relativeBounds.X + margin.Left; Y = relativeBounds.Y + margin.Top }
                     | RelativePosition.Position(relativePosition) -> 
                         
@@ -533,7 +524,7 @@ type NoobishComponents(count) =
                     | RelativePosition.Func(f) ->
                         f rcid ccid (relativeBounds.X + margin.Left) (relativeBounds.Y + margin.Top)
                     
-                this.LayoutComponent content styleSheet childStart.X childStart.Y parentBounds.Width parentBounds.Height ccid.Index
+                this.LayoutComponent content styleSheet childStart.X childStart.Y parentBounds.Width parentBounds.Height (ccid |> UIComponentId.index)
 
         | Layout.None -> ()
             
@@ -541,6 +532,7 @@ type NoobishComponents(count) =
     member this.Clear() =
 
         for i = 0 to this.Count - 1 do 
+            this.Id.[i] <- UIComponentId.empty
             this.ThemeId.[i] <- ""
 
             this.ParentId.[i] <- UIComponentId.empty

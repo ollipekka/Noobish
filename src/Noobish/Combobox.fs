@@ -10,7 +10,7 @@ type Noobish with
 
     member this.Combobox<'T> (items: 'T[]) (selectedIndex: int) (onValueChanged: 'T -> unit) = 
         let cid = this.Create "Combobox"
-        this.Components.Text.[cid.Index] <- items.[selectedIndex].ToString()
+        this.Components.Text.[cid |> UIComponentId.index] <- items.[selectedIndex].ToString()
 
         let overlayPaneId =
             this.Overlaypane cid 
@@ -25,7 +25,7 @@ type Noobish with
                     fun i -> 
                         this.Button (i.ToString()) (
                             fun (event) (gameTime: GameTime) -> 
-                                this.Components.Text.[cid.Index] <- i.ToString(); onValueChanged i
+                                this.Components.Text.[cid |> UIComponentId.index] <- i.ToString(); onValueChanged i
                         ) |> this.SetFillHorizontal
                 )
             )
@@ -37,8 +37,8 @@ type Noobish with
         |> ignore
 
 
-        this.Components.WantsOnClick.[cid.Index] <- true
-        this.Components.OnClick.[cid.Index] <- (fun (event: UIComponentId) (position: NoobishPosition) (gameTime: GameTime) -> 
+        this.Components.WantsOnClick.[cid |> UIComponentId.index] <- true
+        this.Components.OnClick.[cid |> UIComponentId.index] <- (fun (event: int<UIComponentId>) (position: NoobishPosition) (gameTime: GameTime) -> 
             this.SetVisible true overlayPaneId |> ignore
         )
 
