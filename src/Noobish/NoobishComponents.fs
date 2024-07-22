@@ -210,6 +210,7 @@ type OnClickEvent = {
 type Layout =
 | LinearHorizontal 
 | LinearVertical
+| Stack
 | Grid of cols: int * rows: int
 | Relative of int<UIComponentId>
 | None
@@ -249,6 +250,9 @@ type NoobishComponents(count) =
     member val Bounds = Array.create<Internal.NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
     member val MinSizeOverride = Array.create count false
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
+    member val WidthPercentage = Array.create count 1f 
+    member val HeightPercentage = Array.create count 1f
+
     member val ContentSize = Array.create count {Width = 0f; Height = 0f}
     member val RelativePosition = Array.create count RelativePosition.None
 
@@ -352,6 +356,19 @@ type NoobishComponents(count) =
                     this.CalculateContentSize content styleSheet viewportWidth viewportHeight (cid |> UIComponentId.index)
 
                 this.MinSize.[i]
+            | Layout.Stack  -> 
+                let children = this.Children.[i]
+                let mutable width = 0f
+                let mutable height= 0f
+                for i = 0 to children.Count - 1 do
+                    let cid = children.[i]
+                    this.CalculateContentSize content styleSheet viewportWidth viewportHeight (cid |> UIComponentId.index)
+                    let childPadding = this.Padding.[cid |> UIComponentId.index]
+                    let childMargin = this.Margin.[cid |> UIComponentId.index]
+                    let childSize = this.ContentSize.[cid |> UIComponentId.index]
+                    width <- max width (childSize.Width + childPadding.Left + childPadding.Right + childMargin.Left + childMargin.Right)
+                    height <- max height (childSize.Height + childPadding.Top + childPadding.Bottom + childMargin.Top + childMargin.Bottom)
+                {Width = width; Height = height}
             | Layout.None ->
                 let text = this.Text.[i]
                 let minSize = this.MinSize.[i]
@@ -407,11 +424,14 @@ type NoobishComponents(count) =
             else 
                 contentSize.Height
 
+        let widthPercentage = this.WidthPercentage.[i]
+        let heightPercentage = this.HeightPercentage.[i]
+
         this.Bounds.[i] <- {
             X = startX; 
             Y = startY; 
-            Width = viewportWidth + margin.Left + margin.Right + padding.Left + padding.Right
-            Height = viewportHeight + margin.Top + margin.Bottom + padding.Top + padding.Bottom
+            Width = viewportWidth * widthPercentage + margin.Left + margin.Right + padding.Left + padding.Right
+            Height = viewportHeight * heightPercentage + margin.Top + margin.Bottom + padding.Top + padding.Bottom
         }
 
         let parentId = this.ParentId.[i]
@@ -525,7 +545,13 @@ type NoobishComponents(count) =
                         f rcid ccid (relativeBounds.X + margin.Left) (relativeBounds.Y + margin.Top)
                     
                 this.LayoutComponent content styleSheet childStart.X childStart.Y parentBounds.Width parentBounds.Height (ccid |> UIComponentId.index)
-
+        | Layout.Stack -> 
+            let children = this.Children.[i]
+            let childY = viewportStartY
+            let childX = viewportStartX
+            for j = 0 to children.Count - 1 do 
+                let cid = children.[j]
+                this.LayoutComponent content styleSheet childX childY viewportWidth viewportHeight (cid |> UIComponentId.index)
         | Layout.None -> ()
             
 
@@ -560,6 +586,8 @@ type NoobishComponents(count) =
 
             this.ConstrainToParentBounds.[i] <- true
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+            this.WidthPercentage.[i] <- 1f 
+            this.HeightPercentage.[i] <- 1f
             this.MinSizeOverride.[i] <- false
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
             this.ContentSize.[i] <- {Width = 0f; Height = 0f}

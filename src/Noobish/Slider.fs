@@ -74,9 +74,7 @@ type Noobish with
                 this.Components.CalculatePinPosition rcid ccid relativeX relativeY (rangeStart, rangeEnd) value
             )
 
-
-        this.SetChildren [| sliderPin |] cid |> ignore
-
+        this.AddChild sliderPin cid |> ignore
 
         this.SetOnPress (fun (cid: int<UIComponentId>) (position: NoobishPosition) (_gameTime: GameTime) -> 
             let v = calcaulateSliderValue cid position

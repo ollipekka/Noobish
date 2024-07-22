@@ -591,6 +591,12 @@ type Noobish(maxCount: int) =
             this.Components.OnClick.[index] <- onClick
         cid
 
+
+    member this.BumpLayer2 (layer: int) (cid: int<UIComponentId>) = 
+            let childLayer = this.Components.Layer.[cid |> UIComponentId.index] + layer
+            this.Components.Layer.[cid |> UIComponentId.index] <- childLayer
+            this.BumpLayer childLayer this.Components.Children.[cid |> UIComponentId.index]
+
     member this.BumpLayer (layer: int) (children: IReadOnlyList<int<UIComponentId>>) = 
         for i = 0 to children.Count - 1 do 
             let cid = children.[i]
@@ -612,7 +618,19 @@ type Noobish(maxCount: int) =
             this.BumpLayer layer (childrenIds :> IReadOnlyList<int<UIComponentId>>)
         cid
 
+    member this.AddChild (childId: int<UIComponentId>) (cid: int<UIComponentId>) = 
+        let index = this.GetIndex cid 
+        if index > -1 then 
 
+            if this.Components.ParentId.[childId |> UIComponentId.index] <> UIComponentId.empty then failwith "what"
+            this.Components.ParentId.[childId |> UIComponentId.index] <- cid
+            let childrenIds = this.Components.Children.[index]
+            childrenIds.Add childId
+
+        
+            let layer = this.Components.Layer.[index]
+            this.BumpLayer2 layer childId
+        cid 
 
     member this.DrawCursor
         (styleSheet: NoobishStyleSheet)

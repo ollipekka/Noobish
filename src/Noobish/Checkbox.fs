@@ -15,8 +15,7 @@ type Noobish with
             |> this.SetOnClick (fun _ _ _ -> onValueChanged (not toggled ))
             |> this.SetThemeId "CheckBox"
             |> this.SetToggled toggled 
-
-        divId |> this.SetChildren [|
-            check 
-            this.Label text
-        |] 
+            
+        divId 
+            |> this.AddChild check 
+            |> this.AddChild (this.Label text)

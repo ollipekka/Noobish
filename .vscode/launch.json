@@ -15,7 +15,6 @@
             "stopAtEntry": false,
             "console": "internalConsole",
             "logging": {
-                "engineLogging": false,
                 "moduleLoad": false,
                 "exceptions": false,
                 "browserStdOut": false

@@ -27,6 +27,7 @@
     <Compile Include="List.fs" />
     <Compile Include="Slider.fs" />
     <Compile Include="Checkbox.fs" />
+    <Compile Include="ProgressBar.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

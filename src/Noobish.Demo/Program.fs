@@ -372,7 +372,14 @@ module Slider =
                         ui.Slider (0f, 100f) 1.0f 35f (fun v -> ())
                             |> ui.FillHorizontal
                     |]
-
+    
+                ui.Panel() 
+                    |> ui.SetFill
+                    |> ui.SetGridLayout(1, 1)
+                    |> ui.SetChildren[|
+                        ui.ProgressBar (0f, 100f) 1.0f 35f
+                            |> ui.FillHorizontal
+                    |]
             |]
 
         gridId
