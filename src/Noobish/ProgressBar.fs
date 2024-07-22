@@ -28,7 +28,10 @@ type Noobish with
 
     member this.DashedProgressBar(dashes: int) (progress: float32) =
 
-        let cid = this.Grid (dashes, 1)
+        let cid = 
+            this.Create("DashedProgressBar")
+            |> this.SetGridLayout(dashes, 1)
+        this.Components.Fill.[cid |> UIComponentId.index] <- {Horizontal = true; Vertical = false}
         let progressPerDash = 1.0f / float32 dashes 
 
         let filledDashes = int (progress / progressPerDash)
