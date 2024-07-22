@@ -375,9 +375,17 @@ module Slider =
     
                 ui.Panel() 
                     |> ui.SetFill
-                    |> ui.SetGridLayout(1, 1)
+                    |> ui.SetGridLayout(1, 5)
                     |> ui.SetChildren[|
-                        ui.ProgressBar (0f, 100f) 1.0f 35f
+                        ui.ProgressBar 0.65f
+                            |> ui.FillHorizontal
+                        ui.DashedProgressBar 10 (model.SliderAValue / 100f)
+                            |> ui.FillHorizontal
+                        ui.DashedProgressBar 10 1f
+                            |> ui.FillHorizontal
+                        ui.DashedProgressBar 10 0.2f
+                            |> ui.FillHorizontal
+                        ui.DashedProgressBar 5 (1f - model.SliderAValue / 100f)
                             |> ui.FillHorizontal
                     |]
             |]

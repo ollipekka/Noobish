@@ -6,10 +6,7 @@ open Noobish
 
 type Noobish with 
 
-    member this.ProgressBar<'T> (rangeStart: float32, rangeEnd: float32) (step: float32) (value: float32) =
-        let length = rangeEnd - rangeStart
-
-        let progress = (value - rangeStart) / (rangeEnd - rangeStart)
+    member this.ProgressBar (progress: float32) =
 
         let cid = this.Create "ProgressBar"
         this.Components.Layout[cid |> UIComponentId.index] <- Layout.Stack
@@ -24,8 +21,31 @@ type Noobish with
         this.Components.Fill.[pcid2 |> UIComponentId.index] <- {Horizontal = true; Vertical = true}
         this.Components.GridCellAlignment.[pcid2 |> UIComponentId.index] <- NoobishAlignment.Left
 
-
         this.AddChild pcid cid |> ignore
         this.AddChild pcid2 cid |> ignore
 
         cid
+
+    member this.DashedProgressBar(dashes: int) (progress: float32) =
+
+        let cid = this.Grid (dashes, 1)
+        let progressPerDash = 1.0f / float32 dashes 
+
+        let filledDashes = int (progress / progressPerDash)
+        for _i = 0 to filledDashes - 1 do 
+            let pcid = this.ProgressBar 1f
+            this.AddChild pcid cid |> ignore 
+
+        let remainingProgress = progress - progressPerDash * float32 filledDashes
+
+        if remainingProgress > 0f then 
+            let pcid = this.ProgressBar (remainingProgress / progressPerDash)
+            this.AddChild pcid cid |> ignore 
+        
+        let remainingDashes = dashes - filledDashes - if remainingProgress > 0f then 1 else 0
+        for _i = 0 to remainingDashes - 1 do 
+            let pcid = this.ProgressBar 0f
+            this.AddChild pcid cid |> ignore 
+
+        cid
+
