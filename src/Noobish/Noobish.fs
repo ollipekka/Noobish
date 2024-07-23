@@ -424,6 +424,41 @@ type Noobish(maxCount: int) =
             this.Components.Margin.[index] <- {Top = margin; Right = margin; Bottom = margin; Left = margin}
         cid
 
+
+    member this.SetMarginTop (top: int) (cid: int<UIComponentId>) =
+        let top = float32 top
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.MarginOverride.[index] <- true
+            this.Components.Margin.[index] <- {this.Components.Margin.[index] with Top = top}
+        cid
+
+
+    member this.SetMarginBottom (bottom: int) (cid: int<UIComponentId>) =
+        let bottom = float32 bottom
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.MarginOverride.[index] <- true
+            this.Components.Margin.[index] <- {this.Components.Margin.[index] with Bottom = bottom}
+        cid
+
+    member this.SetMarginRight (right: int) (cid: int<UIComponentId>) =
+        let right = float32 right
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.MarginOverride.[index] <- true
+            this.Components.Margin.[index] <- {this.Components.Margin.[index] with Right = right}
+        cid
+
+
+    member this.SetMarginLeft (left: int) (cid: int<UIComponentId>) =
+        let left = float32 left
+        let index = this.GetIndex cid 
+        if index <> -1 then 
+            this.Components.MarginOverride.[index] <- true
+            this.Components.Margin.[index] <- {this.Components.Margin.[index] with Bottom = left}
+        cid
+
     member this.SetPadding (padding: int) (cid: int<UIComponentId>) =
         let padding = float32 padding
         let index = this.GetIndex cid 

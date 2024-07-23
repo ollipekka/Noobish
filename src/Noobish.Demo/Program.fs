@@ -377,15 +377,16 @@ module Slider =
                     |> ui.SetFill
                     |> ui.SetVerticalLayout
                     |> ui.SetChildren[|
-                        ui.ProgressBar 0.65f
+                        ui.Label "Progress"
+                        ui.ProgressBar 1 0.65f
                             |> ui.FillHorizontal
-                        ui.DashedProgressBar 10 (model.SliderAValue / 100f)
+                        ui.ProgressBar 10 (model.SliderAValue / 100f)
                             |> ui.FillHorizontal
-                        ui.DashedProgressBar 10 1f
+                        ui.ProgressBar 10 1f
                             |> ui.FillHorizontal
-                        ui.DashedProgressBar 10 0.2f
+                        ui.ProgressBar 10 0.2f
                             |> ui.FillHorizontal
-                        ui.DashedProgressBar 5 (1f - model.SliderAValue / 100f)
+                        ui.ProgressBar 5 (1f - model.SliderAValue / 100f)
                             |> ui.FillHorizontal
                     |]
             |]
