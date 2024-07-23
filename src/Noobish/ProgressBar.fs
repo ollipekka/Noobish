@@ -31,9 +31,6 @@ type Noobish with
         let cid = 
             this.Create("ProgressBar")
             |> this.SetGridLayout(dashes, 1)
-            |> this.SetPadding 0
-            |> this.SetMarginLeft 0
-            |> this.SetMarginRight 0
 
         this.Components.Fill.[cid |> UIComponentId.index] <- {Horizontal = true; Vertical = false}
         let progressPerDash = 1.0f / float32 dashes 

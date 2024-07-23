@@ -131,32 +131,32 @@
                 "color": "df7126aa",
                 "height": 8,
                 "padding": [0, 0, 0, 0],
+                "margin": [0, 0, 0, 0],
                 "drawables": [ ["slider.9"] ]
             }
         },
         "ProgressBar-Mask": {
             "default": {
-                "color": "5f6b80ff",
+                "color": "39404dff",
                 "height": 8,
                 "padding": [0, 0, 0, 0],
+                "margin": [0, 0, 0, 0],
                 "drawables": [ ["progressbar-mask.9"] ]
             }
         },
         "ProgressBar-Dash": {
             "default": {
-                "color": "ffffffff",
+                "color": "39404dff",
                 "height": 8,
                 "padding": [0, 0, 0, 0],
-                "margin": [2, 0, 2, 0],
+                "margin": [0, 0, 0, 0],
                 "drawables": [ ["slider.9"] ]
             }
         },
         "ProgressBar": {
             "default": {
-                "color": "5f6b80ff",
+                "color": "39404dff",
                 "height": 8,
-                "padding": [0, 0, 0, 0],
-                "margin": [2, 0, 2, 0],
                 "drawables": [ ["slider.9"] ]
             }
         },
