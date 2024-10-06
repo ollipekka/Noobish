@@ -1,6 +1,6 @@
 
-/reference:../../bin/net6.0/Noobish.PipelineExtension.dll
-/reference:../../bin/net6.0/Newtonsoft.Json.dll
+/reference:../../bin/net8.0/Noobish.PipelineExtension.dll
+/reference:../../bin/net8.0/Newtonsoft.Json.dll
 
 #begin Pixel.png
 /importer:TextureImporter
