@@ -234,7 +234,9 @@ Notes:
 10. Drop the `V2` suffixes after the project runs fully on the new path.
 
 ## Implementation Status
-- Next: add coverlet-based test coverage and set a branch coverage goal for new code.
+- Done: coverlet collector added to `src/Noobish.Test/Noobish.Test.fsproj`.
+- Done: `test.sh` added to run unit tests with coverage.
+- Next: set a branch coverage goal for new code.
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?
