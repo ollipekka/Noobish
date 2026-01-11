@@ -279,14 +279,12 @@ type Noobish(maxCount: int) =
         let cid = this.Create "Division"
         this.Components.Layout.[cid |> UIComponentId.index] <- (Layout.LinearHorizontal) 
         this.Components.Block.[cid |> UIComponentId.index] <- true 
-        //this.Components.Fill.[cid |> UIComponentId.index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.DivVertical () = 
         let cid = this.Create "Division"
         this.Components.Layout.[cid |> UIComponentId.index] <- (Layout.LinearVertical) 
         this.Components.Block.[cid |> UIComponentId.index] <- true 
-        //this.Components.Fill.[cid |> UIComponentId.index] <- {Horizontal = true; Vertical = true}
         cid   
 
     member this.Canvas () = 
