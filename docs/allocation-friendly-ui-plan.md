@@ -1,10 +1,23 @@
-# Allocation-Friendly UI Plan
+# Allocation-Friendly UI Plan (Immediate-Mode: Noobish IM)
 
 ## Goals
 - Avoid per-frame allocations from `SetChildren` and other builder helpers.
 - Allow UI to be described and re-evaluated every frame (immediate-mode style) without churn.
 - Keep component identity stable enough for focus, input, and layout caching.
 - Avoid shared pools; prefer local frame arenas or persistent buffers.
+
+## Example Usage (No Lambdas)
+```fsharp
+ui.BeginFrame("Settings/Audio")
+    |> PanelVertical
+    |> SetFill
+    |> BeginChildren
+        |> Label "Title"
+        |> Space |> SetRowspan 1 |> SetColspan 16
+        |> Button "Apply" (fun _ _ -> ())
+    |> EndChildren
+|> EndFrame
+```
 
 ## Start With UIComponentId
 Today `UIComponentId` is a measured `int` with `index` and `id` packed into 32 bits, and `empty` is `0xFFFFFFFF`. For immediate-mode rendering you need IDs that are both stable across frames and cheap to generate without allocations.
@@ -53,6 +66,7 @@ Use a user-facing frame label (string) to describe the current UI page/context, 
 Rules:
 - The `page` label is stored for diagnostics, focus scoping, and frame-to-frame mapping.
 - The namespace id remains part of `UIComponentId` but is managed internally by the UI system.
+- Derive the internal namespace from a deterministic hash of `page` (FNV-1a) with collision handling.
 - Each namespace maintains its own `RunningId` and `Count` for the frame.
 - Input focus is stored with a full `UIComponentId` (including namespace), but page label gates cross-page reuse.
 
@@ -79,7 +93,7 @@ ui.BeginFrame("Settings/Audio")
     |> Panel
     |> SetGridLayout(1, 9)
     |> SetFill
-    |> AddChildren
+    |> BeginChildren
         |> DivVertical()
         |> SetRowspan 2
         |> SetFill
@@ -95,68 +109,69 @@ ui.BeginFrame("Settings/Audio")
 ```
 
 Notes on the sketch:
-- `BeginFrame` returns a frame-scoped context value (likely a struct) used by `Panel`, `Label`, etc.
+- `BeginFrame` returns a container context used by `Panel`, `Label`, etc.
 - `AddChildren` switches the pipeline into a children-builder context; `EndChildren` returns to component context.
 - `BeginChildren`/`EndChildren` must be balanced; the builder can track its parent index to prevent misuse.
 
 ### Draft context signatures
 ```fsharp
-type ContainerContext = struct end
+type ComponentContext = struct end
 
 // Frame entry/exit
-val BeginFrame : string -> ContainerContext
-val EndFrame : ContainerContext -> unit
+val BeginFrame : string -> ComponentContext
+val EndFrame : ComponentContext -> unit
 
 // Component builders (convenience surface)
-val Panel : ContainerContext -> struct(ContainerContext * UIComponentId)
-val PanelVertical : ContainerContext -> struct(ContainerContext * UIComponentId)
-val PanelHorizontal : ContainerContext -> struct(ContainerContext * UIComponentId)
-val DivVertical : ContainerContext -> struct(ContainerContext * UIComponentId)
-val DivHorizontal : ContainerContext -> struct(ContainerContext * UIComponentId)
-val Header : string -> ContainerContext -> struct(ContainerContext * UIComponentId)
-val Label : string -> ContainerContext -> struct(ContainerContext * UIComponentId)
-val Paragraph : string -> ContainerContext -> struct(ContainerContext * UIComponentId)
-val HorizontalRule : ContainerContext -> struct(ContainerContext * UIComponentId)
-val Button : string -> (UIComponentId -> GameTime -> unit) -> ContainerContext -> struct(ContainerContext * UIComponentId)
-val Checkbox : bool -> (bool -> unit) -> ContainerContext -> struct(ContainerContext * UIComponentId)
-val Slider : (float32 * float32) -> float32 -> float32 -> (float32 -> unit) -> ContainerContext -> struct(ContainerContext * UIComponentId)
-val ProgressBar : float32 -> ContainerContext -> struct(ContainerContext * UIComponentId)
-val Textbox : string -> (string -> unit) -> ContainerContext -> struct(ContainerContext * UIComponentId)
-val Image : ContainerContext -> struct(ContainerContext * UIComponentId)
-val Space : ContainerContext -> struct(ContainerContext * UIComponentId)
+val Panel : ComponentContext -> struct(ComponentContext * UIComponentId)
+val PanelVertical : ComponentContext -> struct(ComponentContext * UIComponentId)
+val PanelHorizontal : ComponentContext -> struct(ComponentContext * UIComponentId)
+val DivVertical : ComponentContext -> struct(ComponentContext * UIComponentId)
+val DivHorizontal : ComponentContext -> struct(ComponentContext * UIComponentId)
+val Header : string -> ComponentContext -> struct(ComponentContext * UIComponentId)
+val Label : string -> ComponentContext -> struct(ComponentContext * UIComponentId)
+val Paragraph : string -> ComponentContext -> struct(ComponentContext * UIComponentId)
+val HorizontalRule : ComponentContext -> struct(ComponentContext * UIComponentId)
+val Button : string -> (UIComponentId -> GameTime -> unit) -> ComponentContext -> struct(ComponentContext * UIComponentId)
+val Checkbox : bool -> (bool -> unit) -> ComponentContext -> struct(ComponentContext * UIComponentId)
+val Slider : (float32 * float32) -> float32 -> float32 -> (float32 -> unit) -> ComponentContext -> struct(ComponentContext * UIComponentId)
+val ProgressBar : float32 -> ComponentContext -> struct(ComponentContext * UIComponentId)
+val Textbox : string -> (string -> unit) -> ComponentContext -> struct(ComponentContext * UIComponentId)
+val Image : ComponentContext -> struct(ComponentContext * UIComponentId)
+val Space : ComponentContext -> struct(ComponentContext * UIComponentId)
 
 // Component modifiers
-val SetGridLayout : (int * int) -> struct(ContainerContext * UIComponentId) -> struct(ContainerContext * UIComponentId)
-val SetRowspan : int -> struct(ContainerContext * UIComponentId) -> struct(ContainerContext * UIComponentId)
-val SetFill : struct(ContainerContext * UIComponentId) -> struct(ContainerContext * UIComponentId)
-val FillHorizontal : struct(ContainerContext * UIComponentId) -> struct(ContainerContext * UIComponentId)
+val SetGridLayout : (int * int) -> struct(ComponentContext * UIComponentId) -> struct(ComponentContext * UIComponentId)
+val SetRowspan : int -> struct(ComponentContext * UIComponentId) -> struct(ComponentContext * UIComponentId)
+val SetFill : struct(ComponentContext * UIComponentId) -> struct(ComponentContext * UIComponentId)
+val FillHorizontal : struct(ComponentContext * UIComponentId) -> struct(ComponentContext * UIComponentId)
 
 // Children wiring
-val AddChildren : struct(ContainerContext * UIComponentId) -> ContainerContext
-val BeginChildren : struct(ContainerContext * UIComponentId) -> ContainerContext
-val EndChildren : ContainerContext -> struct(ContainerContext * UIComponentId)
+val BeginChildren : struct(ComponentContext * UIComponentId) -> ComponentContext
+val EndChildren : ComponentContext -> struct(ComponentContext * UIComponentId)
 
 // Container additions
-val Add : struct(ContainerContext * UIComponentId) -> ContainerContext -> ContainerContext
+val Add : struct(ComponentContext * UIComponentId) -> ComponentContext -> ComponentContext
 ```
 
 Notes:
-- `ContainerContext` must carry a reference to the ECS backing storage so modifiers know where to write.
-- Component builders return `struct(ContainerContext * UIComponentId)` so pipes keep access to the backing context.
-- `AddChildren` and `BeginChildren` can be aliases; keep one public surface if possible.
+- `ComponentContext` must carry a reference to the ECS backing storage so modifiers know where to write.
+- Component builders return `struct(ComponentContext * UIComponentId)` so pipes keep access to the backing context.
+- Keep only `BeginChildren`/`EndChildren` as the public surface.
+- Use a single `ParentId` in `ComponentContext` (no stack); treat the backing arrays as the structural source of truth.
 
 ### Context shape (suggested)
 ```fsharp
-type ContainerContext = {
+type ComponentContext = class
     FrameId: int
     Page: string
     Components: NoobishComponents
     ParentId: UIComponentId
-}
+end
 ```
 
 Notes:
-- `ContainerContext` can be a reference type (class/record) and pooled per frame if you want to avoid allocations.
+- `ComponentContext` should be a reference type and pooled per frame to avoid allocations.
+- V2 APIs live in separate modules until the rename step.
 
 ### Proposed options
 1. **Builder-style scope**
@@ -175,18 +190,31 @@ Notes:
 ### Recommendation
 Start with builder-style `BeginChildren` + `AddChild` as the minimal change that removes array creation without introducing shared pools.
 
-### Example usage (no lambdas)
+### Begin/End component style with shorthands
+For explicit scoping, introduce `Begin<Component>`/`End<Component>` variants. Simple components can be exposed as shorthands that internally call `Begin` + `End`.
+
+Example:
 ```fsharp
 ui.BeginFrame("Settings/Audio")
-    |> PanelVertical
-    |> SetFill
-    |> AddChildren
-        |> Label "Title"
-        |> Space |> SetRowspan 1 |> SetColspan 16
-        |> Button "Apply" (fun _ _ -> ())
-    |> EndChildren
+    |> BeginPanel
+        |> SetGridLayout(1, 9)
+        |> SetFill
+        |> BeginChildren
+            |> BeginDivVertical
+                |> SetRowspan 2
+                |> BeginHeader "Audio" |> EndHeader
+                |> BeginHorizontalRule |> EndHorizontalRule
+            |> EndDivVertical
+            |> Label "Music"          // shorthand for BeginLabel |> EndLabel
+            |> Slider (0f, 100f) 1.0f 50f (fun _ -> ())  // shorthand for BeginSlider |> EndSlider
+        |> EndChildren
+    |> EndPanel
 |> EndFrame
 ```
+
+Notes:
+- Shorthands should be limited to components that do not require nested children.
+- `Begin<Component>`/`End<Component>` are the primary API; shorthands are syntactic sugar.
 
 ## Memory Strategy (No Shared Pool)
 - Keep `ResizeArray` buffers per component but clear them per frame (do not reallocate).
@@ -194,17 +222,23 @@ ui.BeginFrame("Settings/Audio")
 - Avoid allocations by pre-allocating `ResizeArray` capacity when a component is first created.
 
 ## Incremental Steps (V2-first migration)
-1. Add `docs/allocation-friendly-ui-plan.md` (this document).
-2. Introduce V2 types alongside existing ones (`UIComponentIdV2`, `NoobishComponentsV2`, `ContainerContextV2`, `BuilderV2`, etc.).
-3. Implement the new `UIComponentIdV2` struct and wire it through `NoobishComponentsV2`.
-4. Add the V2 frame lifecycle (`BeginFrame`, `EndFrame`) and `ContainerContextV2` plumbing.
-5. Build `BuilderV2` that mirrors the current APIs (e.g., `Panel`, `Label`, `SetFill`) but returns `struct(ContainerContextV2 * UIComponentIdV2)` and operates on the V2 ECS.
-6. Introduce `BeginChildren`/`EndChildren` in `BuilderV2` and migrate `SetChildren` call sites to V2.
-7. Update the project to use V2 types end-to-end (demo + tests).
-8. Remove old types once they are no longer referenced.
-9. Drop the `V2` suffixes after the project runs fully on the new path.
+1. Implement test coverage with coverlet and wire it into the build/test flow.
+2. Add `docs/allocation-friendly-ui-plan.md` (this document).
+3. Introduce V2 types alongside existing ones (`UIComponentIdV2`, `NoobishComponentsV2`, `ComponentContextV2`, `BuilderV2`, etc.).
+4. Implement the new `UIComponentIdV2` struct and wire it through `NoobishComponentsV2`.
+5. Add the V2 frame lifecycle (`BeginFrame`, `EndFrame`) and `ComponentContextV2` plumbing.
+6. Build `BuilderV2` that mirrors the current APIs (e.g., `Panel`, `Label`, `SetFill`) but returns `struct(ComponentContextV2 * UIComponentIdV2)` and operates on the V2 ECS.
+7. Introduce `BeginChildren`/`EndChildren` in `BuilderV2` and migrate `SetChildren` call sites to V2.
+8. Update the project to use V2 types end-to-end (demo + tests).
+9. Remove old types once they are no longer referenced.
+10. Drop the `V2` suffixes after the project runs fully on the new path.
+
+## Implementation Status
+- Next: add coverlet-based test coverage and set a branch coverage goal for new code.
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?
 - Should `generation` be per-frame or per namespace?
-- How many namespaces should exist by default (e.g. 1 for user UI, 1 for debug UI)?
+- What should the collision strategy be for FNV-1a namespace hashes (e.g. secondary id map, linear probe)?
+- Should `ParentId` use `UIComponentId.empty` or `0` as the sentinel for “no parent”?
+- How should frame resets handle stale component state (clear all vs. clear only active indices)?
