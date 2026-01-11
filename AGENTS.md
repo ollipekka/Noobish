@@ -3,7 +3,7 @@
 ## Testing and Coverage
 - Use coverlet for test coverage.
 - Add tests for all new code.
-- Aim for high branch coverage, not just line coverage.
+- Target 90% branch coverage (minimum goal for new code).
 - Prefer deterministic tests and avoid time-based flakiness.
 
 ## General
