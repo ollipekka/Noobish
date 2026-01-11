@@ -237,6 +237,10 @@ Notes:
 - Done: coverlet collector added to `src/Noobish.Test/Noobish.Test.fsproj`.
 - Done: `test.sh` added to run unit tests with coverage.
 - Done: branch coverage goal set to 90% for new code in `AGENTS.md`.
+- Done: added initial V2 types/helpers and tests (`src/Noobish/TypesV2.fs`, `src/Noobish.Test/TypesV2Tests.fs`).
+- Done: added `ComponentContextV2` and `NoobishComponentsV2` with tests (`src/Noobish/NoobishComponentsV2.fs`, `src/Noobish.Test/NoobishComponentsV2Tests.fs`).
+- Done: added `NoobishV2` API shell and tests (`src/Noobish/NoobishV2.fs`, `src/Noobish.Test/NoobishV2Tests.fs`).
+- Done: added context pooling interface + implementation and ensured `ComponentContextV2` implements the context interface.
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?

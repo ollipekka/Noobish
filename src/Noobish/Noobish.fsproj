@@ -9,6 +9,7 @@
 
     <Compile Include="DictionaryExtensions.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="TypesV2.fs" />
     <Compile Include="Cursor.fs" />
     <Compile Include="Localization.fs" />
     <Compile Include="LocalizationBundleReader.fs" />
@@ -21,6 +22,8 @@
     <Compile Include="MSDFFontReader.fs" />
     <Compile Include="State.fs" />
     <Compile Include="NoobishComponents.fs" />
+    <Compile Include="NoobishComponentsV2.fs" />
+    <Compile Include="NoobishV2.fs" />
     <Compile Include="Noobish.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="Combobox.fs" />

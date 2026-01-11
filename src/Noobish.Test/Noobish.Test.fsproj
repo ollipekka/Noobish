@@ -15,8 +15,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="UnitTest1.fs"/>
+    <Compile Include="NoobishComponentsV2Tests.fs"/>
+    <Compile Include="NoobishV2Tests.fs"/>
+    <Compile Include="TypesV2Tests.fs"/>
     <Compile Include="Program.fs"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noobish\Noobish.fsproj" />
   </ItemGroup>
 
 </Project>
