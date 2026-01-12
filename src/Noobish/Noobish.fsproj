@@ -23,6 +23,7 @@
     <Compile Include="State.fs" />
     <Compile Include="NoobishComponents.fs" />
     <Compile Include="NoobishComponentsV2.fs" />
+    <Compile Include="NoobishLayoutV2.fs" />
     <Compile Include="NoobishV2.fs" />
     <Compile Include="Noobish.fs" />
     <Compile Include="Input.fs" />

@@ -17,6 +17,7 @@ type ComponentContextV2(components: INoobishComponents2) =
     member val Components = components with get
     member val FrameId = 0 with get, set
     member val Page = "" with get, set
+    member val ComponentId = UIComponentIdV2.empty with get, set
     member val ParentId = UIComponentIdV2.empty with get, set
 
     member this.Reset(frameId: int, page: string) =
@@ -45,6 +46,13 @@ and INoobishComponents2 =
     abstract MinSize: NoobishSize[] with get
     abstract Bounds: NoobishRectangle[] with get
     abstract Layer: int[] with get
+    abstract WantsText: bool[] with get
+    abstract Text: string[] with get
+    abstract Textwrap: bool[] with get
+    abstract TextAlign: NoobishAlignment[] with get
+    abstract WantsOnClick: bool[] with get
+    abstract WantsOnPress: bool[] with get
+    abstract WantsTextChanged: bool[] with get
 
 
 /// ECS-style storage for UI components (V2).
@@ -69,6 +77,13 @@ type NoobishComponentsV2(count: int) =
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
     member val Bounds = Array.create<NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
     member val Layer = Array.create count 0
+    member val WantsText = Array.create count false
+    member val Text = Array.create count ""
+    member val Textwrap = Array.create count false
+    member val TextAlign = Array.create count NoobishAlignment.None
+    member val WantsOnClick = Array.create count false
+    member val WantsOnPress = Array.create count false
+    member val WantsTextChanged = Array.create count false
 
     member private this.CreateContext() =
         ComponentContextV2(this)
@@ -106,4 +121,10 @@ type NoobishComponentsV2(count: int) =
         member this.MinSize = this.MinSize
         member this.Bounds = this.Bounds
         member this.Layer = this.Layer
-
+        member this.WantsText = this.WantsText
+        member this.Text = this.Text
+        member this.Textwrap = this.Textwrap
+        member this.TextAlign = this.TextAlign
+        member this.WantsOnClick = this.WantsOnClick
+        member this.WantsOnPress = this.WantsOnPress
+        member this.WantsTextChanged = this.WantsTextChanged

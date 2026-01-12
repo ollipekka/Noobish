@@ -221,6 +221,50 @@ Notes:
 - Add a `ClearChildrenForFrame` pass to reset `Count` and clear child lists only for active components.
 - Avoid allocations by pre-allocating `ResizeArray` capacity when a component is first created.
 
+## Input Handling (Allocation-Friendly)
+Immediate-mode UI can stay allocation-free if input is handled as a second pass that writes into preallocated buffers, rather than wiring callbacks per component.
+
+### Goals
+- No per-frame allocations for input dispatch.
+- No closures required in builder calls.
+- Stable, pollable input state keyed by `UIComponentIdV2`.
+
+### Proposed shape
+- Add per-frame input arrays (or a reusable event queue) to `NoobishComponentsV2`:
+  - `Clicked: bool[]`
+  - `Pressed: bool[]`
+  - `TextChanged: bool[]`
+  - Optional payload storage: `TextValue: string[]`, `KeyPressed: Keys[]`, etc.
+- During input processing, write into these arrays (single pass) based on `Wants*` flags.
+- The fluent API returns `UIComponentIdV2`, and callers poll input state by index:
+```fsharp
+let struct (ctx, cid) = NoobishV2.button "Save" ctx
+if components.Clicked.[int cid.Index] then
+    save()
+```
+
+### Event queue option (if payloads are needed)
+Use a preallocated ring buffer for events to avoid allocations while supporting payloads:
+```fsharp
+type InputEventKind =
+    | Clicked
+    | Pressed
+    | TextChanged
+
+[<Struct>]
+type InputEvent = {
+    Id: UIComponentIdV2
+    Kind: InputEventKind
+    PayloadIndex: int
+}
+```
+Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and indexed by `PayloadIndex`.
+
+### Integration sketch
+- `ProcessInputV2` walks components once, sets `Clicked/Pressed/TextChanged`, and fills the queue.
+- `BeginFrame` clears the input buffers for active indices (not full array clears).
+- Existing `Wants*` flags remain the opt-in for which components participate.
+
 ## Incremental Steps (V2-first migration)
 1. Implement test coverage with coverlet and wire it into the build/test flow.
 2. Add `docs/allocation-friendly-ui-plan.md` (this document).
@@ -241,6 +285,8 @@ Notes:
 - Done: added `ComponentContextV2` and `NoobishComponentsV2` with tests (`src/Noobish/NoobishComponentsV2.fs`, `src/Noobish.Test/NoobishComponentsV2Tests.fs`).
 - Done: added `NoobishV2` API shell and tests (`src/Noobish/NoobishV2.fs`, `src/Noobish.Test/NoobishV2Tests.fs`).
 - Done: added context pooling interface + implementation and ensured `ComponentContextV2` implements the context interface.
+- Done: added initial V2 builder helpers for header/label/paragraph/textbox/button/space/div/grid/panel/canvas plus storage fields and tests.
+- Done: added minimal V2 layout pass (`NoobishLayoutV2`) with stack/grid/relative handling and tests.
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?

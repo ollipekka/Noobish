@@ -10,6 +10,8 @@ let ``NoobishComponentsV2 initializes arrays`` () =
     Assert.AreEqual(4, components.ParentId.Length)
     Assert.AreEqual(4, components.Children.Length)
     Assert.AreEqual(4, components.Layout.Length)
+    Assert.AreEqual(4, components.Text.Length)
+    Assert.AreEqual(4, components.WantsText.Length)
 
 [<Test>]
 let ``NoobishComponentsV2 defaults ParentId to empty`` () =
