@@ -4,15 +4,17 @@ open Noobish
 open Microsoft.Xna.Framework
 
 module NoobishV2 =
-    let beginFrame (page: string) (components: NoobishComponentsV2) =
+    open Noobish.Styles
+    let beginFrame (page: string) (components: INoobishComponents2) =
 
         let ctx = components.AcquireContext()
         ctx.Reset(components.RunningId, page)
+        ctx.ComponentId <- UIComponentIdV2.empty
         ctx
 
     let endFrame (rootWidth: float32) (rootHeight: float32) (parentCtx: ComponentContextV2) =
         NoobishLayoutV2.layoutFrame parentCtx.Components rootWidth rootHeight
-        parentCtx.ParentId
+        
 
     let private createId (parentCtx: ComponentContextV2) (index: int) (localId: uint16) =
         let ns = NamespaceHash.fromPage parentCtx.Page
@@ -23,20 +25,48 @@ module NoobishV2 =
         let components = parentCtx.Components
         let index = components.Count
         let cid = createId parentCtx index localId
+        let parentId = parentCtx.ComponentId
         components.Id.[index] <- cid
         components.ThemeId.[index] <- themeId
-        components.ParentId.[index] <- parentCtx.ParentId
+        components.ParentId.[index] <- parentId
+        if parentId <> UIComponentIdV2.empty then
+            let parentIndex = int parentId.Index
+            components.Children.[parentIndex].Add cid
         components.Count <- components.Count + 1
         components.RunningId <- components.RunningId + 1
 
         let ctx = parentCtx.Components.AcquireContext()
         ctx.ComponentId <- cid 
         ctx.FrameId <- parentCtx.FrameId
-        ctx.ParentId <- parentCtx.ComponentId
+        ctx.ParentId <- parentId
         ctx.Page <- parentCtx.Page
         ctx
 
-    let header (text: string) (parentCtx: ComponentContextV2) =
+    let private endScope (ctx: ComponentContextV2) =
+        let parentId = ctx.ParentId
+        ctx.ComponentId <- parentId
+        if parentId <> UIComponentIdV2.empty then
+            ctx.ParentId <- ctx.Components.ParentId.[int parentId.Index]
+        else
+            ctx.ParentId <- UIComponentIdV2.empty
+        ctx
+
+    let setFill (fill: Fill) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Fill.[index] <- fill
+        ctx
+
+    let setPadding (padding: NoobishPadding) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Padding.[index] <- padding
+        ctx
+
+    let setMinSize (size: NoobishSize) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.MinSize.[index] <- size
+        ctx
+
+    let beginHeader (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Header" 0us parentCtx
         let index = int ctx.ComponentId.Index
         ctx.Components.WantsText.[index] <- true
@@ -44,14 +74,26 @@ module NoobishV2 =
         ctx.Components.Block.[index] <- true
         ctx
 
-    let label (text: string) (parentCtx: ComponentContextV2) =
+    let endHeader (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let header (text: string) (parentCtx: ComponentContextV2) =
+        beginHeader text parentCtx |> endHeader
+
+    let beginLabel (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Label" 0us parentCtx
         let index = int ctx.ComponentId.Index
         ctx.Components.WantsText.[index] <- true
         ctx.Components.Text.[index] <- text
         ctx
 
-    let paragraph (text: string) (parentCtx: ComponentContextV2) =
+    let endLabel (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let label (text: string) (parentCtx: ComponentContextV2) =
+        beginLabel text parentCtx |> endLabel
+
+    let beginParagraph (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Paragraph" 0us parentCtx
         let index = int ctx.ComponentId.Index
         ctx.Components.WantsText.[index] <- true
@@ -62,7 +104,13 @@ module NoobishV2 =
         ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = false}
         ctx
 
-    let textbox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
+    let endParagraph (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let paragraph (text: string) (parentCtx: ComponentContextV2) =
+        beginParagraph text parentCtx |> endParagraph
+
+    let beginTextbox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "TextBox" localId parentCtx
         let index = int ctx.ComponentId.Index
         ctx.Components.WantsText.[index] <- true
@@ -70,7 +118,13 @@ module NoobishV2 =
         ctx.Components.WantsTextChanged.[index] <- true
         ctx
 
-    let button (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
+    let endTextbox (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let textbox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
+        beginTextbox text localId parentCtx |> endTextbox
+
+    let beginButton (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Button" localId parentCtx
         let index = int ctx.ComponentId.Index
         ctx.Components.WantsText.[index] <- true
@@ -79,19 +133,36 @@ module NoobishV2 =
         ctx.Components.WantsOnPress.[index] <- true
         ctx
 
-    let space (parentCtx: ComponentContextV2) =
+    let endButton (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let button (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
+        beginButton text localId parentCtx |> endButton
+
+    let beginSpace (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Space" 0us parentCtx
         let index = int ctx.ComponentId.Index
         ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = true}
         ctx
 
+    let endSpace (ctx: ComponentContextV2) =
+        endScope ctx
 
-    let canvas (parentCtx: ComponentContextV2) =
+    let space (parentCtx: ComponentContextV2) =
+        beginSpace parentCtx |> endSpace
+
+    let beginCanvas (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Division" 0us parentCtx
         let index = int ctx.ComponentId.Index
         ctx.Components.Layout.[index] <- LayoutV2.Relative ctx.ComponentId
         ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = true}
         ctx
+
+    let endCanvas (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let canvas (parentCtx: ComponentContextV2) =
+        beginCanvas parentCtx |> endCanvas
 
     let beginPanel (parentCtx: ComponentContextV2) = 
         let ctx = createComponent "Panel" 0us parentCtx
@@ -103,9 +174,8 @@ module NoobishV2 =
         
         ctx
 
-    let endPanel (parentCtx: ComponentContextV2) = 
-
-        parentCtx.ParentId
+    let endPanel (ctx: ComponentContextV2) =
+        endScope ctx
 
     let beginStackVertical (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Division" 0us parentCtx
@@ -115,7 +185,7 @@ module NoobishV2 =
         ctx
 
     let endStackVertical (ctx: ComponentContextV2) =
-        ctx.ParentId
+        endScope ctx
 
     let beginStackHorizontal (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Division" 0us parentCtx
@@ -125,7 +195,7 @@ module NoobishV2 =
         ctx
 
     let endStackHorizontal (ctx: ComponentContextV2) =
-        ctx.ParentId
+        endScope ctx
 
     let beginGrid (cols: int, rows: int) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Division" 0us parentCtx
@@ -135,4 +205,4 @@ module NoobishV2 =
         ctx
 
     let endGrid (ctx: ComponentContextV2) =
-        ctx.ParentId
+        endScope ctx

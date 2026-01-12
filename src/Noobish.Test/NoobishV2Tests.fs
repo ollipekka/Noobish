@@ -3,12 +3,13 @@ module Noobish.Test.NoobishV2Tests
 open NUnit.Framework
 open Microsoft.Xna.Framework
 open Noobish
+open Noobish.Styles
 
 [<Test>]
 let ``beginFrame resets context`` () =
     let components = NoobishComponentsV2(2)
     let ctx = NoobishV2.beginFrame "Settings/Audio" components
-    Assert.AreEqual(42, ctx.FrameId)
+    Assert.AreEqual(0, ctx.FrameId)
     Assert.AreEqual("Settings/Audio", ctx.Page)
     Assert.AreEqual(UIComponentIdV2.empty, ctx.ParentId)
 
@@ -25,11 +26,26 @@ let ``createComponent stores id and theme`` () =
     Assert.AreEqual(UIComponentIdV2.empty, components.ParentId.[0])
 
 [<Test>]
+let ``endPanel returns parent context`` () =
+    let components = NoobishComponentsV2(3)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+    let childCtx = NoobishV2.beginLabel "Nested" rootCtx
+    let childId = childCtx.ComponentId
+    let rootId = rootCtx.ComponentId
+    Assert.AreEqual(rootId, components.ParentId.[int childId.Index])
+    Assert.AreEqual(1, components.Children.[int rootId.Index].Count)
+    let parentCtx = NoobishV2.endPanel childCtx
+    Assert.AreEqual(rootCtx.ComponentId, parentCtx.ComponentId)
+    Assert.AreEqual(UIComponentIdV2.empty, parentCtx.ParentId)
+
+[<Test>]
 let ``header writes text and blocks`` () =
     let components = NoobishComponentsV2(1)
     let ctx = 
         NoobishV2.beginFrame "Page" components
-        |> NoobishV2.header "Title"
+        |> NoobishV2.beginHeader "Title"
     let cid = ctx.ComponentId
     let index = int cid.Index
     Assert.AreEqual("Header", components.ThemeId.[index])
@@ -42,7 +58,7 @@ let ``label writes text without blocking`` () =
     let components = NoobishComponentsV2(1)
     let ctx = 
         NoobishV2.beginFrame "Page" components
-        |> NoobishV2.label "Tag"
+        |> NoobishV2.beginLabel "Tag"
     let cid = ctx.ComponentId
     let index = int cid.Index
     Assert.AreEqual("Label", components.ThemeId.[index])
@@ -55,7 +71,7 @@ let ``paragraph enables wrap and fill`` () =
     let components = NoobishComponentsV2(1)
     let ctx = 
         NoobishV2.beginFrame "Page" components
-        |> NoobishV2.paragraph "Copy"
+        |> NoobishV2.beginParagraph "Copy"
     let cid = ctx.ComponentId
     let index = int cid.Index
     Assert.AreEqual("Paragraph", components.ThemeId.[index])
@@ -71,7 +87,7 @@ let ``textbox stores text and local id`` () =
     let localId = 11us
     let ctx = 
         NoobishV2.beginFrame "Page" components
-        |> NoobishV2.textbox "Seed" localId
+        |> NoobishV2.beginTextbox "Seed" localId
     let cid = ctx.ComponentId
     let index = int cid.Index
     Assert.AreEqual("TextBox", components.ThemeId.[index])
@@ -85,7 +101,7 @@ let ``button stores local id`` () =
     let localId = 7us
     let ctx = 
         NoobishV2.beginFrame "Page" components
-        |> NoobishV2.button "Press" localId
+        |> NoobishV2.beginButton "Press" localId
     let cid = ctx.ComponentId
     let index = int cid.Index
     Assert.AreEqual("Button", components.ThemeId.[index])
@@ -96,11 +112,22 @@ let ``button stores local id`` () =
     Assert.IsTrue(components.WantsOnPress.[index])
 
 [<Test>]
+let ``endButton returns parent context`` () =
+    let components = NoobishComponentsV2(2)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+    let childCtx = NoobishV2.beginButton "Ok" 1us rootCtx
+    let parentCtx = NoobishV2.endButton childCtx
+    Assert.AreEqual(rootCtx.ComponentId, parentCtx.ComponentId)
+    Assert.AreEqual(UIComponentIdV2.empty, parentCtx.ParentId)
+
+[<Test>]
 let ``space fills in both directions`` () =
     let components = NoobishComponentsV2(1)
     let ctx = 
         NoobishV2.beginFrame "Page" components
-        |> NoobishV2.space
+        |> NoobishV2.beginSpace
     let cid = ctx.ComponentId
     let index = int cid.Index
     Assert.AreEqual("Space", components.ThemeId.[index])
@@ -113,13 +140,50 @@ let ``canvas uses relative layout`` () =
     let components = NoobishComponentsV2(1)
     let ctx = 
         NoobishV2.beginFrame "Page" components
-        |> NoobishV2.canvas
+        |> NoobishV2.beginCanvas
     let cid = ctx.ComponentId
     let index = int cid.Index
     Assert.AreEqual("Division", components.ThemeId.[index])
     Assert.AreEqual(LayoutV2.Relative cid, components.Layout.[index])
     Assert.IsTrue(components.Fill.[index].Horizontal)
     Assert.IsTrue(components.Fill.[index].Vertical)
+
+[<Test>]
+let ``setFill updates fill flags`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSpace
+        |> NoobishV2.setFill {Horizontal = true; Vertical = false}
+    let index = int ctx.ComponentId.Index
+    Assert.IsTrue(components.Fill.[index].Horizontal)
+    Assert.IsFalse(components.Fill.[index].Vertical)
+
+[<Test>]
+let ``setPadding writes padding values`` () =
+    let components = NoobishComponentsV2(1)
+    let padding = {NoobishPadding.Top = 1f; Right = 2f; Bottom = 3f; Left = 4f}
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSpace
+        |> NoobishV2.setPadding padding
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(1f, components.Padding.[index].Top)
+    Assert.AreEqual(2f, components.Padding.[index].Right)
+    Assert.AreEqual(3f, components.Padding.[index].Bottom)
+    Assert.AreEqual(4f, components.Padding.[index].Left)
+
+[<Test>]
+let ``setMinSize writes size values`` () =
+    let components = NoobishComponentsV2(1)
+    let size = {Width = 12f; Height = 34f}
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSpace
+        |> NoobishV2.setMinSize size
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(12f, components.MinSize.[index].Width)
+    Assert.AreEqual(34f, components.MinSize.[index].Height)
 
 [<Test>]
 let ``beginStackVertical sets vertical layout`` () =

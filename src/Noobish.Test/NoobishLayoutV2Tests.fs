@@ -3,12 +3,6 @@ module Noobish.Test.NoobishLayoutV2Tests
 open NUnit.Framework
 open Noobish
 
-let private attachChild (components: NoobishComponentsV2) (parent: UIComponentIdV2) (child: UIComponentIdV2) =
-    let parentIndex = int parent.Index
-    let childIndex = int child.Index
-    components.ParentId.[childIndex] <- parent
-    components.Children.[parentIndex].Add(child)
-
 [<Test>]
 let ``layoutFrame stacks vertical children and respects fill`` () =
     let components = NoobishComponentsV2(3)
@@ -16,8 +10,8 @@ let ``layoutFrame stacks vertical children and respects fill`` () =
         NoobishV2.beginFrame "Page" components
         |> NoobishV2.beginStackVertical
     let rootId = rootCtx.ComponentId
-    let child1Ctx = NoobishV2.label "One" rootCtx
-    let child2Ctx = NoobishV2.space rootCtx
+    let child1Ctx = NoobishV2.beginLabel "One" rootCtx
+    let child2Ctx = NoobishV2.beginSpace rootCtx
     let child1 = child1Ctx.ComponentId
     let child2 = child2Ctx.ComponentId
 
@@ -25,9 +19,6 @@ let ``layoutFrame stacks vertical children and respects fill`` () =
     components.MinSize.[int child2.Index] <- {Width = 10f; Height = 5f}
     components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
     components.Fill.[int child2.Index] <- {Horizontal = true; Vertical = true}
-
-    attachChild components rootId child1
-    attachChild components rootId child2
 
     NoobishLayoutV2.layoutFrame components 100f 60f
 
@@ -46,8 +37,8 @@ let ``layoutFrame stacks horizontal children and respects fill`` () =
         NoobishV2.beginFrame "Page" components
         |> NoobishV2.beginStackHorizontal
     let rootId = rootCtx.ComponentId
-    let child1Ctx = NoobishV2.label "Left" rootCtx
-    let child2Ctx = NoobishV2.space rootCtx
+    let child1Ctx = NoobishV2.beginLabel "Left" rootCtx
+    let child2Ctx = NoobishV2.beginSpace rootCtx
     let child1 = child1Ctx.ComponentId
     let child2 = child2Ctx.ComponentId
 
@@ -55,9 +46,6 @@ let ``layoutFrame stacks horizontal children and respects fill`` () =
     components.MinSize.[int child2.Index] <- {Width = 5f; Height = 10f}
     components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
     components.Fill.[int child2.Index] <- {Horizontal = true; Vertical = false}
-
-    attachChild components rootId child1
-    attachChild components rootId child2
 
     NoobishLayoutV2.layoutFrame components 100f 20f
 
@@ -77,16 +65,12 @@ let ``layoutFrame places grid children by order`` () =
     let rootId = rootCtx.ComponentId
     components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
 
-    let child1Ctx = NoobishV2.label "A" rootCtx
-    let child2Ctx = NoobishV2.label "B" rootCtx
-    let child3Ctx = NoobishV2.label "C" rootCtx
+    let child1Ctx = NoobishV2.beginLabel "A" rootCtx
+    let child2Ctx = NoobishV2.beginLabel "B" rootCtx
+    let child3Ctx = NoobishV2.beginLabel "C" rootCtx
     let child1 = child1Ctx.ComponentId
     let child2 = child2Ctx.ComponentId
     let child3 = child3Ctx.ComponentId
-
-    attachChild components rootId child1
-    attachChild components rootId child2
-    attachChild components rootId child3
 
     NoobishLayoutV2.layoutFrame components 100f 80f
 

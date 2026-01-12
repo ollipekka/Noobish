@@ -5,7 +5,7 @@ module NoobishLayoutV2 =
         if value < 0f then 0f else value
 
     let private computeBounds
-        (components: NoobishComponentsV2)
+        (components: INoobishComponents2)
         (startX: float32)
         (startY: float32)
         (availableWidth: float32)
@@ -38,7 +38,7 @@ module NoobishLayoutV2 =
         bounds
 
     let rec private layoutComponent
-        (components: NoobishComponentsV2)
+        (components: INoobishComponents2)
         (startX: float32)
         (startY: float32)
         (availableWidth: float32)
@@ -166,7 +166,7 @@ module NoobishLayoutV2 =
         | LayoutV2.None ->
             ()
 
-    let layoutFrame (components: NoobishComponentsV2) (rootWidth: float32) (rootHeight: float32) =
+    let layoutFrame (components: INoobishComponents2) (rootWidth: float32) (rootHeight: float32) =
         for i = 0 to components.Count - 1 do
             if components.ParentId.[i] = UIComponentIdV2.empty then
                 layoutComponent components 0f 0f rootWidth rootHeight i

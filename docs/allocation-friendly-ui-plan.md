@@ -287,6 +287,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: added context pooling interface + implementation and ensured `ComponentContextV2` implements the context interface.
 - Done: added initial V2 builder helpers for header/label/paragraph/textbox/button/space/div/grid/panel/canvas plus storage fields and tests.
 - Done: added minimal V2 layout pass (`NoobishLayoutV2`) with stack/grid/relative handling and tests.
+- Done: added MonoGame renderer V2 (`src/Noobish/NoobishRenderV2.fs`) with helper tests.
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?
