@@ -40,13 +40,13 @@ let private buildUi2 (components: NoobishComponentsV2) (width: float32) (height:
             |> NoobishV2.setFill {Horizontal = true; Vertical = true}
             |> NoobishV2.setPadding {NoobishPadding.Top = 24f; Right = 24f; Bottom = 24f; Left = 24f}
             |> NoobishV2.beginHeader "Noobish V2"
-                |> NoobishV2.setMinSize {Width = 0f; Height = 48f}
+                |> NoobishV2.setMinHeight 48f
                 |> NoobishV2.endHeader
             |> NoobishV2.beginParagraph "A tiny demo screen to grow from."
-                |> NoobishV2.setMinSize {Width = 0f; Height = 96f}
+                |> NoobishV2.setMinHeight 96f
                 |> NoobishV2.endParagraph
             |> NoobishV2.beginButton "Get Started" 1us
-                |> NoobishV2.setMinSize {Width = 0f; Height = 40f}
+                |> NoobishV2.setMinHeight 48f
                 |> NoobishV2.setFill {Horizontal = true; Vertical = false}
                 |> NoobishV2.endButton
             |> NoobishV2.endPanel

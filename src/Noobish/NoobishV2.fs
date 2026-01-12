@@ -66,12 +66,25 @@ module NoobishV2 =
         ctx.Components.MinSize.[index] <- size
         ctx
 
+    let setMinWidth (width: float32) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        let size = ctx.Components.MinSize.[index]
+        ctx.Components.MinSize.[index] <- {size with Width = width}
+        ctx
+
+    let setMinHeight (height: float32) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        let size = ctx.Components.MinSize.[index]
+        ctx.Components.MinSize.[index] <- {size with Height = height}
+        ctx
+
     let beginHeader (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Header" 0us parentCtx
         let index = int ctx.ComponentId.Index
         ctx.Components.WantsText.[index] <- false
         ctx.Components.Text.[index] <- text
         ctx.Components.Block.[index] <- true
+        ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = false}
         ctx
 
     let endHeader (ctx: ComponentContextV2) =

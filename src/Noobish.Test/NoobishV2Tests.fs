@@ -186,6 +186,30 @@ let ``setMinSize writes size values`` () =
     Assert.AreEqual(34f, components.MinSize.[index].Height)
 
 [<Test>]
+let ``setMinWidth updates only width`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSpace
+        |> NoobishV2.setMinSize {Width = 10f; Height = 20f}
+        |> NoobishV2.setMinWidth 42f
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(42f, components.MinSize.[index].Width)
+    Assert.AreEqual(20f, components.MinSize.[index].Height)
+
+[<Test>]
+let ``setMinHeight updates only height`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSpace
+        |> NoobishV2.setMinSize {Width = 10f; Height = 20f}
+        |> NoobishV2.setMinHeight 55f
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(10f, components.MinSize.[index].Width)
+    Assert.AreEqual(55f, components.MinSize.[index].Height)
+
+[<Test>]
 let ``beginStackVertical sets vertical layout`` () =
     let components = NoobishComponentsV2(1)
     let ctx =
