@@ -69,7 +69,7 @@ module NoobishV2 =
     let beginHeader (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Header" 0us parentCtx
         let index = int ctx.ComponentId.Index
-        ctx.Components.WantsText.[index] <- true
+        ctx.Components.WantsText.[index] <- false
         ctx.Components.Text.[index] <- text
         ctx.Components.Block.[index] <- true
         ctx
@@ -83,7 +83,7 @@ module NoobishV2 =
     let beginLabel (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Label" 0us parentCtx
         let index = int ctx.ComponentId.Index
-        ctx.Components.WantsText.[index] <- true
+        ctx.Components.WantsText.[index] <- false
         ctx.Components.Text.[index] <- text
         ctx
 
@@ -96,7 +96,7 @@ module NoobishV2 =
     let beginParagraph (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Paragraph" 0us parentCtx
         let index = int ctx.ComponentId.Index
-        ctx.Components.WantsText.[index] <- true
+        ctx.Components.WantsText.[index] <- false
         ctx.Components.Text.[index] <- text
         ctx.Components.Textwrap.[index] <- true
         ctx.Components.TextAlign.[index] <- NoobishAlignment.TopLeft
