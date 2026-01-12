@@ -8,7 +8,6 @@ open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
 open Microsoft.Xna.Framework.Input.Touch
-open Noobish.Styles
 
 type Dispatch2<'msg> = 'msg -> unit
 

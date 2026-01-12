@@ -95,7 +95,6 @@ type NoobishFont = {
 }
 
 module NoobishFont =
-    open Noobish.Styles
 
     let getGlyph (f: NoobishFont) (c: char) = 
         let mutable v = Unchecked.defaultof<NoobishGlyph>

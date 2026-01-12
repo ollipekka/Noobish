@@ -1,7 +1,7 @@
 ﻿open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
+
 open Noobish
-open Noobish.Styles
 
 let private buildUi (components: NoobishComponentsV2) =
     let rootCtx =

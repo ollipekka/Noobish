@@ -30,6 +30,28 @@ type NoobishAlignment =
 | Left  | Center | Right
 | BottomLeft | BottomCenter | BottomRight
 
+[<Struct>]
+type NoobishMargin = {
+    Top: float32
+    Right: float32
+    Bottom: float32
+    Left: float32
+}
+
+module NoobishMargin =
+    let empty: NoobishMargin = {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+
+[<Struct>]
+type NoobishPadding = {
+    Top: float32
+    Right: float32
+    Bottom: float32
+    Left: float32
+}
+
+module NoobishPadding =
+    let empty: NoobishPadding = {Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+
 [<RequireQualifiedAccess>]
 type NoobishKeyId =
 | Escape

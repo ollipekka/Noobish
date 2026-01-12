@@ -1,10 +1,8 @@
 namespace Noobish
 
 open Noobish
-open Microsoft.Xna.Framework
 
 module NoobishV2 =
-    open Noobish.Styles
     let beginFrame (page: string) (components: INoobishComponents2) =
 
         let ctx = components.AcquireContext()

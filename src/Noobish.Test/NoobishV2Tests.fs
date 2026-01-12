@@ -1,9 +1,8 @@
 module Noobish.Test.NoobishV2Tests
 
 open NUnit.Framework
-open Microsoft.Xna.Framework
+
 open Noobish
-open Noobish.Styles
 
 [<Test>]
 let ``beginFrame resets context`` () =

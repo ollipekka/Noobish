@@ -2,7 +2,6 @@ namespace Noobish
 
 open Noobish
 open Noobish.Internal
-open Noobish.Styles
 
 [<RequireQualifiedAccess>]
 type LayoutV2 =

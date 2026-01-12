@@ -2,7 +2,6 @@ module Noobish.Test.NoobishRenderV2Tests
 
 open NUnit.Framework
 open Noobish
-open Noobish.Styles
 open Noobish.Internal
 
 [<Test>]
