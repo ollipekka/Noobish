@@ -1,6 +1,5 @@
 ﻿open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
-
 open Noobish
 
 
@@ -36,6 +35,8 @@ type SimpleDemoGame() as game =
         
     let components = NoobishComponentsV2(64)
     let renderer = NoobishMonoGameRendererV2()
+    let inputBuffer = InputBufferV2(64)
+    let inputState = NoobishInputState()
 
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
     let mutable textBatch = Unchecked.defaultof<TextBatch>
@@ -59,12 +60,21 @@ type SimpleDemoGame() as game =
         let fontEffect = game.Content.Load<Effect>(fontEffectId)
         textBatch <- new TextBatch(game.GraphicsDevice, struct(game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height), fontEffect, 1024)
 
-    override _.Draw(gameTime) =
-        game.GraphicsDevice.Clear(Color.Black)
-
+    override _.Update(gameTime) =
         let screenWidth = float32 game.GraphicsDevice.Viewport.Width
         let screenHeight = float32 game.GraphicsDevice.Viewport.Height
+        inputState.Update()
+ 
         NoobishLayoutV2.layoutFrame components screenWidth screenHeight
+        NoobishInputV2.process inputState components inputBuffer
+
+        if inputBuffer.WasClicked 1us then
+            System.Console.WriteLine("Clicked: Get Started")
+
+        base.Update(gameTime)
+
+    override _.Draw(gameTime) =
+        game.GraphicsDevice.Clear(Color.Black)
 
         renderer.Draw components game.GraphicsDevice game.Content spriteBatch textBatch styleSheetId gameTime
 

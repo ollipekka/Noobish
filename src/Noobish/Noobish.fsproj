@@ -21,8 +21,10 @@
     <Compile Include="NoobishFont.fs" />
     <Compile Include="MSDFFontReader.fs" />
     <Compile Include="State.fs" />
+    <Compile Include="InputState.fs" />
     <Compile Include="NoobishComponents.fs" />
     <Compile Include="NoobishComponentsV2.fs" />
+    <Compile Include="NoobishInputV2.fs" />
     <Compile Include="NoobishLayoutV2.fs" />
     <Compile Include="NoobishV2.fs" />
     <Compile Include="NoobishRenderV2.fs" />

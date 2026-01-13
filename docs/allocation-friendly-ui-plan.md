@@ -289,6 +289,9 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: added minimal V2 layout pass (`NoobishLayoutV2`) with stack/grid/relative handling and tests.
 - Done: added MonoGame renderer V2 (`src/Noobish/NoobishRenderV2.fs`) with helper tests.
 - Done: cached V2 namespace hash per frame; current hash is case/whitespace sensitive to avoid allocations.
+- Done: drafted V2 input API (`docs/input-api-v2.md`) for tick-time localId queries.
+- Done: added V2 input buffer scaffolding (`src/Noobish/NoobishInputV2.fs`) with basic tests.
+- Done: V2 input API uses engine-agnostic interfaces; platform backends should remain separate from core.
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?

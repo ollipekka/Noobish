@@ -6,8 +6,6 @@ open System.Collections.Generic
 
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
-open Microsoft.Xna.Framework.Input
-open Microsoft.Xna.Framework.Input.Touch
 
 type Dispatch2<'msg> = 'msg -> unit
 
@@ -37,32 +35,6 @@ module Cmd =
             for msg in msgs do
                 unpack array msg
         | Cmd.None -> ()
-
-[<Struct>]
-type NoobishInputDeviceState<'InputDevice> = {
-    Current: 'InputDevice
-    Previous: 'InputDevice
-}
-
-[<Struct>]
-type NoobishInputState = {
-    Keyboard: NoobishInputDeviceState<KeyboardState>
-    Mouse: NoobishInputDeviceState<MouseState>
-    Touch: NoobishInputDeviceState<TouchCollection>
-} with
-    member this.IsKeyPressed (k:Keys) =
-        this.Keyboard.Previous.IsKeyDown k && this.Keyboard.Current.IsKeyUp k
-
-    member this.IsLeftMouseButtonPressed () =
-        this.Mouse.Previous.LeftButton = ButtonState.Pressed && this.Mouse.Current.LeftButton = ButtonState.Released
-
-    member this.IsRightMouseButtonPressed () =
-        this.Mouse.Previous.LeftButton = ButtonState.Pressed && this.Mouse.Current.LeftButton = ButtonState.Released
-
-
-module NoobishInputState =
-    let updateDevice<'InputDevice> (device: 'InputDevice) (deviceState: NoobishInputDeviceState<'InputDevice>) =
-        {deviceState with Previous = deviceState.Current; Current = device}
 
 [<AbstractClass>]
 type NoobishGame<'arg, 'msg, 'model>() as game =
@@ -133,7 +105,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
     member _this.SetState s =
         state <- s
 
-    member val Input = Unchecked.defaultof<NoobishInputState> with get, set
+    member val Input = NoobishInputState() with get
 
     member this.Dispatch (msg: 'msg) =
         this.Messages.Add msg
@@ -178,11 +150,7 @@ type NoobishGame<'arg, 'msg, 'model>() as game =
         base.Update(gameTime)
 
         if this.IsActive then 
-            this.Input <- {
-                Keyboard = NoobishInputState.updateDevice (Keyboard.GetState()) this.Input.Keyboard
-                Mouse = NoobishInputState.updateDevice (Mouse.GetState()) this.Input.Mouse
-                Touch = NoobishInputState.updateDevice (TouchPanel.GetState()) this.Input.Touch
-            }
+            this.Input.Update()
 
             this.Noobish.Update gameTime
 
