@@ -32,11 +32,7 @@ module UIComponentIdV2 =
         && id.LocalId = UInt16.MaxValue
 
 module NamespaceHash =
-    let normalize (value: string) =
-        value.Trim().ToLowerInvariant()
-
     let fnv1a32 (value: string) =
-        let value = normalize value
         let mutable hash = 2166136261u
         for i = 0 to value.Length - 1 do
             hash <- hash ^^^ uint32 value.[i]

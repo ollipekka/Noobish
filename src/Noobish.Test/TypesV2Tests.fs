@@ -25,12 +25,6 @@ let ``NamespaceHash fnv1a32 is deterministic`` () =
     Assert.AreEqual(hash1, hash2)
 
 [<Test>]
-let ``NamespaceHash fnv1a32 normalizes input`` () =
-    let hash1 = NamespaceHash.fnv1a32 " Settings/Audio "
-    let hash2 = NamespaceHash.fnv1a32 "settings/audio"
-    Assert.AreEqual(hash1, hash2)
-
-[<Test>]
 let ``NamespaceHash fromPage folds fnv1a32`` () =
     let hash = NamespaceHash.fnv1a32 "Settings/Audio"
     let ns = NamespaceHash.fromPage "Settings/Audio"
