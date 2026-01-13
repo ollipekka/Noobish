@@ -6,7 +6,8 @@ module NoobishV2 =
     let beginFrame (page: string) (components: INoobishComponents2) =
 
         let ctx = components.AcquireContext()
-        ctx.Reset(components.RunningId, page)
+        let namespaceId = NamespaceHash.fromPage page
+        ctx.Reset(components.RunningId, page, namespaceId)
         ctx.ComponentId <- UIComponentIdV2.empty
         ctx
 
@@ -15,9 +16,8 @@ module NoobishV2 =
         
 
     let private createId (parentCtx: ComponentContextV2) (index: int) (localId: uint16) =
-        let ns = NamespaceHash.fromPage parentCtx.Page
         let generation = uint16 parentCtx.Components.RunningId
-        UIComponentIdV2.create ns generation (uint16 index) localId
+        UIComponentIdV2.create parentCtx.NamespaceId generation (uint16 index) localId
 
     let createComponent (themeId: string) (localId: uint16) (parentCtx: ComponentContextV2) =
         let components = parentCtx.Components

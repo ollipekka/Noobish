@@ -71,6 +71,9 @@ let ``layoutFrame places grid children by order`` () =
     let child1 = child1Ctx.ComponentId
     let child2 = child2Ctx.ComponentId
     let child3 = child3Ctx.ComponentId
+    components.Fill.[int child1.Index] <- {Horizontal = true; Vertical = true}
+    components.Fill.[int child2.Index] <- {Horizontal = true; Vertical = true}
+    components.Fill.[int child3.Index] <- {Horizontal = true; Vertical = true}
 
     NoobishLayoutV2.layoutFrame components 100f 80f
 

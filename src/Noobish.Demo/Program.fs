@@ -3,37 +3,8 @@ open Microsoft.Xna.Framework.Graphics
 
 open Noobish
 
-let private buildUi (components: NoobishComponentsV2) =
-    let rootCtx =
-        NoobishV2.beginFrame "Demo/Simple" components
-        |> NoobishV2.beginPanel
 
-    let rootId = rootCtx.ComponentId
-    let headerCtx = NoobishV2.beginHeader "Noobish V2" rootCtx
-    let bodyCtx = NoobishV2.beginParagraph "A tiny demo screen to grow from." rootCtx
-    let buttonCtx = NoobishV2.beginButton "Get Started" 1us rootCtx
-
-    let rootIndex = int rootId.Index
-    let headerIndex = int headerCtx.ComponentId.Index
-    let bodyIndex = int bodyCtx.ComponentId.Index
-    let buttonIndex = int buttonCtx.ComponentId.Index
-
-    components.Fill.[rootIndex] <- {Horizontal = true; Vertical = true}
-    components.Padding.[rootIndex] <- {NoobishPadding.Top = 24f; Right = 24f; Bottom = 24f; Left = 24f}
-
-    components.MinSize.[headerIndex] <- {Width = 0f; Height = 48f}
-    components.MinSize.[bodyIndex] <- {Width = 0f; Height = 96f}
-    components.MinSize.[buttonIndex] <- {Width = 0f; Height = 40f}
-    components.Fill.[buttonIndex] <- {Horizontal = true; Vertical = false}
-
-    components.ReleaseContext headerCtx
-    components.ReleaseContext bodyCtx
-    components.ReleaseContext buttonCtx
-    components.ReleaseContext rootCtx
-
-    rootId
-
-let private buildUi2 (components: NoobishComponentsV2) (width: float32) (height: float32)=
+let private buildUi (components: NoobishComponentsV2) (width: float32) (height: float32)=
 
     NoobishV2.beginFrame "Demo/Simple" components
         |> NoobishV2.beginPanel
@@ -80,7 +51,7 @@ type SimpleDemoGame() as game =
         base.Initialize()
         let screenWidth = float32 game.GraphicsDevice.Viewport.Width
         let screenHeight = float32 game.GraphicsDevice.Viewport.Height
-        buildUi2 components screenWidth screenHeight
+        buildUi components screenWidth screenHeight
         ()
 
     override _.LoadContent() =

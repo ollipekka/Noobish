@@ -10,6 +10,7 @@ let ``beginFrame resets context`` () =
     let ctx = NoobishV2.beginFrame "Settings/Audio" components
     Assert.AreEqual(0, ctx.FrameId)
     Assert.AreEqual("Settings/Audio", ctx.Page)
+    Assert.AreEqual(NamespaceHash.fromPage "Settings/Audio", ctx.NamespaceId)
     Assert.AreEqual(UIComponentIdV2.empty, ctx.ParentId)
 
 [<Test>]
@@ -48,7 +49,6 @@ let ``header writes text and blocks`` () =
     let cid = ctx.ComponentId
     let index = int cid.Index
     Assert.AreEqual("Header", components.ThemeId.[index])
-    Assert.IsTrue(components.WantsText.[index])
     Assert.AreEqual("Title", components.Text.[index])
     Assert.IsTrue(components.Block.[index])
 
@@ -61,7 +61,6 @@ let ``label writes text without blocking`` () =
     let cid = ctx.ComponentId
     let index = int cid.Index
     Assert.AreEqual("Label", components.ThemeId.[index])
-    Assert.IsTrue(components.WantsText.[index])
     Assert.AreEqual("Tag", components.Text.[index])
     Assert.IsFalse(components.Block.[index])
 

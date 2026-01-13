@@ -16,12 +16,14 @@ type ComponentContextV2(components: INoobishComponents2) =
     member val Components = components with get
     member val FrameId = 0 with get, set
     member val Page = "" with get, set
+    member val NamespaceId = 0us with get, set
     member val ComponentId = UIComponentIdV2.empty with get, set
     member val ParentId = UIComponentIdV2.empty with get, set
 
-    member this.Reset(frameId: int, page: string) =
+    member this.Reset(frameId: int, page: string, namespaceId: uint16) =
         this.FrameId <- frameId
         this.Page <- page
+        this.NamespaceId <- namespaceId
         this.ParentId <- UIComponentIdV2.empty
 
 and INoobishComponents2 =

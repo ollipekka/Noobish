@@ -24,9 +24,10 @@ let ``ComponentContextV2 reset updates frame data`` () =
     let components = NoobishComponentsV2(1)
     let ctx = ComponentContextV2(components)
     ctx.ParentId <- UIComponentIdV2.create 1us 2us 3us 4us
-    ctx.Reset(7, "Settings/Audio")
+    ctx.Reset(7, "Settings/Audio", 9us)
     Assert.AreEqual(7, ctx.FrameId)
     Assert.AreEqual("Settings/Audio", ctx.Page)
+    Assert.AreEqual(9us, ctx.NamespaceId)
     Assert.AreEqual(UIComponentIdV2.empty, ctx.ParentId)
 
 [<Test>]
