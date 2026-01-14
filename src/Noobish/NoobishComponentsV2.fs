@@ -42,6 +42,9 @@ and INoobishComponents2 =
     abstract GridSpan: TableSpan[] with get
     abstract GridCellAlignment: NoobishAlignment[] with get
     abstract Fill: Fill[] with get
+    abstract Toggled: bool[] with get
+    abstract Hovered: bool[] with get
+    abstract WantsToggle: bool[] with get
     abstract Padding: NoobishPadding[] with get
     abstract Margin: NoobishMargin[] with get
     abstract MinSize: NoobishSize[] with get
@@ -73,6 +76,9 @@ type NoobishComponentsV2(count: int) =
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
     member val GridCellAlignment = Array.create count NoobishAlignment.None
     member val Fill = Array.create count {Fill.Horizontal = false; Vertical = false}
+    member val Toggled = Array.create count false
+    member val Hovered = Array.create count false
+    member val WantsToggle = Array.create count false
     member val Padding = Array.create count {NoobishPadding.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val Margin = Array.create count {NoobishMargin.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
@@ -117,6 +123,9 @@ type NoobishComponentsV2(count: int) =
         member this.GridSpan = this.GridSpan
         member this.GridCellAlignment = this.GridCellAlignment
         member this.Fill = this.Fill
+        member this.Toggled = this.Toggled
+        member this.Hovered = this.Hovered
+        member this.WantsToggle = this.WantsToggle
         member this.Padding = this.Padding
         member this.Margin = this.Margin
         member this.MinSize = this.MinSize

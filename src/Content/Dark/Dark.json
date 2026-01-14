@@ -51,8 +51,20 @@
                     ["button-default.9"]
                 ]
             },
+            "hovered": {
+                "color": "3c5524ff",
+                "drawables": [
+                    ["button-toggled.9"]
+                ]
+            },
             "toggled": {
                 "color": "4b692fff",
+                "drawables": [
+                    ["button-toggled.9"]
+                ]
+            },
+            "toggledHovered": {
+                "color": "6f9a3cff",
                 "drawables": [
                     ["button-toggled.9"]
                 ]

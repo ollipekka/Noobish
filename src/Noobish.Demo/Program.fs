@@ -18,6 +18,7 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
             |> NoobishV2.beginButton "Get Started" 1us
                 |> NoobishV2.setMinHeight 48f
                 |> NoobishV2.setFill {Horizontal = true; Vertical = false}
+                |> NoobishV2.setWantsToggle true
                 |> NoobishV2.endButton
             |> NoobishV2.endPanel
         |> NoobishV2.endFrame width height

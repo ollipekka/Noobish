@@ -172,6 +172,16 @@ let ``setPadding writes padding values`` () =
     Assert.AreEqual(4f, components.Padding.[index].Left)
 
 [<Test>]
+let ``setToggled updates flag`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginButton "Ok" 1us
+        |> NoobishV2.setToggled true
+    let index = int ctx.ComponentId.Index
+    Assert.IsTrue(components.Toggled.[index])
+
+[<Test>]
 let ``setMinSize writes size values`` () =
     let components = NoobishComponentsV2(1)
     let size = {Width = 12f; Height = 34f}

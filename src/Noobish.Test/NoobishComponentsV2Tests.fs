@@ -20,6 +20,21 @@ let ``NoobishComponentsV2 defaults ParentId to empty`` () =
     Assert.AreEqual(UIComponentIdV2.empty, components.ParentId.[1])
 
 [<Test>]
+let ``NoobishComponentsV2 defaults toggled to false`` () =
+    let components = NoobishComponentsV2(1)
+    Assert.IsFalse(components.Toggled.[0])
+
+[<Test>]
+let ``NoobishComponentsV2 defaults hovered to false`` () =
+    let components = NoobishComponentsV2(1)
+    Assert.IsFalse(components.Hovered.[0])
+
+[<Test>]
+let ``NoobishComponentsV2 defaults wants toggle to false`` () =
+    let components = NoobishComponentsV2(1)
+    Assert.IsFalse(components.WantsToggle.[0])
+
+[<Test>]
 let ``ComponentContextV2 reset updates frame data`` () =
     let components = NoobishComponentsV2(1)
     let ctx = ComponentContextV2(components)

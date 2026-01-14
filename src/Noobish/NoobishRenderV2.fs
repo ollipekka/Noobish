@@ -13,8 +13,12 @@ module NoobishRenderV2 =
     let private max0 value =
         if value < 0f then 0f else value
 
-    let resolveState (enabled: bool) =
-        if enabled then "default" else "disabled"
+    let resolveState (enabled: bool) (toggled: bool) (hovered: bool) =
+        if not enabled then "disabled"
+        elif toggled && hovered then "toggledHovered"
+        elif toggled then "toggled"
+        elif hovered then "hovered"
+        else "default"
 
     let computeTextBounds (bounds: NoobishRectangle) (padding: NoobishPadding) =
         {
@@ -46,7 +50,7 @@ type NoobishMonoGameRendererV2() =
         (spriteBatch: SpriteBatch)
         (index: int) =
         let themeId = components.ThemeId.[index]
-        let state = NoobishRenderV2.resolveState components.Enabled.[index]
+        let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
         let bounds = components.Bounds.[index]
         if bounds.Width > 0f && bounds.Height > 0f then
             let layer = 1f - float32 components.Layer.[index] / 255f
@@ -65,7 +69,7 @@ type NoobishMonoGameRendererV2() =
         let text = components.Text.[index]
         if not (String.IsNullOrWhiteSpace text) then
             let themeId = components.ThemeId.[index]
-            let state = NoobishRenderV2.resolveState components.Enabled.[index]
+            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
             this.EnsureTextAlignment components styleSheet index
 
             let fontId = styleSheet.GetFont themeId state

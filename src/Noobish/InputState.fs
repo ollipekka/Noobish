@@ -7,6 +7,7 @@ type INoobishInputState =
     abstract PointerX: float32
     abstract PointerY: float32
     abstract IsPrimaryClick: unit -> bool
+    abstract IsPrimaryDown: unit -> bool
     abstract IsSecondaryClick: unit -> bool
     abstract IsKeyPressed: NoobishKeyId -> bool
 
@@ -65,6 +66,9 @@ type NoobishInputState() =
     member _.IsPrimaryClick() =
         mousePrevious.LeftButton = ButtonState.Pressed && mouseCurrent.LeftButton = ButtonState.Released
 
+    member _.IsPrimaryDown() =
+        mouseCurrent.LeftButton = ButtonState.Pressed
+
     member _.IsSecondaryClick() =
         mousePrevious.RightButton = ButtonState.Pressed && mouseCurrent.RightButton = ButtonState.Released
 
@@ -77,5 +81,6 @@ type NoobishInputState() =
         member this.PointerX = this.PointerX
         member this.PointerY = this.PointerY
         member this.IsPrimaryClick() = this.IsPrimaryClick()
+        member this.IsPrimaryDown() = this.IsPrimaryDown()
         member this.IsSecondaryClick() = this.IsSecondaryClick()
         member this.IsKeyPressed keyId = this.IsKeyPressed keyId

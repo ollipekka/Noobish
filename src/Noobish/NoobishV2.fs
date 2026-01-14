@@ -54,6 +54,16 @@ module NoobishV2 =
         ctx.Components.Fill.[index] <- fill
         ctx
 
+    let setToggled (value: bool) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Toggled.[index] <- value
+        ctx
+
+    let setWantsToggle (value: bool) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.WantsToggle.[index] <- value
+        ctx
+
     let setPadding (padding: NoobishPadding) (ctx: ComponentContextV2) =
         let index = int ctx.ComponentId.Index
         ctx.Components.Padding.[index] <- padding

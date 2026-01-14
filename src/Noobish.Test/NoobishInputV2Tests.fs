@@ -35,3 +35,46 @@ let ``InputBufferV2 marks and queries input`` () =
 
     components.ReleaseContext buttonCtx
     components.ReleaseContext ctx
+
+[<Test>]
+let ``InputBufferV2 tracks down and release`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components
+    let buttonCtx = NoobishV2.beginButton "Ok" 2us ctx
+    let index = int buttonCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.Reset components
+
+    buffer.SetDown index
+    Assert.IsTrue(buffer.IsDown 2us)
+    buffer.ClearDown()
+    Assert.IsFalse(buffer.IsDown 2us)
+    Assert.IsTrue(buffer.WasReleased 2us)
+
+    components.ReleaseContext buttonCtx
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 marks hovered`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components
+    let buttonCtx = NoobishV2.beginButton "Ok" 1us ctx
+    let index = int buttonCtx.ComponentId.Index
+    components.Bounds.[index] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    let buffer = InputBufferV2(1)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 5f
+            member _.PointerY = 5f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false }
+
+    NoobishInputV2.process input components buffer
+
+    Assert.IsTrue(components.Hovered.[index])
+
+    components.ReleaseContext buttonCtx
+    components.ReleaseContext ctx
