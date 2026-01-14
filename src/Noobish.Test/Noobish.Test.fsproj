@@ -18,6 +18,7 @@
     <Compile Include="NoobishComponentsV2Tests.fs"/>
     <Compile Include="NoobishAllocationTests.fs"/>
     <Compile Include="NoobishLayoutV2Tests.fs"/>
+    <Compile Include="NoobishMeasureV2Tests.fs"/>
     <Compile Include="NoobishInputV2Tests.fs"/>
     <Compile Include="NoobishRenderV2Tests.fs"/>
     <Compile Include="NoobishV2Tests.fs"/>

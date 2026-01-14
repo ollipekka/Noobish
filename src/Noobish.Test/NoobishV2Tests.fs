@@ -132,6 +132,17 @@ let ``space fills in both directions`` () =
     Assert.IsTrue(components.Fill.[index].Horizontal)
     Assert.IsTrue(components.Fill.[index].Vertical)
 
+[<Test>]
+let ``checkbox opts into toggle`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginCheckbox "Option" 5us
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual("Checkbox", components.ThemeId.[index])
+    Assert.IsTrue(components.WantsOnClick.[index])
+    Assert.IsTrue(components.WantsToggle.[index])
+
 
 [<Test>]
 let ``canvas uses relative layout`` () =

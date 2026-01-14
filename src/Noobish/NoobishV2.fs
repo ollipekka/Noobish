@@ -89,7 +89,7 @@ module NoobishV2 =
     let beginHeader (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Header" 0us parentCtx
         let index = int ctx.ComponentId.Index
-        ctx.Components.WantsText.[index] <- false
+        ctx.Components.WantsText.[index] <- true
         ctx.Components.Text.[index] <- text
         ctx.Components.Block.[index] <- true
         ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = false}
@@ -104,7 +104,7 @@ module NoobishV2 =
     let beginLabel (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Label" 0us parentCtx
         let index = int ctx.ComponentId.Index
-        ctx.Components.WantsText.[index] <- false
+        ctx.Components.WantsText.[index] <- true
         ctx.Components.Text.[index] <- text
         ctx
 
@@ -117,7 +117,7 @@ module NoobishV2 =
     let beginParagraph (text: string) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Paragraph" 0us parentCtx
         let index = int ctx.ComponentId.Index
-        ctx.Components.WantsText.[index] <- false
+        ctx.Components.WantsText.[index] <- true
         ctx.Components.Text.[index] <- text
         ctx.Components.Textwrap.[index] <- true
         ctx.Components.TextAlign.[index] <- NoobishAlignment.TopLeft
@@ -159,6 +159,21 @@ module NoobishV2 =
 
     let button (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
         beginButton text localId parentCtx |> endButton
+
+    let beginCheckbox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
+        let ctx = createComponent "Checkbox" localId parentCtx
+        let index = int ctx.ComponentId.Index
+        ctx.Components.WantsText.[index] <- true
+        ctx.Components.Text.[index] <- text
+        ctx.Components.WantsOnClick.[index] <- true
+        ctx.Components.WantsToggle.[index] <- true
+        ctx
+
+    let endCheckbox (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let checkbox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
+        beginCheckbox text localId parentCtx |> endCheckbox
 
     let beginSpace (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Space" 0us parentCtx

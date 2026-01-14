@@ -25,6 +25,7 @@
     <Compile Include="NoobishComponents.fs" />
     <Compile Include="NoobishComponentsV2.fs" />
     <Compile Include="NoobishInputV2.fs" />
+    <Compile Include="NoobishMeasureV2.fs" />
     <Compile Include="NoobishLayoutV2.fs" />
     <Compile Include="NoobishV2.fs" />
     <Compile Include="NoobishRenderV2.fs" />

@@ -88,3 +88,23 @@ let ``layoutFrame places grid children by order`` () =
     Assert.AreEqual(0f, bounds2.Y)
     Assert.AreEqual(0f, bounds3.X)
     Assert.AreEqual(40f, bounds3.Y)
+
+[<Test>]
+let ``layoutFrame uses content size when not filling`` () =
+    let components = NoobishComponentsV2(2)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginStackVertical
+    let rootId = rootCtx.ComponentId
+    let childCtx = NoobishV2.beginLabel "Sized" rootCtx
+    let childId = childCtx.ComponentId
+
+    components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
+    components.MinSize.[int childId.Index] <- {Width = 0f; Height = 0f}
+    components.ContentSize.[int childId.Index] <- {Width = 42f; Height = 12f}
+
+    NoobishLayoutV2.layoutFrame components 100f 60f
+
+    let childBounds = components.Bounds.[int childId.Index]
+    Assert.AreEqual(42f, childBounds.Width)
+    Assert.AreEqual(12f, childBounds.Height)

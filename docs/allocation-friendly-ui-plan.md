@@ -292,6 +292,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: drafted V2 input API (`docs/input-api-v2.md`) for tick-time localId queries.
 - Done: added V2 input buffer scaffolding (`src/Noobish/NoobishInputV2.fs`) with basic tests.
 - Done: V2 input API uses engine-agnostic interfaces; platform backends should remain separate from core.
+- Done: added V2 measure pass (`src/Noobish/NoobishMeasureV2.fs`) and content size storage for layout.
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?
@@ -299,3 +300,17 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - What should the collision strategy be for FNV-1a namespace hashes (e.g. secondary id map, linear probe)?
 - Should `ParentId` use `UIComponentId.empty` or `0` as the sentinel for “no parent”?
 - How should frame resets handle stale component state (clear all vs. clear only active indices)?
+
+## ToDo (By Component + Dependencies)
+- Input Core: focus, key typing/press handling, cursor positioning, scroll wheel, drag interactions; depends on input buffer + input state APIs.
+- Layout Core: grid span/alignment, margin/padding overrides, percent sizing, style-driven min size defaults.
+- Rendering Core: scissor/clip parity, debug overlays, pressed color blend; depends on layout bounds + style states.
+- Text: wrap + align overrides from styles, text bounds selection; depends on layout + style defaults.
+- Scroll Container: scroll offsets/content size, scrollbars, scroll wheel; depends on layout + input core + rendering core.
+- Image Component: basic/atlas/nine-patch rendering; depends on rendering core + style lookups.
+- Checkbox: toggle visuals + input behavior; depends on input core + rendering core.
+- Slider: drag behavior + fill rendering; depends on input core + rendering core.
+- List/Combobox: selection + input behavior; depends on input core + rendering core + scroll container.
+- ProgressBar: fill rendering; depends on rendering core.
+- HorizontalRule: simple drawable; depends on rendering core.
+- State carry: minimal per-frame carry for hover/press/scroll; depends on input core.

@@ -6,21 +6,44 @@ open Noobish
 let private buildUi (components: NoobishComponentsV2) (width: float32) (height: float32)=
 
     NoobishV2.beginFrame "Demo/Simple" components
-        |> NoobishV2.beginPanel
+        |> NoobishV2.beginStackHorizontal
             |> NoobishV2.setFill {Horizontal = true; Vertical = true}
-            |> NoobishV2.setPadding {NoobishPadding.Top = 24f; Right = 24f; Bottom = 24f; Left = 24f}
-            |> NoobishV2.beginHeader "Noobish V2"
-                |> NoobishV2.setMinHeight 48f
-                |> NoobishV2.endHeader
-            |> NoobishV2.beginParagraph "A tiny demo screen to grow from."
-                |> NoobishV2.setMinHeight 96f
-                |> NoobishV2.endParagraph
-            |> NoobishV2.beginButton "Get Started" 1us
-                |> NoobishV2.setMinHeight 48f
-                |> NoobishV2.setFill {Horizontal = true; Vertical = false}
-                |> NoobishV2.setWantsToggle true
-                |> NoobishV2.endButton
-            |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setMinWidth 220f
+                |> NoobishV2.setFill {Horizontal = false; Vertical = true}
+                |> NoobishV2.setPadding {NoobishPadding.Top = 16f; Right = 16f; Bottom = 16f; Left = 16f}
+                |> NoobishV2.beginHeader "Components"
+                    |> NoobishV2.setMinHeight 32f
+                    |> NoobishV2.endHeader
+                |> NoobishV2.beginButton "Labels" 1us
+                    |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.endButton
+                |> NoobishV2.beginButton "Buttons" 2us
+                    |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.endButton
+                |> NoobishV2.beginButton "Checkbox" 3us
+                    |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.endButton
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setPadding {NoobishPadding.Top = 24f; Right = 24f; Bottom = 24f; Left = 24f}
+                |> NoobishV2.beginHeader "Preview"
+                    |> NoobishV2.setMinHeight 40f
+                    |> NoobishV2.endHeader
+                |> NoobishV2.beginLabel "Sample label"
+                    |> NoobishV2.setMinHeight 32f
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginButton "Sample button" 1us
+                    |> NoobishV2.setMinHeight 48f
+                    |> NoobishV2.setFill {Horizontal = false; Vertical = false}
+                    |> NoobishV2.setWantsToggle true
+                    |> NoobishV2.endButton
+                |> NoobishV2.beginCheckbox "Sample checkbox" 2us
+                    |> NoobishV2.setMinHeight 40f
+                    |> NoobishV2.endCheckbox
+                |> NoobishV2.endPanel
+            |> NoobishV2.endStackHorizontal
         |> NoobishV2.endFrame width height
 
 
@@ -65,7 +88,9 @@ type SimpleDemoGame() as game =
         let screenWidth = float32 game.GraphicsDevice.Viewport.Width
         let screenHeight = float32 game.GraphicsDevice.Viewport.Height
         inputState.Update()
- 
+
+        let styleSheet = game.Content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
+        NoobishMeasureV2.measureFrame game.Content styleSheet components
         NoobishLayoutV2.layoutFrame components screenWidth screenHeight
         NoobishInputV2.process inputState components inputBuffer
 

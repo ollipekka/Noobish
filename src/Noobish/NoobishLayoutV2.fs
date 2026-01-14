@@ -12,20 +12,22 @@ module NoobishLayoutV2 =
         (availableHeight: float32)
         (index: int) =
         let minSize = components.MinSize.[index]
+        let contentSize = components.ContentSize.[index]
         let fill = components.Fill.[index]
         let margin = components.Margin.[index]
+        let padding = components.Padding.[index]
 
         let width =
             if fill.Horizontal then
                 max minSize.Width (availableWidth - margin.Left - margin.Right)
             else
-                minSize.Width
+                max minSize.Width contentSize.Width + padding.Left + padding.Right
 
         let height =
             if fill.Vertical then
                 max minSize.Height (availableHeight - margin.Top - margin.Bottom)
             else
-                minSize.Height
+                max minSize.Height contentSize.Height + padding.Top + padding.Bottom
 
         let bounds: Internal.NoobishRectangle = {
             X = startX + margin.Left
