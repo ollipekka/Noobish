@@ -35,6 +35,36 @@ let ``NoobishComponentsV2 defaults wants toggle to false`` () =
     Assert.IsFalse(components.WantsToggle.[0])
 
 [<Test>]
+let ``NoobishComponentsV2 isClickable and isPressable respect flags`` () =
+    let components = NoobishComponentsV2(1)
+    let index = 0
+    Assert.IsFalse(NoobishComponentsV2.isClickable components index)
+    Assert.IsFalse(NoobishComponentsV2.isPressable components index)
+
+    components.Visible.[index] <- true
+    components.Enabled.[index] <- true
+    components.WantsOnClick.[index] <- true
+    components.WantsOnPress.[index] <- true
+
+    Assert.IsTrue(NoobishComponentsV2.isClickable components index)
+    Assert.IsTrue(NoobishComponentsV2.isPressable components index)
+
+    components.Visible.[index] <- false
+    Assert.IsFalse(NoobishComponentsV2.isClickable components index)
+    Assert.IsFalse(NoobishComponentsV2.isPressable components index)
+
+    components.Visible.[index] <- true
+    components.Enabled.[index] <- false
+    Assert.IsFalse(NoobishComponentsV2.isClickable components index)
+    Assert.IsFalse(NoobishComponentsV2.isPressable components index)
+
+    components.Enabled.[index] <- true
+    components.WantsOnClick.[index] <- false
+    components.WantsOnPress.[index] <- false
+    Assert.IsFalse(NoobishComponentsV2.isClickable components index)
+    Assert.IsFalse(NoobishComponentsV2.isPressable components index)
+
+[<Test>]
 let ``ComponentContextV2 reset updates frame data`` () =
     let components = NoobishComponentsV2(1)
     let ctx = ComponentContextV2(components)

@@ -48,3 +48,30 @@ Notes:
 - `InputBufferV2.Reset` should not clear full arrays each frame; only clear indices in `ActiveIndices`.
 - `TextPayload` is indexed by component index for `TryGetTextChanged`.
 - Avoid lambdas or per-frame allocation in input processing.
+
+## Optional: Event Queue (for dynamic content)
+An additional event queue can coexist with the input buffer to support list/dynamic content without polling.
+
+### Shape
+```fsharp
+type InputEventType =
+    | Clicked
+    | Pressed
+    | Released
+    | TextChanged
+
+type InputEvent = {
+    ComponentId: UIComponentIdV2
+    EventType: InputEventType
+    PayloadIndex: int
+}
+```
+
+### Flow
+- `process` fills `InputBufferV2` as before, and optionally appends `InputEvent` to a reusable `ResizeArray`.
+- For text changes, store payloads in a parallel array and set `PayloadIndex`.
+- Consumers can use `match` on events for dynamic lists without predeclared ids.
+
+### Trade-offs
+- Queue is better for dynamic content or “any clicked” logic.
+- Buffer polling is cheaper and ideal for fixed, known controls.

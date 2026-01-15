@@ -141,3 +141,14 @@ type NoobishComponentsV2(count: int) =
         member this.WantsOnClick = this.WantsOnClick
         member this.WantsOnPress = this.WantsOnPress
         member this.WantsTextChanged = this.WantsTextChanged
+
+module NoobishComponentsV2 =
+    let isClickable (components: NoobishComponentsV2) index =
+        components.Visible.[index]
+        && components.Enabled.[index]
+        && components.WantsOnClick.[index]
+
+    let isPressable (components: NoobishComponentsV2) index =
+        components.Visible.[index]
+        && components.Enabled.[index]
+        && components.WantsOnPress.[index]

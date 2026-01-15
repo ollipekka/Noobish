@@ -15,6 +15,8 @@ type InputBufferV2(capacity: int) =
     let localIdToIndex = Dictionary<uint16, int>()
     let mutable downIndex = -1
     let mutable hoveredIndex = -1
+    let mutable lastClickedLocalId = 0us
+    let mutable lastPressedLocalId = 0us
 
     let ensureActive index =
         if not activeFlags.[index] then
@@ -33,6 +35,12 @@ type InputBufferV2(capacity: int) =
     member _.HoveredIndex
         with get() = hoveredIndex
         and set value = hoveredIndex <- value
+    member _.LastClickedLocalId
+        with get() = lastClickedLocalId
+        and set value = lastClickedLocalId <- value
+    member _.LastPressedLocalId
+        with get() = lastPressedLocalId
+        and set value = lastPressedLocalId <- value
 
     member _.EnsureCapacity(count: int) =
         if count > clicked.Length then
@@ -40,6 +48,8 @@ type InputBufferV2(capacity: int) =
 
     member this.Reset(components: NoobishComponentsV2) =
         this.EnsureCapacity components.Count
+        lastClickedLocalId <- 0us
+        lastPressedLocalId <- 0us
         for i = 0 to activeIndices.Count - 1 do
             let index = activeIndices.[i]
             clicked.[index] <- false
@@ -111,6 +121,45 @@ type InputBufferV2(capacity: int) =
         | true, index when textChanged.[index] -> ValueSome textPayload.[index]
         | _ -> ValueNone
 
+    member _.GetClicked() = lastClickedLocalId
+
+    member _.GetPressed() = lastPressedLocalId
+
+    member _.TryGetClicked() =
+        if lastClickedLocalId = 0us then ValueNone else ValueSome lastClickedLocalId
+
+    member _.TryGetPressed() =
+        if lastPressedLocalId = 0us then ValueNone else ValueSome lastPressedLocalId
+
+    member this.UpdateHover(components: NoobishComponentsV2, hitIndex: int) =
+        let nextIndex = if hitIndex >= 0 && hitIndex < components.Count then hitIndex else -1
+        if nextIndex <> hoveredIndex then
+            if hoveredIndex >= 0 && hoveredIndex < components.Count then
+                components.Hovered.[hoveredIndex] <- false
+            hoveredIndex <- nextIndex
+            if hoveredIndex >= 0 then
+                components.Hovered.[hoveredIndex] <- true
+
+    member this.UpdateDown(components: NoobishComponentsV2, hitIndex: int) =
+        if downIndex < 0 && hitIndex >= 0 && hitIndex < components.Count then
+            this.MarkPressed hitIndex
+            this.SetDown hitIndex
+            let localId = components.Id.[hitIndex].LocalId
+            if localId <> 0us then
+                lastPressedLocalId <- localId
+
+    member this.Release(components: NoobishComponentsV2, hitIndex: int) =
+        if downIndex >= 0 && downIndex < components.Count then
+            if hitIndex = downIndex then
+                if NoobishComponentsV2.isClickable components downIndex then
+                    let localId = components.Id.[downIndex].LocalId
+                    this.MarkClicked downIndex
+                    if localId <> 0us then
+                        lastClickedLocalId <- localId
+                    if components.WantsToggle.[downIndex] then
+                        components.Toggled.[downIndex] <- not components.Toggled.[downIndex]
+            this.ClearDown()
+
 module NoobishInputV2 =
     let private contains (bounds: NoobishRectangle) (x: float32) (y: float32) =
         x >= bounds.X && x <= bounds.X + bounds.Width
@@ -125,51 +174,35 @@ module NoobishInputV2 =
             parentId <- components.ParentId.[parentIndex]
         bounds
 
+    let private hitTest (components: NoobishComponentsV2) (x: float32) (y: float32) (predicate: int -> bool) =
+        let mutable hit = -1
+        let mutable i = components.Count - 1
+        while i >= 0 && hit < 0 do
+            if predicate i then
+                let bounds = clippedBounds components i
+                if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
+                    hit <- i
+            i <- i - 1
+        hit
+
     let process (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
         buffer.Reset components
         if buffer.DownIndex >= components.Count then
             buffer.ClearDown()
         let x = input.PointerX
         let y = input.PointerY
-        if buffer.HoveredIndex >= components.Count then
-            if buffer.HoveredIndex >= 0 && buffer.HoveredIndex < components.Hovered.Length then
-                components.Hovered.[buffer.HoveredIndex] <- false
-            buffer.HoveredIndex <- -1
-        let mutable foundHover = false
-        let mutable i = components.Count - 1
-        while i >= 0 && not foundHover do
-            if components.Visible.[i] && components.Enabled.[i] then
-                let bounds = clippedBounds components i
-                if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
-                    if buffer.HoveredIndex <> i then
-                        if buffer.HoveredIndex >= 0 then
-                            components.Hovered.[buffer.HoveredIndex] <- false
-                        components.Hovered.[i] <- true
-                        buffer.HoveredIndex <- i
-                    foundHover <- true
-            i <- i - 1
-        if not foundHover && buffer.HoveredIndex >= 0 then
-            components.Hovered.[buffer.HoveredIndex] <- false
-            buffer.HoveredIndex <- -1
+        let hoverHit =
+            hitTest components x y (fun i ->
+                components.Visible.[i] && components.Enabled.[i])
+        buffer.UpdateHover(components, hoverHit)
         if input.IsPrimaryDown() then
             if buffer.DownIndex < 0 then
-                let mutable found = false
-                let mutable i = components.Count - 1
-                while i >= 0 && not found do
-                    if components.Visible.[i] && components.Enabled.[i] && components.WantsOnPress.[i] then
-                        let bounds = clippedBounds components i
-                        if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
-                            buffer.MarkPressed i
-                            buffer.SetDown i
-                            found <- true
-                    i <- i - 1
-        else
-            let downIndex = buffer.DownIndex
-            if downIndex >= 0 then
-                if components.Visible.[downIndex] && components.Enabled.[downIndex] && components.WantsOnClick.[downIndex] then
-                    let bounds = clippedBounds components downIndex
-                    if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
-                        buffer.MarkClicked downIndex
-                        if components.WantsToggle.[downIndex] then
-                            components.Toggled.[downIndex] <- not components.Toggled.[downIndex]
-                buffer.ClearDown()
+                let pressHit =
+                    hitTest components x y (fun i ->
+                        NoobishComponentsV2.isPressable components i)
+                buffer.UpdateDown(components, pressHit)
+            else
+                let clickHit =
+                    hitTest components x y (fun i ->
+                        NoobishComponentsV2.isClickable components i)
+                buffer.Release(components, clickHit)

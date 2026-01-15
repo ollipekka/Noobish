@@ -3,6 +3,16 @@ open Microsoft.Xna.Framework.Graphics
 open Noobish
 
 
+type ComponentId = 
+| LabelsAndParagraphs= 1us
+| Buttons = 2us
+| Checkbox = 3us
+
+module ComponentId = 
+    let toLocalId (cid: ComponentId) = LanguagePrimitives.EnumToValue cid 
+    let ofLocalId (v: uint16): ComponentId = 
+        LanguagePrimitives.EnumOfValue v
+
 let private buildUi (components: NoobishComponentsV2) (width: float32) (height: float32)=
 
     NoobishV2.beginFrame "Demo/Simple" components
@@ -15,13 +25,13 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
                 |> NoobishV2.beginHeader "Components"
                     |> NoobishV2.setMinHeight 32f
                     |> NoobishV2.endHeader
-                |> NoobishV2.beginButton "Labels" 1us
+                |> NoobishV2.beginButton "Labels and Paragraphs" (ComponentId.toLocalId ComponentId.LabelsAndParagraphs)
                     |> NoobishV2.setMinHeight 28f
                     |> NoobishV2.endButton
-                |> NoobishV2.beginButton "Buttons" 2us
+                |> NoobishV2.beginButton "Buttons" (ComponentId.toLocalId ComponentId.Buttons)
                     |> NoobishV2.setMinHeight 28f
                     |> NoobishV2.endButton
-                |> NoobishV2.beginButton "Checkbox" 3us
+                |> NoobishV2.beginButton "Checkbox" (ComponentId.toLocalId ComponentId.Checkbox)
                     |> NoobishV2.setMinHeight 28f
                     |> NoobishV2.endButton
                 |> NoobishV2.endPanel
@@ -84,7 +94,7 @@ type SimpleDemoGame() as game =
         let fontEffect = game.Content.Load<Effect>(fontEffectId)
         textBatch <- new TextBatch(game.GraphicsDevice, struct(game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height), fontEffect, 1024)
 
-    override _.Update(gameTime) =
+    override this.Update(gameTime) =
         let screenWidth = float32 game.GraphicsDevice.Viewport.Width
         let screenHeight = float32 game.GraphicsDevice.Viewport.Height
         inputState.Update()
@@ -94,8 +104,15 @@ type SimpleDemoGame() as game =
         NoobishLayoutV2.layoutFrame components screenWidth screenHeight
         NoobishInputV2.process inputState components inputBuffer
 
-        if inputBuffer.WasClicked 1us then
-            System.Console.WriteLine("Clicked: Get Started")
+        let lastClicked = ComponentId.ofLocalId inputBuffer.LastClickedLocalId
+        match lastClicked with 
+        | ComponentId.LabelsAndParagraphs -> 
+            System.Console.WriteLine("Clicked: LabelsAndParagraphs")
+        | ComponentId.Buttons -> 
+            System.Console.WriteLine("Clicked: Buttons")
+        | ComponentId.Checkbox -> 
+            System.Console.WriteLine("Clicked: Checkbox")
+        | _ -> ()
 
         base.Update(gameTime)
 
