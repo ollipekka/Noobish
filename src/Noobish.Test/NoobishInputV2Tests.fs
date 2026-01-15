@@ -42,7 +42,7 @@ let ``InputBufferV2 GetClicked returns last clicked local id`` () =
     let ctx = NoobishV2.beginFrame "Page" components
     let buttonCtx = NoobishV2.beginButton "Ok" 7us ctx
     let index = int buttonCtx.ComponentId.Index
-    let buffer = InputBufferV2(1)
+    let buffer = InputBufferV2(2)
     buffer.Reset components
 
     buffer.MarkClicked index
@@ -59,7 +59,7 @@ let ``InputBufferV2 TryGetClicked returns none when unset`` () =
     let components = NoobishComponentsV2(1)
     let ctx = NoobishV2.beginFrame "Page" components
     let _buttonCtx = NoobishV2.beginButton "Ok" 7us ctx
-    let buffer = InputBufferV2(1)
+    let buffer = InputBufferV2(2)
     buffer.Reset components
 
     Assert.IsTrue(ValueOption.isNone (buffer.TryGetClicked()))
@@ -72,7 +72,7 @@ let ``InputBufferV2 GetPressed returns last pressed local id`` () =
     let ctx = NoobishV2.beginFrame "Page" components
     let buttonCtx = NoobishV2.beginButton "Ok" 9us ctx
     let index = int buttonCtx.ComponentId.Index
-    let buffer = InputBufferV2(1)
+    let buffer = InputBufferV2(2)
     buffer.Reset components
 
     buffer.MarkPressed index
@@ -89,7 +89,7 @@ let ``InputBufferV2 TryGetPressed returns none when unset`` () =
     let components = NoobishComponentsV2(1)
     let ctx = NoobishV2.beginFrame "Page" components
     let _buttonCtx = NoobishV2.beginButton "Ok" 9us ctx
-    let buffer = InputBufferV2(1)
+    let buffer = InputBufferV2(2)
     buffer.Reset components
 
     Assert.IsTrue(ValueOption.isNone (buffer.TryGetPressed()))
@@ -126,6 +126,163 @@ let ``InputBufferV2 Reset clears active flags`` () =
     buffer.Reset components
     Assert.AreEqual(0, buffer.ActiveIndices.Count)
     Assert.IsFalse(buffer.WasClicked 1us)
+
+    components.ReleaseContext buttonCtx
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 contains checks bounds`` () =
+    let bounds:Noobish.Internal.NoobishRectangle = {X = 1f; Y = 2f; Width = 3f; Height = 4f}
+    Assert.IsTrue(NoobishInputV2.contains bounds 1f 2f)
+    Assert.IsTrue(NoobishInputV2.contains bounds 4f 6f)
+    Assert.IsFalse(NoobishInputV2.contains bounds 0.9f 2f)
+    Assert.IsFalse(NoobishInputV2.contains bounds 4.1f 6f)
+
+[<Test>]
+let ``NoobishInputV2 clippedBounds clamps to parent`` () =
+    let components = NoobishComponentsV2(2)
+    let parentCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let childCtx = NoobishV2.beginLabel "Child" parentCtx
+    let parentIndex = int parentCtx.ComponentId.Index
+    let childIndex = int childCtx.ComponentId.Index
+
+    components.Bounds.[parentIndex] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Bounds.[childIndex] <- {Noobish.Internal.NoobishRectangle.X = -5f; Y = -5f; Width = 20f; Height = 20f}
+
+    let clipped = NoobishInputV2.clippedBounds components childIndex
+    Assert.AreEqual(0f, clipped.X)
+    Assert.AreEqual(0f, clipped.Y)
+    Assert.AreEqual(10f, clipped.Width)
+    Assert.AreEqual(10f, clipped.Height)
+
+    components.ReleaseContext childCtx
+    components.ReleaseContext parentCtx
+
+[<Test>]
+let ``NoobishInputV2 hitTest returns topmost match`` () =
+    let components = NoobishComponentsV2(3)
+    let rootCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let firstCtx = NoobishV2.beginLabel "First" rootCtx
+    let secondCtx = NoobishV2.beginLabel "Second" rootCtx
+    let firstIndex = int firstCtx.ComponentId.Index
+    let secondIndex = int secondCtx.ComponentId.Index
+    let rootIndex = int rootCtx.ComponentId.Index
+
+    components.Bounds.[rootIndex] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Bounds.[firstIndex] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Bounds.[secondIndex] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+
+    let hit = NoobishInputV2.hitTest components 5f 5f (fun _ -> true)
+    Assert.AreEqual(secondIndex, hit)
+
+    components.ReleaseContext secondCtx
+    components.ReleaseContext firstCtx
+    components.ReleaseContext rootCtx
+
+[<Test>]
+let ``NoobishInputV2 hitTest returns -1 when no hit`` () =
+    let components = NoobishComponentsV2(2)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let labelCtx = NoobishV2.beginLabel "Label" ctx
+    let index = int labelCtx.ComponentId.Index
+
+    components.Bounds.[index] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+
+    let hit = NoobishInputV2.hitTest components 50f 50f (fun _ -> true)
+    Assert.AreEqual(-1, hit)
+
+    components.ReleaseContext labelCtx
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 process clears down when not primary down`` () =
+    let components = NoobishComponentsV2(2)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let buttonCtx = NoobishV2.beginButton "Ok" 21us ctx
+    let rootIndex = int ctx.ComponentId.Index
+    let buttonIndex = int buttonCtx.ComponentId.Index
+
+    components.Bounds.[rootIndex] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Bounds.[buttonIndex] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.WantsOnClick.[buttonIndex] <- false
+
+    let buffer = InputBufferV2(2)
+    buffer.Reset components
+    buffer.SetDown buttonIndex
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 50f
+            member _.PointerY = 50f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false }
+
+    NoobishInputV2.process input components buffer
+
+    Assert.IsFalse(buffer.IsDown 21us)
+    Assert.IsTrue(buffer.WasReleased 21us)
+    Assert.IsFalse(buffer.WasClicked 21us)
+    Assert.AreEqual(0us, buffer.GetClicked())
+
+    components.ReleaseContext buttonCtx
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 process marks pressed when primary down`` () =
+    let components = NoobishComponentsV2(2)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let buttonCtx = NoobishV2.beginButton "Ok" 22us ctx
+    let rootIndex = int ctx.ComponentId.Index
+    let buttonIndex = int buttonCtx.ComponentId.Index
+
+    components.Bounds.[rootIndex] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Bounds.[buttonIndex] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+
+    let buffer = InputBufferV2(2)
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 5f
+            member _.PointerY = 5f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = true
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false }
+
+    NoobishInputV2.process input components buffer
+
+    Assert.IsTrue(buffer.IsDown 22us)
+    Assert.IsTrue(buffer.WasPressed 22us)
+    Assert.AreEqual(22us, buffer.GetPressed())
+
+    components.ReleaseContext buttonCtx
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 process clears down when index out of range`` () =
+    let components = NoobishComponentsV2(2)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let buttonCtx = NoobishV2.beginButton "Ok" 30us ctx
+    let index = int buttonCtx.ComponentId.Index
+
+    let buffer = InputBufferV2(2)
+    buffer.SetDown index
+
+    components.Count <- 1
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 0f
+            member _.PointerY = 0f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = true
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false }
+
+    NoobishInputV2.process input components buffer
+
+    Assert.AreEqual(-1, buffer.DownIndex)
+    Assert.IsTrue(buffer.Released.[index])
 
     components.ReleaseContext buttonCtx
     components.ReleaseContext ctx

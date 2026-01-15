@@ -161,11 +161,11 @@ type InputBufferV2(capacity: int) =
             this.ClearDown()
 
 module NoobishInputV2 =
-    let private contains (bounds: NoobishRectangle) (x: float32) (y: float32) =
+    let internal contains (bounds: NoobishRectangle) (x: float32) (y: float32) =
         x >= bounds.X && x <= bounds.X + bounds.Width
         && y >= bounds.Y && y <= bounds.Y + bounds.Height
 
-    let private clippedBounds (components: NoobishComponentsV2) (index: int) =
+    let internal clippedBounds (components: NoobishComponentsV2) (index: int) =
         let mutable bounds = components.Bounds.[index]
         let mutable parentId = components.ParentId.[index]
         while parentId <> UIComponentIdV2.empty do
@@ -174,7 +174,7 @@ module NoobishInputV2 =
             parentId <- components.ParentId.[parentIndex]
         bounds
 
-    let private hitTest (components: NoobishComponentsV2) (x: float32) (y: float32) (predicate: int -> bool) =
+    let internal hitTest (components: NoobishComponentsV2) (x: float32) (y: float32) (predicate: int -> bool) =
         let mutable hit = -1
         let mutable i = components.Count - 1
         while i >= 0 && hit < 0 do
@@ -201,8 +201,8 @@ module NoobishInputV2 =
                     hitTest components x y (fun i ->
                         NoobishComponentsV2.isPressable components i)
                 buffer.UpdateDown(components, pressHit)
-            else
-                let clickHit =
-                    hitTest components x y (fun i ->
-                        NoobishComponentsV2.isClickable components i)
-                buffer.Release(components, clickHit)
+        else
+            let clickHit =
+                hitTest components x y (fun i ->
+                    NoobishComponentsV2.isClickable components i)
+            buffer.Release(components, clickHit)
