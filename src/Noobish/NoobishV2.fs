@@ -175,6 +175,24 @@ module NoobishV2 =
     let checkbox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
         beginCheckbox text localId parentCtx |> endCheckbox
 
+    let beginSlider (rangeStart: float32, rangeEnd: float32) (step: float32) (value: float32) (localId: uint16) (parentCtx: ComponentContextV2) =
+        let ctx = createComponent "Slider" localId parentCtx
+        let index = int ctx.ComponentId.Index
+        ctx.Components.WantsOnPress.[index] <- true
+        ctx.Components.WantsSlider.[index] <- true
+        ctx.Components.SliderMin.[index] <- rangeStart
+        ctx.Components.SliderMax.[index] <- rangeEnd
+        ctx.Components.SliderStep.[index] <- step
+        ctx.Components.SliderValue.[index] <- value
+        ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = false}
+        ctx
+
+    let endSlider (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let slider (rangeStart: float32, rangeEnd: float32) (step: float32) (value: float32) (localId: uint16) (parentCtx: ComponentContextV2) =
+        beginSlider (rangeStart, rangeEnd) step value localId parentCtx |> endSlider
+
     let beginSpace (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Space" 0us parentCtx
         let index = int ctx.ComponentId.Index

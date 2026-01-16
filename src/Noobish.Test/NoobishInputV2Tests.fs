@@ -584,6 +584,33 @@ let ``InputBufferV2 TryGetTextChanged returns none when unset`` () =
     components.ReleaseContext ctx
 
 [<Test>]
+let ``InputBufferV2 TryGetSliderChanged returns payload when set`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components
+    let sliderCtx = NoobishV2.beginSlider (0f, 10f) 1f 2f 15us ctx
+    let index = int sliderCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.Reset components
+
+    buffer.MarkSliderChanged(index, 4f)
+    Assert.AreEqual(ValueSome 4f, buffer.TryGetSliderChanged 15us)
+
+    components.ReleaseContext sliderCtx
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``InputBufferV2 TryGetSliderChanged returns none when unset`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components
+    let _sliderCtx = NoobishV2.beginSlider (0f, 10f) 1f 2f 16us ctx
+    let buffer = InputBufferV2(1)
+    buffer.Reset components
+
+    Assert.IsTrue(ValueOption.isNone (buffer.TryGetSliderChanged 16us))
+
+    components.ReleaseContext ctx
+
+[<Test>]
 let ``InputBufferV2 tracks down and release`` () =
     let components = NoobishComponentsV2(1)
     let ctx = NoobishV2.beginFrame "Page" components
@@ -624,4 +651,30 @@ let ``NoobishInputV2 marks hovered`` () =
     Assert.IsTrue(components.Hovered.[index])
 
     components.ReleaseContext buttonCtx
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 process updates slider value on drag`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components
+    let sliderCtx = NoobishV2.beginSlider (0f, 10f) 1f 0f 17us ctx
+    let index = int sliderCtx.ComponentId.Index
+    components.Bounds.[index] <- {Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    let buffer = InputBufferV2(1)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 5f
+            member _.PointerY = 5f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = true
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false }
+
+    NoobishInputV2.process input components buffer
+
+    Assert.AreEqual(5f, components.SliderValue.[index])
+    Assert.AreEqual(ValueSome 5f, buffer.TryGetSliderChanged 17us)
+
+    components.ReleaseContext sliderCtx
     components.ReleaseContext ctx

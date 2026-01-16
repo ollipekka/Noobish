@@ -10,6 +10,8 @@ type InputBufferV2(capacity: int) =
     let down = Array.create capacity false
     let textChanged = Array.create capacity false
     let textPayload = Array.create capacity ""
+    let sliderChanged = Array.create capacity false
+    let sliderPayload = Array.create capacity 0f
     let activeFlags = Array.create capacity false
     let activeIndices = ResizeArray<int>()
     let localIdToIndex = Dictionary<uint16, int>()
@@ -29,6 +31,8 @@ type InputBufferV2(capacity: int) =
     member _.Down = down
     member _.TextChanged = textChanged
     member _.TextPayload = textPayload
+    member _.SliderChanged = sliderChanged
+    member _.SliderPayload = sliderPayload
     member _.ActiveIndices = activeIndices
     member _.LocalIdToIndex = localIdToIndex
     member _.DownIndex = downIndex
@@ -57,6 +61,8 @@ type InputBufferV2(capacity: int) =
             released.[index] <- false
             textChanged.[index] <- false
             textPayload.[index] <- ""
+            sliderChanged.[index] <- false
+            sliderPayload.[index] <- 0f
             activeFlags.[index] <- false
         activeIndices.Clear()
         localIdToIndex.Clear()
@@ -81,6 +87,11 @@ type InputBufferV2(capacity: int) =
         ensureActive index
         textChanged.[index] <- true
         textPayload.[index] <- text
+
+    member this.MarkSliderChanged(index: int, value: float32) =
+        ensureActive index
+        sliderChanged.[index] <- true
+        sliderPayload.[index] <- value
 
     member this.SetDown(index: int) =
         if downIndex <> index then
@@ -119,6 +130,11 @@ type InputBufferV2(capacity: int) =
     member this.TryGetTextChanged(localId: uint16) =
         match localIdToIndex.TryGetValue localId with
         | true, index when textChanged.[index] -> ValueSome textPayload.[index]
+        | _ -> ValueNone
+
+    member this.TryGetSliderChanged(localId: uint16) =
+        match localIdToIndex.TryGetValue localId with
+        | true, index when sliderChanged.[index] -> ValueSome sliderPayload.[index]
         | _ -> ValueNone
 
     member _.GetClicked() = lastClickedLocalId
@@ -201,6 +217,27 @@ module NoobishInputV2 =
                     hitTest components x y (fun i ->
                         NoobishComponentsV2.isPressable components i)
                 buffer.UpdateDown(components, pressHit)
+            if buffer.DownIndex >= 0 then
+                let downIndex = buffer.DownIndex
+                if components.WantsSlider.[downIndex] then
+                    let bounds = components.Bounds.[downIndex]
+                    let rangeStart = components.SliderMin.[downIndex]
+                    let rangeEnd = components.SliderMax.[downIndex]
+                    let step = components.SliderStep.[downIndex]
+                    let width = bounds.Width
+                    let relative =
+                        if width <= 0f then 0f
+                        else (x - bounds.X) / width
+                    let unclamped = rangeStart + relative * (rangeEnd - rangeStart)
+                    let stepped =
+                        if step > 0f then
+                            truncate (unclamped / step) * step
+                        else
+                            unclamped
+                    let value = Noobish.Internal.clamp stepped rangeStart rangeEnd
+                    if value <> components.SliderValue.[downIndex] then
+                        components.SliderValue.[downIndex] <- value
+                        buffer.MarkSliderChanged(downIndex, value)
         else
             let clickHit =
                 hitTest components x y (fun i ->

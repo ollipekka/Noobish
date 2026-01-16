@@ -40,3 +40,30 @@ let ``computeTextBounds clamps negative dimensions`` () =
     Assert.AreEqual(4f, result.Y)
     Assert.AreEqual(0f, result.Width)
     Assert.AreEqual(0f, result.Height)
+
+[<Test>]
+let ``computeSliderPinBounds centers pin and respects range`` () =
+    let bounds: NoobishRectangle = {X = 0f; Y = 0f; Width = 100f; Height = 20f}
+    let padding = {NoobishPadding.Top = 0f; Right = 0f; Bottom = 0f; Left = 10f}
+    let result = NoobishRenderV2.computeSliderPinBounds bounds padding 0f 10f 5f 10f 10f
+    Assert.AreEqual(50f, result.X)
+    Assert.AreEqual(5f, result.Y)
+    Assert.AreEqual(10f, result.Width)
+    Assert.AreEqual(10f, result.Height)
+
+[<Test>]
+let ``computeSliderPinBounds clamps value to range`` () =
+    let bounds: NoobishRectangle = {X = 0f; Y = 0f; Width = 100f; Height = 10f}
+    let padding = {NoobishPadding.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+    let result = NoobishRenderV2.computeSliderPinBounds bounds padding 0f 10f 50f 10f 10f
+    Assert.AreEqual(90f, result.X)
+
+[<Test>]
+let ``computeSliderTrackBounds centers track`` () =
+    let bounds: NoobishRectangle = {X = 0f; Y = 0f; Width = 100f; Height = 20f}
+    let padding = {NoobishPadding.Top = 2f; Right = 3f; Bottom = 4f; Left = 5f}
+    let result = NoobishRenderV2.computeSliderTrackBounds bounds padding 4f
+    Assert.AreEqual(5f, result.X)
+    Assert.AreEqual(7f, result.Y)
+    Assert.AreEqual(92f, result.Width)
+    Assert.AreEqual(4f, result.Height)

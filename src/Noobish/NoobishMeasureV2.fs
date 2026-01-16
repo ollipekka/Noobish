@@ -33,3 +33,15 @@ module NoobishMeasureV2 =
             content.Load<NoobishFont> fontId
         let getFontSize themeId = styleSheet.GetFontSize themeId "default"
         measureFrameWith getFont getFontSize components
+        for i = 0 to components.Count - 1 do
+            if components.WantsSlider.[i] then
+                let minSize = components.MinSize.[i]
+                let sliderHeight = styleSheet.GetHeight components.ThemeId.[i] "default"
+                let pinHeight = styleSheet.GetHeight "SliderPin" "default"
+                let desiredHeight = max sliderHeight pinHeight
+                if desiredHeight > 0f then
+                    let size = components.ContentSize.[i]
+                    components.ContentSize.[i] <- {
+                        Width = max size.Width minSize.Width
+                        Height = max size.Height desiredHeight
+                    }

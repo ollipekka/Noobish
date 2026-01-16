@@ -286,11 +286,14 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: added `NoobishV2` API shell and tests (`src/Noobish/NoobishV2.fs`, `src/Noobish.Test/NoobishV2Tests.fs`).
 - Done: added context pooling interface + implementation and ensured `ComponentContextV2` implements the context interface.
 - Done: added initial V2 builder helpers for header/label/paragraph/textbox/button/space/div/grid/panel/canvas plus storage fields and tests.
+- Done: added V2 slider builder API and backing storage fields with tests.
 - Done: added minimal V2 layout pass (`NoobishLayoutV2`) with stack/grid/relative handling and tests.
 - Done: added MonoGame renderer V2 (`src/Noobish/NoobishRenderV2.fs`) with helper tests.
 - Done: cached V2 namespace hash per frame; current hash is case/whitespace sensitive to avoid allocations.
 - Done: drafted V2 input API (`docs/input-api-v2.md`) for tick-time localId queries.
 - Done: added V2 input buffer scaffolding (`src/Noobish/NoobishInputV2.fs`) with basic tests.
+- Done: added slider input polling and drag processing in V2 input buffer.
+- Done: added V2 slider render pin placement and bounds helper with tests.
 - Done: V2 input API uses engine-agnostic interfaces; platform backends should remain separate from core.
 - Done: added V2 measure pass (`src/Noobish/NoobishMeasureV2.fs`) and content size storage for layout.
 

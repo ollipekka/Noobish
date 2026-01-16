@@ -12,6 +12,11 @@ let ``NoobishComponentsV2 initializes arrays`` () =
     Assert.AreEqual(4, components.Layout.Length)
     Assert.AreEqual(4, components.Text.Length)
     Assert.AreEqual(4, components.WantsText.Length)
+    Assert.AreEqual(4, components.WantsSlider.Length)
+    Assert.AreEqual(4, components.SliderMin.Length)
+    Assert.AreEqual(4, components.SliderMax.Length)
+    Assert.AreEqual(4, components.SliderStep.Length)
+    Assert.AreEqual(4, components.SliderValue.Length)
 
 [<Test>]
 let ``NoobishComponentsV2 defaults ParentId to empty`` () =
@@ -33,6 +38,11 @@ let ``NoobishComponentsV2 defaults hovered to false`` () =
 let ``NoobishComponentsV2 defaults wants toggle to false`` () =
     let components = NoobishComponentsV2(1)
     Assert.IsFalse(components.WantsToggle.[0])
+
+[<Test>]
+let ``NoobishComponentsV2 defaults wants slider to false`` () =
+    let components = NoobishComponentsV2(1)
+    Assert.IsFalse(components.WantsSlider.[0])
 
 [<Test>]
 let ``NoobishComponentsV2 isClickable and isPressable respect flags`` () =

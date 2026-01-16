@@ -10,7 +10,7 @@ open Noobish.Styles
 open Noobish.TextureAtlas
 
 module NoobishRenderV2 =
-    let private max0 value =
+    let max0 value =
         if value < 0f then 0f else value
 
     let resolveState (enabled: bool) (toggled: bool) (hovered: bool) =
@@ -26,6 +26,50 @@ module NoobishRenderV2 =
             Y = bounds.Y + padding.Top
             Width = max0 (bounds.Width - padding.Left - padding.Right)
             Height = max0 (bounds.Height - padding.Top - padding.Bottom)
+        }
+
+    let computeSliderPinBounds
+        (bounds: NoobishRectangle)
+        (padding: NoobishPadding)
+        (rangeStart: float32)
+        (rangeEnd: float32)
+        (value: float32)
+        (pinWidth: float32)
+        (pinHeight: float32) =
+        let availableWidth = max0 (bounds.Width - padding.Left - padding.Right)
+        let availableHeight = max0 (bounds.Height - padding.Top - padding.Bottom)
+        let clampedPinWidth = min pinWidth availableWidth
+        let clampedPinHeight = min pinHeight availableHeight
+        let span = rangeEnd - rangeStart
+        let t =
+            if span = 0f then
+                0f
+            else
+                Noobish.Internal.clamp ((value - rangeStart) / span) 0f 1f
+        let usableWidth = max0 (availableWidth - clampedPinWidth)
+        {
+            X = bounds.X + padding.Left + t * usableWidth
+            Y = bounds.Y + padding.Top + (availableHeight - clampedPinHeight) * 0.5f
+            Width = clampedPinWidth
+            Height = clampedPinHeight
+        }
+
+    let computeSliderTrackBounds
+        (bounds: NoobishRectangle)
+        (padding: NoobishPadding)
+        (trackHeight: float32) =
+        let availableWidth = max0 (bounds.Width - padding.Left - padding.Right)
+        let availableHeight = max0 (bounds.Height - padding.Top - padding.Bottom)
+        let clampedHeight =
+            if trackHeight > 0f then
+                min trackHeight availableHeight
+            else
+                availableHeight
+        {
+            X = bounds.X + padding.Left
+            Y = bounds.Y + padding.Top + (availableHeight - clampedHeight) * 0.5f
+            Width = availableWidth
+            Height = clampedHeight
         }
 
 type NoobishMonoGameRendererV2() =
@@ -59,6 +103,61 @@ type NoobishMonoGameRendererV2() =
             let position = Vector2(bounds.X, bounds.Y)
             let size = Vector2(bounds.Width, bounds.Height)
             DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
+
+    member private this.DrawSliderPin
+        (components: NoobishComponentsV2)
+        (styleSheet: NoobishStyleSheet)
+        (textureAtlas: NoobishTextureAtlas)
+        (spriteBatch: SpriteBatch)
+        (index: int) =
+        let bounds = components.Bounds.[index]
+        if bounds.Width > 0f && bounds.Height > 0f then
+            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
+            let pinThemeId = "SliderPin"
+            let pinWidth =
+                let width = styleSheet.GetWidth pinThemeId state
+                if width > 0f then
+                    width
+                else
+                    let height = styleSheet.GetHeight pinThemeId state
+                    if height > 0f then height else bounds.Height
+            let pinHeight =
+                let height = styleSheet.GetHeight pinThemeId state
+                if height > 0f then height else bounds.Height
+            let rangeStart = components.SliderMin.[index]
+            let rangeEnd = components.SliderMax.[index]
+            let value = components.SliderValue.[index]
+            let padding = components.Padding.[index]
+            let pinBounds = NoobishRenderV2.computeSliderPinBounds bounds padding rangeStart rangeEnd value pinWidth pinHeight
+            if pinBounds.Width > 0f && pinBounds.Height > 0f then
+                let layer = 1f - float32 components.Layer.[index] / 255f
+                let pinLayer = NoobishRenderV2.max0 (layer - 0.0001f)
+                let color = styleSheet.GetColor pinThemeId state
+                let drawables = styleSheet.GetDrawables pinThemeId state
+                let position = Vector2(pinBounds.X, pinBounds.Y)
+                let size = Vector2(pinBounds.Width, pinBounds.Height)
+                DrawUI.drawDrawable textureAtlas spriteBatch position size pinLayer color drawables
+
+    member private this.DrawSliderTrack
+        (components: NoobishComponentsV2)
+        (styleSheet: NoobishStyleSheet)
+        (textureAtlas: NoobishTextureAtlas)
+        (spriteBatch: SpriteBatch)
+        (index: int) =
+        let bounds = components.Bounds.[index]
+        if bounds.Width > 0f && bounds.Height > 0f then
+            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
+            let themeId = components.ThemeId.[index]
+            let trackHeight = styleSheet.GetHeight themeId state
+            let padding = components.Padding.[index]
+            let trackBounds = NoobishRenderV2.computeSliderTrackBounds bounds padding trackHeight
+            if trackBounds.Width > 0f && trackBounds.Height > 0f then
+                let layer = 1f - float32 components.Layer.[index] / 255f
+                let color = styleSheet.GetColor themeId state
+                let drawables = styleSheet.GetDrawables themeId state
+                let position = Vector2(trackBounds.X, trackBounds.Y)
+                let size = Vector2(trackBounds.Width, trackBounds.Height)
+                DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
 
     member private this.DrawText
         (components: NoobishComponentsV2)
@@ -108,7 +207,11 @@ type NoobishMonoGameRendererV2() =
                 graphics.ScissorRectangle <- DrawUI.toRectangle clippedBounds
 
                 spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
-                this.DrawBackground components styleSheet textureAtlas spriteBatch index
+                if components.WantsSlider.[index] then
+                    this.DrawSliderTrack components styleSheet textureAtlas spriteBatch index
+                    this.DrawSliderPin components styleSheet textureAtlas spriteBatch index
+                else
+                    this.DrawBackground components styleSheet textureAtlas spriteBatch index
                 spriteBatch.End()
 
                 let textClip = NoobishRenderV2.computeTextBounds bounds components.Padding.[index]

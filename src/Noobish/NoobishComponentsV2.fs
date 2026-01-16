@@ -58,6 +58,11 @@ and INoobishComponents2 =
     abstract WantsOnClick: bool[] with get
     abstract WantsOnPress: bool[] with get
     abstract WantsTextChanged: bool[] with get
+    abstract WantsSlider: bool[] with get
+    abstract SliderMin: float32[] with get
+    abstract SliderMax: float32[] with get
+    abstract SliderStep: float32[] with get
+    abstract SliderValue: float32[] with get
 
 
 /// ECS-style storage for UI components (V2).
@@ -93,6 +98,11 @@ type NoobishComponentsV2(count: int) =
     member val WantsOnClick = Array.create count false
     member val WantsOnPress = Array.create count false
     member val WantsTextChanged = Array.create count false
+    member val WantsSlider = Array.create count false
+    member val SliderMin = Array.create count 0f
+    member val SliderMax = Array.create count 0f
+    member val SliderStep = Array.create count 0f
+    member val SliderValue = Array.create count 0f
 
     member private this.CreateContext() =
         ComponentContextV2(this)
@@ -141,6 +151,11 @@ type NoobishComponentsV2(count: int) =
         member this.WantsOnClick = this.WantsOnClick
         member this.WantsOnPress = this.WantsOnPress
         member this.WantsTextChanged = this.WantsTextChanged
+        member this.WantsSlider = this.WantsSlider
+        member this.SliderMin = this.SliderMin
+        member this.SliderMax = this.SliderMax
+        member this.SliderStep = this.SliderStep
+        member this.SliderValue = this.SliderValue
 
 module NoobishComponentsV2 =
     let isClickable (components: NoobishComponentsV2) index =

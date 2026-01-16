@@ -7,6 +7,8 @@ type ComponentId =
 | LabelsAndParagraphs= 1us
 | Buttons = 2us
 | Checkbox = 3us
+| Slider = 6us
+
 
 module ComponentId = 
     let toLocalId (cid: ComponentId) = LanguagePrimitives.EnumToValue cid 
@@ -52,6 +54,9 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
                 |> NoobishV2.beginCheckbox "Sample checkbox" 2us
                     |> NoobishV2.setMinHeight 40f
                     |> NoobishV2.endCheckbox
+                |> NoobishV2.beginSlider (0f, 100f) 1f 50f (ComponentId.toLocalId ComponentId.Slider)
+                    |> NoobishV2.setMinHeight 40f
+                    |> NoobishV2.endSlider
                 |> NoobishV2.endPanel
             |> NoobishV2.endStackHorizontal
         |> NoobishV2.endFrame width height

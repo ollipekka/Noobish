@@ -143,6 +143,24 @@ let ``checkbox opts into toggle`` () =
     Assert.IsTrue(components.WantsOnClick.[index])
     Assert.IsTrue(components.WantsToggle.[index])
 
+[<Test>]
+let ``slider stores range and value`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSlider (0f, 10f) 0.5f 3.5f 12us
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual("Slider", components.ThemeId.[index])
+    Assert.AreEqual(12us, ctx.ComponentId.LocalId)
+    Assert.IsTrue(components.WantsOnPress.[index])
+    Assert.IsTrue(components.WantsSlider.[index])
+    Assert.AreEqual(0f, components.SliderMin.[index])
+    Assert.AreEqual(10f, components.SliderMax.[index])
+    Assert.AreEqual(0.5f, components.SliderStep.[index])
+    Assert.AreEqual(3.5f, components.SliderValue.[index])
+    Assert.IsTrue(components.Fill.[index].Horizontal)
+    Assert.IsFalse(components.Fill.[index].Vertical)
+
 
 [<Test>]
 let ``canvas uses relative layout`` () =
