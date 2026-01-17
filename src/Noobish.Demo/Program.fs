@@ -242,8 +242,8 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
                 |> NoobishV2.beginHeader "Preview"
-                    |> NoobishV2.setMinHeight 40f
                     |> NoobishV2.endHeader
+                |> NoobishV2.horizontalRule
 
     let previewCtx =
         match model.View with
