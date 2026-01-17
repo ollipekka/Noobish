@@ -5,7 +5,6 @@ open Noobish
 
 type ComponentId = 
 | Text = 1us
-| Layouts = 2us
 | Buttons = 3us
 | Checkbox = 4us
 | Slider = 5us
@@ -23,12 +22,44 @@ module TextDemo =
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
-        |> NoobishV2.beginLabel model.LabelText
-            |> NoobishV2.setMinHeight 32f
-            |> NoobishV2.endLabel
-        |> NoobishV2.beginParagraph model.ParagraphText
-            |> NoobishV2.setMinHeight 64f
-            |> NoobishV2.endParagraph
+        |> NoobishV2.beginGrid (2, 2)
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.beginLabel "Intro"
+                    |> NoobishV2.setMinHeight 32f
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginParagraph model.ParagraphText
+                    |> NoobishV2.setMinHeight 64f
+                    |> NoobishV2.endParagraph
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.beginLabel "Details"
+                    |> NoobishV2.setMinHeight 32f
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginParagraph model.ParagraphText
+                    |> NoobishV2.setMinHeight 64f
+                    |> NoobishV2.endParagraph
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.beginLabel "Notes"
+                    |> NoobishV2.setMinHeight 32f
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginParagraph model.ParagraphText
+                    |> NoobishV2.setMinHeight 64f
+                    |> NoobishV2.endParagraph
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.beginLabel "Summary"
+                    |> NoobishV2.setMinHeight 32f
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginParagraph model.ParagraphText
+                    |> NoobishV2.setMinHeight 64f
+                    |> NoobishV2.endParagraph
+                |> NoobishV2.endPanel
+            |> NoobishV2.endGrid
 
 module ButtonsDemo =
     [<Literal>]
@@ -123,38 +154,41 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
     let rootCtx =
         NoobishV2.beginFrame "Demo/Simple" components
         |> NoobishV2.beginStackHorizontal
+            
             |> NoobishV2.setFill {Horizontal = true; Vertical = true}
             |> NoobishV2.beginPanel
                 |> NoobishV2.setMinWidth 220f
                 |> NoobishV2.setFill {Horizontal = false; Vertical = true}
-                |> NoobishV2.setPadding {NoobishPadding.Top = 16f; Right = 16f; Bottom = 16f; Left = 16f}
                 |> NoobishV2.beginHeader "Components"
                     |> NoobishV2.setMinHeight 32f
                     |> NoobishV2.endHeader
-                |> NoobishV2.beginButton "Labels and Paragraphs" (ComponentId.toLocalId ComponentId.Text)
+                |> NoobishV2.beginButton "Text & Layouts" (ComponentId.toLocalId ComponentId.Text)
                     |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setWantsToggle true 
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Text)
                     |> NoobishV2.endButton
                 |> NoobishV2.beginButton "Buttons" (ComponentId.toLocalId ComponentId.Buttons)
                     |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setWantsToggle true 
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Buttons)
                     |> NoobishV2.endButton
                 |> NoobishV2.beginButton "Checkbox" (ComponentId.toLocalId ComponentId.Checkbox)
                     |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setWantsToggle true
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Checkbox)
                     |> NoobishV2.endButton
                 |> NoobishV2.beginButton "Slider" (ComponentId.toLocalId ComponentId.Slider)
                     |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setWantsToggle true
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Slider)
                     |> NoobishV2.endButton
                 |> NoobishV2.endPanel
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
-                |> NoobishV2.setPadding {NoobishPadding.Top = 24f; Right = 24f; Bottom = 24f; Left = 24f}
                 |> NoobishV2.beginHeader "Preview"
                     |> NoobishV2.setMinHeight 40f
                     |> NoobishV2.endHeader

@@ -297,6 +297,8 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: V2 input API uses engine-agnostic interfaces; platform backends should remain separate from core.
 - Done: added V2 measure pass (`src/Noobish/NoobishMeasureV2.fs`) and content size storage for layout.
 - Done: added `NoobishComponentsV2.Clear()` and `beginFrame` guard for cleared component state.
+- Done: added V2 grid span builder helpers with tests.
+- Done: applied V2 style-driven padding/margin defaults with overrides.
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?

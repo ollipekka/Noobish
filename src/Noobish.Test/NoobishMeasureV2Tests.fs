@@ -55,6 +55,26 @@ let private createStyleSheet (sliderHeight: float32) (pinHeight: float32) =
         Drawables = emptyNested<NoobishDrawable[]>()
     }
 
+let private createSpacingStyleSheet (padding: NoobishPadding) (margin: NoobishMargin) =
+    let paddings = Dictionary<string, IReadOnlyDictionary<string, NoobishPadding>>()
+    let margins = Dictionary<string, IReadOnlyDictionary<string, NoobishMargin>>()
+    paddings.["Panel"] <- singleState padding
+    margins.["Panel"] <- singleState margin
+    {
+        Name = "Test"
+        TextureAtlasId = ""
+        Widths = emptyNested<float32>()
+        Heights = emptyNested<float32>()
+        Paddings = paddings :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishPadding>>
+        Margins = margins :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishMargin>>
+        Colors = emptyNested<Color>()
+        Fonts = emptyNested<string>()
+        FontSizes = emptyNested<int>()
+        FontColors = emptyNested<Color>()
+        TextAlignments = emptyNested<NoobishAlignment>()
+        Drawables = emptyNested<NoobishDrawable[]>()
+    }
+
 [<Test>]
 let ``measureFrameWith uses text width when wants text`` () =
     let components = NoobishComponentsV2(1)
@@ -83,3 +103,49 @@ let ``measureFrame applies slider height from style`` () =
     NoobishMeasureV2.measureFrame Unchecked.defaultof<_> styleSheet components
 
     Assert.AreEqual(16f, components.ContentSize.[index].Height)
+
+[<Test>]
+let ``measureFrame applies style padding and margin defaults`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+    let index = int ctx.ComponentId.Index
+    let padding = {NoobishPadding.Top = 2f; Right = 3f; Bottom = 4f; Left = 5f}
+    let margin = {NoobishMargin.Top = 6f; Right = 7f; Bottom = 8f; Left = 9f}
+    let styleSheet = createSpacingStyleSheet padding margin
+
+    NoobishMeasureV2.measureFrame Unchecked.defaultof<_> styleSheet components
+
+    Assert.AreEqual(2f, components.Padding.[index].Top)
+    Assert.AreEqual(3f, components.Padding.[index].Right)
+    Assert.AreEqual(4f, components.Padding.[index].Bottom)
+    Assert.AreEqual(5f, components.Padding.[index].Left)
+    Assert.AreEqual(6f, components.Margin.[index].Top)
+    Assert.AreEqual(7f, components.Margin.[index].Right)
+    Assert.AreEqual(8f, components.Margin.[index].Bottom)
+    Assert.AreEqual(9f, components.Margin.[index].Left)
+
+[<Test>]
+let ``measureFrame keeps overridden padding and margin`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+        |> NoobishV2.setPadding {NoobishPadding.Top = 1f; Right = 1f; Bottom = 1f; Left = 1f}
+        |> NoobishV2.setMargin {NoobishMargin.Top = 2f; Right = 2f; Bottom = 2f; Left = 2f}
+    let index = int ctx.ComponentId.Index
+    let padding = {NoobishPadding.Top = 9f; Right = 9f; Bottom = 9f; Left = 9f}
+    let margin = {NoobishMargin.Top = 8f; Right = 8f; Bottom = 8f; Left = 8f}
+    let styleSheet = createSpacingStyleSheet padding margin
+
+    NoobishMeasureV2.measureFrame Unchecked.defaultof<_> styleSheet components
+
+    Assert.AreEqual(1f, components.Padding.[index].Top)
+    Assert.AreEqual(1f, components.Padding.[index].Right)
+    Assert.AreEqual(1f, components.Padding.[index].Bottom)
+    Assert.AreEqual(1f, components.Padding.[index].Left)
+    Assert.AreEqual(2f, components.Margin.[index].Top)
+    Assert.AreEqual(2f, components.Margin.[index].Right)
+    Assert.AreEqual(2f, components.Margin.[index].Bottom)
+    Assert.AreEqual(2f, components.Margin.[index].Left)

@@ -195,6 +195,30 @@ let ``setFill updates fill flags`` () =
     Assert.IsFalse(components.Fill.[index].Vertical)
 
 [<Test>]
+let ``setFillHorizontal preserves vertical`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSpace
+        |> NoobishV2.setFill {Horizontal = false; Vertical = true}
+        |> NoobishV2.setFillHorizontal
+    let index = int ctx.ComponentId.Index
+    Assert.IsTrue(components.Fill.[index].Horizontal)
+    Assert.IsTrue(components.Fill.[index].Vertical)
+
+[<Test>]
+let ``setFillVertical preserves horizontal`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSpace
+        |> NoobishV2.setFill {Horizontal = true; Vertical = false}
+        |> NoobishV2.setFillVertical
+    let index = int ctx.ComponentId.Index
+    Assert.IsTrue(components.Fill.[index].Horizontal)
+    Assert.IsTrue(components.Fill.[index].Vertical)
+
+[<Test>]
 let ``setPadding writes padding values`` () =
     let components = NoobishComponentsV2(1)
     let padding = {NoobishPadding.Top = 1f; Right = 2f; Bottom = 3f; Left = 4f}
@@ -207,6 +231,22 @@ let ``setPadding writes padding values`` () =
     Assert.AreEqual(2f, components.Padding.[index].Right)
     Assert.AreEqual(3f, components.Padding.[index].Bottom)
     Assert.AreEqual(4f, components.Padding.[index].Left)
+    Assert.IsTrue(components.PaddingOverride.[index])
+
+[<Test>]
+let ``setMargin writes margin values`` () =
+    let components = NoobishComponentsV2(1)
+    let margin = {NoobishMargin.Top = 5f; Right = 6f; Bottom = 7f; Left = 8f}
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSpace
+        |> NoobishV2.setMargin margin
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(5f, components.Margin.[index].Top)
+    Assert.AreEqual(6f, components.Margin.[index].Right)
+    Assert.AreEqual(7f, components.Margin.[index].Bottom)
+    Assert.AreEqual(8f, components.Margin.[index].Left)
+    Assert.IsTrue(components.MarginOverride.[index])
 
 [<Test>]
 let ``setToggled updates flag`` () =
@@ -253,6 +293,30 @@ let ``setMinHeight updates only height`` () =
     let index = int ctx.ComponentId.Index
     Assert.AreEqual(10f, components.MinSize.[index].Width)
     Assert.AreEqual(55f, components.MinSize.[index].Height)
+
+[<Test>]
+let ``setRowspan updates grid span`` () =
+    let components = NoobishComponentsV2(2)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginGrid (2, 2)
+        |> NoobishV2.beginLabel "Cell"
+        |> NoobishV2.setRowspan 2
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(2, components.GridSpan.[index].Rowspan)
+    Assert.AreEqual(1, components.GridSpan.[index].Colspan)
+
+[<Test>]
+let ``setColspan updates grid span`` () =
+    let components = NoobishComponentsV2(2)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginGrid (2, 2)
+        |> NoobishV2.beginLabel "Cell"
+        |> NoobishV2.setColspan 2
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(1, components.GridSpan.[index].Rowspan)
+    Assert.AreEqual(2, components.GridSpan.[index].Colspan)
 
 [<Test>]
 let ``beginStackVertical sets vertical layout`` () =

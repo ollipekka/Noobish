@@ -11,6 +11,7 @@ module NoobishV2 =
         let namespaceId = NamespaceHash.fromPage page
         ctx.Reset(components.RunningId, page, namespaceId)
         ctx.ComponentId <- UIComponentIdV2.empty
+
         ctx
 
     let endFrame (rootWidth: float32) (rootHeight: float32) (parentCtx: ComponentContextV2) =
@@ -56,6 +57,18 @@ module NoobishV2 =
         ctx.Components.Fill.[index] <- fill
         ctx
 
+    let setFillHorizontal (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        let fill = ctx.Components.Fill.[index]
+        ctx.Components.Fill.[index] <- {fill with Horizontal = true}
+        ctx
+
+    let setFillVertical (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        let fill = ctx.Components.Fill.[index]
+        ctx.Components.Fill.[index] <- {fill with Vertical = true}
+        ctx
+
     let setToggled (value: bool) (ctx: ComponentContextV2) =
         let index = int ctx.ComponentId.Index
         ctx.Components.Toggled.[index] <- value
@@ -69,6 +82,13 @@ module NoobishV2 =
     let setPadding (padding: NoobishPadding) (ctx: ComponentContextV2) =
         let index = int ctx.ComponentId.Index
         ctx.Components.Padding.[index] <- padding
+        ctx.Components.PaddingOverride.[index] <- true
+        ctx
+
+    let setMargin (margin: NoobishMargin) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Margin.[index] <- margin
+        ctx.Components.MarginOverride.[index] <- true
         ctx
 
     let setMinSize (size: NoobishSize) (ctx: ComponentContextV2) =
@@ -86,6 +106,18 @@ module NoobishV2 =
         let index = int ctx.ComponentId.Index
         let size = ctx.Components.MinSize.[index]
         ctx.Components.MinSize.[index] <- {size with Height = height}
+        ctx
+
+    let setRowspan (rowspan: int) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        let span = ctx.Components.GridSpan.[index]
+        ctx.Components.GridSpan.[index] <- {span with Rowspan = rowspan}
+        ctx
+
+    let setColspan (colspan: int) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        let span = ctx.Components.GridSpan.[index]
+        ctx.Components.GridSpan.[index] <- {span with Colspan = colspan}
         ctx
 
     let beginHeader (text: string) (parentCtx: ComponentContextV2) =

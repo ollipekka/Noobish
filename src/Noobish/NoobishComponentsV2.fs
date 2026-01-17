@@ -47,7 +47,9 @@ and INoobishComponents2 =
     abstract WantsToggle: bool[] with get
     abstract ContentSize: NoobishSize[] with get
     abstract Padding: NoobishPadding[] with get
+    abstract PaddingOverride: bool[] with get
     abstract Margin: NoobishMargin[] with get
+    abstract MarginOverride: bool[] with get
     abstract MinSize: NoobishSize[] with get
     abstract Bounds: NoobishRectangle[] with get
     abstract Layer: int[] with get
@@ -87,7 +89,9 @@ type NoobishComponentsV2(count: int) =
     member val WantsToggle = Array.create count false
     member val ContentSize = Array.create count {Width = 0f; Height = 0f}
     member val Padding = Array.create count {NoobishPadding.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+    member val PaddingOverride = Array.create count false
     member val Margin = Array.create count {NoobishMargin.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+    member val MarginOverride = Array.create count false
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
     member val Bounds = Array.create<NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
     member val Layer = Array.create count 0
@@ -137,7 +141,9 @@ type NoobishComponentsV2(count: int) =
             this.WantsToggle.[i] <- false
             this.ContentSize.[i] <- {Width = 0f; Height = 0f}
             this.Padding.[i] <- {NoobishPadding.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+            this.PaddingOverride.[i] <- false
             this.Margin.[i] <- {NoobishMargin.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+            this.MarginOverride.[i] <- false
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
             this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
             this.Layer.[i] <- 0
@@ -176,7 +182,9 @@ type NoobishComponentsV2(count: int) =
         member this.WantsToggle = this.WantsToggle
         member this.ContentSize = this.ContentSize
         member this.Padding = this.Padding
+        member this.PaddingOverride = this.PaddingOverride
         member this.Margin = this.Margin
+        member this.MarginOverride = this.MarginOverride
         member this.MinSize = this.MinSize
         member this.Bounds = this.Bounds
         member this.Layer = this.Layer

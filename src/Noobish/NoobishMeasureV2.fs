@@ -32,6 +32,12 @@ module NoobishMeasureV2 =
             let fontId = styleSheet.GetFont themeId "default"
             content.Load<NoobishFont> fontId
         let getFontSize themeId = styleSheet.GetFontSize themeId "default"
+        for i = 0 to components.Count - 1 do
+            let themeId = components.ThemeId.[i]
+            if not components.MarginOverride.[i] then
+                components.Margin.[i] <- styleSheet.GetMargin themeId "default"
+            if not components.PaddingOverride.[i] then
+                components.Padding.[i] <- styleSheet.GetPadding themeId "default"
         measureFrameWith getFont getFontSize components
         for i = 0 to components.Count - 1 do
             if components.WantsSlider.[i] then
