@@ -431,6 +431,30 @@ let ``InputBufferV2 UpdateHover ignores invalid index`` () =
     components.ReleaseContext ctx
 
 [<Test>]
+let ``InputBufferV2 Reset restores hovered localId`` () =
+    let components = NoobishComponentsV2(2)
+    let ctx = NoobishV2.beginFrame "Page" components
+    let buttonCtx = NoobishV2.beginButton "Hover" 7us ctx
+    let buffer = InputBufferV2(2)
+
+    buffer.UpdateHover(components, int buttonCtx.ComponentId.Index)
+    Assert.AreEqual(7us, buffer.LastHoveredLocalId)
+
+    components.ReleaseContext buttonCtx
+    components.ReleaseContext ctx
+    components.Clear()
+    let ctx2 = NoobishV2.beginFrame "Page" components
+    let buttonCtx2 = NoobishV2.beginButton "Hover" 7us ctx2
+    buffer.Reset components
+
+    let index = int buttonCtx2.ComponentId.Index
+    Assert.IsTrue(components.Hovered.[index])
+    Assert.AreEqual(index, buffer.HoveredIndex)
+
+    components.ReleaseContext buttonCtx2
+    components.ReleaseContext ctx2
+
+[<Test>]
 let ``InputBufferV2 ClearDown releases and marks released`` () =
     let components = NoobishComponentsV2(1)
     let ctx = NoobishV2.beginFrame "Page" components

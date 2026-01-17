@@ -91,9 +91,20 @@
                     ["checkbox-default.9"]
                 ]
             },
+            "hovered": {
+                "drawables": [
+                    ["checkbox-default.9", "df7126aa"]
+                ]
+            },
             "toggled": {
                 "drawables": [
                     ["checkbox-default.9"],
+                    ["checkbox-toggled.9", "df7126aa"]
+                ]
+            },
+            "toggledHovered": {
+                "drawables": [
+                    ["checkbox-default.9", "df7126aa"],
                     ["checkbox-toggled.9", "df7126aa"]
                 ]
             }

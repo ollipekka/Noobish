@@ -17,6 +17,7 @@ type InputBufferV2(capacity: int) =
     let localIdToIndex = Dictionary<uint16, int>()
     let mutable downIndex = -1
     let mutable hoveredIndex = -1
+    let mutable lastHoveredLocalId = 0us
     let mutable lastClickedLocalId = 0us
     let mutable lastPressedLocalId = 0us
 
@@ -39,6 +40,9 @@ type InputBufferV2(capacity: int) =
     member _.HoveredIndex
         with get() = hoveredIndex
         and set value = hoveredIndex <- value
+    member _.LastHoveredLocalId
+        with get() = lastHoveredLocalId
+        and set value = lastHoveredLocalId <- value
     member _.LastClickedLocalId
         with get() = lastClickedLocalId
         and set value = lastClickedLocalId <- value
@@ -67,9 +71,18 @@ type InputBufferV2(capacity: int) =
         activeIndices.Clear()
         localIdToIndex.Clear()
         for i = 0 to components.Count - 1 do
+            components.Hovered.[i] <- false
+        for i = 0 to components.Count - 1 do
             let localId = components.Id.[i].LocalId
             if localId <> 0us then
                 localIdToIndex.[localId] <- i
+        hoveredIndex <- -1
+        if lastHoveredLocalId <> 0us then
+            match localIdToIndex.TryGetValue lastHoveredLocalId with
+            | true, index ->
+                hoveredIndex <- index
+                components.Hovered.[index] <- true
+            | false, _ -> lastHoveredLocalId <- 0us
 
     member this.MarkClicked(index: int) =
         ensureActive index
@@ -155,6 +168,13 @@ type InputBufferV2(capacity: int) =
             hoveredIndex <- nextIndex
             if hoveredIndex >= 0 then
                 components.Hovered.[hoveredIndex] <- true
+                let localId = components.Id.[hoveredIndex].LocalId
+                if localId <> 0us then
+                    lastHoveredLocalId <- localId
+                else
+                    lastHoveredLocalId <- 0us
+            else
+                lastHoveredLocalId <- 0us
 
     member this.UpdateDown(components: NoobishComponentsV2, hitIndex: int) =
         if downIndex < 0 && hitIndex >= 0 && hitIndex < components.Count then

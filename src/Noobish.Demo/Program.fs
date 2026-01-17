@@ -252,17 +252,6 @@ type SimpleDemoGame() as game =
         textBatch <- new TextBatch(game.GraphicsDevice, struct(game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height), fontEffect, 1024)
 
     override this.Update(gameTime) =
-        let screenWidth = float32 game.GraphicsDevice.Viewport.Width
-        let screenHeight = float32 game.GraphicsDevice.Viewport.Height
-        inputState.Update()
-
-        let styleSheet = game.Content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
-        
-        buildUi components screenWidth screenHeight demoModel
-        NoobishMeasureV2.measureFrame game.Content styleSheet components
-        NoobishLayoutV2.layoutFrame components screenWidth screenHeight
-        NoobishInputV2.process inputState components inputBuffer
-
         let lastClicked = ComponentId.ofLocalId inputBuffer.LastClickedLocalId
         match lastClicked with 
         | ComponentId.Text -> 
@@ -293,6 +282,15 @@ type SimpleDemoGame() as game =
     override _.Draw(gameTime) =
         game.GraphicsDevice.Clear(Color.Black)
 
+        let screenWidth = float32 game.GraphicsDevice.Viewport.Width
+        let screenHeight = float32 game.GraphicsDevice.Viewport.Height
+        let styleSheet = game.Content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
+
+        inputState.Update()
+        buildUi components screenWidth screenHeight demoModel
+        NoobishMeasureV2.measureFrame game.Content styleSheet components
+        NoobishLayoutV2.layoutFrame components screenWidth screenHeight
+        NoobishInputV2.process inputState components inputBuffer
         renderer.Draw components game.GraphicsDevice game.Content spriteBatch textBatch styleSheetId gameTime
 
         base.Draw(gameTime)
