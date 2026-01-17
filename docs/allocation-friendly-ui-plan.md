@@ -296,6 +296,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: added V2 slider render pin placement and bounds helper with tests.
 - Done: V2 input API uses engine-agnostic interfaces; platform backends should remain separate from core.
 - Done: added V2 measure pass (`src/Noobish/NoobishMeasureV2.fs`) and content size storage for layout.
+- Done: added `NoobishComponentsV2.Clear()` and `beginFrame` guard for cleared component state.
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?
@@ -305,6 +306,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - How should frame resets handle stale component state (clear all vs. clear only active indices)?
 
 ## ToDo (By Component + Dependencies)
+- Theme parity: respect V1 theme/style lookups in V2 (colors/fonts/nine-patch/spacing); plan: add a per-frame resolved-style cache keyed by `UIComponentId`+state, reuse precomputed atlas/font indices, and route all render/layout defaults through cached lookups to avoid allocations.
 - Input Core: focus, key typing/press handling, cursor positioning, scroll wheel, drag interactions; depends on input buffer + input state APIs.
 - Layout Core: grid span/alignment, margin/padding overrides, percent sizing, style-driven min size defaults.
 - Rendering Core: scissor/clip parity, debug overlays, pressed color blend; depends on layout bounds + style states.

@@ -14,6 +14,14 @@ let ``beginFrame resets context`` () =
     Assert.AreEqual(UIComponentIdV2.empty, ctx.ParentId)
 
 [<Test>]
+let ``beginFrame throws when components are not cleared`` () =
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    Assert.Throws<System.InvalidOperationException>(fun () ->
+        NoobishV2.beginFrame "Settings/Audio" components |> ignore)
+    |> ignore
+
+[<Test>]
 let ``createComponent stores id and theme`` () =
     let components = NoobishComponentsV2(2)
     let ctx = 

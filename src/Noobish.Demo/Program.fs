@@ -15,8 +15,12 @@ module ComponentId =
     let ofLocalId (v: uint16): ComponentId = 
         LanguagePrimitives.EnumOfValue v
 
-let private buildUi (components: NoobishComponentsV2) (width: float32) (height: float32)=
+type DemoModel () = 
+    member val ViewState = "None" with get, set 
 
+let private buildUi (components: NoobishComponentsV2) (width: float32) (height: float32) (model: DemoModel)=
+
+    components.Clear()
     NoobishV2.beginFrame "Demo/Simple" components
         |> NoobishV2.beginStackHorizontal
             |> NoobishV2.setFill {Horizontal = true; Vertical = true}
@@ -29,12 +33,18 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
                     |> NoobishV2.endHeader
                 |> NoobishV2.beginButton "Labels and Paragraphs" (ComponentId.toLocalId ComponentId.LabelsAndParagraphs)
                     |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.setWantsToggle true 
+                    |> NoobishV2.setToggled (model.ViewState = "Labels and Paragraphs") 
                     |> NoobishV2.endButton
                 |> NoobishV2.beginButton "Buttons" (ComponentId.toLocalId ComponentId.Buttons)
                     |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.setWantsToggle true 
+                    |> NoobishV2.setToggled (model.ViewState = "Buttons") 
                     |> NoobishV2.endButton
                 |> NoobishV2.beginButton "Checkbox" (ComponentId.toLocalId ComponentId.Checkbox)
                     |> NoobishV2.setMinHeight 28f
+                    |> NoobishV2.setWantsToggle true
+                    |> NoobishV2.setToggled (model.ViewState = "Checkbox")  
                     |> NoobishV2.endButton
                 |> NoobishV2.endPanel
             |> NoobishV2.beginPanel
@@ -80,6 +90,8 @@ type SimpleDemoGame() as game =
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
     let mutable textBatch = Unchecked.defaultof<TextBatch>
 
+    let demoModel = DemoModel()
+
     let styleSheetId = "Dark/Dark"
     let fontEffectId = "MSDFFontEffect"
 
@@ -91,7 +103,6 @@ type SimpleDemoGame() as game =
         base.Initialize()
         let screenWidth = float32 game.GraphicsDevice.Viewport.Width
         let screenHeight = float32 game.GraphicsDevice.Viewport.Height
-        buildUi components screenWidth screenHeight
         ()
 
     override _.LoadContent() =
@@ -105,6 +116,8 @@ type SimpleDemoGame() as game =
         inputState.Update()
 
         let styleSheet = game.Content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
+        
+        buildUi components screenWidth screenHeight demoModel
         NoobishMeasureV2.measureFrame game.Content styleSheet components
         NoobishLayoutV2.layoutFrame components screenWidth screenHeight
         NoobishInputV2.process inputState components inputBuffer
@@ -112,10 +125,13 @@ type SimpleDemoGame() as game =
         let lastClicked = ComponentId.ofLocalId inputBuffer.LastClickedLocalId
         match lastClicked with 
         | ComponentId.LabelsAndParagraphs -> 
+            demoModel.ViewState <- "Labels and Paragraphs"
             System.Console.WriteLine("Clicked: LabelsAndParagraphs")
         | ComponentId.Buttons -> 
+            demoModel.ViewState <- "Buttons"
             System.Console.WriteLine("Clicked: Buttons")
         | ComponentId.Checkbox -> 
+            demoModel.ViewState <- "Checkbox"
             System.Console.WriteLine("Clicked: Checkbox")
         | _ -> ()
 

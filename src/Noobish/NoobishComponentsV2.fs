@@ -119,6 +119,42 @@ type NoobishComponentsV2(count: int) =
     member this.ReleaseContext(ctx: ComponentContextV2) =
         contextPool.Add(ctx)
 
+    member this.Clear() =
+        for i = 0 to this.Count - 1 do
+            this.Id.[i] <- UIComponentIdV2.empty
+            this.ThemeId.[i] <- ""
+            this.ParentId.[i] <- UIComponentIdV2.empty
+            this.Children.[i].Clear()
+            this.Visible.[i] <- true
+            this.Enabled.[i] <- true
+            this.Block.[i] <- false
+            this.Layout.[i] <- LayoutV2.None
+            this.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
+            this.GridCellAlignment.[i] <- NoobishAlignment.None
+            this.Fill.[i] <- {Horizontal = false; Vertical = false}
+            this.Toggled.[i] <- false
+            this.Hovered.[i] <- false
+            this.WantsToggle.[i] <- false
+            this.ContentSize.[i] <- {Width = 0f; Height = 0f}
+            this.Padding.[i] <- {NoobishPadding.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+            this.Margin.[i] <- {NoobishMargin.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+            this.MinSize.[i] <- {Width = 0f; Height = 0f}
+            this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+            this.Layer.[i] <- 0
+            this.WantsText.[i] <- false
+            this.Text.[i] <- ""
+            this.Textwrap.[i] <- false
+            this.TextAlign.[i] <- NoobishAlignment.None
+            this.WantsOnClick.[i] <- false
+            this.WantsOnPress.[i] <- false
+            this.WantsTextChanged.[i] <- false
+            this.WantsSlider.[i] <- false
+            this.SliderMin.[i] <- 0f
+            this.SliderMax.[i] <- 0f
+            this.SliderStep.[i] <- 0f
+            this.SliderValue.[i] <- 0f
+        this.Count <- 0
+
     interface INoobishComponents2 with
         member this.AcquireContext() = this.AcquireContext()
         member this.ReleaseContext(ctx) = this.ReleaseContext(ctx)

@@ -45,6 +45,50 @@ let ``NoobishComponentsV2 defaults wants slider to false`` () =
     Assert.IsFalse(components.WantsSlider.[0])
 
 [<Test>]
+let ``NoobishComponentsV2 clear resets state`` () =
+    let components = NoobishComponentsV2(2)
+    let index = 0
+    components.Count <- 1
+    components.Id.[index] <- UIComponentIdV2.create 1us 1us 1us 1us
+    components.ThemeId.[index] <- "Button"
+    components.ParentId.[index] <- UIComponentIdV2.create 2us 2us 2us 2us
+    components.Children.[index].Add(UIComponentIdV2.create 3us 3us 3us 3us)
+    components.Visible.[index] <- false
+    components.Enabled.[index] <- false
+    components.Block.[index] <- true
+    components.Text.[index] <- "Hi"
+    components.WantsText.[index] <- true
+    components.Textwrap.[index] <- true
+    components.TextAlign.[index] <- NoobishAlignment.Center
+    components.WantsOnClick.[index] <- true
+    components.WantsOnPress.[index] <- true
+    components.WantsTextChanged.[index] <- true
+    components.WantsSlider.[index] <- true
+    components.SliderValue.[index] <- 42f
+    components.Layer.[index] <- 7
+
+    components.Clear()
+
+    Assert.AreEqual(0, components.Count)
+    Assert.AreEqual(UIComponentIdV2.empty, components.Id.[index])
+    Assert.AreEqual("", components.ThemeId.[index])
+    Assert.AreEqual(UIComponentIdV2.empty, components.ParentId.[index])
+    Assert.AreEqual(0, components.Children.[index].Count)
+    Assert.IsTrue(components.Visible.[index])
+    Assert.IsTrue(components.Enabled.[index])
+    Assert.IsFalse(components.Block.[index])
+    Assert.IsFalse(components.WantsText.[index])
+    Assert.AreEqual("", components.Text.[index])
+    Assert.IsFalse(components.Textwrap.[index])
+    Assert.AreEqual(NoobishAlignment.None, components.TextAlign.[index])
+    Assert.IsFalse(components.WantsOnClick.[index])
+    Assert.IsFalse(components.WantsOnPress.[index])
+    Assert.IsFalse(components.WantsTextChanged.[index])
+    Assert.IsFalse(components.WantsSlider.[index])
+    Assert.AreEqual(0f, components.SliderValue.[index])
+    Assert.AreEqual(0, components.Layer.[index])
+
+[<Test>]
 let ``NoobishComponentsV2 isClickable and isPressable respect flags`` () =
     let components = NoobishComponentsV2(1)
     let index = 0

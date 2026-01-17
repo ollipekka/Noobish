@@ -4,6 +4,8 @@ open Noobish
 
 module NoobishV2 =
     let beginFrame (page: string) (components: INoobishComponents2) =
+        if components.Count <> 0 then
+            invalidOp "beginFrame requires a cleared component store. Call components.Clear() between frames."
 
         let ctx = components.AcquireContext()
         let namespaceId = NamespaceHash.fromPage page
