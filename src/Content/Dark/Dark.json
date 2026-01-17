@@ -83,9 +83,10 @@
                 ]
             }
         },
-        "CheckBox": {
+        "Checkbox": {
             "default": {
-                "padding": [12, 12, 12, 12],
+                "padding": [6, 6, 6, 6],
+                "textAlign": "left",
                 "drawables": [
                     ["checkbox-default.9"]
                 ]

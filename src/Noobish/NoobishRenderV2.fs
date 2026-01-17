@@ -104,6 +104,7 @@ type NoobishMonoGameRendererV2() =
             let size = Vector2(bounds.Width, bounds.Height)
             DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
 
+
     member private this.DrawSliderPin
         (components: NoobishComponentsV2)
         (styleSheet: NoobishStyleSheet)

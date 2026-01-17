@@ -5,7 +5,61 @@ open Microsoft.Xna.Framework.Content
 open Noobish.Styles
 
 module NoobishMeasureV2 =
+    let private applyCheckboxMinSize (components: NoobishComponentsV2) =
+        for i = 0 to components.Count - 1 do
+            if components.ThemeId.[i] = "Checkbox" && not components.WantsText.[i] then
+                let minSize = components.MinSize.[i]
+                let padding = components.Padding.[i]
+                let paddingSize = max (padding.Left + padding.Right) (padding.Top + padding.Bottom)
+                let squareSize =
+                    if minSize.Width > 0f && minSize.Height > 0f then
+                        max minSize.Width minSize.Height
+                    elif minSize.Height > 0f then
+                        minSize.Height
+                    elif minSize.Width > 0f then
+                        minSize.Width
+                    else
+                        paddingSize
+                if squareSize > 0f then
+                    components.MinSize.[i] <- {Width = squareSize; Height = squareSize}
+
+    let private computeContainerContentSizes (components: NoobishComponentsV2) =
+        for i = components.Count - 1 downto 0 do
+            let children = components.Children.[i]
+            if children.Count > 0 then
+                let mutable totalWidth = 0f
+                let mutable totalHeight = 0f
+                let mutable maxWidth = 0f
+                let mutable maxHeight = 0f
+                for c = 0 to children.Count - 1 do
+                    let childIndex = int children.[c].Index
+                    let minSize = components.MinSize.[childIndex]
+                    let contentSize = components.ContentSize.[childIndex]
+                    let padding = components.Padding.[childIndex]
+                    let margin = components.Margin.[childIndex]
+                    let childWidth = max minSize.Width contentSize.Width + padding.Left + padding.Right + margin.Left + margin.Right
+                    let childHeight = max minSize.Height contentSize.Height + padding.Top + padding.Bottom + margin.Top + margin.Bottom
+                    totalWidth <- totalWidth + childWidth
+                    totalHeight <- totalHeight + childHeight
+                    maxWidth <- max maxWidth childWidth
+                    maxHeight <- max maxHeight childHeight
+                let computed =
+                    match components.Layout.[i] with
+                    | LayoutV2.LinearHorizontal -> {Width = totalWidth; Height = maxHeight}
+                    | LayoutV2.LinearVertical -> {Width = maxWidth; Height = totalHeight}
+                    | LayoutV2.Stack
+                    | LayoutV2.Relative _ -> {Width = maxWidth; Height = maxHeight}
+                    | LayoutV2.Grid _
+                    | LayoutV2.None -> {Width = 0f; Height = 0f}
+                if computed.Width > 0f || computed.Height > 0f then
+                    let existing = components.ContentSize.[i]
+                    components.ContentSize.[i] <- {
+                        Width = max existing.Width computed.Width
+                        Height = max existing.Height computed.Height
+                    }
+
     let measureFrameWith (getFont: string -> NoobishFont) (getFontSize: string -> int) (components: NoobishComponentsV2) =
+        applyCheckboxMinSize components
         for i = 0 to components.Count - 1 do
             let minSize = components.MinSize.[i]
             let text = components.Text.[i]
@@ -26,6 +80,7 @@ module NoobishMeasureV2 =
                 }
             else
                 components.ContentSize.[i] <- minSize
+        computeContainerContentSizes components
 
     let measureFrame (content: ContentManager) (styleSheet: NoobishStyleSheet) (components: NoobishComponentsV2) =
         let getFont themeId =
@@ -51,3 +106,4 @@ module NoobishMeasureV2 =
                         Width = max size.Width minSize.Width
                         Height = max size.Height desiredHeight
                     }
+        computeContainerContentSizes components

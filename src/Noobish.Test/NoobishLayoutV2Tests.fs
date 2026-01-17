@@ -110,6 +110,29 @@ let ``layoutFrame uses content size when not filling`` () =
     Assert.AreEqual(12f, childBounds.Height)
 
 [<Test>]
+let ``layoutFrame stacks using content size`` () =
+    let components = NoobishComponentsV2(3)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginStackVertical
+    let rootId = rootCtx.ComponentId
+    let child1Ctx = NoobishV2.beginLabel "First" rootCtx
+    let child2Ctx = NoobishV2.beginLabel "Second" rootCtx
+    let child1 = child1Ctx.ComponentId
+    let child2 = child2Ctx.ComponentId
+
+    components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
+    components.ContentSize.[int child1.Index] <- {Width = 10f; Height = 12f}
+    components.ContentSize.[int child2.Index] <- {Width = 10f; Height = 8f}
+
+    NoobishLayoutV2.layoutFrame components 100f 40f
+
+    let bounds1 = components.Bounds.[int child1.Index]
+    let bounds2 = components.Bounds.[int child2.Index]
+    Assert.AreEqual(0f, bounds1.Y)
+    Assert.AreEqual(12f, bounds2.Y)
+
+[<Test>]
 let ``layoutFrame applies margins once`` () =
     let components = NoobishComponentsV2(2)
     let rootCtx =

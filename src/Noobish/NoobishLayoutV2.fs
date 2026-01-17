@@ -65,8 +65,10 @@ module NoobishLayoutV2 =
                 let childIndex = int children.[i].Index
                 let margin = components.Margin.[childIndex]
                 let minSize = components.MinSize.[childIndex]
+                let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let minHeight = minSize.Height + padding.Top + padding.Bottom
+                let contentHeight = contentSize.Height + padding.Top + padding.Bottom
+                let minHeight = max minSize.Height contentHeight
                 let outerMin = minHeight + margin.Top + margin.Bottom
                 if components.Fill.[childIndex].Vertical then
                     fillCount <- fillCount + 1
@@ -85,8 +87,10 @@ module NoobishLayoutV2 =
                 let childIndex = int children.[i].Index
                 let margin = components.Margin.[childIndex]
                 let minSize = components.MinSize.[childIndex]
+                let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let minHeight = minSize.Height + padding.Top + padding.Bottom
+                let contentHeight = contentSize.Height + padding.Top + padding.Bottom
+                let minHeight = max minSize.Height contentHeight
                 let outerMin = minHeight + margin.Top + margin.Bottom
                 let outerHeight =
                     if components.Fill.[childIndex].Vertical then
@@ -106,8 +110,10 @@ module NoobishLayoutV2 =
                 let childIndex = int children.[i].Index
                 let margin = components.Margin.[childIndex]
                 let minSize = components.MinSize.[childIndex]
+                let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let minWidth = minSize.Width + padding.Left + padding.Right
+                let contentWidth = contentSize.Width + padding.Left + padding.Right
+                let minWidth = max minSize.Width contentWidth
                 let outerMin = minWidth + margin.Left + margin.Right
                 if components.Fill.[childIndex].Horizontal then
                     fillCount <- fillCount + 1
@@ -126,8 +132,10 @@ module NoobishLayoutV2 =
                 let childIndex = int children.[i].Index
                 let margin = components.Margin.[childIndex]
                 let minSize = components.MinSize.[childIndex]
+                let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let minWidth = minSize.Width + padding.Left + padding.Right
+                let contentWidth = contentSize.Width + padding.Left + padding.Right
+                let minWidth = max minSize.Width contentWidth
                 let outerMin = minWidth + margin.Left + margin.Right
                 let outerWidth =
                     if components.Fill.[childIndex].Horizontal then

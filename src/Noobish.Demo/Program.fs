@@ -28,6 +28,8 @@ module TextDemo =
                 |> NoobishV2.beginLabel "Intro"
                     |> NoobishV2.setMinHeight 32f
                     |> NoobishV2.endLabel
+                |> NoobishV2.beginHorizontalRule
+                    |> NoobishV2.endHorizontalRule
                 |> NoobishV2.beginParagraph model.ParagraphText
                     |> NoobishV2.setMinHeight 64f
                     |> NoobishV2.endParagraph
@@ -37,6 +39,8 @@ module TextDemo =
                 |> NoobishV2.beginLabel "Details"
                     |> NoobishV2.setMinHeight 32f
                     |> NoobishV2.endLabel
+                |> NoobishV2.beginHorizontalRule
+                    |> NoobishV2.endHorizontalRule
                 |> NoobishV2.beginParagraph model.ParagraphText
                     |> NoobishV2.setMinHeight 64f
                     |> NoobishV2.endParagraph
@@ -46,6 +50,8 @@ module TextDemo =
                 |> NoobishV2.beginLabel "Notes"
                     |> NoobishV2.setMinHeight 32f
                     |> NoobishV2.endLabel
+                |> NoobishV2.beginHorizontalRule
+                    |> NoobishV2.endHorizontalRule
                 |> NoobishV2.beginParagraph model.ParagraphText
                     |> NoobishV2.setMinHeight 64f
                     |> NoobishV2.endParagraph
@@ -55,6 +61,8 @@ module TextDemo =
                 |> NoobishV2.beginLabel "Summary"
                     |> NoobishV2.setMinHeight 32f
                     |> NoobishV2.endLabel
+                |> NoobishV2.beginHorizontalRule
+                    |> NoobishV2.endHorizontalRule
                 |> NoobishV2.beginParagraph model.ParagraphText
                     |> NoobishV2.setMinHeight 64f
                     |> NoobishV2.endParagraph
@@ -87,7 +95,6 @@ module CheckboxDemo =
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
         |> NoobishV2.beginCheckbox "Sample checkbox" CheckboxId
-            |> NoobishV2.setMinHeight 40f
             |> NoobishV2.setToggled model.IsChecked
             |> NoobishV2.endCheckbox
 
@@ -160,28 +167,24 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
                 |> NoobishV2.setMinWidth 220f
                 |> NoobishV2.setFill {Horizontal = false; Vertical = true}
                 |> NoobishV2.beginHeader "Components"
-                    |> NoobishV2.setMinHeight 32f
                     |> NoobishV2.endHeader
-                |> NoobishV2.beginButton "Text & Layouts" (ComponentId.toLocalId ComponentId.Text)
-                    |> NoobishV2.setMinHeight 28f
+                |> NoobishV2.horizontalRule
+                |> NoobishV2.beginButton "Text" (ComponentId.toLocalId ComponentId.Text)
                     |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setWantsToggle true 
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Text)
                     |> NoobishV2.endButton
                 |> NoobishV2.beginButton "Buttons" (ComponentId.toLocalId ComponentId.Buttons)
-                    |> NoobishV2.setMinHeight 28f
                     |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setWantsToggle true 
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Buttons)
                     |> NoobishV2.endButton
                 |> NoobishV2.beginButton "Checkbox" (ComponentId.toLocalId ComponentId.Checkbox)
-                    |> NoobishV2.setMinHeight 28f
                     |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setWantsToggle true
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Checkbox)
                     |> NoobishV2.endButton
                 |> NoobishV2.beginButton "Slider" (ComponentId.toLocalId ComponentId.Slider)
-                    |> NoobishV2.setMinHeight 28f
                     |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setWantsToggle true
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Slider)

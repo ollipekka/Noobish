@@ -13,7 +13,7 @@ type Noobish with
         let check = 
             this.Div()
             |> this.SetOnClick (fun _ _ _ -> onValueChanged (not toggled ))
-            |> this.SetThemeId "CheckBox"
+            |> this.SetThemeId "Checkbox"
             |> this.SetToggled toggled 
             
         divId 

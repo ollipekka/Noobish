@@ -91,6 +91,60 @@ let ``measureFrameWith uses text width when wants text`` () =
     Assert.Greater(components.ContentSize.[index].Height, 0f)
 
 [<Test>]
+let ``measureFrameWith sizes horizontal containers from children`` () =
+    let components = NoobishComponentsV2(3)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginStackHorizontal
+    let child1Ctx = NoobishV2.beginLabel "A" rootCtx
+    let child1Id = child1Ctx.ComponentId
+    let rootCtx = NoobishV2.endLabel child1Ctx
+    let child2Ctx = NoobishV2.beginLabel "B" rootCtx
+    let child2Id = child2Ctx.ComponentId
+    let _ = NoobishV2.endLabel child2Ctx
+    let rootId = rootCtx.ComponentId
+
+    let font = createFont ()
+    NoobishMeasureV2.measureFrameWith (fun _ -> font) (fun _ -> 10) components
+
+    let rootSize = components.ContentSize.[int rootId.Index]
+    let child1Size = components.ContentSize.[int child1Id.Index]
+    let child2Size = components.ContentSize.[int child2Id.Index]
+    Assert.AreEqual(child1Size.Width + child2Size.Width, rootSize.Width)
+
+[<Test>]
+let ``measureFrameWith sizes checkbox box from padding`` () =
+    let components = NoobishComponentsV2(3)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginCheckbox "Option" 1us
+    let boxIndex = int ctx.ComponentId.Index
+    components.Padding.[boxIndex] <- {NoobishPadding.Top = 2f; Right = 2f; Bottom = 2f; Left = 2f}
+
+    let font = createFont ()
+    NoobishMeasureV2.measureFrameWith (fun _ -> font) (fun _ -> 10) components
+
+    let boxSize = components.ContentSize.[boxIndex]
+    Assert.AreEqual(4f, boxSize.Width)
+    Assert.AreEqual(4f, boxSize.Height)
+
+[<Test>]
+let ``measureFrameWith keeps checkbox box square for min height`` () =
+    let components = NoobishComponentsV2(3)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginCheckbox "Option" 1us
+        |> NoobishV2.setMinHeight 20f
+    let boxIndex = int ctx.ComponentId.Index
+
+    let font = createFont ()
+    NoobishMeasureV2.measureFrameWith (fun _ -> font) (fun _ -> 10) components
+
+    let boxSize = components.ContentSize.[boxIndex]
+    Assert.AreEqual(20f, boxSize.Width)
+    Assert.AreEqual(20f, boxSize.Height)
+
+[<Test>]
 let ``measureFrame applies slider height from style`` () =
     let components = NoobishComponentsV2(1)
     let ctx =

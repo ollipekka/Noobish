@@ -195,16 +195,28 @@ module NoobishV2 =
         beginButton text localId parentCtx |> endButton
 
     let beginCheckbox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
-        let ctx = createComponent "Checkbox" localId parentCtx
-        let index = int ctx.ComponentId.Index
-        ctx.Components.WantsText.[index] <- true
-        ctx.Components.Text.[index] <- text
-        ctx.Components.WantsOnClick.[index] <- true
-        ctx.Components.WantsToggle.[index] <- true
-        ctx
+        let containerCtx = createComponent "Division" 0us parentCtx
+        let containerIndex = int containerCtx.ComponentId.Index
+        containerCtx.Components.Block.[containerIndex] <- true
+        containerCtx.Components.Layout.[containerIndex] <- LayoutV2.LinearHorizontal
+
+        let boxCtx = createComponent "Checkbox" localId containerCtx
+        let boxIndex = int boxCtx.ComponentId.Index
+        boxCtx.Components.WantsOnClick.[boxIndex] <- true
+        boxCtx.Components.WantsOnPress.[boxIndex] <- true
+        boxCtx.Components.WantsToggle.[boxIndex] <- true
+
+        let labelCtx = createComponent "Label" 0us containerCtx
+        let labelIndex = int labelCtx.ComponentId.Index
+        labelCtx.Components.WantsText.[labelIndex] <- true
+        labelCtx.Components.Text.[labelIndex] <- text
+        labelCtx.Components.TextAlign.[labelIndex] <- NoobishAlignment.Left
+        labelCtx.Components.Fill.[labelIndex] <- {Horizontal = true; Vertical = true}
+
+        boxCtx
 
     let endCheckbox (ctx: ComponentContextV2) =
-        endScope ctx
+        endScope ctx |> endScope
 
     let checkbox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
         beginCheckbox text localId parentCtx |> endCheckbox
@@ -294,3 +306,16 @@ module NoobishV2 =
 
     let endGrid (ctx: ComponentContextV2) =
         endScope ctx
+
+    let beginHorizontalRule (parentCtx: ComponentContextV2) =
+        let ctx = createComponent "HorizontalRule" 0us parentCtx
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Block.[index] <- true
+        ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = false}
+        ctx
+
+    let endHorizontalRule (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let horizontalRule (parentCtx: ComponentContextV2) =
+        beginHorizontalRule parentCtx |> endHorizontalRule

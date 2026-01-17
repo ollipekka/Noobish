@@ -142,14 +142,23 @@ let ``space fills in both directions`` () =
 
 [<Test>]
 let ``checkbox opts into toggle`` () =
-    let components = NoobishComponentsV2(1)
+    let components = NoobishComponentsV2(3)
     let ctx =
         NoobishV2.beginFrame "Page" components
         |> NoobishV2.beginCheckbox "Option" 5us
-    let index = int ctx.ComponentId.Index
-    Assert.AreEqual("Checkbox", components.ThemeId.[index])
-    Assert.IsTrue(components.WantsOnClick.[index])
-    Assert.IsTrue(components.WantsToggle.[index])
+    let boxIndex = int ctx.ComponentId.Index
+    let containerIndex = int components.ParentId.[boxIndex].Index
+    let labelIndex = int components.Children.[containerIndex].[1].Index
+    Assert.AreEqual("Division", components.ThemeId.[containerIndex])
+    Assert.AreEqual(LayoutV2.LinearHorizontal, components.Layout.[containerIndex])
+    Assert.IsTrue(components.Block.[containerIndex])
+    Assert.AreEqual("Checkbox", components.ThemeId.[boxIndex])
+    Assert.IsTrue(components.WantsOnClick.[boxIndex])
+    Assert.IsTrue(components.WantsOnPress.[boxIndex])
+    Assert.IsTrue(components.WantsToggle.[boxIndex])
+    Assert.AreEqual("Label", components.ThemeId.[labelIndex])
+    Assert.IsTrue(components.WantsText.[labelIndex])
+    Assert.AreEqual("Option", components.Text.[labelIndex])
 
 [<Test>]
 let ``slider stores range and value`` () =
@@ -354,3 +363,15 @@ let ``beginGrid sets grid layout and fill`` () =
     Assert.AreEqual(LayoutV2.Grid(2, 3), components.Layout.[index])
     Assert.IsTrue(components.Fill.[index].Horizontal)
     Assert.IsTrue(components.Fill.[index].Vertical)
+
+[<Test>]
+let ``horizontalRule fills horizontally and blocks`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginHorizontalRule
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual("HorizontalRule", components.ThemeId.[index])
+    Assert.IsTrue(components.Block.[index])
+    Assert.IsTrue(components.Fill.[index].Horizontal)
+    Assert.IsFalse(components.Fill.[index].Vertical)
