@@ -67,8 +67,8 @@ module NoobishLayoutV2 =
                 let minSize = components.MinSize.[childIndex]
                 let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let contentHeight = contentSize.Height + padding.Top + padding.Bottom
-                let minHeight = max minSize.Height contentHeight
+                let contentHeight = max minSize.Height contentSize.Height
+                let minHeight = contentHeight + padding.Top + padding.Bottom
                 let outerMin = minHeight + margin.Top + margin.Bottom
                 if components.Fill.[childIndex].Vertical then
                     fillCount <- fillCount + 1
@@ -89,8 +89,8 @@ module NoobishLayoutV2 =
                 let minSize = components.MinSize.[childIndex]
                 let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let contentHeight = contentSize.Height + padding.Top + padding.Bottom
-                let minHeight = max minSize.Height contentHeight
+                let contentHeight = max minSize.Height contentSize.Height
+                let minHeight = contentHeight + padding.Top + padding.Bottom
                 let outerMin = minHeight + margin.Top + margin.Bottom
                 let outerHeight =
                     if components.Fill.[childIndex].Vertical then
@@ -112,8 +112,8 @@ module NoobishLayoutV2 =
                 let minSize = components.MinSize.[childIndex]
                 let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let contentWidth = contentSize.Width + padding.Left + padding.Right
-                let minWidth = max minSize.Width contentWidth
+                let contentWidth = max minSize.Width contentSize.Width
+                let minWidth = contentWidth + padding.Left + padding.Right
                 let outerMin = minWidth + margin.Left + margin.Right
                 if components.Fill.[childIndex].Horizontal then
                     fillCount <- fillCount + 1
@@ -134,8 +134,8 @@ module NoobishLayoutV2 =
                 let minSize = components.MinSize.[childIndex]
                 let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let contentWidth = contentSize.Width + padding.Left + padding.Right
-                let minWidth = max minSize.Width contentWidth
+                let contentWidth = max minSize.Width contentSize.Width
+                let minWidth = contentWidth + padding.Left + padding.Right
                 let outerMin = minWidth + margin.Left + margin.Right
                 let outerWidth =
                     if components.Fill.[childIndex].Horizontal then
@@ -151,17 +151,62 @@ module NoobishLayoutV2 =
             let children = components.Children.[index]
             let cellWidth = if cols > 0 then contentWidth / float32 cols else 0f
             let cellHeight = if rows > 0 then contentHeight / float32 rows else 0f
+            let occupancy = Array.create (max 0 (cols * rows)) false
+
+            let canPlace row col colspan rowspan =
+                if row < 0 || col < 0 || row + rowspan > rows || col + colspan > cols then
+                    false
+                else
+                    let mutable ok = true
+                    let mutable r = row
+                    while ok && r < row + rowspan do
+                        let mutable c = col
+                        while ok && c < col + colspan do
+                            if occupancy.[r * cols + c] then
+                                ok <- false
+                            c <- c + 1
+                        r <- r + 1
+                    ok
+
+            let mark row col colspan rowspan =
+                let mutable r = row
+                while r < row + rowspan do
+                    let mutable c = col
+                    while c < col + colspan do
+                        occupancy.[r * cols + c] <- true
+                        c <- c + 1
+                    r <- r + 1
 
             for i = 0 to children.Count - 1 do
                 let childIndex = int children.[i].Index
-                let row = if cols > 0 then i / cols else 0
-                let col = if cols > 0 then i % cols else 0
                 let span = components.GridSpan.[childIndex]
+                let colspan = max 1 span.Colspan
+                let rowspan = max 1 span.Rowspan
+                let colspan = if cols > 0 then min colspan cols else colspan
+                let rowspan = if rows > 0 then min rowspan rows else rowspan
                 let margin = components.Margin.[childIndex]
+                let mutable placed = false
+                let mutable row = 0
+                let mutable col = 0
+                if cols > 0 && rows > 0 then
+                    let mutable r = 0
+                    while not placed && r < rows do
+                        let mutable c = 0
+                        while not placed && c < cols do
+                            if canPlace r c colspan rowspan then
+                                row <- r
+                                col <- c
+                                mark r c colspan rowspan
+                                placed <- true
+                            c <- c + 1
+                        r <- r + 1
+                if not placed then
+                    row <- if cols > 0 then i / cols else 0
+                    col <- if cols > 0 then i % cols else 0
                 let childStartX = contentX + float32 col * cellWidth
                 let childStartY = contentY + float32 row * cellHeight
-                let childWidth = cellWidth * float32 span.Colspan
-                let childHeight = cellHeight * float32 span.Rowspan
+                let childWidth = cellWidth * float32 colspan
+                let childHeight = cellHeight * float32 rowspan
                 layoutComponent components childStartX childStartY childWidth childHeight childIndex
 
         | LayoutV2.Relative _ ->

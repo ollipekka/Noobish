@@ -175,6 +175,29 @@ let ``layoutFrame applies grid spans`` () =
     Assert.AreEqual(40f, childBounds.Height)
 
 [<Test>]
+let ``layoutFrame places grid children after spans`` () =
+    let components = NoobishComponentsV2(3)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginGrid (2, 2)
+    let rootId = rootCtx.ComponentId
+    components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
+
+    let firstCtx = NoobishV2.beginLabel "Span" rootCtx |> NoobishV2.setColspan 2
+    let secondCtx = NoobishV2.beginLabel "Next" rootCtx
+    let firstId = firstCtx.ComponentId
+    let secondId = secondCtx.ComponentId
+    components.Fill.[int firstId.Index] <- {Horizontal = true; Vertical = true}
+    components.Fill.[int secondId.Index] <- {Horizontal = true; Vertical = true}
+
+    NoobishLayoutV2.layoutFrame components 100f 80f
+
+    let firstBounds = components.Bounds.[int firstId.Index]
+    let secondBounds = components.Bounds.[int secondId.Index]
+    Assert.AreEqual(0f, firstBounds.Y)
+    Assert.AreEqual(40f, secondBounds.Y)
+
+[<Test>]
 let ``layoutFrame reserves padding in horizontal layout`` () =
     let components = NoobishComponentsV2(4)
     let rootCtx =

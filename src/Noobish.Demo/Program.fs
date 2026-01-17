@@ -8,6 +8,7 @@ type ComponentId =
 | Buttons = 3us
 | Checkbox = 4us
 | Slider = 5us
+| Grid = 6us
 
 
 module ComponentId = 
@@ -111,12 +112,51 @@ module SliderDemo =
             |> NoobishV2.setMinHeight 40f
             |> NoobishV2.endSlider
 
+module GridDemo =
+    type Model() =
+        member val Header = "Grid Layout" with get, set
+
+    let buildUi (model: Model) (parentCtx: ComponentContextV2) =
+        parentCtx
+        |> NoobishV2.beginGrid (3, 3)
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setRowspan 2
+                |> NoobishV2.setColspan 2
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginHeader model.Header
+                    |> NoobishV2.endHeader
+                |> NoobishV2.beginParagraph "Spans 2 columns and 2 rows."
+                    |> NoobishV2.endParagraph
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginLabel "Top Right"
+                    |> NoobishV2.endLabel
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginLabel "Bottom Left"
+                    |> NoobishV2.endLabel
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setColspan 3
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginParagraph "Spans three columns."
+                    |> NoobishV2.endParagraph
+                |> NoobishV2.endPanel
+            |> NoobishV2.endGrid
+
 [<RequireQualifiedAccess>]
 type DemoPage =
 | Text
 | Buttons
 | Checkbox
 | Slider
+| Grid
 
 [<RequireQualifiedAccess>]
 type DemoSubModel =
@@ -124,12 +164,14 @@ type DemoSubModel =
 | Buttons of ButtonsDemo.Model
 | Checkbox of CheckboxDemo.Model
 | Slider of SliderDemo.Model
+| Grid of GridDemo.Model
 
 type DemoModel () =
     let text = TextDemo.Model()
     let buttons = ButtonsDemo.Model()
     let checkbox = CheckboxDemo.Model()
     let slider = SliderDemo.Model()
+    let grid = GridDemo.Model()
     let mutable viewState = DemoPage.Text
     let mutable view = DemoSubModel.Text text
 
@@ -145,6 +187,7 @@ type DemoModel () =
     member _.Buttons = buttons
     member _.Checkbox = checkbox
     member _.Slider = slider
+    member _.Grid = grid
 
     member this.SetViewState(value: DemoPage) =
         viewState <- value
@@ -154,6 +197,7 @@ type DemoModel () =
             | DemoPage.Buttons -> DemoSubModel.Buttons buttons
             | DemoPage.Checkbox -> DemoSubModel.Checkbox checkbox
             | DemoPage.Slider -> DemoSubModel.Slider slider
+            | DemoPage.Grid -> DemoSubModel.Grid grid
 
 let private buildUi (components: NoobishComponentsV2) (width: float32) (height: float32) (model: DemoModel)=
 
@@ -189,6 +233,11 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
                     |> NoobishV2.setWantsToggle true
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Slider)
                     |> NoobishV2.endButton
+                |> NoobishV2.beginButton "Grid" (ComponentId.toLocalId ComponentId.Grid)
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.setWantsToggle true
+                    |> NoobishV2.setToggled (model.ViewState = DemoPage.Grid)
+                    |> NoobishV2.endButton
                 |> NoobishV2.endPanel
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
@@ -206,6 +255,8 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
             CheckboxDemo.buildUi subModel rootCtx
         | DemoSubModel.Slider subModel ->
             SliderDemo.buildUi subModel rootCtx
+        | DemoSubModel.Grid subModel ->
+            GridDemo.buildUi subModel rootCtx
 
     previewCtx
         |> NoobishV2.endPanel
@@ -262,6 +313,8 @@ type SimpleDemoGame() as game =
             demoModel.SetViewState DemoPage.Checkbox
         | ComponentId.Slider ->
             demoModel.SetViewState DemoPage.Slider
+        | ComponentId.Grid ->
+            demoModel.SetViewState DemoPage.Grid
         | _ -> ()
 
         match demoModel.ViewState with
@@ -275,6 +328,7 @@ type SimpleDemoGame() as game =
             match inputBuffer.TryGetSliderChanged SliderDemo.SliderId with
             | ValueSome value -> demoModel.Slider.Value <- value
             | ValueNone -> ()
+        | DemoPage.Grid -> ()
         | DemoPage.Text -> ()
 
         base.Update(gameTime)
