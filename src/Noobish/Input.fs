@@ -151,8 +151,7 @@ type Noobish with
                     let nextScroll = this.Components.ScrollY.[i] + scaledScroll
                     let minScroll = contentHeight - contentSize.Height
 
-
-                    this.Components.ScrollY.[i] <- clamp nextScroll minScroll 0.0f
+                    this.Components.ScrollY.[i] <-  Math.Clamp(nextScroll, minScroll,0.0f)
                     this.Components.LastScrollTime.[i] <- time
                     handled <- true
             else

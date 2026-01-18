@@ -1,6 +1,8 @@
 [<AutoOpen>]
 module Noobish.Slider
 
+open System
+
 open Noobish
 
 open Microsoft.Xna.Framework
@@ -59,7 +61,7 @@ type Noobish with
             let relative = (position.X - bounds.X) / (bounds.Width)
             let newValue = rangeStart + (relative * (rangeEnd - rangeStart))
             let steppedNewValue = truncate(newValue / step) * step
-            Noobish.Internal.clamp steppedNewValue rangeStart rangeEnd
+            Math.Clamp(steppedNewValue, rangeStart, rangeEnd)
 
         
 

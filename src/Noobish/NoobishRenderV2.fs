@@ -48,7 +48,7 @@ module NoobishRenderV2 =
 
     let computeProgressBounds (bounds: NoobishRectangle) (padding: NoobishPadding) (progress: float32) =
         let content = computeTextBounds bounds padding
-        let clamped = Noobish.Internal.clamp progress 0f 1f
+        let clamped = Math.Clamp(progress, 0f, 1f)
         {
             X = content.X
             Y = content.Y
@@ -73,7 +73,7 @@ module NoobishRenderV2 =
             if span = 0f then
                 0f
             else
-                Noobish.Internal.clamp ((value - rangeStart) / span) 0f 1f
+                Math.Clamp ((value - rangeStart) / span, 0f, 1f)
         let usableWidth = max0 (availableWidth - clampedPinWidth)
         {
             X = bounds.X + padding.Left + t * usableWidth
@@ -244,7 +244,7 @@ type NoobishMonoGameRendererV2() =
                     let size = Vector2(segmentBounds.Width, segmentBounds.Height)
                     DrawUI.drawDrawable textureAtlas spriteBatch position size layer dashColor dashDrawables
 
-                    let segmentProgress = Noobish.Internal.clamp (progress * float32 segments - float32 s) 0f 1f
+                    let segmentProgress = Math.Clamp (progress * float32 segments - float32 s,  0f, 1f)
                     if segmentProgress > 0f then
                         let fillBounds = NoobishRenderV2.computeTextBounds segmentBounds dashPadding
                         let fillWidth = fillBounds.Width * segmentProgress

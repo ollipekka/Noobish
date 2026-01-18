@@ -297,11 +297,11 @@ module NoobishInputV2 =
         if scroll.Vertical && contentHeight > viewportHeight then
             let minScroll = viewportHeight - contentHeight
             let nextScroll = components.ScrollY.[index] + delta
-            components.ScrollY.[index] <- clamp nextScroll minScroll 0f
+            components.ScrollY.[index] <- Math.Clamp(nextScroll, minScroll,0f)
         if scroll.Horizontal && not scroll.Vertical && contentWidth > viewportWidth then
             let minScroll = viewportWidth - contentWidth
             let nextScroll = components.ScrollX.[index] + delta
-            components.ScrollX.[index] <- clamp nextScroll minScroll 0f
+            components.ScrollX.[index] <- Math.Clamp(nextScroll, minScroll, 0f)
 
     let internal clippedBounds (components: NoobishComponentsV2) (index: int) =
         let mutable bounds = boundsWithAncestorScroll components index
@@ -338,7 +338,7 @@ module NoobishInputV2 =
                 MathF.Floor(unclamped / step) * step
             else
                 unclamped
-        Noobish.Internal.clamp stepped rangeStart rangeEnd
+        Math.Clamp(stepped, rangeStart, rangeEnd)
 
     let internal updateHover (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         let hoverHit =
