@@ -146,6 +146,49 @@ let ``measureFrameWith wraps text using parent bounds when available`` () =
     Assert.Greater(components.ContentSize.[childIndex].Height, 10f)
 
 [<Test>]
+let ``computeCheckboxSquareSize prefers min sizes over padding`` () =
+    let padding = {NoobishPadding.Top = 1f; Right = 2f; Bottom = 3f; Left = 4f}
+    let both = NoobishMeasureV2.computeCheckboxSquareSize {Width = 5f; Height = 7f} padding
+    let onlyHeight = NoobishMeasureV2.computeCheckboxSquareSize {Width = 0f; Height = 6f} padding
+    let onlyWidth = NoobishMeasureV2.computeCheckboxSquareSize {Width = 4f; Height = 0f} padding
+    let paddingOnly = NoobishMeasureV2.computeCheckboxSquareSize {Width = 0f; Height = 0f} padding
+    Assert.AreEqual(7f, both)
+    Assert.AreEqual(6f, onlyHeight)
+    Assert.AreEqual(4f, onlyWidth)
+    Assert.AreEqual(6f, paddingOnly)
+
+[<Test>]
+let ``resolveWrapWidth uses priority order`` () =
+    let padding = {NoobishPadding.Top = 0f; Right = 2f; Bottom = 0f; Left = 3f}
+    let minWidth = NoobishMeasureV2.resolveWrapWidth 10f 20f 30f padding
+    let parentWidth = NoobishMeasureV2.resolveWrapWidth 0f 20f 30f padding
+    let boundsWidth = NoobishMeasureV2.resolveWrapWidth 0f 0f 30f padding
+    let none = NoobishMeasureV2.resolveWrapWidth 0f 0f 0f padding
+    Assert.AreEqual(10f, minWidth)
+    Assert.AreEqual(20f, parentWidth)
+    Assert.AreEqual(25f, boundsWidth)
+    Assert.AreEqual(0f, none)
+
+[<Test>]
+let ``computeContainerContentSize handles layout variants`` () =
+    let totalWidth = 10f
+    let totalHeight = 12f
+    let maxWidth = 7f
+    let maxHeight = 9f
+    let linearH = NoobishMeasureV2.computeContainerContentSize LayoutV2.LinearHorizontal totalWidth totalHeight maxWidth maxHeight
+    let linearV = NoobishMeasureV2.computeContainerContentSize LayoutV2.LinearVertical totalWidth totalHeight maxWidth maxHeight
+    let grid = NoobishMeasureV2.computeContainerContentSize (LayoutV2.Grid(2, 2)) totalWidth totalHeight maxWidth maxHeight
+    let none = NoobishMeasureV2.computeContainerContentSize LayoutV2.None totalWidth totalHeight maxWidth maxHeight
+    Assert.AreEqual(totalWidth, linearH.Width)
+    Assert.AreEqual(maxHeight, linearH.Height)
+    Assert.AreEqual(maxWidth, linearV.Width)
+    Assert.AreEqual(totalHeight, linearV.Height)
+    Assert.AreEqual(0f, grid.Width)
+    Assert.AreEqual(0f, grid.Height)
+    Assert.AreEqual(0f, none.Width)
+    Assert.AreEqual(0f, none.Height)
+
+[<Test>]
 let ``measureFramePostLayoutWith wraps text using component bounds`` () =
     let components = NoobishComponentsV2(1)
     let ctx =
@@ -161,6 +204,21 @@ let ``measureFramePostLayoutWith wraps text using component bounds`` () =
 
     Assert.AreEqual(4f, components.ContentSize.[index].Width)
     Assert.Greater(components.ContentSize.[index].Height, 1f)
+
+[<Test>]
+let ``measureFramePostLayout ignores non-wrapped text`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginLabel "Label"
+    let index = int ctx.ComponentId.Index
+    components.ContentSize.[index] <- {Width = 10f; Height = 5f}
+
+    let styleSheet = createSpacingStyleSheet NoobishPadding.empty NoobishMargin.empty
+    NoobishMeasureV2.measureFramePostLayout Unchecked.defaultof<_> styleSheet components
+
+    Assert.AreEqual(10f, components.ContentSize.[index].Width)
+    Assert.AreEqual(5f, components.ContentSize.[index].Height)
 
 [<Test>]
 let ``measureFrameWith sizes horizontal containers from children`` () =

@@ -135,5 +135,8 @@ type NoobishKeyboardShortcut =
 module Internal =
 
     let pi = float32 System.Math.PI
+
+    let inline max0 (value: float32) = if value < 0f then 0f else value
+
     let inline toDegrees angle = (float32 angle) * 180.0f / pi
     let inline toRadians angle = (float32 angle) * pi / 180.0f

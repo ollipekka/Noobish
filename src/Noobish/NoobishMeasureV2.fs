@@ -5,24 +5,53 @@ open Microsoft.Xna.Framework.Content
 open Noobish.Styles
 
 module NoobishMeasureV2 =
-    let private max0 value =
-        if value < 0f then 0f else value
+    let internal computeCheckboxSquareSize (minSize: NoobishSize) (padding: NoobishPadding) =
+        let paddingSize = max (padding.Left + padding.Right) (padding.Top + padding.Bottom)
+        if minSize.Width > 0f && minSize.Height > 0f then
+            max minSize.Width minSize.Height
+        elif minSize.Height > 0f then
+            minSize.Height
+        elif minSize.Width > 0f then
+            minSize.Width
+        else
+            paddingSize
+
+    let internal computeContainerContentSize (layout: LayoutV2) (totalWidth: float32) (totalHeight: float32) (maxWidth: float32) (maxHeight: float32) =
+        match layout with
+        | LayoutV2.LinearHorizontal -> {Width = totalWidth; Height = maxHeight}
+        | LayoutV2.LinearVertical -> {Width = maxWidth; Height = totalHeight}
+        | LayoutV2.Stack
+        | LayoutV2.Relative _ -> {Width = maxWidth; Height = maxHeight}
+        | LayoutV2.Grid _ // Grid sizing is handled in layout; children are expected to fill cells.
+        | LayoutV2.None -> {Width = 0f; Height = 0f}
+
+    let internal resolveWrapWidth (minWidth: float32) (parentWidth: float32) (boundsWidth: float32) (padding: NoobishPadding) =
+        if minWidth > 0f then
+            minWidth
+        elif parentWidth > 0f then
+            parentWidth
+        elif boundsWidth > 0f then
+            Internal.max0 (boundsWidth - padding.Left - padding.Right)
+        else
+            0f
+
+    let internal computeParentWrapWidth (components: NoobishComponentsV2) (index: int) =
+        let parentId = components.ParentId.[index]
+        if parentId <> UIComponentIdV2.empty then
+            let parentIndex = int parentId.Index
+            let parentBounds = components.Bounds.[parentIndex]
+            let parentPadding = components.Padding.[parentIndex]
+            let margin = components.Margin.[index]
+            Internal.max0 (parentBounds.Width - parentPadding.Left - parentPadding.Right - margin.Left - margin.Right)
+        else
+            0f
 
     let private applyCheckboxMinSize (components: NoobishComponentsV2) =
         for i = 0 to components.Count - 1 do
             if components.ThemeId.[i] = "Checkbox" && not components.WantsText.[i] then
                 let minSize = components.MinSize.[i]
                 let padding = components.Padding.[i]
-                let paddingSize = max (padding.Left + padding.Right) (padding.Top + padding.Bottom)
-                let squareSize =
-                    if minSize.Width > 0f && minSize.Height > 0f then
-                        max minSize.Width minSize.Height
-                    elif minSize.Height > 0f then
-                        minSize.Height
-                    elif minSize.Width > 0f then
-                        minSize.Width
-                    else
-                        paddingSize
+                let squareSize = computeCheckboxSquareSize minSize padding
                 if squareSize > 0f then
                     components.MinSize.[i] <- {Width = squareSize; Height = squareSize}
 
@@ -46,14 +75,7 @@ module NoobishMeasureV2 =
                     totalHeight <- totalHeight + childHeight
                     maxWidth <- max maxWidth childWidth
                     maxHeight <- max maxHeight childHeight
-                let computed =
-                    match components.Layout.[i] with
-                    | LayoutV2.LinearHorizontal -> {Width = totalWidth; Height = maxHeight}
-                    | LayoutV2.LinearVertical -> {Width = maxWidth; Height = totalHeight}
-                    | LayoutV2.Stack
-                    | LayoutV2.Relative _ -> {Width = maxWidth; Height = maxHeight}
-                    | LayoutV2.Grid _ -> {Width = 0f; Height = 0f} // Grid sizing is handled in layout; children are expected to fill cells.
-                    | LayoutV2.None -> {Width = 0f; Height = 0f}
+                let computed = computeContainerContentSize components.Layout.[i] totalWidth totalHeight maxWidth maxHeight
                 if computed.Width > 0f || computed.Height > 0f then
                     let existing = components.ContentSize.[i]
                     components.ContentSize.[i] <- {
@@ -75,26 +97,9 @@ module NoobishMeasureV2 =
                 let struct(textWidth, textHeight) =
                     if wrap then
                         let padding = components.Padding.[i]
-                        let margin = components.Margin.[i]
                         let boundsWidth = components.Bounds.[i].Width
-                        let parentId = components.ParentId.[i]
-                        let parentWidth =
-                            if parentId <> UIComponentIdV2.empty then
-                                let parentIndex = int parentId.Index
-                                let parentBounds = components.Bounds.[parentIndex]
-                                let parentPadding = components.Padding.[parentIndex]
-                                max0 (parentBounds.Width - parentPadding.Left - parentPadding.Right - margin.Left - margin.Right)
-                            else
-                                0f
-                        let wrapWidth =
-                            if minSize.Width > 0f then
-                                minSize.Width
-                            elif parentWidth > 0f then
-                                parentWidth
-                            elif boundsWidth > 0f then
-                                max0 (boundsWidth - padding.Left - padding.Right)
-                            else
-                                0f
+                        let parentWidth = computeParentWrapWidth components i
+                        let wrapWidth = resolveWrapWidth minSize.Width parentWidth boundsWidth padding
                         if wrapWidth > 0f then
                             NoobishFont.measureMultiLine font fontSize wrapWidth text
                         else
@@ -118,7 +123,7 @@ module NoobishMeasureV2 =
                 let fontSize = getFontSize themeId
                 let bounds = components.Bounds.[i]
                 let padding = components.Padding.[i]
-                let wrapWidth = max0 (bounds.Width - padding.Left - padding.Right)
+                let wrapWidth = Internal.max0 (bounds.Width - padding.Left - padding.Right)
                 let struct(textWidth, textHeight) =
                     if wrapWidth > 0f then
                         NoobishFont.measureMultiLine font fontSize wrapWidth text

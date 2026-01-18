@@ -3,9 +3,6 @@ namespace Noobish
 open System.Diagnostics
 
 module NoobishLayoutV2 =
-    let private max0 value =
-        if value < 0f then 0f else value
-
     let private computeBounds
         (components: INoobishComponents2)
         (startX: float32)
@@ -22,8 +19,8 @@ module NoobishLayoutV2 =
 
         let minWidth = minSize.Width + padding.Left + padding.Right
         let minHeight = minSize.Height + padding.Top + padding.Bottom
-        let availableContentWidth = max0 (availableWidth - margin.Left - margin.Right - padding.Left - padding.Right)
-        let availableContentHeight = max0 (availableHeight - margin.Top - margin.Bottom - padding.Top - padding.Bottom)
+        let availableContentWidth = Internal.max0 (availableWidth - margin.Left - margin.Right - padding.Left - padding.Right)
+        let availableContentHeight = Internal.max0 (availableHeight - margin.Top - margin.Bottom - padding.Top - padding.Bottom)
 
         let widthContent =
             if fill.Horizontal || (scroll.Horizontal && contentSize.Width > availableContentWidth) then
@@ -44,8 +41,8 @@ module NoobishLayoutV2 =
         let bounds: NoobishRectangle = {
             X = startX + margin.Left
             Y = startY + margin.Top
-            Width = max0 width
-            Height = max0 height
+            Width = Internal.max0 width
+            Height = Internal.max0 height
         }
 
         components.Bounds.[index] <- bounds
@@ -62,8 +59,8 @@ module NoobishLayoutV2 =
         let padding = components.Padding.[index]
         let contentX = bounds.X + padding.Left
         let contentY = bounds.Y + padding.Top
-        let contentWidth = max0 (bounds.Width - padding.Left - padding.Right)
-        let contentHeight = max0 (bounds.Height - padding.Top - padding.Bottom)
+        let contentWidth = Internal.max0 (bounds.Width - padding.Left - padding.Right)
+        let contentHeight = Internal.max0 (bounds.Height - padding.Top - padding.Bottom)
 
         match components.Layout.[index] with
         | LayoutV2.LinearVertical ->
@@ -88,7 +85,7 @@ module NoobishLayoutV2 =
                 else
                     fixedHeight <- fixedHeight + outerContent
 
-            let remaining = max0 (contentHeight - fixedHeight)
+            let remaining = Internal.max0 (contentHeight - fixedHeight)
             let fillShare =
                 if fillCount > 0 then
                     remaining / float32 fillCount
@@ -141,7 +138,7 @@ module NoobishLayoutV2 =
                 else
                     fixedWidth <- fixedWidth + outerContent
 
-            let remaining = max0 (contentWidth - fixedWidth)
+            let remaining = Internal.max0 (contentWidth - fixedWidth)
             let fillShare =
                 if fillCount > 0 then
                     remaining / float32 fillCount

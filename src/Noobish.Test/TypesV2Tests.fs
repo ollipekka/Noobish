@@ -32,6 +32,12 @@ let ``NamespaceHash fromPage folds fnv1a32`` () =
     Assert.LessOrEqual(ns, UInt16.MaxValue)
 
 [<Test>]
+let ``Internal max0 clamps negatives`` () =
+    Assert.AreEqual(0f, Internal.max0 -1f)
+    Assert.AreEqual(0f, Internal.max0 0f)
+    Assert.AreEqual(2.5f, Internal.max0 2.5f)
+
+[<Test>]
 let ``NoobishRectangle Contains checks bounds`` () =
     let bounds: NoobishRectangle = { X = 1f; Y = 2f; Width = 3f; Height = 4f }
     Assert.IsTrue(bounds.Contains 1f 2f)

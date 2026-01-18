@@ -211,9 +211,6 @@ type InputBufferV2(capacity: int) =
             this.ClearDown()
 
 module NoobishInputV2 =
-    let inline max0 value =
-        if value < 0f then 0f else value
-
 
     let internal boundsWithAncestorScroll (components: NoobishComponentsV2) (index: int) =
         let mutable bounds = components.Bounds.[index]
@@ -236,8 +233,8 @@ module NoobishInputV2 =
         {
             X = bounds.X + padding.Left
             Y = bounds.Y + padding.Top
-            Width = max0 (bounds.Width - padding.Left - padding.Right)
-            Height = max0 (bounds.Height - padding.Top - padding.Bottom)
+            Width = Internal.max0 (bounds.Width - padding.Left - padding.Right)
+            Height = Internal.max0 (bounds.Height - padding.Top - padding.Bottom)
         }
 
     let internal tryFindScrollableAncestor (components: NoobishComponentsV2) (index: int) =
@@ -258,8 +255,8 @@ module NoobishInputV2 =
     let internal getViewportSize (components: NoobishComponentsV2) (index: int) =
         let bounds = components.Bounds.[index]
         let padding = components.Padding.[index]
-        let width = max0 (bounds.Width - padding.Left - padding.Right)
-        let height = max0 (bounds.Height - padding.Top - padding.Bottom)
+        let width = Internal.max0 (bounds.Width - padding.Left - padding.Right)
+        let height = Internal.max0 (bounds.Height - padding.Top - padding.Bottom)
         struct(width, height)
 
     let internal getContentExtent (components: NoobishComponentsV2) (index: int) =
@@ -280,7 +277,7 @@ module NoobishInputV2 =
                     maxRight <- right
                 if bottom > maxBottom then
                     maxBottom <- bottom
-            struct(max0 (maxRight - contentX), max0 (maxBottom - contentY))
+            struct(Internal.max0 (maxRight - contentX), Internal.max0 (maxBottom - contentY))
         else
             let contentSize = components.ContentSize.[index]
             struct(contentSize.Width, contentSize.Height)

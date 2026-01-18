@@ -10,9 +10,6 @@ open Noobish.Styles
 open Noobish.TextureAtlas
 
 module NoobishRenderV2 =
-    let max0 value =
-        if value < 0f then 0f else value
-
     let resolveState (enabled: bool) (toggled: bool) (hovered: bool) =
         if not enabled then "disabled"
         elif toggled && hovered then "toggledHovered"
@@ -24,8 +21,8 @@ module NoobishRenderV2 =
         {
             X = bounds.X + padding.Left
             Y = bounds.Y + padding.Top
-            Width = max0 (bounds.Width - padding.Left - padding.Right)
-            Height = max0 (bounds.Height - padding.Top - padding.Bottom)
+            Width = Internal.max0 (bounds.Width - padding.Left - padding.Right)
+            Height = Internal.max0 (bounds.Height - padding.Top - padding.Bottom)
         }
 
     let offsetBounds (bounds: NoobishRectangle) (offsetX: float32) (offsetY: float32) =
@@ -36,15 +33,15 @@ module NoobishRenderV2 =
         let top = MathF.Floor bounds.Y
         let right = MathF.Ceiling (bounds.X + bounds.Width)
         let bottom = MathF.Ceiling (bounds.Y + bounds.Height)
-        let width = max0 (right - left)
-        let height = max0 (bottom - top)
+        let width = Internal.max0 (right - left)
+        let height = Internal.max0 (bottom - top)
         Rectangle(int left, int top, int width, int height)
 
     let computeProgressSegmentWidth (contentWidth: float32) (segments: int) (gap: float32) =
         if segments <= 0 then
             0f
         else
-            max0 ((contentWidth - gap * float32 (segments - 1)) / float32 segments)
+            Internal.max0 ((contentWidth - gap * float32 (segments - 1)) / float32 segments)
 
     let computeProgressBounds (bounds: NoobishRectangle) (padding: NoobishPadding) (progress: float32) =
         let content = computeTextBounds bounds padding
@@ -64,8 +61,8 @@ module NoobishRenderV2 =
         (value: float32)
         (pinWidth: float32)
         (pinHeight: float32) =
-        let availableWidth = max0 (bounds.Width - padding.Left - padding.Right)
-        let availableHeight = max0 (bounds.Height - padding.Top - padding.Bottom)
+        let availableWidth = Internal.max0 (bounds.Width - padding.Left - padding.Right)
+        let availableHeight = Internal.max0 (bounds.Height - padding.Top - padding.Bottom)
         let clampedPinWidth = min pinWidth availableWidth
         let clampedPinHeight = min pinHeight availableHeight
         let span = rangeEnd - rangeStart
@@ -74,7 +71,7 @@ module NoobishRenderV2 =
                 0f
             else
                 Math.Clamp ((value - rangeStart) / span, 0f, 1f)
-        let usableWidth = max0 (availableWidth - clampedPinWidth)
+        let usableWidth = Internal.max0 (availableWidth - clampedPinWidth)
         {
             X = bounds.X + padding.Left + t * usableWidth
             Y = bounds.Y + padding.Top + (availableHeight - clampedPinHeight) * 0.5f
@@ -86,8 +83,8 @@ module NoobishRenderV2 =
         (bounds: NoobishRectangle)
         (padding: NoobishPadding)
         (trackHeight: float32) =
-        let availableWidth = max0 (bounds.Width - padding.Left - padding.Right)
-        let availableHeight = max0 (bounds.Height - padding.Top - padding.Bottom)
+        let availableWidth = Internal.max0 (bounds.Width - padding.Left - padding.Right)
+        let availableHeight = Internal.max0 (bounds.Height - padding.Top - padding.Bottom)
         let clampedHeight =
             if trackHeight > 0f then
                 min trackHeight availableHeight
@@ -160,7 +157,7 @@ type NoobishMonoGameRendererV2() =
             let pinBounds = NoobishRenderV2.computeSliderPinBounds bounds padding rangeStart rangeEnd value pinWidth pinHeight
             if pinBounds.Width > 0f && pinBounds.Height > 0f then
                 let layer = 1f - float32 components.Layer.[index] / 255f
-                let pinLayer = NoobishRenderV2.max0 (layer - 0.0001f)
+                let pinLayer = Internal.max0 (layer - 0.0001f)
                 let color = styleSheet.GetColor pinThemeId state
                 let drawables = styleSheet.GetDrawables pinThemeId state
                 let position = Vector2(pinBounds.X, pinBounds.Y)
