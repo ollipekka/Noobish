@@ -5,6 +5,7 @@ open Noobish
 
 type ComponentId = 
 | Text = 1us
+| TextInput = 2us
 | Buttons = 3us
 | Checkbox = 4us
 | Slider = 5us
@@ -24,13 +25,9 @@ module ComponentId =
         LanguagePrimitives.EnumOfValue v
 
 module TextDemo =
-    [<Literal>]
-    let TextboxId = 401us
-
     type Model() =
         member val LabelText = "Sample label" with get, set
         member val ParagraphText = "Sample paragraph text to show wrapping and layout." with get, set
-        member val TextboxText = "Type here..." with get, set
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
@@ -79,13 +76,38 @@ module TextDemo =
                     |> NoobishV2.setMinHeight 64f
                     |> NoobishV2.endParagraph
                 |> NoobishV2.endPanel
+            |> NoobishV2.endGrid
+
+module TextInputDemo =
+    [<Literal>]
+    let TopTextboxId = 401us
+
+    [<Literal>]
+    let BottomTextboxId = 402us
+
+    type Model() =
+        member val TopText = "Type here..." with get, set
+        member val BottomText = "Type here too..." with get, set
+
+    let buildUi (model: Model) (parentCtx: ComponentContextV2) =
+        parentCtx
+        |> NoobishV2.beginGrid (1, 2)
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
-                |> NoobishV2.setColspan 2
                 |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
-                |> NoobishV2.beginLabel "TextBox"
+                |> NoobishV2.beginLabel "Textbox A"
                     |> NoobishV2.endLabel
-                |> NoobishV2.beginTextbox model.TextboxText TextboxId
+                |> NoobishV2.beginTextbox model.TopText TopTextboxId
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.setMinHeight 40f
+                    |> NoobishV2.endTextbox
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginLabel "Textbox B"
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginTextbox model.BottomText BottomTextboxId
                     |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setMinHeight 40f
                     |> NoobishV2.endTextbox
@@ -222,6 +244,7 @@ module ScrollDemo =
 [<RequireQualifiedAccess>]
 type DemoPage =
 | Text
+| TextInput
 | Buttons
 | Checkbox
 | Slider
@@ -231,6 +254,7 @@ type DemoPage =
 [<RequireQualifiedAccess>]
 type DemoSubModel =
 | Text of TextDemo.Model
+| TextInput of TextInputDemo.Model
 | Buttons of ButtonsDemo.Model
 | Checkbox of CheckboxDemo.Model
 | Slider of SliderDemo.Model
@@ -239,6 +263,7 @@ type DemoSubModel =
 
 type DemoModel () =
     let text = TextDemo.Model()
+    let textInput = TextInputDemo.Model()
     let buttons = ButtonsDemo.Model()
     let checkbox = CheckboxDemo.Model()
     let slider = SliderDemo.Model()
@@ -256,6 +281,7 @@ type DemoModel () =
         and private set value = view <- value
 
     member _.Text = text
+    member _.TextInput = textInput
     member _.Buttons = buttons
     member _.Checkbox = checkbox
     member _.Slider = slider
@@ -267,6 +293,7 @@ type DemoModel () =
         view <-
             match value with
             | DemoPage.Text -> DemoSubModel.Text text
+            | DemoPage.TextInput -> DemoSubModel.TextInput textInput
             | DemoPage.Buttons -> DemoSubModel.Buttons buttons
             | DemoPage.Checkbox -> DemoSubModel.Checkbox checkbox
             | DemoPage.Slider -> DemoSubModel.Slider slider
@@ -291,6 +318,11 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
                     |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setWantsToggle true 
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Text)
+                    |> NoobishV2.endButton
+                |> NoobishV2.beginButton "Text Input" (ComponentId.toLocalId ComponentId.TextInput)
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.setWantsToggle true 
+                    |> NoobishV2.setToggled (model.ViewState = DemoPage.TextInput)
                     |> NoobishV2.endButton
                 |> NoobishV2.beginButton "Buttons" (ComponentId.toLocalId ComponentId.Buttons)
                     |> NoobishV2.setFillHorizontal
@@ -328,6 +360,8 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
         match model.View with
         | DemoSubModel.Text subModel ->
             TextDemo.buildUi subModel rootCtx
+        | DemoSubModel.TextInput subModel ->
+            TextInputDemo.buildUi subModel rootCtx
         | DemoSubModel.Buttons subModel ->
             ButtonsDemo.buildUi subModel rootCtx
         | DemoSubModel.Checkbox subModel ->
@@ -393,6 +427,8 @@ type SimpleDemoGame() as game =
         match lastClicked with 
         | ComponentId.Text -> 
             demoModel.SetViewState DemoPage.Text
+        | ComponentId.TextInput ->
+            demoModel.SetViewState DemoPage.TextInput
         | ComponentId.Buttons -> 
             demoModel.SetViewState DemoPage.Buttons
         | ComponentId.Checkbox -> 
@@ -418,9 +454,13 @@ type SimpleDemoGame() as game =
             | ValueNone -> ()
         | DemoPage.Grid -> ()
         | DemoPage.Scroll -> ()
-        | DemoPage.Text ->
-            match inputBuffer.TryGetTextChanged TextDemo.TextboxId with
-            | ValueSome text -> demoModel.Text.TextboxText <- text
+        | DemoPage.Text -> ()
+        | DemoPage.TextInput ->
+            match inputBuffer.TryGetTextChanged TextInputDemo.TopTextboxId with
+            | ValueSome text -> demoModel.TextInput.TopText <- text
+            | ValueNone -> ()
+            match inputBuffer.TryGetTextChanged TextInputDemo.BottomTextboxId with
+            | ValueSome text -> demoModel.TextInput.BottomText <- text
             | ValueNone -> ()
 
         base.Update(gameTime)

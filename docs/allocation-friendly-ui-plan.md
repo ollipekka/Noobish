@@ -359,15 +359,13 @@ V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (fo
 - How should frame resets handle stale component state (clear all vs. clear only active indices)?
 
 ## ToDo (By Component + Dependencies)
+- Gap analysis check: review the V1/V2 parity snapshot after each component milestone and update gaps.
 - Theme parity: respect V1 theme/style lookups in V2 (colors/fonts/nine-patch/spacing); plan: add a per-frame resolved-style cache keyed by `UIComponentId`+state, reuse precomputed atlas/font indices, and route all render/layout defaults through cached lookups to avoid allocations.
 - Input Core: remaining key handling (selection/edit shortcuts), drag interactions; depends on input buffer + input state APIs.
 - Layout Core: grid span/alignment, margin/padding overrides, percent sizing, style-driven min size defaults.
 - Rendering Core: scissor/clip parity, debug overlays, pressed color blend; depends on layout bounds + style states.
 - Text: wrap + align overrides from styles, text bounds selection; depends on layout + style defaults.
 - Image Component: basic/atlas/nine-patch rendering; depends on rendering core + style lookups.
-- Checkbox: toggle visuals + input behavior; depends on input core + rendering core.
 - Slider: drag behavior + fill rendering; depends on input core + rendering core.
 - List/Combobox: selection + input behavior; depends on input core + rendering core + scroll container.
-- ProgressBar: fill rendering; depends on rendering core.
-- HorizontalRule: simple drawable; depends on rendering core.
 - State carry: minimal per-frame carry for hover/press/scroll; depends on input core.
