@@ -238,39 +238,6 @@ module NoobishInputV2 =
     let internal hitTest (components: NoobishComponentsV2) (x: float32) (y: float32) (predicate: int -> bool) =
         hitTestWith components.Count (fun i -> clippedBounds components i) x y predicate
 
-    let internal hitTestVisibleEnabled (components: NoobishComponentsV2) (x: float32) (y: float32) =
-        let mutable hit = -1
-        let mutable i = components.Count - 1
-        while i >= 0 && hit < 0 do
-            if components.Visible.[i] && components.Enabled.[i] then
-                let bounds = clippedBounds components i
-                if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
-                    hit <- i
-            i <- i - 1
-        hit
-
-    let internal hitTestPressable (components: NoobishComponentsV2) (x: float32) (y: float32) =
-        let mutable hit = -1
-        let mutable i = components.Count - 1
-        while i >= 0 && hit < 0 do
-            if components.Visible.[i] && components.Enabled.[i] && components.WantsOnPress.[i] then
-                let bounds = clippedBounds components i
-                if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
-                    hit <- i
-            i <- i - 1
-        hit
-
-    let internal hitTestClickable (components: NoobishComponentsV2) (x: float32) (y: float32) =
-        let mutable hit = -1
-        let mutable i = components.Count - 1
-        while i >= 0 && hit < 0 do
-            if components.Visible.[i] && components.Enabled.[i] && components.WantsOnClick.[i] then
-                let bounds = clippedBounds components i
-                if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
-                    hit <- i
-            i <- i - 1
-        hit
-
     let internal calculateSliderValue (bounds: NoobishRectangle) (rangeStart: float32) (rangeEnd: float32) (step: float32) (x: float32) =
         let width = bounds.Width
         let relative =
@@ -285,7 +252,9 @@ module NoobishInputV2 =
         Noobish.Internal.clamp stepped rangeStart rangeEnd
 
     let internal updateHover (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
-        let hoverHit = hitTestVisibleEnabled components x y
+        let hoverHit =
+            hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+                components.Visible.[i] && components.Enabled.[i])
         buffer.UpdateHover(components, hoverHit)
 
     let internal updateSliderFromPointer (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) =
@@ -302,13 +271,17 @@ module NoobishInputV2 =
 
     let internal updatePrimaryDown (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         if buffer.DownIndex < 0 then
-            let pressHit = hitTestPressable components x y
+            let pressHit =
+                hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+                    NoobishComponentsV2.isPressable components i)
             buffer.UpdateDown(components, pressHit)
         if buffer.DownIndex >= 0 then
             updateSliderFromPointer components buffer x
 
     let internal updateRelease (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
-        let clickHit = hitTestClickable components x y
+        let clickHit =
+            hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+                NoobishComponentsV2.isClickable components i)
         buffer.Release(components, clickHit)
 
     let ProcessInput (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
