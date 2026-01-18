@@ -54,7 +54,7 @@ type Noobish with
     member this.Slider<'T> (rangeStart: float32, rangeEnd: float32) (step: float32) (value: float32) (onValueChanged: float32 -> unit) =
 
         let calcaulateSliderValue (cid: int<UIComponentId>) (position: NoobishPosition) = 
-            let bounds: Internal.NoobishRectangle = this.Components.Bounds.[cid |> UIComponentId.index]
+            let bounds: NoobishRectangle = this.Components.Bounds.[cid |> UIComponentId.index]
 
             let relative = (position.X - bounds.X) / (bounds.Width)
             let newValue = rangeStart + (relative * (rangeEnd - rangeStart))

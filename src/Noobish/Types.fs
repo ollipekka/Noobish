@@ -31,6 +31,39 @@ type NoobishAlignment =
 | BottomLeft | BottomCenter | BottomRight
 
 [<Struct>]
+type NoobishRectangle = {
+    X: float32
+    Y: float32
+    Width: float32
+    Height: float32
+} with
+    member r.Left with get() = r.X
+    member r.Right with get() = r.X + r.Width
+    member r.Top with get() = r.Y
+    member r.Bottom with get() = r.Y + r.Height
+
+    member this.Clamp (bounds: NoobishRectangle) =
+        let x = 
+            if this.X < bounds.X then bounds.X else this.X
+        let y = 
+            if this.Y < bounds.Y then bounds.Y else this.Y
+
+        let right = if this.Right > bounds.Right then bounds.Right else this.Right
+        let bottom = if this.Bottom > bounds.Bottom then bounds.Bottom else this.Bottom
+
+        {
+            X = x 
+            Y = y
+            Width = max 0f (right - x)
+            Height = max 0f (bottom - y)
+        }
+
+    
+    member this.Contains  (x: float32) (y: float32) =
+        x >= this.X && x <= this.X + this.Width
+        && y >= this.Y && y <= this.Y + this.Height
+
+[<Struct>]
 type NoobishMargin = {
     Top: float32
     Right: float32
@@ -100,34 +133,6 @@ type NoobishKeyboardShortcut =
 | NoShortcut
 
 module Internal =
-
-    [<Struct>]
-    type NoobishRectangle = {
-        X: float32
-        Y: float32
-        Width: float32
-        Height: float32
-    } with
-        member r.Left with get() = r.X
-        member r.Right with get() = r.X + r.Width
-        member r.Top with get() = r.Y
-        member r.Bottom with get() = r.Y + r.Height
-
-        member this.Clamp (bounds: NoobishRectangle) =
-            let x = 
-                if this.X < bounds.X then bounds.X else this.X
-            let y = 
-                if this.Y < bounds.Y then bounds.Y else this.Y
-
-            let right = if this.Right > bounds.Right then bounds.Right else this.Right
-            let bottom = if this.Bottom > bounds.Bottom then bounds.Bottom else this.Bottom
-
-            {
-                X = x 
-                Y = y
-                Width = max 0f (right - x)
-                Height = max 0f (bottom - y)
-            }
 
     let pi = float32 System.Math.PI
     let clamp n minVal maxVal = max (min n maxVal) minVal

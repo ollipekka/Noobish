@@ -39,7 +39,7 @@ module NoobishLayoutV2 =
 
         let height = heightContent + padding.Top + padding.Bottom
 
-        let bounds: Internal.NoobishRectangle = {
+        let bounds: NoobishRectangle = {
             X = startX + margin.Left
             Y = startY + margin.Top
             Width = max0 width

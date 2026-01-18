@@ -303,6 +303,9 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: refactored V2 input processing helpers with pure hit testing and floor-based slider stepping, plus added tests.
 - Done: added V2 scroll container support (storage, input wheel handling, layout bounds, render offsets).
 - Done: documented V1/V2 component and behavior parity snapshot with noted intentional differences.
+- Done: added InputBufferV2 tests to cover missing branches for text/slider change queries.
+- Done: added NoobishV2 progress segment clamp coverage for non-positive values.
+- Done: added NoobishV2 progress segment coverage for positive values.
 
 ## V1/V2 Parity Snapshot (Component + Behavior)
 V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (for example: any container can scroll, and there is no dedicated scrollable component).

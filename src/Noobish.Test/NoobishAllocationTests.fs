@@ -65,7 +65,7 @@ let ``buildUi and layout allocate no managed memory`` () =
 
 [<Test>]
 let ``NoobishInputV2 hitTestWith lambdas allocate no managed memory`` () =
-    let bounds: Noobish.Internal.NoobishRectangle[] =
+    let bounds: Noobish.NoobishRectangle[] =
         [| { X = 0f; Y = 0f; Width = 10f; Height = 10f }
            { X = 0f; Y = 0f; Width = 10f; Height = 10f } |]
     let boundsAt i = bounds.[i]
@@ -86,8 +86,8 @@ let ``NoobishInputV2 ProcessInput allocates no managed memory`` () =
     let buttonCtx = NoobishV2.beginButton "Ok" 1us ctx
     let rootIndex = int ctx.ComponentId.Index
     let buttonIndex = int buttonCtx.ComponentId.Index
-    components.Bounds.[rootIndex] <- { Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f }
-    components.Bounds.[buttonIndex] <- { Noobish.Internal.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f }
+    components.Bounds.[rootIndex] <- { Noobish.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f }
+    components.Bounds.[buttonIndex] <- { Noobish.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f }
     components.Visible.[rootIndex] <- true
     components.Visible.[buttonIndex] <- true
     components.Enabled.[rootIndex] <- true

@@ -690,7 +690,7 @@ type Noobish(maxCount: int) =
         let contentStartY = bounds.Y +  margin.Top + padding.Top
         let contentWidth = bounds.Width - margin.Left - margin.Right - padding.Left - padding.Right
         let contentHeight = bounds.Height - margin.Top - margin.Bottom - padding.Top - padding.Bottom
-        let bounds: Internal.NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
+        let bounds: NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
 
         let text = this.Components.Text.[i]
         let textAlign = this.Components.TextAlign.[i]
@@ -838,7 +838,7 @@ type Noobish(maxCount: int) =
             let contentStartY = scrollY + bounds.Y + padding.Top + margin.Top
             let contentWidth = bounds.Width - padding.Left - padding.Right - margin.Left - margin.Right
             let contentHeight = bounds.Height - padding.Top - padding.Bottom - margin.Left - margin.Right
-            let bounds: Internal.NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
+            let bounds: NoobishRectangle = {X = contentStartX; Y = contentStartY; Width = contentWidth; Height = contentHeight}
             let textWrap = this.Components.Textwrap.[i]
             let textAlign = this.Components.TextAlign.[i]
             let textBounds =

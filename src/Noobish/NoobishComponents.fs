@@ -247,7 +247,7 @@ type NoobishComponents(count) =
     member val Layer = Array.create count 0
 
     member val ConstrainToParentBounds = Array.create count true
-    member val Bounds = Array.create<Internal.NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
+    member val Bounds = Array.create<NoobishRectangle> count {X = 0f; Y = 0f; Width = 0f; Height = 0f}
     member val MinSizeOverride = Array.create count false
     member val MinSize = Array.create count {Width = 0f; Height = 0f}
     member val WidthPercentage = Array.create count 1f 

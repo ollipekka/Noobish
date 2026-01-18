@@ -214,9 +214,6 @@ module NoobishInputV2 =
     let inline max0 value =
         if value < 0f then 0f else value
 
-    let inline contains (bounds: NoobishRectangle) (x: float32) (y: float32) =
-        x >= bounds.X && x <= bounds.X + bounds.Width
-        && y >= bounds.Y && y <= bounds.Y + bounds.Height
 
     let internal boundsWithAncestorScroll (components: NoobishComponentsV2) (index: int) =
         let mutable bounds = components.Bounds.[index]
@@ -322,7 +319,7 @@ module NoobishInputV2 =
         while i >= 0 && hit < 0 do
             if predicate i then
                 let bounds = boundsAt i
-                if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
+                if bounds.Width > 0f && bounds.Height > 0f && bounds.Contains x y then
                     hit <- i
             i <- i - 1
         hit

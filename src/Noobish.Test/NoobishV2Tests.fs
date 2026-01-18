@@ -411,6 +411,26 @@ let ``setProgressSegments clamps at one`` () =
     Assert.AreEqual(1, components.ProgressSegments.[index])
 
 [<Test>]
+let ``setProgressSegments clamps negative to one`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginProgressBar 0.4f
+        |> NoobishV2.setProgressSegments -2
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(1, components.ProgressSegments.[index])
+
+[<Test>]
+let ``setProgressSegments keeps positive values`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginProgressBar 0.4f
+        |> NoobishV2.setProgressSegments 3
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(3, components.ProgressSegments.[index])
+
+[<Test>]
 let ``horizontalRule fills horizontally and blocks`` () =
     let components = NoobishComponentsV2(1)
     let ctx =

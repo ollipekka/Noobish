@@ -279,7 +279,7 @@ module NoobishV2 =
 
     let setProgressSegments (segments: int) (ctx: ComponentContextV2) =
         let index = int ctx.ComponentId.Index
-        ctx.Components.ProgressSegments.[index] <- max 1 segments
+        ctx.Components.ProgressSegments.[index] <- if segments < 1 then 1 else segments
         ctx
 
     let beginSpace (parentCtx: ComponentContextV2) =

@@ -30,3 +30,11 @@ let ``NamespaceHash fromPage folds fnv1a32`` () =
     let ns = NamespaceHash.fromPage "Settings/Audio"
     Assert.AreEqual(uint16 (hash &&& 0xFFFFu), ns)
     Assert.LessOrEqual(ns, UInt16.MaxValue)
+
+[<Test>]
+let ``NoobishRectangle Contains checks bounds`` () =
+    let bounds: NoobishRectangle = { X = 1f; Y = 2f; Width = 3f; Height = 4f }
+    Assert.IsTrue(bounds.Contains 1f 2f)
+    Assert.IsTrue(bounds.Contains 4f 6f)
+    Assert.IsFalse(bounds.Contains 0.9f 2f)
+    Assert.IsFalse(bounds.Contains 4.1f 6f)

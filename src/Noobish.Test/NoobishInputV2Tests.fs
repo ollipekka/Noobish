@@ -131,14 +131,6 @@ let ``InputBufferV2 Reset clears active flags`` () =
     components.ReleaseContext ctx
 
 [<Test>]
-let ``NoobishInputV2 contains checks bounds`` () =
-    let bounds:Noobish.Internal.NoobishRectangle = {X = 1f; Y = 2f; Width = 3f; Height = 4f}
-    Assert.IsTrue(NoobishInputV2.contains bounds 1f 2f)
-    Assert.IsTrue(NoobishInputV2.contains bounds 4f 6f)
-    Assert.IsFalse(NoobishInputV2.contains bounds 0.9f 2f)
-    Assert.IsFalse(NoobishInputV2.contains bounds 4.1f 6f)
-
-[<Test>]
 let ``NoobishInputV2 clippedBounds clamps to parent`` () =
     let components = NoobishComponentsV2(2)
     let parentCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
@@ -239,7 +231,7 @@ let ``NoobishInputV2 hitTest returns -1 when no hit`` () =
 
 [<Test>]
 let ``NoobishInputV2 hitTestWith returns topmost match`` () =
-    let bounds: Noobish.Internal.NoobishRectangle[] =
+    let bounds: Noobish.NoobishRectangle[] =
         [| {X = 0f; Y = 0f; Width = 10f; Height = 10f }
            { X = 0f; Y = 0f; Width = 10f; Height = 10f }
            { X = 0f; Y = 0f; Width = 10f; Height = 10f } |]
@@ -248,7 +240,7 @@ let ``NoobishInputV2 hitTestWith returns topmost match`` () =
 
 [<Test>]
 let ``NoobishInputV2 hitTestWith respects predicate`` () =
-    let bounds:  Noobish.Internal.NoobishRectangle[] =
+    let bounds:  Noobish.NoobishRectangle[] =
         [| { X = 0f; Y = 0f; Width = 10f; Height = 10f }
            { X = 0f; Y = 0f; Width = 10f; Height = 10f } |]
     let hit = NoobishInputV2.hitTestWith bounds.Length (fun i -> bounds.[i]) 5f 5f (fun i -> i = 0)
@@ -782,6 +774,21 @@ let ``InputBufferV2 TryGetTextChanged returns none when unset`` () =
     components.ReleaseContext ctx
 
 [<Test>]
+let ``InputBufferV2 TryGetTextChanged returns none when localId missing`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components
+    let textboxCtx = NoobishV2.beginTextbox "Text" 11us ctx
+    let index = int textboxCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.Reset components
+
+    buffer.MarkTextChanged(index, "Hello")
+    Assert.IsTrue(ValueOption.isNone (buffer.TryGetTextChanged 99us))
+
+    components.ReleaseContext textboxCtx
+    components.ReleaseContext ctx
+
+[<Test>]
 let ``InputBufferV2 TryGetSliderChanged returns payload when set`` () =
     let components = NoobishComponentsV2(1)
     let ctx = NoobishV2.beginFrame "Page" components
@@ -792,6 +799,21 @@ let ``InputBufferV2 TryGetSliderChanged returns payload when set`` () =
 
     buffer.MarkSliderChanged(index, 4f)
     Assert.AreEqual(ValueSome 4f, buffer.TryGetSliderChanged 15us)
+
+    components.ReleaseContext sliderCtx
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``InputBufferV2 TryGetSliderChanged returns none when localId missing`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components
+    let sliderCtx = NoobishV2.beginSlider (0f, 10f) 1f 2f 15us ctx
+    let index = int sliderCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.Reset components
+
+    buffer.MarkSliderChanged(index, 4f)
+    Assert.IsTrue(ValueOption.isNone (buffer.TryGetSliderChanged 99us))
 
     components.ReleaseContext sliderCtx
     components.ReleaseContext ctx
@@ -997,12 +1019,12 @@ let ``NoobishInputV2 scroll uses child bounds over content size horizontally`` (
 
 [<Test>]
 let ``NoobishInputV2 calculateSliderValue uses floor stepping`` () =
-    let bounds:  Noobish.Internal.NoobishRectangle = { X = 0f; Y = 0f; Width = 10f; Height = 10f }
+    let bounds:  Noobish.NoobishRectangle = { X = 0f; Y = 0f; Width = 10f; Height = 10f }
     let value = NoobishInputV2.calculateSliderValue bounds 0f 10f 2f 5f
     Assert.AreEqual(4f, value)
 
 [<Test>]
 let ``NoobishInputV2 calculateSliderValue floors negative values`` () =
-    let bounds:  Noobish.Internal.NoobishRectangle = { X = 0f; Y = 0f; Width = 10f; Height = 10f }
+    let bounds:  Noobish.NoobishRectangle = { X = 0f; Y = 0f; Width = 10f; Height = 10f }
     let value = NoobishInputV2.calculateSliderValue bounds -10f 10f 2f 2.5f
     Assert.AreEqual(-6f, value)
