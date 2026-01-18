@@ -211,16 +211,108 @@ type InputBufferV2(capacity: int) =
             this.ClearDown()
 
 module NoobishInputV2 =
+    let inline max0 value =
+        if value < 0f then 0f else value
+
     let inline contains (bounds: NoobishRectangle) (x: float32) (y: float32) =
         x >= bounds.X && x <= bounds.X + bounds.Width
         && y >= bounds.Y && y <= bounds.Y + bounds.Height
 
-    let internal clippedBounds (components: NoobishComponentsV2) (index: int) =
+    let internal boundsWithAncestorScroll (components: NoobishComponentsV2) (index: int) =
         let mutable bounds = components.Bounds.[index]
+        let mutable parentId = components.ParentId.[index]
+        let mutable scrollX = 0f
+        let mutable scrollY = 0f
+        while parentId <> UIComponentIdV2.empty do
+            let parentIndex = int parentId.Index
+            let scroll = components.Scroll.[parentIndex]
+            if scroll.Horizontal then
+                scrollX <- scrollX + components.ScrollX.[parentIndex]
+            if scroll.Vertical then
+                scrollY <- scrollY + components.ScrollY.[parentIndex]
+            parentId <- components.ParentId.[parentIndex]
+        { bounds with X = bounds.X + scrollX; Y = bounds.Y + scrollY }
+
+    let internal contentBounds (components: NoobishComponentsV2) (index: int) =
+        let bounds = boundsWithAncestorScroll components index
+        let padding = components.Padding.[index]
+        {
+            X = bounds.X + padding.Left
+            Y = bounds.Y + padding.Top
+            Width = max0 (bounds.Width - padding.Left - padding.Right)
+            Height = max0 (bounds.Height - padding.Top - padding.Bottom)
+        }
+
+    let internal tryFindScrollableAncestor (components: NoobishComponentsV2) (index: int) =
+        let mutable current = index
+        let mutable found = -1
+        while current >= 0 && found < 0 do
+            let scroll = components.Scroll.[current]
+            if scroll.Horizontal || scroll.Vertical then
+                found <- current
+            else
+                let parentId = components.ParentId.[current]
+                if parentId = UIComponentIdV2.empty then
+                    current <- -1
+                else
+                    current <- int parentId.Index
+        found
+
+    let internal getViewportSize (components: NoobishComponentsV2) (index: int) =
+        let bounds = components.Bounds.[index]
+        let padding = components.Padding.[index]
+        let width = max0 (bounds.Width - padding.Left - padding.Right)
+        let height = max0 (bounds.Height - padding.Top - padding.Bottom)
+        struct(width, height)
+
+    let internal getContentExtent (components: NoobishComponentsV2) (index: int) =
+        let bounds = components.Bounds.[index]
+        let padding = components.Padding.[index]
+        let contentX = bounds.X + padding.Left
+        let contentY = bounds.Y + padding.Top
+        let children = components.Children.[index]
+        if children.Count > 0 then
+            let mutable maxRight = contentX
+            let mutable maxBottom = contentY
+            for i = 0 to children.Count - 1 do
+                let childIndex = int children.[i].Index
+                let childBounds = components.Bounds.[childIndex]
+                let right = childBounds.X + childBounds.Width
+                let bottom = childBounds.Y + childBounds.Height
+                if right > maxRight then
+                    maxRight <- right
+                if bottom > maxBottom then
+                    maxBottom <- bottom
+            struct(max0 (maxRight - contentX), max0 (maxBottom - contentY))
+        else
+            let contentSize = components.ContentSize.[index]
+            struct(contentSize.Width, contentSize.Height)
+
+    let internal applyScrollDelta
+        (components: NoobishComponentsV2)
+        (index: int)
+        (delta: float32)
+        (viewportWidth: float32)
+        (viewportHeight: float32)
+        (contentWidth: float32)
+        (contentHeight: float32) =
+        let scroll = components.Scroll.[index]
+        if scroll.Vertical && contentHeight > viewportHeight then
+            let minScroll = viewportHeight - contentHeight
+            let nextScroll = components.ScrollY.[index] + delta
+            components.ScrollY.[index] <- clamp nextScroll minScroll 0f
+        if scroll.Horizontal && not scroll.Vertical && contentWidth > viewportWidth then
+            let minScroll = viewportWidth - contentWidth
+            let nextScroll = components.ScrollX.[index] + delta
+            components.ScrollX.[index] <- clamp nextScroll minScroll 0f
+
+    let internal clippedBounds (components: NoobishComponentsV2) (index: int) =
+        let mutable bounds = boundsWithAncestorScroll components index
         let mutable parentId = components.ParentId.[index]
         while parentId <> UIComponentIdV2.empty do
             let parentIndex = int parentId.Index
-            bounds <- bounds.Clamp components.Bounds.[parentIndex]
+            let parentBounds = contentBounds components parentIndex
+            bounds <- bounds.Clamp parentBounds
             parentId <- components.ParentId.[parentIndex]
         bounds
 
@@ -260,7 +352,7 @@ module NoobishInputV2 =
     let internal updateSliderFromPointer (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) =
         let downIndex = buffer.DownIndex
         if components.WantsSlider.[downIndex] then
-            let bounds = components.Bounds.[downIndex]
+            let bounds = boundsWithAncestorScroll components downIndex
             let rangeStart = components.SliderMin.[downIndex]
             let rangeEnd = components.SliderMax.[downIndex]
             let step = components.SliderStep.[downIndex]
@@ -268,6 +360,19 @@ module NoobishInputV2 =
             if value <> components.SliderValue.[downIndex] then
                 components.SliderValue.[downIndex] <- value
                 buffer.MarkSliderChanged(downIndex, value)
+
+    let internal updateScroll (input: INoobishInputState) (components: NoobishComponentsV2) (x: float32) (y: float32) =
+        let scrollDelta = input.ScrollWheelDelta
+        if scrollDelta <> 0f then
+            let hitIndex =
+                hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+                    components.Visible.[i] && components.Enabled.[i])
+            let scrollHit = if hitIndex >= 0 then tryFindScrollableAncestor components hitIndex else -1
+            if scrollHit >= 0 then
+                let struct(viewportWidth, viewportHeight) = getViewportSize components scrollHit
+                let struct(contentWidth, contentHeight) = getContentExtent components scrollHit
+                let delta = -scrollDelta * 0.5f
+                applyScrollDelta components scrollHit delta viewportWidth viewportHeight contentWidth contentHeight
 
     let internal updatePrimaryDown (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         if buffer.DownIndex < 0 then
@@ -290,6 +395,7 @@ module NoobishInputV2 =
             buffer.ClearDown()
         let x = input.PointerX
         let y = input.PointerY
+        updateScroll input components x y
         updateHover components buffer x y
         if input.IsPrimaryDown() then
             updatePrimaryDown components buffer x y

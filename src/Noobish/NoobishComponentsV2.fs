@@ -42,6 +42,9 @@ and INoobishComponents2 =
     abstract GridSpan: TableSpan[] with get
     abstract GridCellAlignment: NoobishAlignment[] with get
     abstract Fill: Fill[] with get
+    abstract Scroll: Scroll[] with get
+    abstract ScrollX: float32[] with get
+    abstract ScrollY: float32[] with get
     abstract Toggled: bool[] with get
     abstract Hovered: bool[] with get
     abstract WantsToggle: bool[] with get
@@ -87,6 +90,9 @@ type NoobishComponentsV2(count: int) =
     member val GridSpan = Array.create count ({Rowspan = 1; Colspan = 1})
     member val GridCellAlignment = Array.create count NoobishAlignment.None
     member val Fill = Array.create count {Fill.Horizontal = false; Vertical = false}
+    member val Scroll = Array.create count {Scroll.Horizontal = false; Vertical = false}
+    member val ScrollX = Array.create count 0f
+    member val ScrollY = Array.create count 0f
     member val Toggled = Array.create count false
     member val Hovered = Array.create count false
     member val WantsToggle = Array.create count false
@@ -142,6 +148,7 @@ type NoobishComponentsV2(count: int) =
             this.GridSpan.[i] <- {Rowspan = 1; Colspan = 1}
             this.GridCellAlignment.[i] <- NoobishAlignment.None
             this.Fill.[i] <- {Horizontal = false; Vertical = false}
+            this.Scroll.[i] <- {Horizontal = false; Vertical = false}
             this.Toggled.[i] <- false
             this.Hovered.[i] <- false
             this.WantsToggle.[i] <- false
@@ -151,7 +158,6 @@ type NoobishComponentsV2(count: int) =
             this.Margin.[i] <- {NoobishMargin.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
             this.MarginOverride.[i] <- false
             this.MinSize.[i] <- {Width = 0f; Height = 0f}
-            this.Bounds.[i] <- {X = 0f; Y = 0f; Width = 0f; Height = 0f}
             this.Layer.[i] <- 0
             this.WantsText.[i] <- false
             this.Text.[i] <- ""
@@ -186,6 +192,9 @@ type NoobishComponentsV2(count: int) =
         member this.GridSpan = this.GridSpan
         member this.GridCellAlignment = this.GridCellAlignment
         member this.Fill = this.Fill
+        member this.Scroll = this.Scroll
+        member this.ScrollX = this.ScrollX
+        member this.ScrollY = this.ScrollY
         member this.Toggled = this.Toggled
         member this.Hovered = this.Hovered
         member this.WantsToggle = this.WantsToggle

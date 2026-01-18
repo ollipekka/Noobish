@@ -47,6 +47,7 @@ Notes:
 - `LocalIdToIndex` only includes components with `LocalId <> 0us`.
 - `InputBufferV2.Reset` should not clear full arrays each frame; only clear indices in `ActiveIndices`.
 - `TextPayload` is indexed by component index for `TryGetTextChanged`.
+- `INoobishInputState.ScrollWheelDelta` reports the per-frame mouse wheel delta for scroll containers.
 - Avoid lambdas or per-frame allocation in input processing.
 
 ## Optional: Event Queue (for dynamic content)

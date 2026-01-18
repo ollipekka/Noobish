@@ -110,6 +110,110 @@ let ``layoutFrame uses content size when not filling`` () =
     Assert.AreEqual(12f, childBounds.Height)
 
 [<Test>]
+let ``layoutFrame clamps scroll containers to available space`` () =
+    let components = NoobishComponentsV2(2)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginStackVertical
+    let rootId = rootCtx.ComponentId
+    let childCtx =
+        NoobishV2.beginPanel rootCtx
+        |> NoobishV2.setScrollVertical
+    let childId = childCtx.ComponentId
+
+    components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
+    components.MinSize.[int childId.Index] <- {Width = 0f; Height = 0f}
+    components.ContentSize.[int childId.Index] <- {Width = 50f; Height = 200f}
+
+    NoobishLayoutV2.layoutFrame components 100f 60f
+
+    let childBounds = components.Bounds.[int childId.Index]
+    Assert.AreEqual(60f, childBounds.Height)
+
+[<Test>]
+let ``layoutFrame scroll container height respects parent padding and child margin`` () =
+    let components = NoobishComponentsV2(2)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginStackVertical
+        |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+        |> NoobishV2.setPadding {NoobishPadding.Top = 6f; Right = 4f; Bottom = 10f; Left = 4f}
+    let childCtx =
+        NoobishV2.beginPanel rootCtx
+        |> NoobishV2.setScrollVertical
+        |> NoobishV2.setMargin {NoobishMargin.Top = 3f; Right = 0f; Bottom = 5f; Left = 0f}
+    let rootId = rootCtx.ComponentId
+    let childId = childCtx.ComponentId
+
+    components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
+    components.MinSize.[int childId.Index] <- {Width = 0f; Height = 0f}
+    components.ContentSize.[int childId.Index] <- {Width = 50f; Height = 200f}
+
+    NoobishLayoutV2.layoutFrame components 100f 100f
+
+    let childBounds = components.Bounds.[int childId.Index]
+    let expectedHeight = 100f - 6f - 10f - 3f - 5f
+    Assert.AreEqual(expectedHeight, childBounds.Height)
+
+[<Test>]
+let ``layoutFrame scroll container height respects its own padding`` () =
+    let components = NoobishComponentsV2(2)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginStackVertical
+        |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+    let childCtx =
+        NoobishV2.beginPanel rootCtx
+        |> NoobishV2.setScrollVertical
+        |> NoobishV2.setPadding {NoobishPadding.Top = 4f; Right = 0f; Bottom = 6f; Left = 0f}
+    let rootId = rootCtx.ComponentId
+    let childId = childCtx.ComponentId
+
+    components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
+    components.MinSize.[int childId.Index] <- {Width = 0f; Height = 0f}
+    components.ContentSize.[int childId.Index] <- {Width = 50f; Height = 200f}
+
+    NoobishLayoutV2.layoutFrame components 100f 80f
+
+    let childBounds = components.Bounds.[int childId.Index]
+    Assert.AreEqual(80f, childBounds.Height)
+
+[<Test>]
+let ``layoutFrame nested scroll containers respect parent padding`` () =
+    let components = NoobishComponentsV2(3)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginStackVertical
+        |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+        |> NoobishV2.setPadding {NoobishPadding.Top = 5f; Right = 0f; Bottom = 5f; Left = 0f}
+    let outerCtx =
+        NoobishV2.beginPanel rootCtx
+        |> NoobishV2.setScrollVertical
+        |> NoobishV2.setPadding {NoobishPadding.Top = 3f; Right = 0f; Bottom = 3f; Left = 0f}
+    let innerCtx =
+        NoobishV2.beginPanel outerCtx
+        |> NoobishV2.setScrollVertical
+    let rootId = rootCtx.ComponentId
+    let outerId = outerCtx.ComponentId
+    let innerId = innerCtx.ComponentId
+
+    components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
+    components.Fill.[int outerId.Index] <- {Horizontal = true; Vertical = true}
+    components.MinSize.[int outerId.Index] <- {Width = 0f; Height = 0f}
+    components.ContentSize.[int outerId.Index] <- {Width = 50f; Height = 200f}
+    components.MinSize.[int innerId.Index] <- {Width = 0f; Height = 0f}
+    components.ContentSize.[int innerId.Index] <- {Width = 50f; Height = 200f}
+
+    NoobishLayoutV2.layoutFrame components 100f 90f
+
+    let outerBounds = components.Bounds.[int outerId.Index]
+    let innerBounds = components.Bounds.[int innerId.Index]
+    let expectedOuterHeight = 90f - 5f - 5f
+    let expectedInnerHeight = expectedOuterHeight - 3f - 3f
+    Assert.AreEqual(expectedOuterHeight, outerBounds.Height)
+    Assert.AreEqual(expectedInnerHeight, innerBounds.Height)
+
+[<Test>]
 let ``layoutFrame stacks using content size`` () =
     let components = NoobishComponentsV2(3)
     let rootCtx =

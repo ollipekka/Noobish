@@ -17,6 +17,9 @@ let ``NoobishComponentsV2 initializes arrays`` () =
     Assert.AreEqual(4, components.SliderMax.Length)
     Assert.AreEqual(4, components.SliderStep.Length)
     Assert.AreEqual(4, components.SliderValue.Length)
+    Assert.AreEqual(4, components.Scroll.Length)
+    Assert.AreEqual(4, components.ScrollX.Length)
+    Assert.AreEqual(4, components.ScrollY.Length)
 
 [<Test>]
 let ``NoobishComponentsV2 defaults ParentId to empty`` () =
@@ -65,6 +68,9 @@ let ``NoobishComponentsV2 clear resets state`` () =
     components.WantsTextChanged.[index] <- true
     components.WantsSlider.[index] <- true
     components.SliderValue.[index] <- 42f
+    components.Scroll.[index] <- {Horizontal = true; Vertical = true}
+    components.ScrollX.[index] <- -3f
+    components.ScrollY.[index] <- -7f
     components.Layer.[index] <- 7
 
     components.Clear()
@@ -86,6 +92,9 @@ let ``NoobishComponentsV2 clear resets state`` () =
     Assert.IsFalse(components.WantsTextChanged.[index])
     Assert.IsFalse(components.WantsSlider.[index])
     Assert.AreEqual(0f, components.SliderValue.[index])
+    Assert.AreEqual({Horizontal = false; Vertical = false}, components.Scroll.[index])
+    Assert.AreEqual(-3f, components.ScrollX.[index])
+    Assert.AreEqual(-7f, components.ScrollY.[index])
     Assert.AreEqual(0, components.Layer.[index])
 
 [<Test>]

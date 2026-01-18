@@ -100,6 +100,7 @@ let ``NoobishInputV2 ProcessInput allocates no managed memory`` () =
         { new INoobishInputState with
             member _.PointerX = 5f
             member _.PointerY = 5f
+            member _.ScrollWheelDelta = 0f
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = true
             member _.IsSecondaryClick() = false

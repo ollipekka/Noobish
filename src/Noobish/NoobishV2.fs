@@ -69,6 +69,23 @@ module NoobishV2 =
         ctx.Components.Fill.[index] <- {fill with Vertical = true}
         ctx
 
+    let setScroll (scroll: Scroll) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Scroll.[index] <- scroll
+        ctx
+
+    let setScrollHorizontal (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        let scroll = ctx.Components.Scroll.[index]
+        ctx.Components.Scroll.[index] <- {scroll with Horizontal = true}
+        ctx
+
+    let setScrollVertical (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        let scroll = ctx.Components.Scroll.[index]
+        ctx.Components.Scroll.[index] <- {scroll with Vertical = true}
+        ctx
+
     let setToggled (value: bool) (ctx: ComponentContextV2) =
         let index = int ctx.ComponentId.Index
         ctx.Components.Toggled.[index] <- value

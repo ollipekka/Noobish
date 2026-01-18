@@ -228,6 +228,29 @@ let ``setFillVertical preserves horizontal`` () =
     Assert.IsTrue(components.Fill.[index].Vertical)
 
 [<Test>]
+let ``setScroll updates scroll flags`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+        |> NoobishV2.setScroll {Horizontal = true; Vertical = true}
+    let index = int ctx.ComponentId.Index
+    Assert.IsTrue(components.Scroll.[index].Horizontal)
+    Assert.IsTrue(components.Scroll.[index].Vertical)
+
+[<Test>]
+let ``setScrollVertical and setScrollHorizontal set axis`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+        |> NoobishV2.setScrollVertical
+        |> NoobishV2.setScrollHorizontal
+    let index = int ctx.ComponentId.Index
+    Assert.IsTrue(components.Scroll.[index].Horizontal)
+    Assert.IsTrue(components.Scroll.[index].Vertical)
+
+[<Test>]
 let ``setPadding writes padding values`` () =
     let components = NoobishComponentsV2(1)
     let padding = {NoobishPadding.Top = 1f; Right = 2f; Bottom = 3f; Left = 4f}

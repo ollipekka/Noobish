@@ -159,6 +159,49 @@ let ``NoobishInputV2 clippedBounds clamps to parent`` () =
     components.ReleaseContext parentCtx
 
 [<Test>]
+let ``NoobishInputV2 clippedBounds offsets for scroll`` () =
+    let components = NoobishComponentsV2(2)
+    let parentCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let childCtx = NoobishV2.beginLabel "Child" parentCtx
+    let parentIndex = int parentCtx.ComponentId.Index
+    let childIndex = int childCtx.ComponentId.Index
+
+    components.Bounds.[parentIndex] <- {X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Bounds.[childIndex] <- {X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Scroll.[parentIndex] <- {Horizontal = false; Vertical = true}
+    components.ScrollY.[parentIndex] <- -5f
+
+    let clipped = NoobishInputV2.clippedBounds components childIndex
+    Assert.AreEqual(0f, clipped.X)
+    Assert.AreEqual(0f, clipped.Y)
+    Assert.AreEqual(10f, clipped.Width)
+    Assert.AreEqual(5f, clipped.Height)
+
+    components.ReleaseContext childCtx
+    components.ReleaseContext parentCtx
+
+[<Test>]
+let ``NoobishInputV2 clippedBounds clamps to parent content bounds`` () =
+    let components = NoobishComponentsV2(2)
+    let parentCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let childCtx = NoobishV2.beginLabel "Child" parentCtx
+    let parentIndex = int parentCtx.ComponentId.Index
+    let childIndex = int childCtx.ComponentId.Index
+
+    components.Bounds.[parentIndex] <- {X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Padding.[parentIndex] <- {NoobishPadding.Top = 2f; Right = 0f; Bottom = 1f; Left = 1f}
+    components.Bounds.[childIndex] <- {X = -5f; Y = -5f; Width = 20f; Height = 20f}
+
+    let clipped = NoobishInputV2.clippedBounds components childIndex
+    Assert.AreEqual(1f, clipped.X)
+    Assert.AreEqual(2f, clipped.Y)
+    Assert.AreEqual(9f, clipped.Width)
+    Assert.AreEqual(7f, clipped.Height)
+
+    components.ReleaseContext childCtx
+    components.ReleaseContext parentCtx
+
+[<Test>]
 let ``NoobishInputV2 hitTest returns topmost match`` () =
     let components = NoobishComponentsV2(3)
     let rootCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
@@ -231,6 +274,7 @@ let ``NoobishInputV2 ProcessInput clears down when not primary down`` () =
         { new INoobishInputState with
             member _.PointerX = 50f
             member _.PointerY = 50f
+            member _.ScrollWheelDelta = 0f
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
@@ -262,6 +306,7 @@ let ``NoobishInputV2 ProcessInput marks pressed when primary down`` () =
         { new INoobishInputState with
             member _.PointerX = 5f
             member _.PointerY = 5f
+            member _.ScrollWheelDelta = 0f
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = true
             member _.IsSecondaryClick() = false
@@ -295,6 +340,7 @@ let ``NoobishInputV2 ProcessInput clicks on release over same component`` () =
         { new INoobishInputState with
             member _.PointerX = 5f
             member _.PointerY = 5f
+            member _.ScrollWheelDelta = 0f
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
@@ -324,6 +370,7 @@ let ``NoobishInputV2 ProcessInput clears down when index out of range`` () =
         { new INoobishInputState with
             member _.PointerX = 0f
             member _.PointerY = 0f
+            member _.ScrollWheelDelta = 0f
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = true
             member _.IsSecondaryClick() = false
@@ -792,6 +839,7 @@ let ``NoobishInputV2 ProcessInput marks hovered`` () =
         { new INoobishInputState with
             member _.PointerX = 5f
             member _.PointerY = 5f
+            member _.ScrollWheelDelta = 0f
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
@@ -817,6 +865,7 @@ let ``NoobishInputV2 ProcessInput updates slider value on drag`` () =
         { new INoobishInputState with
             member _.PointerX = 5f
             member _.PointerY = 5f
+            member _.ScrollWheelDelta = 0f
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = true
             member _.IsSecondaryClick() = false
@@ -829,6 +878,122 @@ let ``NoobishInputV2 ProcessInput updates slider value on drag`` () =
 
     components.ReleaseContext sliderCtx
     components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 ProcessInput scrolls vertical containers`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let index = int ctx.ComponentId.Index
+    components.Bounds.[index] <- {X = 0f; Y = 0f; Width = 100f; Height = 100f}
+    components.ContentSize.[index] <- {Width = 100f; Height = 200f}
+    components.Scroll.[index] <- {Horizontal = false; Vertical = true}
+    let buffer = InputBufferV2(1)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 10f
+            member _.PointerY = 10f
+            member _.ScrollWheelDelta = 10f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual(-5f, components.ScrollY.[index])
+
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 ProcessInput scrolls when hovering child`` () =
+    let components = NoobishComponentsV2(2)
+    let parentCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let childCtx = NoobishV2.beginLabel "Child" parentCtx
+    let parentIndex = int parentCtx.ComponentId.Index
+    let childIndex = int childCtx.ComponentId.Index
+    components.Bounds.[parentIndex] <- {X = 0f; Y = 0f; Width = 100f; Height = 100f}
+    components.Bounds.[childIndex] <- {X = 0f; Y = 0f; Width = 100f; Height = 200f}
+    components.ContentSize.[parentIndex] <- {Width = 100f; Height = 200f}
+    components.Scroll.[parentIndex] <- {Horizontal = false; Vertical = true}
+    let buffer = InputBufferV2(2)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 10f
+            member _.PointerY = 10f
+            member _.ScrollWheelDelta = 10f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual(-5f, components.ScrollY.[parentIndex])
+
+    components.ReleaseContext childCtx
+    components.ReleaseContext parentCtx
+
+[<Test>]
+let ``NoobishInputV2 scroll uses child bounds over content size`` () =
+    let components = NoobishComponentsV2(2)
+    let parentCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let childCtx = NoobishV2.beginLabel "Child" parentCtx
+    let parentIndex = int parentCtx.ComponentId.Index
+    let childIndex = int childCtx.ComponentId.Index
+    components.Bounds.[parentIndex] <- {X = 0f; Y = 0f; Width = 100f; Height = 100f}
+    components.Bounds.[childIndex] <- {X = 0f; Y = 0f; Width = 100f; Height = 200f}
+    components.ContentSize.[parentIndex] <- {Width = 10f; Height = 10f}
+    components.Scroll.[parentIndex] <- {Horizontal = false; Vertical = true}
+    let buffer = InputBufferV2(2)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 10f
+            member _.PointerY = 10f
+            member _.ScrollWheelDelta = 10f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual(-5f, components.ScrollY.[parentIndex])
+
+    components.ReleaseContext childCtx
+    components.ReleaseContext parentCtx
+
+[<Test>]
+let ``NoobishInputV2 scroll uses child bounds over content size horizontally`` () =
+    let components = NoobishComponentsV2(2)
+    let parentCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let childCtx = NoobishV2.beginLabel "Child" parentCtx
+    let parentIndex = int parentCtx.ComponentId.Index
+    let childIndex = int childCtx.ComponentId.Index
+    components.Bounds.[parentIndex] <- {X = 0f; Y = 0f; Width = 100f; Height = 100f}
+    components.Bounds.[childIndex] <- {X = 0f; Y = 0f; Width = 200f; Height = 20f}
+    components.ContentSize.[parentIndex] <- {Width = 10f; Height = 10f}
+    components.Scroll.[parentIndex] <- {Horizontal = true; Vertical = false}
+    let buffer = InputBufferV2(2)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 10f
+            member _.PointerY = 10f
+            member _.ScrollWheelDelta = 10f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual(-5f, components.ScrollX.[parentIndex])
+
+    components.ReleaseContext childCtx
+    components.ReleaseContext parentCtx
 
 [<Test>]
 let ``NoobishInputV2 calculateSliderValue uses floor stepping`` () =

@@ -6,6 +6,7 @@ open Microsoft.Xna.Framework.Input.Touch
 type INoobishInputState =
     abstract PointerX: float32
     abstract PointerY: float32
+    abstract ScrollWheelDelta: float32
     abstract IsPrimaryClick: unit -> bool
     abstract IsPrimaryDown: unit -> bool
     abstract IsSecondaryClick: unit -> bool
@@ -62,6 +63,7 @@ type NoobishInputState() =
 
     member _.PointerX = float32 mouseCurrent.X
     member _.PointerY = float32 mouseCurrent.Y
+    member _.ScrollWheelDelta = float32 (mouseCurrent.ScrollWheelValue - mousePrevious.ScrollWheelValue)
 
     member _.IsPrimaryClick() =
         mousePrevious.LeftButton = ButtonState.Pressed && mouseCurrent.LeftButton = ButtonState.Released
@@ -80,6 +82,7 @@ type NoobishInputState() =
     interface INoobishInputState with
         member this.PointerX = this.PointerX
         member this.PointerY = this.PointerY
+        member this.ScrollWheelDelta = this.ScrollWheelDelta
         member this.IsPrimaryClick() = this.IsPrimaryClick()
         member this.IsPrimaryDown() = this.IsPrimaryDown()
         member this.IsSecondaryClick() = this.IsSecondaryClick()

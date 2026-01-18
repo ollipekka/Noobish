@@ -28,6 +28,18 @@ module NoobishRenderV2 =
             Height = max0 (bounds.Height - padding.Top - padding.Bottom)
         }
 
+    let offsetBounds (bounds: NoobishRectangle) (offsetX: float32) (offsetY: float32) =
+        { bounds with X = bounds.X + offsetX; Y = bounds.Y + offsetY }
+
+    let toScissorRectangle (bounds: NoobishRectangle) =
+        let left = MathF.Floor bounds.X
+        let top = MathF.Floor bounds.Y
+        let right = MathF.Ceiling (bounds.X + bounds.Width)
+        let bottom = MathF.Ceiling (bounds.Y + bounds.Height)
+        let width = max0 (right - left)
+        let height = max0 (bottom - top)
+        Rectangle(int left, int top, int width, int height)
+
     let computeProgressSegmentWidth (contentWidth: float32) (segments: int) (gap: float32) =
         if segments <= 0 then
             0f
@@ -108,10 +120,10 @@ type NoobishMonoGameRendererV2() =
         (styleSheet: NoobishStyleSheet)
         (textureAtlas: NoobishTextureAtlas)
         (spriteBatch: SpriteBatch)
+        (bounds: NoobishRectangle)
         (index: int) =
         let themeId = components.ThemeId.[index]
         let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
-        let bounds = components.Bounds.[index]
         if bounds.Width > 0f && bounds.Height > 0f then
             let layer = 1f - float32 components.Layer.[index] / 255f
             let color = styleSheet.GetColor themeId state
@@ -126,8 +138,8 @@ type NoobishMonoGameRendererV2() =
         (styleSheet: NoobishStyleSheet)
         (textureAtlas: NoobishTextureAtlas)
         (spriteBatch: SpriteBatch)
+        (bounds: NoobishRectangle)
         (index: int) =
-        let bounds = components.Bounds.[index]
         if bounds.Width > 0f && bounds.Height > 0f then
             let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
             let pinThemeId = "SliderPin"
@@ -160,8 +172,8 @@ type NoobishMonoGameRendererV2() =
         (styleSheet: NoobishStyleSheet)
         (textureAtlas: NoobishTextureAtlas)
         (spriteBatch: SpriteBatch)
+        (bounds: NoobishRectangle)
         (index: int) =
-        let bounds = components.Bounds.[index]
         if bounds.Width > 0f && bounds.Height > 0f then
             let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
             let themeId = components.ThemeId.[index]
@@ -181,8 +193,8 @@ type NoobishMonoGameRendererV2() =
         (styleSheet: NoobishStyleSheet)
         (textureAtlas: NoobishTextureAtlas)
         (spriteBatch: SpriteBatch)
+        (bounds: NoobishRectangle)
         (index: int) =
-        let bounds = components.Bounds.[index]
         if bounds.Width > 0f && bounds.Height > 0f then
             let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
             let padding = components.Padding.[index]
@@ -202,8 +214,8 @@ type NoobishMonoGameRendererV2() =
         (styleSheet: NoobishStyleSheet)
         (textureAtlas: NoobishTextureAtlas)
         (spriteBatch: SpriteBatch)
+        (bounds: NoobishRectangle)
         (index: int) =
-        let bounds = components.Bounds.[index]
         if bounds.Width > 0f && bounds.Height > 0f then
             let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
             let padding = components.Padding.[index]
@@ -249,6 +261,7 @@ type NoobishMonoGameRendererV2() =
         (content: ContentManager)
         (styleSheet: NoobishStyleSheet)
         (textBatch: TextBatch)
+        (bounds: NoobishRectangle)
         (index: int) =
         let text = components.Text.[index]
         if not (String.IsNullOrWhiteSpace text) then
@@ -261,7 +274,6 @@ type NoobishMonoGameRendererV2() =
             let fontSize = styleSheet.GetFontSize themeId state
             let textColor = styleSheet.GetFontColor themeId state
 
-            let bounds = components.Bounds.[index]
             let padding = components.Padding.[index]
             let textBounds = NoobishRenderV2.computeTextBounds bounds padding
             let textAlign = components.TextAlign.[index]
@@ -283,33 +295,35 @@ type NoobishMonoGameRendererV2() =
         (styleSheet: NoobishStyleSheet)
         (textureAtlas: NoobishTextureAtlas)
         (parentBounds: NoobishRectangle)
+        (scrollX: float32)
+        (scrollY: float32)
         (index: int) =
         if components.Visible.[index] then
-            let bounds = components.Bounds.[index]
+            let bounds = NoobishRenderV2.offsetBounds components.Bounds.[index] scrollX scrollY
             let clippedBounds = bounds.Clamp parentBounds
             if clippedBounds.Width > 0f && clippedBounds.Height > 0f then
                 let oldScissorRect = graphics.ScissorRectangle
-                graphics.ScissorRectangle <- DrawUI.toRectangle clippedBounds
+                graphics.ScissorRectangle <- NoobishRenderV2.toScissorRectangle clippedBounds
 
                 spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
                 if components.WantsSlider.[index] then
-                    this.DrawSliderTrack components styleSheet textureAtlas spriteBatch index
-                    this.DrawSliderPin components styleSheet textureAtlas spriteBatch index
+                    this.DrawSliderTrack components styleSheet textureAtlas spriteBatch bounds index
+                    this.DrawSliderPin components styleSheet textureAtlas spriteBatch bounds index
                 elif components.WantsProgress.[index] then
-                    this.DrawBackground components styleSheet textureAtlas spriteBatch index
+                    this.DrawBackground components styleSheet textureAtlas spriteBatch bounds index
                     if components.ProgressSegments.[index] > 1 then
-                        this.DrawProgressSegments components styleSheet textureAtlas spriteBatch index
+                        this.DrawProgressSegments components styleSheet textureAtlas spriteBatch bounds index
                     else
-                        this.DrawProgressFill components styleSheet textureAtlas spriteBatch index
+                        this.DrawProgressFill components styleSheet textureAtlas spriteBatch bounds index
                 else
-                    this.DrawBackground components styleSheet textureAtlas spriteBatch index
+                    this.DrawBackground components styleSheet textureAtlas spriteBatch bounds index
                 spriteBatch.End()
 
                 let textClip = NoobishRenderV2.computeTextBounds bounds components.Padding.[index]
                 let textClip = textClip.Clamp clippedBounds
                 if textClip.Width > 0f && textClip.Height > 0f then
-                    graphics.ScissorRectangle <- DrawUI.toRectangle textClip
-                    this.DrawText components content styleSheet textBatch index
+                    graphics.ScissorRectangle <- NoobishRenderV2.toScissorRectangle textClip
+                    this.DrawText components content styleSheet textBatch bounds index
 
                 graphics.ScissorRectangle <- oldScissorRect
 
@@ -322,9 +336,15 @@ type NoobishMonoGameRendererV2() =
 
                 let children = components.Children.[index]
                 if children.Count > 0 then
-                    for i = 0 to children.Count - 1 do
-                        let childIndex = int children.[i].Index
-                        this.DrawComponent components graphics content spriteBatch textBatch styleSheet textureAtlas clippedBounds childIndex
+                    let contentBounds = NoobishRenderV2.computeTextBounds bounds components.Padding.[index]
+                    let childClip = contentBounds.Clamp clippedBounds
+                    if childClip.Width > 0f && childClip.Height > 0f then
+                        let scroll = components.Scroll.[index]
+                        let childScrollX = scrollX + if scroll.Horizontal then components.ScrollX.[index] else 0f
+                        let childScrollY = scrollY + if scroll.Vertical then components.ScrollY.[index] else 0f
+                        for i = 0 to children.Count - 1 do
+                            let childIndex = int children.[i].Index
+                            this.DrawComponent components graphics content spriteBatch textBatch styleSheet textureAtlas childClip childScrollX childScrollY childIndex
 
     member this.Draw
         (components: NoobishComponentsV2)
@@ -351,6 +371,6 @@ type NoobishMonoGameRendererV2() =
 
         while drawQueue.Count > 0 do
             let i = drawQueue.Dequeue()
-            this.DrawComponent components graphics content spriteBatch textBatch styleSheet textureAtlas {X = 0f; Y = 0f; Width = screenWidth; Height = screenHeight} i
+            this.DrawComponent components graphics content spriteBatch textBatch styleSheet textureAtlas {X = 0f; Y = 0f; Width = screenWidth; Height = screenHeight} 0f 0f i
 
         graphics.RasterizerState <- oldRasterizerState

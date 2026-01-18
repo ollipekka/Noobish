@@ -301,6 +301,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: applied V2 style-driven padding/margin defaults with overrides.
 - Done: added V2 progress bar component with segmented render support.
 - Done: refactored V2 input processing helpers with pure hit testing and floor-based slider stepping, plus added tests.
+- Done: added V2 scroll container support (storage, input wheel handling, layout bounds, render offsets).
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?
@@ -315,7 +316,6 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Layout Core: grid span/alignment, margin/padding overrides, percent sizing, style-driven min size defaults.
 - Rendering Core: scissor/clip parity, debug overlays, pressed color blend; depends on layout bounds + style states.
 - Text: wrap + align overrides from styles, text bounds selection; depends on layout + style defaults.
-- Scroll Container: scroll offsets/content size, scrollbars, scroll wheel; depends on layout + input core + rendering core.
 - Image Component: basic/atlas/nine-patch rendering; depends on rendering core + style lookups.
 - Checkbox: toggle visuals + input behavior; depends on input core + rendering core.
 - Slider: drag behavior + fill rendering; depends on input core + rendering core.

@@ -9,6 +9,13 @@ type ComponentId =
 | Checkbox = 4us
 | Slider = 5us
 | Grid = 6us
+| Scroll = 7us
+
+let loremIpsum1 =
+    "Scroll me!\n\n Lorem\nipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+
+let loremIpsum2 =
+    "Part 2\n Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"
 
 
 module ComponentId = 
@@ -136,7 +143,7 @@ module SliderDemo =
                 |> NoobishV2.beginSlider (0f, 100f) 1f model.Value SliderId
                     |> NoobishV2.setMinHeight 40f
                     |> NoobishV2.endSlider
-                |> NoobishV2.beginProgressBar (model.Value / 100f)
+                |> NoobishV2.beginProgressBar (1f - model.Value / 100f)
                     |> NoobishV2.setProgressSegments 10
                     |> NoobishV2.endProgressBar
                 |> NoobishV2.endPanel
@@ -181,12 +188,30 @@ module GridDemo =
             |> NoobishV2.endGrid
 
 [<RequireQualifiedAccess>]
+module ScrollDemo =
+    type Model() =
+        member val Text = loremIpsum1 + "\n\n" + loremIpsum2 with get, set
+
+    let buildUi (model: Model) (parentCtx: ComponentContextV2) =
+        parentCtx
+        |> NoobishV2.beginPanel
+            |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+            |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+            |> NoobishV2.setScrollVertical
+            |> NoobishV2.beginParagraph model.Text
+                |> NoobishV2.setMinWidth 320f
+                |> NoobishV2.setFillHorizontal
+                |> NoobishV2.endParagraph
+            |> NoobishV2.endPanel
+
+[<RequireQualifiedAccess>]
 type DemoPage =
 | Text
 | Buttons
 | Checkbox
 | Slider
 | Grid
+| Scroll
 
 [<RequireQualifiedAccess>]
 type DemoSubModel =
@@ -195,6 +220,7 @@ type DemoSubModel =
 | Checkbox of CheckboxDemo.Model
 | Slider of SliderDemo.Model
 | Grid of GridDemo.Model
+| Scroll of ScrollDemo.Model
 
 type DemoModel () =
     let text = TextDemo.Model()
@@ -202,6 +228,7 @@ type DemoModel () =
     let checkbox = CheckboxDemo.Model()
     let slider = SliderDemo.Model()
     let grid = GridDemo.Model()
+    let scroll = ScrollDemo.Model()
     let mutable viewState = DemoPage.Text
     let mutable view = DemoSubModel.Text text
 
@@ -218,6 +245,7 @@ type DemoModel () =
     member _.Checkbox = checkbox
     member _.Slider = slider
     member _.Grid = grid
+    member _.Scroll = scroll
 
     member this.SetViewState(value: DemoPage) =
         viewState <- value
@@ -228,6 +256,7 @@ type DemoModel () =
             | DemoPage.Checkbox -> DemoSubModel.Checkbox checkbox
             | DemoPage.Slider -> DemoSubModel.Slider slider
             | DemoPage.Grid -> DemoSubModel.Grid grid
+            | DemoPage.Scroll -> DemoSubModel.Scroll scroll
 
 let private buildUi (components: NoobishComponentsV2) (width: float32) (height: float32) (model: DemoModel)=
 
@@ -268,6 +297,11 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
                     |> NoobishV2.setWantsToggle true
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Grid)
                     |> NoobishV2.endButton
+                |> NoobishV2.beginButton "Scroll" (ComponentId.toLocalId ComponentId.Scroll)
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.setWantsToggle true
+                    |> NoobishV2.setToggled (model.ViewState = DemoPage.Scroll)
+                    |> NoobishV2.endButton
                 |> NoobishV2.endPanel
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
@@ -287,6 +321,8 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
             SliderDemo.buildUi subModel rootCtx
         | DemoSubModel.Grid subModel ->
             GridDemo.buildUi subModel rootCtx
+        | DemoSubModel.Scroll subModel ->
+            ScrollDemo.buildUi subModel rootCtx
 
     previewCtx
         |> NoobishV2.endPanel
@@ -333,6 +369,8 @@ type SimpleDemoGame() as game =
         textBatch <- new TextBatch(game.GraphicsDevice, struct(game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height), fontEffect, 1024)
 
     override this.Update(gameTime) =
+        inputState.Update()
+
         let lastClicked = ComponentId.ofLocalId inputBuffer.LastClickedLocalId
         match lastClicked with 
         | ComponentId.Text -> 
@@ -345,6 +383,8 @@ type SimpleDemoGame() as game =
             demoModel.SetViewState DemoPage.Slider
         | ComponentId.Grid ->
             demoModel.SetViewState DemoPage.Grid
+        | ComponentId.Scroll ->
+            demoModel.SetViewState DemoPage.Scroll
         | _ -> ()
 
         match demoModel.ViewState with
@@ -359,6 +399,7 @@ type SimpleDemoGame() as game =
             | ValueSome value -> demoModel.Slider.Value <- value
             | ValueNone -> ()
         | DemoPage.Grid -> ()
+        | DemoPage.Scroll -> ()
         | DemoPage.Text -> ()
 
         base.Update(gameTime)
@@ -370,7 +411,6 @@ type SimpleDemoGame() as game =
         let screenHeight = float32 game.GraphicsDevice.Viewport.Height
         let styleSheet = game.Content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
 
-        inputState.Update()
         buildUi components screenWidth screenHeight demoModel
         NoobishMeasureV2.measureFrame game.Content styleSheet components
         NoobishLayoutV2.layoutFrame components screenWidth screenHeight

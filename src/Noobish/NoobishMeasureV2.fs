@@ -5,6 +5,9 @@ open Microsoft.Xna.Framework.Content
 open Noobish.Styles
 
 module NoobishMeasureV2 =
+    let private max0 value =
+        if value < 0f then 0f else value
+
     let private applyCheckboxMinSize (components: NoobishComponentsV2) =
         for i = 0 to components.Count - 1 do
             if components.ThemeId.[i] = "Checkbox" && not components.WantsText.[i] then
@@ -70,8 +73,32 @@ module NoobishMeasureV2 =
                 let fontSize = getFontSize themeId
                 let wrap = components.Textwrap.[i]
                 let struct(textWidth, textHeight) =
-                    if wrap && minSize.Width > 0f then
-                        NoobishFont.measureMultiLine font fontSize minSize.Width text
+                    if wrap then
+                        let padding = components.Padding.[i]
+                        let margin = components.Margin.[i]
+                        let boundsWidth = components.Bounds.[i].Width
+                        let parentId = components.ParentId.[i]
+                        let parentWidth =
+                            if parentId <> UIComponentIdV2.empty then
+                                let parentIndex = int parentId.Index
+                                let parentBounds = components.Bounds.[parentIndex]
+                                let parentPadding = components.Padding.[parentIndex]
+                                max0 (parentBounds.Width - parentPadding.Left - parentPadding.Right - margin.Left - margin.Right)
+                            else
+                                0f
+                        let wrapWidth =
+                            if minSize.Width > 0f then
+                                minSize.Width
+                            elif parentWidth > 0f then
+                                parentWidth
+                            elif boundsWidth > 0f then
+                                max0 (boundsWidth - padding.Left - padding.Right)
+                            else
+                                0f
+                        if wrapWidth > 0f then
+                            NoobishFont.measureMultiLine font fontSize wrapWidth text
+                        else
+                            NoobishFont.measureSingleLine font fontSize text
                     else
                         NoobishFont.measureSingleLine font fontSize text
                 components.ContentSize.[i] <- {
