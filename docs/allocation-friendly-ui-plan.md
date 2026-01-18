@@ -302,6 +302,47 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: added V2 progress bar component with segmented render support.
 - Done: refactored V2 input processing helpers with pure hit testing and floor-based slider stepping, plus added tests.
 - Done: added V2 scroll container support (storage, input wheel handling, layout bounds, render offsets).
+- Done: documented V1/V2 component and behavior parity snapshot with noted intentional differences.
+
+## V1/V2 Parity Snapshot (Component + Behavior)
+V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (for example: any container can scroll, and there is no dedicated scrollable component).
+
+### Components
+| Component/Feature | V1 | V2 | Notes |
+| --- | --- | --- | --- |
+| Header | Yes | Yes | V2 builder in `NoobishV2` |
+| Label | Yes | Yes | V2 builder in `NoobishV2` |
+| Paragraph | Yes | Yes | Text wrap + align supported |
+| Textbox | Yes | Partial | V2 has builder + `WantsTextChanged`, but no text input/editing yet |
+| Button | Yes | Yes | Click/press flags in V2 input buffer |
+| Checkbox | Yes | Partial | V2 has builder + toggle state; visuals/behavior still minimal |
+| Slider | Yes | Yes | V2 has builder, render pin, and input drag |
+| ProgressBar | Yes | Yes | V2 supports segmented progress |
+| Space | Yes | Yes | V2 builder in `NoobishV2` |
+| Panel | Yes | Partial | V2 has panel + stack/grid containers, but no window helpers |
+| Division/Stack | Yes | Yes | V1 `Div*` vs V2 `beginStack*` with `Division` theme |
+| Grid | Yes | Yes | V2 supports grid + spans |
+| Canvas/Relative | Yes | Yes | V2 canvas uses relative layout |
+| HorizontalRule | Yes | Yes | V2 builder in `NoobishV2` |
+| Image | Yes | No | V2 render has no image support yet |
+| List | Yes | No | To be redesigned for scrollable containers |
+| Combobox | Yes | No | Overlay/menu behavior not implemented in V2 |
+| Overlaypane/Window | Yes | No | V2 has no overlay/window helpers yet |
+| Scroll component | Implicit | No | V2 uses scroll flags on any container |
+
+### Behavior/Functionality
+| Behavior | V1 | V2 | Notes |
+| --- | --- | --- | --- |
+| Click/Press input | Yes | Yes | V2 uses `InputBufferV2` |
+| Hover state | Yes | Yes | V2 tracks `Hovered` and renders hover state |
+| Toggle state | Yes | Yes | V2 uses `Toggled` + `WantsToggle` |
+| Text input/editing | Yes | No | V2 buffer supports text payload, but no key handling/cursor |
+| Focus/cursor caret | Yes | No | V2 has no focus/cursor implementation |
+| Scroll wheel | Yes | Yes | V2 scrolls nearest scrollable ancestor |
+| Scroll bars visuals | Yes | No | V2 does not render scroll bars yet |
+| Layout: stack/grid/relative | Yes | Yes | V2 includes basic layout pass |
+| Padding/margin defaults | Yes | Yes | V2 applies style defaults + overrides |
+| Image rendering | Yes | No | Pending V2 render support |
 
 ## Open Questions
 - Do you want `localId` to be user-defined or derived from call-site order?
