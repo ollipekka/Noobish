@@ -1,5 +1,7 @@
 namespace Noobish
 
+open System
+open System.Buffers
 open System.Diagnostics
 
 module NoobishLayoutV2 =
@@ -173,64 +175,74 @@ module NoobishLayoutV2 =
             let children = components.Children.[index]
             let cellWidth = if cols > 0 then contentWidth / float32 cols else 0f
             let cellHeight = if rows > 0 then contentHeight / float32 rows else 0f
-            let occupancy = Array.create (max 0 (cols * rows)) false
-
-            let canPlace row col colspan rowspan =
-                if row < 0 || col < 0 || row + rowspan > rows || col + colspan > cols then
-                    false
+            let cellCount = max 0 (cols * rows)
+            let occupancy =
+                if cellCount = 0 then
+                    Array.Empty<bool>()
                 else
-                    let mutable ok = true
+                    ArrayPool<bool>.Shared.Rent cellCount
+            try
+                if cellCount > 0 then
+                    Array.Clear(occupancy, 0, cellCount)
+
+                let canPlace row col colspan rowspan =
+                    if row < 0 || col < 0 || row + rowspan > rows || col + colspan > cols then
+                        false
+                    else
+                        let mutable ok = true
+                        let mutable r = row
+                        while ok && r < row + rowspan do
+                            let mutable c = col
+                            while ok && c < col + colspan do
+                                if occupancy.[r * cols + c] then
+                                    ok <- false
+                                c <- c + 1
+                            r <- r + 1
+                        ok
+
+                let mark row col colspan rowspan =
                     let mutable r = row
-                    while ok && r < row + rowspan do
+                    while r < row + rowspan do
                         let mutable c = col
-                        while ok && c < col + colspan do
-                            if occupancy.[r * cols + c] then
-                                ok <- false
+                        while c < col + colspan do
+                            occupancy.[r * cols + c] <- true
                             c <- c + 1
                         r <- r + 1
-                    ok
 
-            let mark row col colspan rowspan =
-                let mutable r = row
-                while r < row + rowspan do
-                    let mutable c = col
-                    while c < col + colspan do
-                        occupancy.[r * cols + c] <- true
-                        c <- c + 1
-                    r <- r + 1
-
-            for i = 0 to children.Count - 1 do
-                let childIndex = int children.[i].Index
-                let span = components.GridSpan.[childIndex]
-                Debug.Assert(components.Fill.[childIndex].Horizontal && components.Fill.[childIndex].Vertical, "Grid children must fill horizontally and vertically.")
-                let colspan = max 1 span.Colspan
-                let rowspan = max 1 span.Rowspan
-                let colspan = if cols > 0 then min colspan cols else colspan
-                let rowspan = if rows > 0 then min rowspan rows else rowspan
-                let margin = components.Margin.[childIndex]
-                let mutable placed = false
-                let mutable row = 0
-                let mutable col = 0
-                if cols > 0 && rows > 0 then
-                    let mutable r = 0
-                    while not placed && r < rows do
-                        let mutable c = 0
-                        while not placed && c < cols do
-                            if canPlace r c colspan rowspan then
-                                row <- r
-                                col <- c
-                                mark r c colspan rowspan
-                                placed <- true
-                            c <- c + 1
-                        r <- r + 1
-                if not placed then
-                    row <- if cols > 0 then i / cols else 0
-                    col <- if cols > 0 then i % cols else 0
-                let childStartX = contentX + float32 col * cellWidth
-                let childStartY = contentY + float32 row * cellHeight
-                let childWidth = cellWidth * float32 colspan
-                let childHeight = cellHeight * float32 rowspan
-                layoutComponent components childStartX childStartY childWidth childHeight childIndex
+                for i = 0 to children.Count - 1 do
+                    let childIndex = int children.[i].Index
+                    let span = components.GridSpan.[childIndex]
+                    Debug.Assert(components.Fill.[childIndex].Horizontal && components.Fill.[childIndex].Vertical, "Grid children must fill horizontally and vertically.")
+                    let colspan = max 1 span.Colspan
+                    let rowspan = max 1 span.Rowspan
+                    let colspan = if cols > 0 then min colspan cols else colspan
+                    let rowspan = if rows > 0 then min rowspan rows else rowspan
+                    let mutable placed = false
+                    let mutable row = 0
+                    let mutable col = 0
+                    if cols > 0 && rows > 0 then
+                        let mutable r = 0
+                        while not placed && r < rows do
+                            let mutable c = 0
+                            while not placed && c < cols do
+                                if canPlace r c colspan rowspan then
+                                    row <- r
+                                    col <- c
+                                    mark r c colspan rowspan
+                                    placed <- true
+                                c <- c + 1
+                            r <- r + 1
+                    if not placed then
+                        row <- if cols > 0 then i / cols else 0
+                        col <- if cols > 0 then i % cols else 0
+                    let childStartX = contentX + float32 col * cellWidth
+                    let childStartY = contentY + float32 row * cellHeight
+                    let childWidth = cellWidth * float32 colspan
+                    let childHeight = cellHeight * float32 rowspan
+                    layoutComponent components childStartX childStartY childWidth childHeight childIndex
+            finally
+                if cellCount > 0 then
+                    ArrayPool<bool>.Shared.Return occupancy 
 
         | LayoutV2.Relative _ ->
             let children = components.Children.[index]

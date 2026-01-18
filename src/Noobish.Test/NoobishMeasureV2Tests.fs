@@ -177,12 +177,15 @@ let ``computeContainerContentSize handles layout variants`` () =
     let maxHeight = 9f
     let linearH = NoobishMeasureV2.computeContainerContentSize LayoutV2.LinearHorizontal totalWidth totalHeight maxWidth maxHeight
     let linearV = NoobishMeasureV2.computeContainerContentSize LayoutV2.LinearVertical totalWidth totalHeight maxWidth maxHeight
+    let stack = NoobishMeasureV2.computeContainerContentSize LayoutV2.Stack totalWidth totalHeight maxWidth maxHeight
     let grid = NoobishMeasureV2.computeContainerContentSize (LayoutV2.Grid(2, 2)) totalWidth totalHeight maxWidth maxHeight
     let none = NoobishMeasureV2.computeContainerContentSize LayoutV2.None totalWidth totalHeight maxWidth maxHeight
     Assert.AreEqual(totalWidth, linearH.Width)
     Assert.AreEqual(maxHeight, linearH.Height)
     Assert.AreEqual(maxWidth, linearV.Width)
     Assert.AreEqual(totalHeight, linearV.Height)
+    Assert.AreEqual(maxWidth, stack.Width)
+    Assert.AreEqual(maxHeight, stack.Height)
     Assert.AreEqual(0f, grid.Width)
     Assert.AreEqual(0f, grid.Height)
     Assert.AreEqual(0f, none.Width)
