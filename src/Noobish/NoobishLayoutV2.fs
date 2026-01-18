@@ -5,6 +5,63 @@ open System.Buffers
 open System.Diagnostics
 
 module NoobishLayoutV2 =
+    let internal computeAvailableContent (availableWidth: float32) (availableHeight: float32) (margin: NoobishMargin) (padding: NoobishPadding) =
+        let width = Internal.max0 (availableWidth - margin.Left - margin.Right - padding.Left - padding.Right)
+        let height = Internal.max0 (availableHeight - margin.Top - margin.Bottom - padding.Top - padding.Bottom)
+        struct(width, height)
+
+    let internal resolveContentSize
+        (minSize: NoobishSize)
+        (contentSize: NoobishSize)
+        (fill: Fill)
+        (scroll: Scroll)
+        (availableContentWidth: float32)
+        (availableContentHeight: float32) =
+        let widthContent =
+            if fill.Horizontal || (scroll.Horizontal && contentSize.Width > availableContentWidth) then
+                max minSize.Width availableContentWidth
+            else
+                max minSize.Width contentSize.Width
+        let heightContent =
+            if fill.Vertical || (scroll.Vertical && contentSize.Height > availableContentHeight) then
+                max minSize.Height availableContentHeight
+            else
+                max minSize.Height contentSize.Height
+        struct(widthContent, heightContent)
+
+    let internal computeOuterSizeVertical
+        (minSize: NoobishSize)
+        (contentSize: NoobishSize)
+        (padding: NoobishPadding)
+        (margin: NoobishMargin) =
+        let childContentHeight = max minSize.Height contentSize.Height
+        let childContentHeightWithPadding = childContentHeight + padding.Top + padding.Bottom
+        let minHeightWithPadding = minSize.Height + padding.Top + padding.Bottom
+        let outerContent = childContentHeightWithPadding + margin.Top + margin.Bottom
+        let outerMin = minHeightWithPadding + margin.Top + margin.Bottom
+        struct(outerContent, outerMin)
+
+    let internal computeOuterSizeHorizontal
+        (minSize: NoobishSize)
+        (contentSize: NoobishSize)
+        (padding: NoobishPadding)
+        (margin: NoobishMargin) =
+        let childContentWidth = max minSize.Width contentSize.Width
+        let childContentWidthWithPadding = childContentWidth + padding.Left + padding.Right
+        let minWidthWithPadding = minSize.Width + padding.Left + padding.Right
+        let outerContent = childContentWidthWithPadding + margin.Left + margin.Right
+        let outerMin = minWidthWithPadding + margin.Left + margin.Right
+        struct(outerContent, outerMin)
+
+    let internal shouldFill (fillFlag: bool) (scrollFlag: bool) (outerContent: float32) (availableContent: float32) =
+        fillFlag || (scrollFlag && outerContent > availableContent)
+
+    let internal computeFillShare (remaining: float32) (fillCount: int) =
+        if fillCount > 0 then
+            remaining / float32 fillCount
+        else
+            0f
+
     let private computeBounds
         (components: INoobishComponents2)
         (startX: float32)
@@ -19,25 +76,9 @@ module NoobishLayoutV2 =
         let margin = components.Margin.[index]
         let padding = components.Padding.[index]
 
-        let minWidth = minSize.Width + padding.Left + padding.Right
-        let minHeight = minSize.Height + padding.Top + padding.Bottom
-        let availableContentWidth = Internal.max0 (availableWidth - margin.Left - margin.Right - padding.Left - padding.Right)
-        let availableContentHeight = Internal.max0 (availableHeight - margin.Top - margin.Bottom - padding.Top - padding.Bottom)
-
-        let widthContent =
-            if fill.Horizontal || (scroll.Horizontal && contentSize.Width > availableContentWidth) then
-                max minSize.Width availableContentWidth
-            else
-                max minSize.Width contentSize.Width
-
+        let struct(availableContentWidth, availableContentHeight) = computeAvailableContent availableWidth availableHeight margin padding
+        let struct(widthContent, heightContent) = resolveContentSize minSize contentSize fill scroll availableContentWidth availableContentHeight
         let width = widthContent + padding.Left + padding.Right
-
-        let heightContent =
-            if fill.Vertical || (scroll.Vertical && contentSize.Height > availableContentHeight) then
-                max minSize.Height availableContentHeight
-            else
-                max minSize.Height contentSize.Height
-
         let height = heightContent + padding.Top + padding.Bottom
 
         let bounds: NoobishRectangle = {
@@ -75,24 +116,16 @@ module NoobishLayoutV2 =
                 let minSize = components.MinSize.[childIndex]
                 let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let childContentHeight = max minSize.Height contentSize.Height
-                let childContentHeightWithPadding = childContentHeight + padding.Top + padding.Bottom
-                let minHeightWithPadding = minSize.Height + padding.Top + padding.Bottom
-                let outerContent = childContentHeightWithPadding + margin.Top + margin.Bottom
-                let outerMin = minHeightWithPadding + margin.Top + margin.Bottom
+                let struct(outerContent, _outerMin) = computeOuterSizeVertical minSize contentSize padding margin
                 let scroll = components.Scroll.[childIndex]
-                let scrollOverflow = scroll.Vertical && outerContent > contentHeight
-                if components.Fill.[childIndex].Vertical || scrollOverflow then
+                let fillVertical = shouldFill components.Fill.[childIndex].Vertical scroll.Vertical outerContent contentHeight
+                if fillVertical then
                     fillCount <- fillCount + 1
                 else
                     fixedHeight <- fixedHeight + outerContent
 
             let remaining = Internal.max0 (contentHeight - fixedHeight)
-            let fillShare =
-                if fillCount > 0 then
-                    remaining / float32 fillCount
-                else
-                    0f
+            let fillShare = computeFillShare remaining fillCount
 
             let mutable cursorY = contentY
             for i = 0 to children.Count - 1 do
@@ -101,15 +134,10 @@ module NoobishLayoutV2 =
                 let minSize = components.MinSize.[childIndex]
                 let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let childContentHeight = max minSize.Height contentSize.Height
-                let childContentHeightWithPadding = childContentHeight + padding.Top + padding.Bottom
-                let minHeightWithPadding = minSize.Height + padding.Top + padding.Bottom
-                let outerContent = childContentHeightWithPadding + margin.Top + margin.Bottom
-                let outerMin = minHeightWithPadding + margin.Top + margin.Bottom
+                let struct(outerContent, outerMin) = computeOuterSizeVertical minSize contentSize padding margin
                 let scroll = components.Scroll.[childIndex]
-                let scrollOverflow = scroll.Vertical && outerContent > contentHeight
                 let outerHeight =
-                    if components.Fill.[childIndex].Vertical || scrollOverflow then
+                    if shouldFill components.Fill.[childIndex].Vertical scroll.Vertical outerContent contentHeight then
                         max outerMin fillShare
                     else
                         outerContent
@@ -128,24 +156,16 @@ module NoobishLayoutV2 =
                 let minSize = components.MinSize.[childIndex]
                 let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let childContentWidth = max minSize.Width contentSize.Width
-                let childContentWidthWithPadding = childContentWidth + padding.Left + padding.Right
-                let minWidthWithPadding = minSize.Width + padding.Left + padding.Right
-                let outerContent = childContentWidthWithPadding + margin.Left + margin.Right
-                let outerMin = minWidthWithPadding + margin.Left + margin.Right
+                let struct(outerContent, _outerMin) = computeOuterSizeHorizontal minSize contentSize padding margin
                 let scroll = components.Scroll.[childIndex]
-                let scrollOverflow = scroll.Horizontal && outerContent > contentWidth
-                if components.Fill.[childIndex].Horizontal || scrollOverflow then
+                let fillHorizontal = shouldFill components.Fill.[childIndex].Horizontal scroll.Horizontal outerContent contentWidth
+                if fillHorizontal then
                     fillCount <- fillCount + 1
                 else
                     fixedWidth <- fixedWidth + outerContent
 
             let remaining = Internal.max0 (contentWidth - fixedWidth)
-            let fillShare =
-                if fillCount > 0 then
-                    remaining / float32 fillCount
-                else
-                    0f
+            let fillShare = computeFillShare remaining fillCount
 
             let mutable cursorX = contentX
             for i = 0 to children.Count - 1 do
@@ -154,15 +174,10 @@ module NoobishLayoutV2 =
                 let minSize = components.MinSize.[childIndex]
                 let contentSize = components.ContentSize.[childIndex]
                 let padding = components.Padding.[childIndex]
-                let childContentWidth = max minSize.Width contentSize.Width
-                let childContentWidthWithPadding = childContentWidth + padding.Left + padding.Right
-                let minWidthWithPadding = minSize.Width + padding.Left + padding.Right
-                let outerContent = childContentWidthWithPadding + margin.Left + margin.Right
-                let outerMin = minWidthWithPadding + margin.Left + margin.Right
+                let struct(outerContent, outerMin) = computeOuterSizeHorizontal minSize contentSize padding margin
                 let scroll = components.Scroll.[childIndex]
-                let scrollOverflow = scroll.Horizontal && outerContent > contentWidth
                 let outerWidth =
-                    if components.Fill.[childIndex].Horizontal || scrollOverflow then
+                    if shouldFill components.Fill.[childIndex].Horizontal scroll.Horizontal outerContent contentWidth then
                         max outerMin fillShare
                     else
                         outerContent
@@ -172,18 +187,15 @@ module NoobishLayoutV2 =
                 cursorX <- cursorX + outerWidth
 
         | LayoutV2.Grid(cols, rows) ->
+            if cols <= 0 || rows <= 0 then
+                invalidArg "cols" "Grid layout requires positive columns and rows."
             let children = components.Children.[index]
-            let cellWidth = if cols > 0 then contentWidth / float32 cols else 0f
-            let cellHeight = if rows > 0 then contentHeight / float32 rows else 0f
-            let cellCount = max 0 (cols * rows)
-            let occupancy =
-                if cellCount = 0 then
-                    Array.Empty<bool>()
-                else
-                    ArrayPool<bool>.Shared.Rent cellCount
+            let cellWidth = contentWidth / float32 cols 
+            let cellHeight = contentHeight / float32 rows 
+            let cellCount = cols * rows
+            let occupancy = ArrayPool<bool>.Shared.Rent cellCount
             try
-                if cellCount > 0 then
-                    Array.Clear(occupancy, 0, cellCount)
+                Array.Clear(occupancy, 0, cellCount)
 
                 let canPlace row col colspan rowspan =
                     if row < 0 || col < 0 || row + rowspan > rows || col + colspan > cols then
@@ -215,34 +227,32 @@ module NoobishLayoutV2 =
                     Debug.Assert(components.Fill.[childIndex].Horizontal && components.Fill.[childIndex].Vertical, "Grid children must fill horizontally and vertically.")
                     let colspan = max 1 span.Colspan
                     let rowspan = max 1 span.Rowspan
-                    let colspan = if cols > 0 then min colspan cols else colspan
-                    let rowspan = if rows > 0 then min rowspan rows else rowspan
+                    let colspan = min colspan cols
+                    let rowspan = min rowspan rows
                     let mutable placed = false
                     let mutable row = 0
                     let mutable col = 0
-                    if cols > 0 && rows > 0 then
-                        let mutable r = 0
-                        while not placed && r < rows do
-                            let mutable c = 0
-                            while not placed && c < cols do
-                                if canPlace r c colspan rowspan then
-                                    row <- r
-                                    col <- c
-                                    mark r c colspan rowspan
-                                    placed <- true
-                                c <- c + 1
-                            r <- r + 1
+                    let mutable r = 0
+                    while not placed && r < rows do
+                        let mutable c = 0
+                        while not placed && c < cols do
+                            if canPlace r c colspan rowspan then
+                                row <- r
+                                col <- c
+                                mark r c colspan rowspan
+                                placed <- true
+                            c <- c + 1
+                        r <- r + 1
                     if not placed then
-                        row <- if cols > 0 then i / cols else 0
-                        col <- if cols > 0 then i % cols else 0
+                        row <- i / cols
+                        col <- i % cols
                     let childStartX = contentX + float32 col * cellWidth
                     let childStartY = contentY + float32 row * cellHeight
                     let childWidth = cellWidth * float32 colspan
                     let childHeight = cellHeight * float32 rowspan
                     layoutComponent components childStartX childStartY childWidth childHeight childIndex
             finally
-                if cellCount > 0 then
-                    ArrayPool<bool>.Shared.Return occupancy 
+                ArrayPool<bool>.Shared.Return occupancy 
 
         | LayoutV2.Relative _ ->
             let children = components.Children.[index]

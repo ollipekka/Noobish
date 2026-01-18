@@ -4,6 +4,89 @@ open NUnit.Framework
 open Noobish
 
 [<Test>]
+let ``computeAvailableContent clamps to zero`` () =
+    let margin = {NoobishMargin.Top = 1f; Right = 4f; Bottom = 1f; Left = 3f}
+    let padding = {NoobishPadding.Top = 2f; Right = 2f; Bottom = 3f; Left = 2f}
+    let struct(width, height) = NoobishLayoutV2.computeAvailableContent 5f 10f margin padding
+    Assert.AreEqual(0f, width)
+    Assert.AreEqual(3f, height)
+
+[<Test>]
+let ``resolveContentSize respects fill and scroll overflow`` () =
+    let minSize = {Width = 2f; Height = 2f}
+    let contentSize = {Width = 8f; Height = 8f}
+    let fill: Fill = {Horizontal = false; Vertical = true}
+    let scroll = {Horizontal = true; Vertical = false}
+    let struct(width, height) = NoobishLayoutV2.resolveContentSize minSize contentSize fill scroll 5f 6f
+    Assert.AreEqual(5f, width)
+    Assert.AreEqual(6f, height)
+
+[<Test>]
+let ``computeOuterSize helpers include padding and margin`` () =
+    let minSize = {Width = 4f; Height = 4f}
+    let contentSize = {Width = 10f; Height = 12f}
+    let padding = {NoobishPadding.Top = 2f; Right = 3f; Bottom = 1f; Left = 1f}
+    let margin = {NoobishMargin.Top = 1f; Right = 2f; Bottom = 2f; Left = 4f}
+    let struct(vOuterContent, vOuterMin) = NoobishLayoutV2.computeOuterSizeVertical minSize contentSize padding margin
+    let struct(hOuterContent, hOuterMin) = NoobishLayoutV2.computeOuterSizeHorizontal minSize contentSize padding margin
+    Assert.AreEqual(18f, vOuterContent)
+    Assert.AreEqual(10f, vOuterMin)
+    Assert.AreEqual(20f, hOuterContent)
+    Assert.AreEqual(14f, hOuterMin)
+
+[<Test>]
+let ``shouldFill respects fill and scroll overflow`` () =
+    Assert.IsTrue(NoobishLayoutV2.shouldFill true false 5f 10f)
+    Assert.IsTrue(NoobishLayoutV2.shouldFill false true 12f 10f)
+    Assert.IsFalse(NoobishLayoutV2.shouldFill false true 5f 10f)
+
+[<Test>]
+let ``computeFillShare handles zero count`` () =
+    Assert.AreEqual(0f, NoobishLayoutV2.computeFillShare 10f 0)
+    Assert.AreEqual(5f, NoobishLayoutV2.computeFillShare 10f 2)
+
+[<Test>]
+let ``layoutFrame stacks children to same bounds`` () =
+    let components = NoobishComponentsV2(3)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+        |> NoobishV2.setPadding {NoobishPadding.Top = 2f; Right = 3f; Bottom = 4f; Left = 5f}
+    let rootId = rootCtx.ComponentId
+    components.Layout.[int rootId.Index] <- LayoutV2.Stack
+    components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
+
+    let child1Ctx = NoobishV2.beginLabel "One" rootCtx |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+    let child2Ctx = NoobishV2.beginLabel "Two" rootCtx |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+    let child1 = child1Ctx.ComponentId
+    let child2 = child2Ctx.ComponentId
+
+    NoobishLayoutV2.layoutFrame components 100f 60f
+
+    let child1Bounds = components.Bounds.[int child1.Index]
+    let child2Bounds = components.Bounds.[int child2.Index]
+    Assert.AreEqual(5f, child1Bounds.X)
+    Assert.AreEqual(2f, child1Bounds.Y)
+    Assert.AreEqual(child1Bounds.X, child2Bounds.X)
+    Assert.AreEqual(child1Bounds.Y, child2Bounds.Y)
+    Assert.AreEqual(92f, child1Bounds.Width)
+    Assert.AreEqual(54f, child1Bounds.Height)
+    Assert.AreEqual(child1Bounds.Width, child2Bounds.Width)
+    Assert.AreEqual(child1Bounds.Height, child2Bounds.Height)
+
+[<Test>]
+let ``layoutFrame throws on non-positive grid size`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+    let index = int ctx.ComponentId.Index
+    components.Layout.[index] <- LayoutV2.Grid(0, 2)
+
+    let ex = Assert.Throws<System.ArgumentException>(fun () -> NoobishLayoutV2.layoutFrame components 10f 10f |> ignore)
+    Assert.IsTrue(ex.Message.Contains("Grid layout requires positive columns and rows"))
+
+[<Test>]
 let ``layoutFrame stacks vertical children and respects fill`` () =
     let components = NoobishComponentsV2(3)
     let rootCtx =
