@@ -309,6 +309,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: added post-layout measure pass for wrapped text and wired it into the demo layout flow.
 - Done: refactored `NoobishMeasureV2` helpers for testability and added coverage for wrap width and layout sizing branches.
 - Done: refactored `NoobishLayoutV2` helpers for testability and expanded layout helper test coverage.
+- Done: added V2 textbox focus, caret, and text input handling with render-time cursor support.
 
 ## V1/V2 Parity Snapshot (Component + Behavior)
 V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (for example: any container can scroll, and there is no dedicated scrollable component).
@@ -319,7 +320,7 @@ V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (fo
 | Header | Yes | Yes | V2 builder in `NoobishV2` |
 | Label | Yes | Yes | V2 builder in `NoobishV2` |
 | Paragraph | Yes | Yes | Text wrap + align supported |
-| Textbox | Yes | Partial | V2 has builder + `WantsTextChanged`, but no text input/editing yet |
+| Textbox | Yes | Yes | V2 supports focus, editing, and caret rendering |
 | Button | Yes | Yes | Click/press flags in V2 input buffer |
 | Checkbox | Yes | Partial | V2 has builder + toggle state; visuals/behavior still minimal |
 | Slider | Yes | Yes | V2 has builder, render pin, and input drag |
@@ -342,8 +343,8 @@ V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (fo
 | Click/Press input | Yes | Yes | V2 uses `InputBufferV2` |
 | Hover state | Yes | Yes | V2 tracks `Hovered` and renders hover state |
 | Toggle state | Yes | Yes | V2 uses `Toggled` + `WantsToggle` |
-| Text input/editing | Yes | No | V2 buffer supports text payload, but no key handling/cursor |
-| Focus/cursor caret | Yes | No | V2 has no focus/cursor implementation |
+| Text input/editing | Yes | Yes | V2 consumes text input into focused textboxes |
+| Focus/cursor caret | Yes | Yes | V2 tracks focus + caret and renders cursor |
 | Scroll wheel | Yes | Yes | V2 scrolls nearest scrollable ancestor |
 | Scroll bars visuals | Yes | No | V2 does not render scroll bars yet |
 | Layout: stack/grid/relative | Yes | Yes | V2 includes basic layout pass |
@@ -359,7 +360,7 @@ V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (fo
 
 ## ToDo (By Component + Dependencies)
 - Theme parity: respect V1 theme/style lookups in V2 (colors/fonts/nine-patch/spacing); plan: add a per-frame resolved-style cache keyed by `UIComponentId`+state, reuse precomputed atlas/font indices, and route all render/layout defaults through cached lookups to avoid allocations.
-- Input Core: focus, key typing/press handling, cursor positioning, scroll wheel, drag interactions; depends on input buffer + input state APIs.
+- Input Core: remaining key handling (selection/edit shortcuts), drag interactions; depends on input buffer + input state APIs.
 - Layout Core: grid span/alignment, margin/padding overrides, percent sizing, style-driven min size defaults.
 - Rendering Core: scissor/clip parity, debug overlays, pressed color blend; depends on layout bounds + style states.
 - Text: wrap + align overrides from styles, text bounds selection; depends on layout + style defaults.

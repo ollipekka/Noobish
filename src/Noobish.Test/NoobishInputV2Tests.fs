@@ -270,7 +270,9 @@ let ``NoobishInputV2 ProcessInput clears down when not primary down`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -302,7 +304,9 @@ let ``NoobishInputV2 ProcessInput marks pressed when primary down`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = true
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -336,7 +340,9 @@ let ``NoobishInputV2 ProcessInput clicks on release over same component`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -366,7 +372,9 @@ let ``NoobishInputV2 ProcessInput clears down when index out of range`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = true
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -865,7 +873,9 @@ let ``NoobishInputV2 ProcessInput marks hovered`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -891,7 +901,9 @@ let ``NoobishInputV2 ProcessInput updates slider value on drag`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = true
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -919,7 +931,9 @@ let ``NoobishInputV2 ProcessInput scrolls vertical containers`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -948,7 +962,9 @@ let ``NoobishInputV2 ProcessInput scrolls when hovering child`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -978,7 +994,9 @@ let ``NoobishInputV2 scroll uses child bounds over content size`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -1008,7 +1026,9 @@ let ``NoobishInputV2 scroll uses child bounds over content size horizontally`` (
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = false
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
 
@@ -1028,3 +1048,88 @@ let ``NoobishInputV2 calculateSliderValue floors negative values`` () =
     let bounds:  Noobish.NoobishRectangle = { X = 0f; Y = 0f; Width = 10f; Height = 10f }
     let value = NoobishInputV2.calculateSliderValue bounds -10f 10f 2f 2.5f
     Assert.AreEqual(-6f, value)
+
+[<Test>]
+let ``InputBufferV2 Reset restores focus by local id`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let textboxCtx = NoobishV2.beginTextbox "Hi" 9us frameCtx
+    let index = int textboxCtx.ComponentId.Index
+    components.Text.[index] <- "Hi"
+    let buffer = InputBufferV2(1)
+
+    buffer.SetFocus(components, index, 5)
+    buffer.Reset components
+
+    Assert.IsTrue(components.Focused.[index])
+    Assert.AreEqual(2, components.CaretIndex.[index])
+
+    components.ReleaseContext textboxCtx
+    components.ReleaseContext frameCtx
+
+[<Test>]
+let ``NoobishInputV2 ProcessInput updates text from text input`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let textboxCtx = NoobishV2.beginTextbox "Hi" 10us frameCtx
+    let index = int textboxCtx.ComponentId.Index
+    components.Bounds.[index] <- { X = 0f; Y = 0f; Width = 100f; Height = 20f }
+    let buffer = InputBufferV2(1)
+
+    let mutable click = true
+    let mutable textBuffer = [||]
+    let mutable textCount = 0
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 5f
+            member _.PointerY = 5f
+            member _.ScrollWheelDelta = 0f
+            member _.IsPrimaryClick() = click
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() =
+                let count = textCount
+                textCount <- 0
+                struct(textBuffer, count)
+            }
+
+    NoobishInputV2.ProcessInput input components buffer
+    click <- false
+    textBuffer <- [| 'a' |]
+    textCount <- 1
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual("Hia", components.Text.[index])
+    Assert.AreEqual(ValueSome "Hia", buffer.TryGetTextChanged 10us)
+
+    components.ReleaseContext textboxCtx
+    components.ReleaseContext frameCtx
+
+[<Test>]
+let ``NoobishInputV2 ProcessInput moves caret with arrow keys`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let textboxCtx = NoobishV2.beginTextbox "Hello" 11us frameCtx
+    let index = int textboxCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.SetFocus(components, index, 5)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 0f
+            member _.PointerY = 0f
+            member _.ScrollWheelDelta = 0f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed keyId = keyId = NoobishKeyId.Left
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual(4, components.CaretIndex.[index])
+
+    components.ReleaseContext textboxCtx
+    components.ReleaseContext frameCtx

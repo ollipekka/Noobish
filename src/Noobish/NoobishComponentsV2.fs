@@ -60,6 +60,8 @@ and INoobishComponents2 =
     abstract Text: string[] with get
     abstract Textwrap: bool[] with get
     abstract TextAlign: NoobishAlignment[] with get
+    abstract Focused: bool[] with get
+    abstract CaretIndex: int[] with get
     abstract WantsOnClick: bool[] with get
     abstract WantsOnPress: bool[] with get
     abstract WantsTextChanged: bool[] with get
@@ -108,6 +110,8 @@ type NoobishComponentsV2(count: int) =
     member val Text = Array.create count ""
     member val Textwrap = Array.create count false
     member val TextAlign = Array.create count NoobishAlignment.None
+    member val Focused = Array.create count false
+    member val CaretIndex = Array.create count 0
     member val WantsOnClick = Array.create count false
     member val WantsOnPress = Array.create count false
     member val WantsTextChanged = Array.create count false
@@ -163,6 +167,8 @@ type NoobishComponentsV2(count: int) =
             this.Text.[i] <- ""
             this.Textwrap.[i] <- false
             this.TextAlign.[i] <- NoobishAlignment.None
+            this.Focused.[i] <- false
+            this.CaretIndex.[i] <- 0
             this.WantsOnClick.[i] <- false
             this.WantsOnPress.[i] <- false
             this.WantsTextChanged.[i] <- false
@@ -210,6 +216,8 @@ type NoobishComponentsV2(count: int) =
         member this.Text = this.Text
         member this.Textwrap = this.Textwrap
         member this.TextAlign = this.TextAlign
+        member this.Focused = this.Focused
+        member this.CaretIndex = this.CaretIndex
         member this.WantsOnClick = this.WantsOnClick
         member this.WantsOnPress = this.WantsOnPress
         member this.WantsTextChanged = this.WantsTextChanged

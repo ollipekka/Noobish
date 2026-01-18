@@ -24,13 +24,17 @@ module ComponentId =
         LanguagePrimitives.EnumOfValue v
 
 module TextDemo =
+    [<Literal>]
+    let TextboxId = 401us
+
     type Model() =
         member val LabelText = "Sample label" with get, set
         member val ParagraphText = "Sample paragraph text to show wrapping and layout." with get, set
+        member val TextboxText = "Type here..." with get, set
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
-        |> NoobishV2.beginGrid (2, 2)
+        |> NoobishV2.beginGrid (2, 3)
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
                 |> NoobishV2.beginLabel "Intro"
@@ -74,6 +78,17 @@ module TextDemo =
                 |> NoobishV2.beginParagraph model.ParagraphText
                     |> NoobishV2.setMinHeight 64f
                     |> NoobishV2.endParagraph
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setColspan 2
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginLabel "TextBox"
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginTextbox model.TextboxText TextboxId
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.setMinHeight 40f
+                    |> NoobishV2.endTextbox
                 |> NoobishV2.endPanel
             |> NoobishV2.endGrid
 
@@ -359,6 +374,9 @@ type SimpleDemoGame() as game =
 
     override _.Initialize() =
         base.Initialize()
+        game.Window.TextInput.Add(fun e ->
+            inputState.EnqueueTextInput e.Character
+        )
         let screenWidth = float32 game.GraphicsDevice.Viewport.Width
         let screenHeight = float32 game.GraphicsDevice.Viewport.Height
         ()
@@ -400,7 +418,10 @@ type SimpleDemoGame() as game =
             | ValueNone -> ()
         | DemoPage.Grid -> ()
         | DemoPage.Scroll -> ()
-        | DemoPage.Text -> ()
+        | DemoPage.Text ->
+            match inputBuffer.TryGetTextChanged TextDemo.TextboxId with
+            | ValueSome text -> demoModel.Text.TextboxText <- text
+            | ValueNone -> ()
 
         base.Update(gameTime)
 

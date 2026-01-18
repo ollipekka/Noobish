@@ -12,6 +12,8 @@ let ``NoobishComponentsV2 initializes arrays`` () =
     Assert.AreEqual(4, components.Layout.Length)
     Assert.AreEqual(4, components.Text.Length)
     Assert.AreEqual(4, components.WantsText.Length)
+    Assert.AreEqual(4, components.Focused.Length)
+    Assert.AreEqual(4, components.CaretIndex.Length)
     Assert.AreEqual(4, components.WantsSlider.Length)
     Assert.AreEqual(4, components.SliderMin.Length)
     Assert.AreEqual(4, components.SliderMax.Length)
@@ -63,6 +65,8 @@ let ``NoobishComponentsV2 clear resets state`` () =
     components.WantsText.[index] <- true
     components.Textwrap.[index] <- true
     components.TextAlign.[index] <- NoobishAlignment.Center
+    components.Focused.[index] <- true
+    components.CaretIndex.[index] <- 4
     components.WantsOnClick.[index] <- true
     components.WantsOnPress.[index] <- true
     components.WantsTextChanged.[index] <- true
@@ -87,6 +91,8 @@ let ``NoobishComponentsV2 clear resets state`` () =
     Assert.AreEqual("", components.Text.[index])
     Assert.IsFalse(components.Textwrap.[index])
     Assert.AreEqual(NoobishAlignment.None, components.TextAlign.[index])
+    Assert.IsFalse(components.Focused.[index])
+    Assert.AreEqual(0, components.CaretIndex.[index])
     Assert.IsFalse(components.WantsOnClick.[index])
     Assert.IsFalse(components.WantsOnPress.[index])
     Assert.IsFalse(components.WantsTextChanged.[index])

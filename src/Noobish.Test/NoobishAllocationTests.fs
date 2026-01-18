@@ -104,7 +104,9 @@ let ``NoobishInputV2 ProcessInput allocates no managed memory`` () =
             member _.IsPrimaryClick() = false
             member _.IsPrimaryDown() = true
             member _.IsSecondaryClick() = false
-            member _.IsKeyPressed _ = false }
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
 
     NoobishInputV2.ProcessInput input components buffer
     buffer.ClearDown()

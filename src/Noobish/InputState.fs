@@ -11,6 +11,7 @@ type INoobishInputState =
     abstract IsPrimaryDown: unit -> bool
     abstract IsSecondaryClick: unit -> bool
     abstract IsKeyPressed: NoobishKeyId -> bool
+    abstract ConsumeTextInput: unit -> struct(char[] * int)
 
 type NoobishInputState() =
     let mutable keyboardCurrent = Keyboard.GetState()
@@ -19,6 +20,8 @@ type NoobishInputState() =
     let mutable mousePrevious = mouseCurrent
     let mutable touchCurrent = TouchPanel.GetState()
     let mutable touchPrevious = touchCurrent
+    let mutable textBuffer = Array.zeroCreate<char> 16
+    let mutable textCount = 0
 
     let mapKeyId keyId =
         match keyId with
@@ -51,6 +54,8 @@ type NoobishInputState() =
         | NoobishKeyId.X -> ValueSome Keys.X
         | NoobishKeyId.Y -> ValueSome Keys.Y
         | NoobishKeyId.Z -> ValueSome Keys.Z
+        | NoobishKeyId.Left -> ValueSome Keys.Left
+        | NoobishKeyId.Right -> ValueSome Keys.Right
         | NoobishKeyId.None -> ValueNone
 
     member _.Update() =
@@ -60,6 +65,13 @@ type NoobishInputState() =
         mouseCurrent <- Mouse.GetState()
         touchPrevious <- touchCurrent
         touchCurrent <- TouchPanel.GetState()
+
+    member _.EnqueueTextInput(value: char) =
+        if textCount >= textBuffer.Length then
+            let nextSize = max 16 (textBuffer.Length * 2)
+            System.Array.Resize(&textBuffer, nextSize)
+        textBuffer.[textCount] <- value
+        textCount <- textCount + 1
 
     member _.PointerX = float32 mouseCurrent.X
     member _.PointerY = float32 mouseCurrent.Y
@@ -79,6 +91,11 @@ type NoobishInputState() =
         | ValueSome key -> keyboardPrevious.IsKeyDown key && keyboardCurrent.IsKeyUp key
         | ValueNone -> false
 
+    member _.ConsumeTextInput() =
+        let count = textCount
+        textCount <- 0
+        struct(textBuffer, count)
+
     interface INoobishInputState with
         member this.PointerX = this.PointerX
         member this.PointerY = this.PointerY
@@ -87,3 +104,4 @@ type NoobishInputState() =
         member this.IsPrimaryDown() = this.IsPrimaryDown()
         member this.IsSecondaryClick() = this.IsSecondaryClick()
         member this.IsKeyPressed keyId = this.IsKeyPressed keyId
+        member this.ConsumeTextInput() = this.ConsumeTextInput()

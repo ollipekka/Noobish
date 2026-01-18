@@ -7,20 +7,24 @@ open Noobish.Internal
 
 [<Test>]
 let ``resolveState maps enabled flag`` () =
-    Assert.AreEqual("default", NoobishRenderV2.resolveState true false false)
-    Assert.AreEqual("disabled", NoobishRenderV2.resolveState false false false)
+    Assert.AreEqual("default", NoobishRenderV2.resolveState true false false false)
+    Assert.AreEqual("disabled", NoobishRenderV2.resolveState false false false false)
 
 [<Test>]
 let ``resolveState toggled wins over default`` () =
-    Assert.AreEqual("toggled", NoobishRenderV2.resolveState true true false)
+    Assert.AreEqual("toggled", NoobishRenderV2.resolveState true true false false)
 
 [<Test>]
 let ``resolveState hovered when enabled`` () =
-    Assert.AreEqual("hovered", NoobishRenderV2.resolveState true false true)
+    Assert.AreEqual("hovered", NoobishRenderV2.resolveState true false true false)
 
 [<Test>]
 let ``resolveState toggledHovered when both`` () =
-    Assert.AreEqual("toggledHovered", NoobishRenderV2.resolveState true true true)
+    Assert.AreEqual("toggledHovered", NoobishRenderV2.resolveState true true true false)
+
+[<Test>]
+let ``resolveState focused overrides hover`` () =
+    Assert.AreEqual("focused", NoobishRenderV2.resolveState true false true true)
 
 [<Test>]
 let ``computeTextBounds applies padding and clamps size`` () =

@@ -21,6 +21,9 @@ type InputBufferV2(capacity: int) =
     let mutable lastHoveredLocalId = 0us
     let mutable lastClickedLocalId = 0us
     let mutable lastPressedLocalId = 0us
+    let mutable focusedIndex = -1
+    let mutable lastFocusedLocalId = 0us
+    let mutable caretIndex = 0
 
     let ensureActive index =
         if not activeFlags.[index] then
@@ -50,6 +53,15 @@ type InputBufferV2(capacity: int) =
     member _.LastPressedLocalId
         with get() = lastPressedLocalId
         and set value = lastPressedLocalId <- value
+    member _.FocusedIndex
+        with get() = focusedIndex
+        and set value = focusedIndex <- value
+    member _.LastFocusedLocalId
+        with get() = lastFocusedLocalId
+        and set value = lastFocusedLocalId <- value
+    member _.CaretIndex
+        with get() = caretIndex
+        and set value = caretIndex <- value
 
     member _.EnsureCapacity(count: int) =
         if count > clicked.Length then
@@ -73,6 +85,8 @@ type InputBufferV2(capacity: int) =
         localIdToIndex.Clear()
         for i = 0 to components.Count - 1 do
             components.Hovered.[i] <- false
+        if focusedIndex >= 0 && focusedIndex < components.Count then
+            components.Focused.[focusedIndex] <- false
         for i = 0 to components.Count - 1 do
             let localId = components.Id.[i].LocalId
             if localId <> 0us then
@@ -85,6 +99,18 @@ type InputBufferV2(capacity: int) =
                 components.Hovered.[index] <- true
             else
                 lastHoveredLocalId <- 0us
+        focusedIndex <- -1
+        if lastFocusedLocalId <> 0us then
+            let mutable index = 0
+            if localIdToIndex.TryGetValue(lastFocusedLocalId, &index) then
+                focusedIndex <- index
+                components.Focused.[index] <- true
+                let textLength = components.Text.[index].Length
+                caretIndex <- min caretIndex textLength
+                components.CaretIndex.[index] <- caretIndex
+            else
+                lastFocusedLocalId <- 0us
+                caretIndex <- 0
 
     member this.MarkClicked(index: int) =
         ensureActive index
@@ -114,6 +140,24 @@ type InputBufferV2(capacity: int) =
                 down.[downIndex] <- false
             downIndex <- index
             down.[index] <- true
+
+    member this.SetFocus(components: NoobishComponentsV2, index: int, nextCaret: int) =
+        if focusedIndex >= 0 && focusedIndex < components.Count then
+            components.Focused.[focusedIndex] <- false
+        focusedIndex <- index
+        let localId = components.Id.[index].LocalId
+        lastFocusedLocalId <- if localId <> 0us then localId else 0us
+        components.Focused.[index] <- true
+        let textLength = components.Text.[index].Length
+        caretIndex <- Math.Clamp(nextCaret, 0, textLength)
+        components.CaretIndex.[index] <- caretIndex
+
+    member this.ClearFocus(components: NoobishComponentsV2) =
+        if focusedIndex >= 0 && focusedIndex < components.Count then
+            components.Focused.[focusedIndex] <- false
+        focusedIndex <- -1
+        lastFocusedLocalId <- 0us
+        caretIndex <- 0
 
     member this.ClearDown() =
         if downIndex >= 0 then
@@ -383,6 +427,68 @@ module NoobishInputV2 =
                 NoobishComponentsV2.isClickable components i)
         buffer.Release(components, clickHit)
 
+    let internal updateFocusFromClick (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
+        if input.IsPrimaryClick() then
+            let focusHit =
+                hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+                    components.Visible.[i] && components.Enabled.[i] && components.WantsTextChanged.[i])
+            if focusHit >= 0 then
+                let textLength = components.Text.[focusHit].Length
+                buffer.SetFocus(components, focusHit, textLength)
+            else
+                buffer.ClearFocus components
+
+    let internal updateTextInput (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
+        let focusedIndex = buffer.FocusedIndex
+        let struct(textBuffer, textCount) = input.ConsumeTextInput()
+        if focusedIndex >= 0 && focusedIndex < components.Count && textCount > 0 then
+            let mutable text = components.Text.[focusedIndex]
+            let mutable caret = buffer.CaretIndex
+            let mutable changed = false
+            let mutable clearFocus = false
+
+            for i = 0 to textCount - 1 do
+                let c = textBuffer.[i]
+                if c = '\b' then
+                    if caret > 0 && text.Length > 0 then
+                        text <- text.Remove(caret - 1, 1)
+                        caret <- caret - 1
+                        changed <- true
+                elif c = '\r' || c = '\n' then
+                    clearFocus <- true
+                elif c = '\u001b' then
+                    clearFocus <- true
+                elif c = '\u007f' then
+                    if caret < text.Length then
+                        text <- text.Remove(caret, 1)
+                        changed <- true
+                elif not (Char.IsControl c) then
+                    text <- text.Insert(caret, string c)
+                    caret <- caret + 1
+                    changed <- true
+
+            if changed then
+                components.Text.[focusedIndex] <- text
+                buffer.CaretIndex <- caret
+                components.CaretIndex.[focusedIndex] <- caret
+                buffer.MarkTextChanged(focusedIndex, text)
+
+            if clearFocus then
+                buffer.ClearFocus components
+
+    let internal updateCaretFromKeys (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
+        let focusedIndex = buffer.FocusedIndex
+        if focusedIndex >= 0 && focusedIndex < components.Count then
+            let textLength = components.Text.[focusedIndex].Length
+            let mutable caret = buffer.CaretIndex
+            if input.IsKeyPressed NoobishKeyId.Left then
+                caret <- max 0 (caret - 1)
+            elif input.IsKeyPressed NoobishKeyId.Right then
+                caret <- min textLength (caret + 1)
+            if caret <> buffer.CaretIndex then
+                buffer.CaretIndex <- caret
+                components.CaretIndex.[focusedIndex] <- caret
+
     let ProcessInput (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
         buffer.Reset components
         if buffer.DownIndex >= components.Count then
@@ -395,3 +501,6 @@ module NoobishInputV2 =
             updatePrimaryDown components buffer x y
         else
             updateRelease components buffer x y
+        updateFocusFromClick input components buffer x y
+        updateTextInput input components buffer
+        updateCaretFromKeys input components buffer

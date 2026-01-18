@@ -34,7 +34,7 @@ type InputBufferV2(capacity: int) =
 ## Proposed flow
 1. **Build UI** (V2 builder calls) and assign `localId` to any interactive element.
 2. **Prepare mapping**: `Reset` clears only the active indices and rebuilds `LocalIdToIndex` from current components (no allocations when capacity is stable).
-3. **Process input**: `NoobishInputV2.process` walks visible components, computes hit tests, and marks `Clicked/Pressed/TextChanged`.
+3. **Process input**: `NoobishInputV2.process` walks visible components, computes hit tests, consumes text input, and marks `Clicked/Pressed/TextChanged`.
 4. **Tick**: game logic calls `WasClicked localId`, `WasPressed localId`, `TryGetTextChanged localId` in a tight loop.
 
 ## Proposed API surface (module)
@@ -48,6 +48,7 @@ Notes:
 - `InputBufferV2.Reset` should not clear full arrays each frame; only clear indices in `ActiveIndices`.
 - `TextPayload` is indexed by component index for `TryGetTextChanged`.
 - `INoobishInputState.ScrollWheelDelta` reports the per-frame mouse wheel delta for scroll containers.
+- `INoobishInputState.ConsumeTextInput` returns the current text buffer and clears it.
 - Avoid lambdas or per-frame allocation in input processing.
 
 ## Optional: Event Queue (for dynamic content)

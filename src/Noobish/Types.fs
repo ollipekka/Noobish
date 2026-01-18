@@ -116,6 +116,8 @@ type NoobishKeyId =
 | X
 | Y
 | Z
+| Left
+| Right
 | None
 
 [<RequireQualifiedAccess>]
