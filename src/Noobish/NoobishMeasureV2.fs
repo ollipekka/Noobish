@@ -52,7 +52,7 @@ module NoobishMeasureV2 =
                     | LayoutV2.LinearVertical -> {Width = maxWidth; Height = totalHeight}
                     | LayoutV2.Stack
                     | LayoutV2.Relative _ -> {Width = maxWidth; Height = maxHeight}
-                    | LayoutV2.Grid _
+                    | LayoutV2.Grid _ -> {Width = 0f; Height = 0f} // Grid sizing is handled in layout; children are expected to fill cells.
                     | LayoutV2.None -> {Width = 0f; Height = 0f}
                 if computed.Width > 0f || computed.Height > 0f then
                     let existing = components.ContentSize.[i]
@@ -109,6 +109,28 @@ module NoobishMeasureV2 =
                 components.ContentSize.[i] <- minSize
         computeContainerContentSizes components
 
+    let measureFramePostLayoutWith (getFont: string -> NoobishFont) (getFontSize: string -> int) (components: NoobishComponentsV2) =
+        for i = 0 to components.Count - 1 do
+            let text = components.Text.[i]
+            if components.WantsText.[i] && components.Textwrap.[i] && not (String.IsNullOrWhiteSpace text) then
+                let themeId = components.ThemeId.[i]
+                let font = getFont themeId
+                let fontSize = getFontSize themeId
+                let bounds = components.Bounds.[i]
+                let padding = components.Padding.[i]
+                let wrapWidth = max0 (bounds.Width - padding.Left - padding.Right)
+                let struct(textWidth, textHeight) =
+                    if wrapWidth > 0f then
+                        NoobishFont.measureMultiLine font fontSize wrapWidth text
+                    else
+                        NoobishFont.measureSingleLine font fontSize text
+                let minSize = components.MinSize.[i]
+                components.ContentSize.[i] <- {
+                    Width = max minSize.Width (ceil textWidth)
+                    Height = max minSize.Height (ceil textHeight)
+                }
+        computeContainerContentSizes components
+
     let measureFrame (content: ContentManager) (styleSheet: NoobishStyleSheet) (components: NoobishComponentsV2) =
         let getFont themeId =
             let fontId = styleSheet.GetFont themeId "default"
@@ -147,3 +169,10 @@ module NoobishMeasureV2 =
                         Height = max size.Height height
                     }
         computeContainerContentSizes components
+
+    let measureFramePostLayout (content: ContentManager) (styleSheet: NoobishStyleSheet) (components: NoobishComponentsV2) =
+        let getFont themeId =
+            let fontId = styleSheet.GetFont themeId "default"
+            content.Load<NoobishFont> fontId
+        let getFontSize themeId = styleSheet.GetFontSize themeId "default"
+        measureFramePostLayoutWith getFont getFontSize components

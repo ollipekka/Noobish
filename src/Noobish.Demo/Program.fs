@@ -414,6 +414,8 @@ type SimpleDemoGame() as game =
         buildUi components screenWidth screenHeight demoModel
         NoobishMeasureV2.measureFrame game.Content styleSheet components
         NoobishLayoutV2.layoutFrame components screenWidth screenHeight
+        NoobishMeasureV2.measureFramePostLayout game.Content styleSheet components
+        NoobishLayoutV2.layoutFrame components screenWidth screenHeight
         NoobishInputV2.ProcessInput inputState components inputBuffer
         renderer.Draw components game.GraphicsDevice game.Content spriteBatch textBatch styleSheetId gameTime
 

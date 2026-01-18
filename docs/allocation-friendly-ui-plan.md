@@ -306,6 +306,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: added InputBufferV2 tests to cover missing branches for text/slider change queries.
 - Done: added NoobishV2 progress segment clamp coverage for non-positive values.
 - Done: added NoobishV2 progress segment coverage for positive values.
+- Done: added post-layout measure pass for wrapped text and wired it into the demo layout flow.
 
 ## V1/V2 Parity Snapshot (Component + Behavior)
 V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (for example: any container can scroll, and there is no dedicated scrollable component).

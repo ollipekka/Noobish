@@ -146,6 +146,23 @@ let ``measureFrameWith wraps text using parent bounds when available`` () =
     Assert.Greater(components.ContentSize.[childIndex].Height, 10f)
 
 [<Test>]
+let ``measureFramePostLayoutWith wraps text using component bounds`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginParagraph "x x x x x x x x"
+    let index = int ctx.ComponentId.Index
+    components.MinSize.[index] <- {Width = 0f; Height = 0f}
+    components.Bounds.[index] <- {X = 0f; Y = 0f; Width = 4f; Height = 0f}
+    components.Padding.[index] <- {NoobishPadding.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
+
+    let font = createFont ()
+    NoobishMeasureV2.measureFramePostLayoutWith (fun _ -> font) (fun _ -> 10) components
+
+    Assert.AreEqual(4f, components.ContentSize.[index].Width)
+    Assert.Greater(components.ContentSize.[index].Height, 1f)
+
+[<Test>]
 let ``measureFrameWith sizes horizontal containers from children`` () =
     let components = NoobishComponentsV2(3)
     let rootCtx =
