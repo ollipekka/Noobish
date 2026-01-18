@@ -1,5 +1,6 @@
 namespace Noobish
 
+open System
 open System.Collections.Generic
 open Noobish.Internal
 
@@ -13,8 +14,8 @@ type InputBufferV2(capacity: int) =
     let sliderChanged = Array.create capacity false
     let sliderPayload = Array.create capacity 0f
     let activeFlags = Array.create capacity false
-    let activeIndices = ResizeArray<int>()
-    let localIdToIndex = Dictionary<uint16, int>()
+    let activeIndices = ResizeArray<int>(capacity)
+    let localIdToIndex = Dictionary<uint16, int>(capacity)
     let mutable downIndex = -1
     let mutable hoveredIndex = -1
     let mutable lastHoveredLocalId = 0us
@@ -78,11 +79,12 @@ type InputBufferV2(capacity: int) =
                 localIdToIndex.[localId] <- i
         hoveredIndex <- -1
         if lastHoveredLocalId <> 0us then
-            match localIdToIndex.TryGetValue lastHoveredLocalId with
-            | true, index ->
+            let mutable index = 0
+            if localIdToIndex.TryGetValue(lastHoveredLocalId, &index) then
                 hoveredIndex <- index
                 components.Hovered.[index] <- true
-            | false, _ -> lastHoveredLocalId <- 0us
+            else
+                lastHoveredLocalId <- 0us
 
     member this.MarkClicked(index: int) =
         ensureActive index
@@ -121,34 +123,46 @@ type InputBufferV2(capacity: int) =
             this.MarkReleased index
 
     member this.WasClicked(localId: uint16) =
-        match localIdToIndex.TryGetValue localId with
-        | true, index -> clicked.[index]
-        | false, _ -> false
+        let mutable index = 0
+        if localIdToIndex.TryGetValue(localId, &index) then
+            clicked.[index]
+        else
+            false
 
     member this.WasPressed(localId: uint16) =
-        match localIdToIndex.TryGetValue localId with
-        | true, index -> pressed.[index]
-        | false, _ -> false
+        let mutable index = 0
+        if localIdToIndex.TryGetValue(localId, &index) then
+            pressed.[index]
+        else
+            false
 
     member this.WasReleased(localId: uint16) =
-        match localIdToIndex.TryGetValue localId with
-        | true, index -> released.[index]
-        | false, _ -> false
+        let mutable index = 0
+        if localIdToIndex.TryGetValue(localId, &index) then
+            released.[index]
+        else
+            false
 
     member this.IsDown(localId: uint16) =
-        match localIdToIndex.TryGetValue localId with
-        | true, index -> down.[index]
-        | false, _ -> false
+        let mutable index = 0
+        if localIdToIndex.TryGetValue(localId, &index) then
+            down.[index]
+        else
+            false
 
     member this.TryGetTextChanged(localId: uint16) =
-        match localIdToIndex.TryGetValue localId with
-        | true, index when textChanged.[index] -> ValueSome textPayload.[index]
-        | _ -> ValueNone
+        let mutable index = 0
+        if localIdToIndex.TryGetValue(localId, &index) && textChanged.[index] then
+            ValueSome textPayload.[index]
+        else
+            ValueNone
 
     member this.TryGetSliderChanged(localId: uint16) =
-        match localIdToIndex.TryGetValue localId with
-        | true, index when sliderChanged.[index] -> ValueSome sliderPayload.[index]
-        | _ -> ValueNone
+        let mutable index = 0
+        if localIdToIndex.TryGetValue(localId, &index) && sliderChanged.[index] then
+            ValueSome sliderPayload.[index]
+        else
+            ValueNone
 
     member _.GetClicked() = lastClickedLocalId
 
@@ -197,7 +211,7 @@ type InputBufferV2(capacity: int) =
             this.ClearDown()
 
 module NoobishInputV2 =
-    let internal contains (bounds: NoobishRectangle) (x: float32) (y: float32) =
+    let inline contains (bounds: NoobishRectangle) (x: float32) (y: float32) =
         x >= bounds.X && x <= bounds.X + bounds.Width
         && y >= bounds.Y && y <= bounds.Y + bounds.Height
 
@@ -210,56 +224,101 @@ module NoobishInputV2 =
             parentId <- components.ParentId.[parentIndex]
         bounds
 
+    let inline hitTestWith (count: int) ([<InlineIfLambda>] boundsAt: int -> NoobishRectangle) (x: float32) (y: float32) ([<InlineIfLambda>] predicate: int -> bool) =
+        let mutable hit = -1
+        let mutable i = count - 1
+        while i >= 0 && hit < 0 do
+            if predicate i then
+                let bounds = boundsAt i
+                if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
+                    hit <- i
+            i <- i - 1
+        hit
+
     let internal hitTest (components: NoobishComponentsV2) (x: float32) (y: float32) (predicate: int -> bool) =
+        hitTestWith components.Count (fun i -> clippedBounds components i) x y predicate
+
+    let internal hitTestVisibleEnabled (components: NoobishComponentsV2) (x: float32) (y: float32) =
         let mutable hit = -1
         let mutable i = components.Count - 1
         while i >= 0 && hit < 0 do
-            if predicate i then
+            if components.Visible.[i] && components.Enabled.[i] then
                 let bounds = clippedBounds components i
                 if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
                     hit <- i
             i <- i - 1
         hit
 
-    let process (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
+    let internal hitTestPressable (components: NoobishComponentsV2) (x: float32) (y: float32) =
+        let mutable hit = -1
+        let mutable i = components.Count - 1
+        while i >= 0 && hit < 0 do
+            if components.Visible.[i] && components.Enabled.[i] && components.WantsOnPress.[i] then
+                let bounds = clippedBounds components i
+                if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
+                    hit <- i
+            i <- i - 1
+        hit
+
+    let internal hitTestClickable (components: NoobishComponentsV2) (x: float32) (y: float32) =
+        let mutable hit = -1
+        let mutable i = components.Count - 1
+        while i >= 0 && hit < 0 do
+            if components.Visible.[i] && components.Enabled.[i] && components.WantsOnClick.[i] then
+                let bounds = clippedBounds components i
+                if bounds.Width > 0f && bounds.Height > 0f && contains bounds x y then
+                    hit <- i
+            i <- i - 1
+        hit
+
+    let internal calculateSliderValue (bounds: NoobishRectangle) (rangeStart: float32) (rangeEnd: float32) (step: float32) (x: float32) =
+        let width = bounds.Width
+        let relative =
+            if width <= 0f then 0f
+            else (x - bounds.X) / width
+        let unclamped = rangeStart + relative * (rangeEnd - rangeStart)
+        let stepped =
+            if step > 0f then
+                MathF.Floor(unclamped / step) * step
+            else
+                unclamped
+        Noobish.Internal.clamp stepped rangeStart rangeEnd
+
+    let internal updateHover (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
+        let hoverHit = hitTestVisibleEnabled components x y
+        buffer.UpdateHover(components, hoverHit)
+
+    let internal updateSliderFromPointer (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) =
+        let downIndex = buffer.DownIndex
+        if components.WantsSlider.[downIndex] then
+            let bounds = components.Bounds.[downIndex]
+            let rangeStart = components.SliderMin.[downIndex]
+            let rangeEnd = components.SliderMax.[downIndex]
+            let step = components.SliderStep.[downIndex]
+            let value = calculateSliderValue bounds rangeStart rangeEnd step x
+            if value <> components.SliderValue.[downIndex] then
+                components.SliderValue.[downIndex] <- value
+                buffer.MarkSliderChanged(downIndex, value)
+
+    let internal updatePrimaryDown (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
+        if buffer.DownIndex < 0 then
+            let pressHit = hitTestPressable components x y
+            buffer.UpdateDown(components, pressHit)
+        if buffer.DownIndex >= 0 then
+            updateSliderFromPointer components buffer x
+
+    let internal updateRelease (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
+        let clickHit = hitTestClickable components x y
+        buffer.Release(components, clickHit)
+
+    let ProcessInput (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
         buffer.Reset components
         if buffer.DownIndex >= components.Count then
             buffer.ClearDown()
         let x = input.PointerX
         let y = input.PointerY
-        let hoverHit =
-            hitTest components x y (fun i ->
-                components.Visible.[i] && components.Enabled.[i])
-        buffer.UpdateHover(components, hoverHit)
+        updateHover components buffer x y
         if input.IsPrimaryDown() then
-            if buffer.DownIndex < 0 then
-                let pressHit =
-                    hitTest components x y (fun i ->
-                        NoobishComponentsV2.isPressable components i)
-                buffer.UpdateDown(components, pressHit)
-            if buffer.DownIndex >= 0 then
-                let downIndex = buffer.DownIndex
-                if components.WantsSlider.[downIndex] then
-                    let bounds = components.Bounds.[downIndex]
-                    let rangeStart = components.SliderMin.[downIndex]
-                    let rangeEnd = components.SliderMax.[downIndex]
-                    let step = components.SliderStep.[downIndex]
-                    let width = bounds.Width
-                    let relative =
-                        if width <= 0f then 0f
-                        else (x - bounds.X) / width
-                    let unclamped = rangeStart + relative * (rangeEnd - rangeStart)
-                    let stepped =
-                        if step > 0f then
-                            truncate (unclamped / step) * step
-                        else
-                            unclamped
-                    let value = Noobish.Internal.clamp stepped rangeStart rangeEnd
-                    if value <> components.SliderValue.[downIndex] then
-                        components.SliderValue.[downIndex] <- value
-                        buffer.MarkSliderChanged(downIndex, value)
+            updatePrimaryDown components buffer x y
         else
-            let clickHit =
-                hitTest components x y (fun i ->
-                    NoobishComponentsV2.isClickable components i)
-            buffer.Release(components, clickHit)
+            updateRelease components buffer x y

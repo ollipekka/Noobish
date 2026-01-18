@@ -28,6 +28,22 @@ module NoobishRenderV2 =
             Height = max0 (bounds.Height - padding.Top - padding.Bottom)
         }
 
+    let computeProgressSegmentWidth (contentWidth: float32) (segments: int) (gap: float32) =
+        if segments <= 0 then
+            0f
+        else
+            max0 ((contentWidth - gap * float32 (segments - 1)) / float32 segments)
+
+    let computeProgressBounds (bounds: NoobishRectangle) (padding: NoobishPadding) (progress: float32) =
+        let content = computeTextBounds bounds padding
+        let clamped = Noobish.Internal.clamp progress 0f 1f
+        {
+            X = content.X
+            Y = content.Y
+            Width = content.Width * clamped
+            Height = content.Height
+        }
+
     let computeSliderPinBounds
         (bounds: NoobishRectangle)
         (padding: NoobishPadding)
@@ -160,6 +176,74 @@ type NoobishMonoGameRendererV2() =
                 let size = Vector2(trackBounds.Width, trackBounds.Height)
                 DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
 
+    member private this.DrawProgressFill
+        (components: NoobishComponentsV2)
+        (styleSheet: NoobishStyleSheet)
+        (textureAtlas: NoobishTextureAtlas)
+        (spriteBatch: SpriteBatch)
+        (index: int) =
+        let bounds = components.Bounds.[index]
+        if bounds.Width > 0f && bounds.Height > 0f then
+            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
+            let padding = components.Padding.[index]
+            let progress = components.ProgressValue.[index]
+            let fillBounds = NoobishRenderV2.computeProgressBounds bounds padding progress
+            if fillBounds.Width > 0f && fillBounds.Height > 0f then
+                let themeId = "ProgressBar-Progress"
+                let layer = 1f - float32 components.Layer.[index] / 255f
+                let color = styleSheet.GetColor themeId state
+                let drawables = styleSheet.GetDrawables themeId state
+                let position = Vector2(fillBounds.X, fillBounds.Y)
+                let size = Vector2(fillBounds.Width, fillBounds.Height)
+                DrawUI.drawDrawable textureAtlas spriteBatch position size layer color drawables
+
+    member private this.DrawProgressSegments
+        (components: NoobishComponentsV2)
+        (styleSheet: NoobishStyleSheet)
+        (textureAtlas: NoobishTextureAtlas)
+        (spriteBatch: SpriteBatch)
+        (index: int) =
+        let bounds = components.Bounds.[index]
+        if bounds.Width > 0f && bounds.Height > 0f then
+            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index]
+            let padding = components.Padding.[index]
+            let content = NoobishRenderV2.computeTextBounds bounds padding
+            let segments = max 1 components.ProgressSegments.[index]
+            let dashMargin = styleSheet.GetMargin "ProgressBar-Dash" "default"
+            let gap = max 0f (dashMargin.Left + dashMargin.Right)
+            let segmentWidth = NoobishRenderV2.computeProgressSegmentWidth content.Width segments gap
+            let dashThemeId = "ProgressBar-Dash"
+            let dashColor = styleSheet.GetColor dashThemeId state
+            let dashDrawables = styleSheet.GetDrawables dashThemeId state
+            let dashPadding = styleSheet.GetPadding dashThemeId "default"
+            let progress = components.ProgressValue.[index]
+
+            for s = 0 to segments - 1 do
+                let segmentX = content.X + float32 s * (segmentWidth + gap)
+                let segmentBounds: NoobishRectangle = {
+                    X = segmentX
+                    Y = content.Y
+                    Width = segmentWidth
+                    Height = content.Height
+                }
+                if segmentBounds.Width > 0f && segmentBounds.Height > 0f then
+                    let layer = 1f - float32 components.Layer.[index] / 255f
+                    let position = Vector2(segmentBounds.X, segmentBounds.Y)
+                    let size = Vector2(segmentBounds.Width, segmentBounds.Height)
+                    DrawUI.drawDrawable textureAtlas spriteBatch position size layer dashColor dashDrawables
+
+                    let segmentProgress = Noobish.Internal.clamp (progress * float32 segments - float32 s) 0f 1f
+                    if segmentProgress > 0f then
+                        let fillBounds = NoobishRenderV2.computeTextBounds segmentBounds dashPadding
+                        let fillWidth = fillBounds.Width * segmentProgress
+                        if fillWidth > 0f then
+                            let themeId = "ProgressBar-Progress"
+                            let color = styleSheet.GetColor themeId state
+                            let drawables = styleSheet.GetDrawables themeId state
+                            let fillPosition = Vector2(fillBounds.X, fillBounds.Y)
+                            let fillSize = Vector2(fillWidth, fillBounds.Height)
+                            DrawUI.drawDrawable textureAtlas spriteBatch fillPosition fillSize layer color drawables
+
     member private this.DrawText
         (components: NoobishComponentsV2)
         (content: ContentManager)
@@ -211,6 +295,12 @@ type NoobishMonoGameRendererV2() =
                 if components.WantsSlider.[index] then
                     this.DrawSliderTrack components styleSheet textureAtlas spriteBatch index
                     this.DrawSliderPin components styleSheet textureAtlas spriteBatch index
+                elif components.WantsProgress.[index] then
+                    this.DrawBackground components styleSheet textureAtlas spriteBatch index
+                    if components.ProgressSegments.[index] > 1 then
+                        this.DrawProgressSegments components styleSheet textureAtlas spriteBatch index
+                    else
+                        this.DrawProgressFill components styleSheet textureAtlas spriteBatch index
                 else
                     this.DrawBackground components styleSheet textureAtlas spriteBatch index
                 spriteBatch.End()

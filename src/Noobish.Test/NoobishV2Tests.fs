@@ -365,6 +365,29 @@ let ``beginGrid sets grid layout and fill`` () =
     Assert.IsTrue(components.Fill.[index].Vertical)
 
 [<Test>]
+let ``progressBar stores value`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginProgressBar 0.25f
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual("ProgressBar", components.ThemeId.[index])
+    Assert.IsTrue(components.WantsProgress.[index])
+    Assert.AreEqual(0.25f, components.ProgressValue.[index])
+    Assert.IsTrue(components.Fill.[index].Horizontal)
+    Assert.IsFalse(components.Fill.[index].Vertical)
+
+[<Test>]
+let ``setProgressSegments clamps at one`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginProgressBar 0.4f
+        |> NoobishV2.setProgressSegments 0
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(1, components.ProgressSegments.[index])
+
+[<Test>]
 let ``horizontalRule fills horizontally and blocks`` () =
     let components = NoobishComponentsV2(1)
     let ctx =

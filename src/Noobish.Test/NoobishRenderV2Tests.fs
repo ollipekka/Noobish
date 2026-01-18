@@ -67,3 +67,16 @@ let ``computeSliderTrackBounds centers track`` () =
     Assert.AreEqual(7f, result.Y)
     Assert.AreEqual(92f, result.Width)
     Assert.AreEqual(4f, result.Height)
+
+[<Test>]
+let ``computeProgressBounds clamps width`` () =
+    let bounds: NoobishRectangle = {X = 0f; Y = 0f; Width = 50f; Height = 10f}
+    let padding = {NoobishPadding.Top = 1f; Right = 2f; Bottom = 1f; Left = 2f}
+    let result = NoobishRenderV2.computeProgressBounds bounds padding 1.5f
+    Assert.AreEqual(2f, result.X)
+    Assert.AreEqual(46f, result.Width)
+
+[<Test>]
+let ``computeProgressSegmentWidth accounts for gaps`` () =
+    let width = NoobishRenderV2.computeProgressSegmentWidth 100f 4 2f
+    Assert.AreEqual(23.5f, width)

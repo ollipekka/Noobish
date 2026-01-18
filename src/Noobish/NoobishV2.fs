@@ -239,6 +239,32 @@ module NoobishV2 =
     let slider (rangeStart: float32, rangeEnd: float32) (step: float32) (value: float32) (localId: uint16) (parentCtx: ComponentContextV2) =
         beginSlider (rangeStart, rangeEnd) step value localId parentCtx |> endSlider
 
+    let beginProgressBar (value: float32) (parentCtx: ComponentContextV2) =
+        let ctx = createComponent "ProgressBar" 0us parentCtx
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Block.[index] <- true
+        ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = false}
+        ctx.Components.WantsProgress.[index] <- true
+        ctx.Components.ProgressValue.[index] <- value
+        ctx.Components.ProgressSegments.[index] <- 1
+        ctx
+
+    let endProgressBar (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let progressBar (value: float32) (parentCtx: ComponentContextV2) =
+        beginProgressBar value parentCtx |> endProgressBar
+
+    let setProgress (value: float32) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.ProgressValue.[index] <- value
+        ctx
+
+    let setProgressSegments (segments: int) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.ProgressSegments.[index] <- max 1 segments
+        ctx
+
     let beginSpace (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Space" 0us parentCtx
         let index = int ctx.ComponentId.Index

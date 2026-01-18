@@ -108,9 +108,39 @@ module SliderDemo =
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
-        |> NoobishV2.beginSlider (0f, 100f) 1f model.Value SliderId
-            |> NoobishV2.setMinHeight 40f
-            |> NoobishV2.endSlider
+        |> NoobishV2.beginGrid (2, 2)
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginLabel "Slider"
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginSlider (0f, 100f) 1f model.Value SliderId
+                    |> NoobishV2.setMinHeight 40f
+                    |> NoobishV2.endSlider
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginLabel "Progress"
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginProgressBar (model.Value / 100f)
+                    |> NoobishV2.setProgressSegments 4
+                    |> NoobishV2.endProgressBar
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setColspan 2
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginLabel "Combined"
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginSlider (0f, 100f) 1f model.Value SliderId
+                    |> NoobishV2.setMinHeight 40f
+                    |> NoobishV2.endSlider
+                |> NoobishV2.beginProgressBar (model.Value / 100f)
+                    |> NoobishV2.setProgressSegments 10
+                    |> NoobishV2.endProgressBar
+                |> NoobishV2.endPanel
+            |> NoobishV2.endGrid
 
 module GridDemo =
     type Model() =
@@ -344,7 +374,7 @@ type SimpleDemoGame() as game =
         buildUi components screenWidth screenHeight demoModel
         NoobishMeasureV2.measureFrame game.Content styleSheet components
         NoobishLayoutV2.layoutFrame components screenWidth screenHeight
-        NoobishInputV2.process inputState components inputBuffer
+        NoobishInputV2.ProcessInput inputState components inputBuffer
         renderer.Draw components game.GraphicsDevice game.Content spriteBatch textBatch styleSheetId gameTime
 
         base.Draw(gameTime)

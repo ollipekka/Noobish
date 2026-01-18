@@ -65,6 +65,9 @@ and INoobishComponents2 =
     abstract SliderMax: float32[] with get
     abstract SliderStep: float32[] with get
     abstract SliderValue: float32[] with get
+    abstract WantsProgress: bool[] with get
+    abstract ProgressValue: float32[] with get
+    abstract ProgressSegments: int[] with get
 
 
 /// ECS-style storage for UI components (V2).
@@ -107,6 +110,9 @@ type NoobishComponentsV2(count: int) =
     member val SliderMax = Array.create count 0f
     member val SliderStep = Array.create count 0f
     member val SliderValue = Array.create count 0f
+    member val WantsProgress = Array.create count false
+    member val ProgressValue = Array.create count 0f
+    member val ProgressSegments = Array.create count 1
 
     member private this.CreateContext() =
         ComponentContextV2(this)
@@ -159,6 +165,9 @@ type NoobishComponentsV2(count: int) =
             this.SliderMax.[i] <- 0f
             this.SliderStep.[i] <- 0f
             this.SliderValue.[i] <- 0f
+            this.WantsProgress.[i] <- false
+            this.ProgressValue.[i] <- 0f
+            this.ProgressSegments.[i] <- 1
         this.Count <- 0
 
     interface INoobishComponents2 with
@@ -200,6 +209,9 @@ type NoobishComponentsV2(count: int) =
         member this.SliderMax = this.SliderMax
         member this.SliderStep = this.SliderStep
         member this.SliderValue = this.SliderValue
+        member this.WantsProgress = this.WantsProgress
+        member this.ProgressValue = this.ProgressValue
+        member this.ProgressSegments = this.ProgressSegments
 
 module NoobishComponentsV2 =
     let isClickable (components: NoobishComponentsV2) index =

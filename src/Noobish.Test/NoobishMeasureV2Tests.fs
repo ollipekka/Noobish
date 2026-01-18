@@ -55,6 +55,24 @@ let private createStyleSheet (sliderHeight: float32) (pinHeight: float32) =
         Drawables = emptyNested<NoobishDrawable[]>()
     }
 
+let private createProgressStyleSheet (height: float32) =
+    let heights = Dictionary<string, IReadOnlyDictionary<string, float32>>()
+    heights.["ProgressBar"] <- singleState height
+    {
+        Name = "Test"
+        TextureAtlasId = ""
+        Widths = emptyNested<float32>()
+        Heights = heights :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
+        Paddings = emptyNested<NoobishPadding>()
+        Margins = emptyNested<NoobishMargin>()
+        Colors = emptyNested<Color>()
+        Fonts = emptyNested<string>()
+        FontSizes = emptyNested<int>()
+        FontColors = emptyNested<Color>()
+        TextAlignments = emptyNested<NoobishAlignment>()
+        Drawables = emptyNested<NoobishDrawable[]>()
+    }
+
 let private createSpacingStyleSheet (padding: NoobishPadding) (margin: NoobishMargin) =
     let paddings = Dictionary<string, IReadOnlyDictionary<string, NoobishPadding>>()
     let margins = Dictionary<string, IReadOnlyDictionary<string, NoobishMargin>>()
@@ -157,6 +175,19 @@ let ``measureFrame applies slider height from style`` () =
     NoobishMeasureV2.measureFrame Unchecked.defaultof<_> styleSheet components
 
     Assert.AreEqual(16f, components.ContentSize.[index].Height)
+
+[<Test>]
+let ``measureFrame applies progress bar height from style`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginProgressBar 0.5f
+    let index = int ctx.ComponentId.Index
+    let styleSheet = createProgressStyleSheet 12f
+
+    NoobishMeasureV2.measureFrame Unchecked.defaultof<_> styleSheet components
+
+    Assert.AreEqual(12f, components.ContentSize.[index].Height)
 
 [<Test>]
 let ``measureFrame applies style padding and margin defaults`` () =

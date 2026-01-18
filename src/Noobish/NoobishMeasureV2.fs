@@ -106,4 +106,17 @@ module NoobishMeasureV2 =
                         Width = max size.Width minSize.Width
                         Height = max size.Height desiredHeight
                     }
+            elif components.WantsProgress.[i] then
+                let minSize = components.MinSize.[i]
+                let themeId = components.ThemeId.[i]
+                let baseHeight = styleSheet.GetHeight themeId "default"
+                let dashHeight = styleSheet.GetHeight "ProgressBar-Dash" "default"
+                let progressHeight = styleSheet.GetHeight "ProgressBar-Progress" "default"
+                let height = max baseHeight (max dashHeight progressHeight)
+                if height > 0f then
+                    let size = components.ContentSize.[i]
+                    components.ContentSize.[i] <- {
+                        Width = max size.Width minSize.Width
+                        Height = max size.Height height
+                    }
         computeContainerContentSizes components
