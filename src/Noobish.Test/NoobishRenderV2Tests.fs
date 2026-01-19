@@ -4,6 +4,8 @@ open Microsoft.Xna.Framework
 open NUnit.Framework
 open Noobish
 open Noobish.Internal
+open System.Collections.Generic
+open System
 
 [<Test>]
 let ``resolveState maps enabled flag`` () =
@@ -146,3 +148,23 @@ let ``toScissorRectangle clamps negative sizes`` () =
     Assert.AreEqual(6, result.Y)
     Assert.AreEqual(0, result.Width)
     Assert.AreEqual(0, result.Height)
+
+[<Test>]
+let ``resolveCaretBlinkStart persists local id start across frames`` () =
+    let localMap = Dictionary<uint32, TimeSpan>()
+    let indexMap = Dictionary<int, TimeSpan>()
+    let componentId = UIComponentIdV2.create 1us 0us 0us 7us
+    let start = NoobishRenderV2.resolveCaretBlinkStart localMap indexMap componentId 0 (TimeSpan.FromSeconds 1.0) true
+    let next = NoobishRenderV2.resolveCaretBlinkStart localMap indexMap componentId 0 (TimeSpan.FromSeconds 3.0) false
+    Assert.AreEqual(TimeSpan.FromSeconds 1.0, start)
+    Assert.AreEqual(TimeSpan.FromSeconds 1.0, next)
+
+[<Test>]
+let ``resolveCaretBlinkStart falls back to index when local id is zero`` () =
+    let localMap = Dictionary<uint32, TimeSpan>()
+    let indexMap = Dictionary<int, TimeSpan>()
+    let componentId = UIComponentIdV2.create 1us 0us 0us 0us
+    let start = NoobishRenderV2.resolveCaretBlinkStart localMap indexMap componentId 4 (TimeSpan.FromSeconds 2.0) true
+    let next = NoobishRenderV2.resolveCaretBlinkStart localMap indexMap componentId 4 (TimeSpan.FromSeconds 5.0) false
+    Assert.AreEqual(TimeSpan.FromSeconds 2.0, start)
+    Assert.AreEqual(TimeSpan.FromSeconds 2.0, next)

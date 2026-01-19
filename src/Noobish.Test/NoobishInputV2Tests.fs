@@ -1095,6 +1095,7 @@ let ``NoobishInputV2 ProcessInput updates text from text input`` () =
             }
 
     NoobishInputV2.ProcessInput input components buffer
+    components.CaretBlinkReset.[index] <- false
     click <- false
     textBuffer <- [| 'a' |]
     textCount <- 1
@@ -1102,6 +1103,7 @@ let ``NoobishInputV2 ProcessInput updates text from text input`` () =
 
     Assert.AreEqual("Hia", components.Text.[index])
     Assert.AreEqual(ValueSome "Hia", buffer.TryGetTextChanged 10us)
+    Assert.IsTrue(components.CaretBlinkReset.[index])
 
     components.ReleaseContext textboxCtx
     components.ReleaseContext frameCtx
@@ -1114,6 +1116,7 @@ let ``NoobishInputV2 ProcessInput moves caret with arrow keys`` () =
     let index = int textboxCtx.ComponentId.Index
     let buffer = InputBufferV2(1)
     buffer.SetFocus(components, index, 5)
+    components.CaretBlinkReset.[index] <- false
 
     let input =
         { new INoobishInputState with
@@ -1130,6 +1133,7 @@ let ``NoobishInputV2 ProcessInput moves caret with arrow keys`` () =
     NoobishInputV2.ProcessInput input components buffer
 
     Assert.AreEqual(4, components.CaretIndex.[index])
+    Assert.IsTrue(components.CaretBlinkReset.[index])
 
     components.ReleaseContext textboxCtx
     components.ReleaseContext frameCtx

@@ -1,5 +1,6 @@
 namespace Noobish
 
+open System
 open Noobish
 open Noobish.Internal
 
@@ -112,6 +113,8 @@ type NoobishComponentsV2(count: int) =
     member val TextAlign = Array.create count NoobishAlignment.None
     member val Focused = Array.create count false
     member val CaretIndex = Array.create count 0
+    member val CaretBlinkStart = Array.create count TimeSpan.Zero
+    member val CaretBlinkReset = Array.create count false
     member val WantsOnClick = Array.create count false
     member val WantsOnPress = Array.create count false
     member val WantsTextChanged = Array.create count false
@@ -169,6 +172,8 @@ type NoobishComponentsV2(count: int) =
             this.TextAlign.[i] <- NoobishAlignment.None
             this.Focused.[i] <- false
             this.CaretIndex.[i] <- 0
+            this.CaretBlinkStart.[i] <- TimeSpan.Zero
+            this.CaretBlinkReset.[i] <- false
             this.WantsOnClick.[i] <- false
             this.WantsOnPress.[i] <- false
             this.WantsTextChanged.[i] <- false

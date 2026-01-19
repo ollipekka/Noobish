@@ -435,6 +435,7 @@ module NoobishInputV2 =
             if focusHit >= 0 then
                 let textLength = components.Text.[focusHit].Length
                 buffer.SetFocus(components, focusHit, textLength)
+                components.CaretBlinkReset.[focusHit] <- true
             else
                 buffer.ClearFocus components
 
@@ -443,7 +444,8 @@ module NoobishInputV2 =
         let struct(textBuffer, textCount) = input.ConsumeTextInput()
         if focusedIndex >= 0 && focusedIndex < components.Count && textCount > 0 then
             let mutable text = components.Text.[focusedIndex]
-            let mutable caret = buffer.CaretIndex
+            let initialCaret = buffer.CaretIndex
+            let mutable caret = initialCaret
             let mutable changed = false
             let mutable clearFocus = false
 
@@ -472,6 +474,8 @@ module NoobishInputV2 =
                 buffer.CaretIndex <- caret
                 components.CaretIndex.[focusedIndex] <- caret
                 buffer.MarkTextChanged(focusedIndex, text)
+                if caret <> initialCaret then
+                    components.CaretBlinkReset.[focusedIndex] <- true
 
             if clearFocus then
                 buffer.ClearFocus components
@@ -488,6 +492,7 @@ module NoobishInputV2 =
             if caret <> buffer.CaretIndex then
                 buffer.CaretIndex <- caret
                 components.CaretIndex.[focusedIndex] <- caret
+                components.CaretBlinkReset.[focusedIndex] <- true
 
     let ProcessInput (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
         buffer.Reset components

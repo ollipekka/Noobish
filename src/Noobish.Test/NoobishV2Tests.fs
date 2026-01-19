@@ -1,8 +1,31 @@
 module Noobish.Test.NoobishV2Tests
 
+open System.Collections.Generic
+open Microsoft.Xna.Framework
+open Microsoft.Xna.Framework.Content
 open NUnit.Framework
 
 open Noobish
+open Noobish.Styles
+
+let private emptyNested<'T> () =
+    Dictionary<string, IReadOnlyDictionary<string, 'T>>() :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>
+
+let private createEmptyStyleSheet () =
+    {
+        Name = "Test"
+        TextureAtlasId = ""
+        Widths = emptyNested<float32>()
+        Heights = emptyNested<float32>()
+        Paddings = emptyNested<NoobishPadding>()
+        Margins = emptyNested<NoobishMargin>()
+        Colors = emptyNested<Color>()
+        Fonts = emptyNested<string>()
+        FontSizes = emptyNested<int>()
+        FontColors = emptyNested<Color>()
+        TextAlignments = emptyNested<NoobishAlignment>()
+        Drawables = emptyNested<NoobishDrawable[]>()
+    }
 
 [<Test>]
 let ``beginFrame resets context`` () =
@@ -20,6 +43,36 @@ let ``beginFrame throws when components are not cleared`` () =
     Assert.Throws<System.InvalidOperationException>(fun () ->
         NoobishV2.beginFrame "Settings/Audio" components |> ignore)
     |> ignore
+
+[<Test>]
+let ``processFrame runs layout and input`` () =
+    let components = NoobishComponentsV2(1)
+    let inputBuffer = InputBufferV2(4)
+    let styleSheet = createEmptyStyleSheet ()
+    let inputState =
+        { new INoobishInputState with
+            member _.PointerX = 0f
+            member _.PointerY = 0f
+            member _.ScrollWheelDelta = 0f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0) }
+
+    let sliderId = 3us
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginSlider (0f, 1f) 0.1f 0.5f sliderId
+        |> NoobishV2.setMinHeight 10f
+    NoobishV2.endSlider ctx |> ignore
+
+    NoobishV2.processFrame Unchecked.defaultof<ContentManager> styleSheet components 100f 40f inputState inputBuffer
+
+    Assert.IsTrue(inputBuffer.LocalIdToIndex.ContainsKey sliderId)
+    let bounds = components.Bounds.[0]
+    Assert.AreEqual(100f, bounds.Width)
+    Assert.AreEqual(10f, bounds.Height)
 
 [<Test>]
 let ``createComponent stores id and theme`` () =

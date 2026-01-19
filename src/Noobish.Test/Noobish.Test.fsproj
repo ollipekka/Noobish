@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="CaretTests.fs"/>
     <Compile Include="NoobishComponentsV2Tests.fs"/>
     <Compile Include="NoobishAllocationTests.fs"/>
     <Compile Include="NoobishLayoutV2Tests.fs"/>

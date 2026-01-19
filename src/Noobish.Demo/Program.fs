@@ -31,7 +31,7 @@ module TextDemo =
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
-        |> NoobishV2.beginGrid (2, 3)
+        |> NoobishV2.beginGrid (2, 2)
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
                 |> NoobishV2.beginLabel "Intro"
@@ -473,11 +473,7 @@ type SimpleDemoGame() as game =
         let styleSheet = game.Content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
 
         buildUi components screenWidth screenHeight demoModel
-        NoobishMeasureV2.measureFrame game.Content styleSheet components
-        NoobishLayoutV2.layoutFrame components screenWidth screenHeight
-        NoobishMeasureV2.measureFramePostLayout game.Content styleSheet components
-        NoobishLayoutV2.layoutFrame components screenWidth screenHeight
-        NoobishInputV2.ProcessInput inputState components inputBuffer
+        NoobishV2.processFrame game.Content styleSheet components screenWidth screenHeight inputState inputBuffer
         renderer.Draw components game.GraphicsDevice game.Content spriteBatch textBatch styleSheetId gameTime
 
         base.Draw(gameTime)

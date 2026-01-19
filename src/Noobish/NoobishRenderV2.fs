@@ -38,6 +38,32 @@ module NoobishRenderV2 =
         let height = Internal.max0 (bottom - top)
         Rectangle(int left, int top, int width, int height)
 
+    let internal resolveCaretBlinkStart
+        (byLocalId: Dictionary<uint32, TimeSpan>)
+        (byIndex: Dictionary<int, TimeSpan>)
+        (componentId: UIComponentIdV2)
+        (index: int)
+        (now: TimeSpan)
+        (reset: bool) =
+        let localId = componentId.LocalId
+        if localId <> 0us then
+            let key = (uint32 componentId.Namespace <<< 16) ||| uint32 localId
+            if reset then
+                byLocalId.[key] <- now
+            match byLocalId.TryGetValue key with
+            | true, value -> value
+            | false, _ ->
+                byLocalId.[key] <- now
+                now
+        else
+            if reset then
+                byIndex.[index] <- now
+            match byIndex.TryGetValue index with
+            | true, value -> value
+            | false, _ ->
+                byIndex.[index] <- now
+                now
+
     let computeProgressSegmentWidth (contentWidth: float32) (segments: int) (gap: float32) =
         if segments <= 0 then
             0f
@@ -105,6 +131,8 @@ type NoobishMonoGameRendererV2() =
         state
 
     let drawQueue = PriorityQueue<int, int>()
+    let caretBlinkByLocalId = Dictionary<uint32, TimeSpan>()
+    let caretBlinkByIndex = Dictionary<int, TimeSpan>()
 
     member val Debug = false with get, set
 
@@ -308,7 +336,21 @@ type NoobishMonoGameRendererV2() =
             let caretBounds = NoobishFont.calculateCursorPosition font fontSize textWrap textBounds 0f 0f textAlign caretIndex text
             let cursorWidth = styleSheet.GetWidth "Cursor" "default"
             if cursorWidth > 0f && caretBounds.Height > 0f then
-                let blinkProgress = Cursor.blink gameTime.TotalGameTime
+                printfn "Reset: %A" components.CaretBlinkReset.[index]
+                let reset = components.CaretBlinkReset.[index]
+                let startTime =
+                    NoobishRenderV2.resolveCaretBlinkStart
+                        caretBlinkByLocalId
+                        caretBlinkByIndex
+                        components.Id.[index]
+                        index
+                        gameTime.TotalGameTime
+                        reset
+                if reset then
+                    components.CaretBlinkReset.[index] <- false
+                let elapsed = gameTime.TotalGameTime - startTime
+                let blinkProgress = Cursor.blink elapsed
+                printfn "Elapsed: %A Blink progress %A" elapsed blinkProgress
                 let baseColor = styleSheet.GetColor "Cursor" "default"
                 let color = Color.Lerp(baseColor, Color.Transparent, blinkProgress)
                 let drawables = styleSheet.GetDrawables "Cursor" "default"
