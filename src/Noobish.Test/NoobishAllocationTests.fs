@@ -68,13 +68,15 @@ let ``NoobishInputV2 hitTestWith lambdas allocate no managed memory`` () =
     let bounds: Noobish.NoobishRectangle[] =
         [| { X = 0f; Y = 0f; Width = 10f; Height = 10f }
            { X = 0f; Y = 0f; Width = 10f; Height = 10f } |]
+    let layers = [| 0; 0 |]
     let boundsAt i = bounds.[i]
+    let layerAt i = layers.[i]
     let predicate i = i = 0
-    NoobishInputV2.hitTestWith bounds.Length boundsAt 5f 5f predicate |> ignore
+    NoobishInputV2.hitTestWith bounds.Length boundsAt layerAt 5f 5f predicate |> ignore
 
     let before = GC.GetAllocatedBytesForCurrentThread()
     for _ = 0 to 50 do
-        NoobishInputV2.hitTestWith bounds.Length boundsAt 5f 5f predicate |> ignore
+        NoobishInputV2.hitTestWith bounds.Length boundsAt layerAt 5f 5f predicate |> ignore
     let allocated = GC.GetAllocatedBytesForCurrentThread() - before
 
     Assert.AreEqual(0L, allocated, $"Expected 0 allocations but got {allocated}.")

@@ -87,6 +87,49 @@ let ``createComponent stores id and theme`` () =
     Assert.AreEqual(UIComponentIdV2.empty, components.ParentId.[0])
 
 [<Test>]
+let ``beginOverlayRoot configures full screen container`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginOverlayRoot 10us
+    let index = int ctx.ComponentId.Index
+    Assert.AreEqual(LayoutV2.Relative ctx.ComponentId, components.Layout.[index])
+    Assert.AreEqual({Fill.Horizontal = true; Vertical = true}, components.Fill.[index])
+    Assert.IsTrue(components.Block.[index])
+    Assert.AreEqual(200, components.Layer.[index])
+
+[<Test>]
+let ``beginOverlayScrim captures clicks and fills`` () =
+    let components = NoobishComponentsV2(2)
+    let rootCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginOverlayRoot 10us
+    let scrimCtx = NoobishV2.beginOverlayScrim 11us rootCtx
+    let index = int scrimCtx.ComponentId.Index
+    Assert.AreEqual({Fill.Horizontal = true; Vertical = true}, components.Fill.[index])
+    Assert.IsTrue(components.WantsOnClick.[index])
+    Assert.IsTrue(components.WantsOnPress.[index])
+    Assert.IsTrue(components.PaddingOverride.[index])
+    Assert.AreEqual(NoobishPadding.empty, components.Padding.[index])
+    Assert.AreEqual(201, components.Layer.[index])
+
+[<Test>]
+let ``beginOverlayPanel creates stacked panel`` () =
+    let components = NoobishComponentsV2(2)
+    let rootCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginOverlayRoot 10us
+    let panelCtx = NoobishV2.beginOverlayPanel 12us rootCtx
+    let index = int panelCtx.ComponentId.Index
+    Assert.AreEqual(LayoutV2.LinearVertical, components.Layout.[index])
+    Assert.IsTrue(components.Block.[index])
+    Assert.AreEqual(202, components.Layer.[index])
+
+[<Test>]
+let ``setLayer updates component layer`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let index = int ctx.ComponentId.Index
+    let _ = NoobishV2.setLayer 42 ctx
+    Assert.AreEqual(42, components.Layer.[index])
+
+[<Test>]
 let ``endPanel returns parent context`` () =
     let components = NoobishComponentsV2(3)
     let rootCtx =

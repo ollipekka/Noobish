@@ -5,6 +5,9 @@ open Microsoft.Xna.Framework.Content
 open Noobish.Styles
 
 module NoobishV2 =
+    let private overlayRootLayer = 200
+    let private overlayScrimLayer = 201
+    let private overlayPanelLayer = 202
     let beginFrame (page: string) (components: INoobishComponents2) =
         if components.Count <> 0 then
             invalidOp "beginFrame requires a cleared component store. Call components.Clear() between frames."
@@ -83,6 +86,11 @@ module NoobishV2 =
         let index = int ctx.ComponentId.Index
         let fill = ctx.Components.Fill.[index]
         ctx.Components.Fill.[index] <- {fill with Vertical = true}
+        ctx
+
+    let setLayer (layer: int) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Layer.[index] <- layer
         ctx
 
     let setScroll (scroll: Scroll) (ctx: ComponentContextV2) =
@@ -322,6 +330,44 @@ module NoobishV2 =
 
     let canvas (parentCtx: ComponentContextV2) =
         beginCanvas parentCtx |> endCanvas
+
+    let beginOverlayRoot (localId: uint16) (parentCtx: ComponentContextV2) =
+        let ctx = createComponent "Overlay" localId parentCtx
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Block.[index] <- true
+        ctx.Components.Layout.[index] <- LayoutV2.Relative ctx.ComponentId
+        ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = true}
+        ctx.Components.Layer.[index] <- overlayRootLayer
+        ctx
+
+    let endOverlayRoot (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let beginOverlayScrim (localId: uint16) (parentCtx: ComponentContextV2) =
+        let ctx = createComponent "Panel" localId parentCtx
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Block.[index] <- true
+        ctx.Components.Fill.[index] <- {Horizontal = true; Vertical = true}
+        ctx.Components.Padding.[index] <- NoobishPadding.empty
+        ctx.Components.PaddingOverride.[index] <- true
+        ctx.Components.WantsOnClick.[index] <- true
+        ctx.Components.WantsOnPress.[index] <- true
+        ctx.Components.Layer.[index] <- overlayScrimLayer
+        ctx
+
+    let endOverlayScrim (ctx: ComponentContextV2) =
+        endScope ctx
+
+    let beginOverlayPanel (localId: uint16) (parentCtx: ComponentContextV2) =
+        let ctx = createComponent "Panel" localId parentCtx
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Block.[index] <- true
+        ctx.Components.Layout.[index] <- LayoutV2.LinearVertical
+        ctx.Components.Layer.[index] <- overlayPanelLayer
+        ctx
+
+    let endOverlayPanel (ctx: ComponentContextV2) =
+        endScope ctx
 
     let beginPanel (parentCtx: ComponentContextV2) = 
         let ctx = createComponent "Panel" 0us parentCtx

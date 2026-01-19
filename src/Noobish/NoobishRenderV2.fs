@@ -336,7 +336,6 @@ type NoobishMonoGameRendererV2() =
             let caretBounds = NoobishFont.calculateCursorPosition font fontSize textWrap textBounds 0f 0f textAlign caretIndex text
             let cursorWidth = styleSheet.GetWidth "Cursor" "default"
             if cursorWidth > 0f && caretBounds.Height > 0f then
-                printfn "Reset: %A" components.CaretBlinkReset.[index]
                 let reset = components.CaretBlinkReset.[index]
                 let startTime =
                     NoobishRenderV2.resolveCaretBlinkStart
@@ -350,7 +349,6 @@ type NoobishMonoGameRendererV2() =
                     components.CaretBlinkReset.[index] <- false
                 let elapsed = gameTime.TotalGameTime - startTime
                 let blinkProgress = Cursor.blink elapsed
-                printfn "Elapsed: %A Blink progress %A" elapsed blinkProgress
                 let baseColor = styleSheet.GetColor "Cursor" "default"
                 let color = Color.Lerp(baseColor, Color.Transparent, blinkProgress)
                 let drawables = styleSheet.GetDrawables "Cursor" "default"

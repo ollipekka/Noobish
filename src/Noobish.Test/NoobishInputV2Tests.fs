@@ -215,6 +215,29 @@ let ``NoobishInputV2 hitTest returns topmost match`` () =
     components.ReleaseContext rootCtx
 
 [<Test>]
+let ``NoobishInputV2 hitTest prefers higher layer`` () =
+    let components = NoobishComponentsV2(3)
+    let rootCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let firstCtx = NoobishV2.beginLabel "First" rootCtx
+    let secondCtx = NoobishV2.beginLabel "Second" rootCtx
+    let firstIndex = int firstCtx.ComponentId.Index
+    let secondIndex = int secondCtx.ComponentId.Index
+    let rootIndex = int rootCtx.ComponentId.Index
+
+    components.Bounds.[rootIndex] <- {X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Bounds.[firstIndex] <- {X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Bounds.[secondIndex] <- {X = 0f; Y = 0f; Width = 10f; Height = 10f}
+    components.Layer.[firstIndex] <- 10
+    components.Layer.[secondIndex] <- 1
+
+    let hit = NoobishInputV2.hitTest components 5f 5f (fun _ -> true)
+    Assert.AreEqual(firstIndex, hit)
+
+    components.ReleaseContext secondCtx
+    components.ReleaseContext firstCtx
+    components.ReleaseContext rootCtx
+
+[<Test>]
 let ``NoobishInputV2 hitTest returns -1 when no hit`` () =
     let components = NoobishComponentsV2(2)
     let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
@@ -235,7 +258,8 @@ let ``NoobishInputV2 hitTestWith returns topmost match`` () =
         [| {X = 0f; Y = 0f; Width = 10f; Height = 10f }
            { X = 0f; Y = 0f; Width = 10f; Height = 10f }
            { X = 0f; Y = 0f; Width = 10f; Height = 10f } |]
-    let hit = NoobishInputV2.hitTestWith bounds.Length (fun i -> bounds.[i]) 5f 5f (fun _ -> true)
+    let layers = [| 0; 0; 0 |]
+    let hit = NoobishInputV2.hitTestWith bounds.Length (fun i -> bounds.[i]) (fun i -> layers.[i]) 5f 5f (fun _ -> true)
     Assert.AreEqual(2, hit)
 
 [<Test>]
@@ -243,7 +267,8 @@ let ``NoobishInputV2 hitTestWith respects predicate`` () =
     let bounds:  Noobish.NoobishRectangle[] =
         [| { X = 0f; Y = 0f; Width = 10f; Height = 10f }
            { X = 0f; Y = 0f; Width = 10f; Height = 10f } |]
-    let hit = NoobishInputV2.hitTestWith bounds.Length (fun i -> bounds.[i]) 5f 5f (fun i -> i = 0)
+    let layers = [| 0; 1 |]
+    let hit = NoobishInputV2.hitTestWith bounds.Length (fun i -> bounds.[i]) (fun i -> layers.[i]) 5f 5f (fun i -> i = 0)
     Assert.AreEqual(0, hit)
 
 [<Test>]

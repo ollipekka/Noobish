@@ -354,19 +354,29 @@ module NoobishInputV2 =
             parentId <- components.ParentId.[parentIndex]
         bounds
 
-    let inline hitTestWith (count: int) ([<InlineIfLambda>] boundsAt: int -> NoobishRectangle) (x: float32) (y: float32) ([<InlineIfLambda>] predicate: int -> bool) =
+    let inline hitTestWith
+        (count: int)
+        ([<InlineIfLambda>] boundsAt: int -> NoobishRectangle)
+        ([<InlineIfLambda>] layerAt: int -> int)
+        (x: float32)
+        (y: float32)
+        ([<InlineIfLambda>] predicate: int -> bool) =
         let mutable hit = -1
-        let mutable i = count - 1
-        while i >= 0 && hit < 0 do
+        let mutable hitLayer = Int32.MinValue
+        let mutable i = 0
+        while i < count do
             if predicate i then
                 let bounds = boundsAt i
                 if bounds.Width > 0f && bounds.Height > 0f && bounds.Contains x y then
-                    hit <- i
-            i <- i - 1
+                    let layer = layerAt i
+                    if layer > hitLayer || (layer = hitLayer && i > hit) then
+                        hit <- i
+                        hitLayer <- layer
+            i <- i + 1
         hit
 
     let internal hitTest (components: NoobishComponentsV2) (x: float32) (y: float32) (predicate: int -> bool) =
-        hitTestWith components.Count (fun i -> clippedBounds components i) x y predicate
+        hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y predicate
 
     let internal calculateSliderValue (bounds: NoobishRectangle) (rangeStart: float32) (rangeEnd: float32) (step: float32) (x: float32) =
         let width = bounds.Width
@@ -383,7 +393,7 @@ module NoobishInputV2 =
 
     let internal updateHover (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         let hoverHit =
-            hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+            hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
                 components.Visible.[i] && components.Enabled.[i])
         buffer.UpdateHover(components, hoverHit)
 
@@ -403,7 +413,7 @@ module NoobishInputV2 =
         let scrollDelta = input.ScrollWheelDelta
         if scrollDelta <> 0f then
             let hitIndex =
-                hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+                hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
                     components.Visible.[i] && components.Enabled.[i])
             let scrollHit = if hitIndex >= 0 then tryFindScrollableAncestor components hitIndex else -1
             if scrollHit >= 0 then
@@ -415,7 +425,7 @@ module NoobishInputV2 =
     let internal updatePrimaryDown (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         if buffer.DownIndex < 0 then
             let pressHit =
-                hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+                hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
                     NoobishComponentsV2.isPressable components i)
             buffer.UpdateDown(components, pressHit)
         if buffer.DownIndex >= 0 then
@@ -423,14 +433,14 @@ module NoobishInputV2 =
 
     let internal updateRelease (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         let clickHit =
-            hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+            hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
                 NoobishComponentsV2.isClickable components i)
         buffer.Release(components, clickHit)
 
     let internal updateFocusFromClick (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         if input.IsPrimaryClick() then
             let focusHit =
-                hitTestWith components.Count (fun i -> clippedBounds components i) x y (fun i ->
+                hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
                     components.Visible.[i] && components.Enabled.[i] && components.WantsTextChanged.[i])
             if focusHit >= 0 then
                 let textLength = components.Text.[focusHit].Length

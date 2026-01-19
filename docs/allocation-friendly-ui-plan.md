@@ -335,7 +335,7 @@ V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (fo
 | Image | Yes | No | V2 render has no image support yet |
 | List | Yes | No | To be redesigned for scrollable containers |
 | Combobox | Yes | No | Overlay/menu behavior not implemented in V2 |
-| Overlaypane/Window | Yes | No | V2 has no overlay/window helpers yet |
+| Overlaypane/Window | Yes | Partial | V2 has overlay helpers + layer-aware hit test; no window helpers yet |
 | Scroll component | Implicit | No | V2 uses scroll flags on any container |
 
 ### Behavior/Functionality

@@ -117,9 +117,16 @@ module TextInputDemo =
 module ButtonsDemo =
     [<Literal>]
     let PrimaryButtonId = 101us
+    [<Literal>]
+    let OverlayButtonId = 102us
+    [<Literal>]
+    let OverlayRootId = 103us
+    [<Literal>]
+    let OverlayScrimId = 104us
 
     type Model() =
         member val PrimaryPressed = false with get, set
+        member val ShowOverlay = false with get, set
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
@@ -128,6 +135,10 @@ module ButtonsDemo =
             |> NoobishV2.setFill {Horizontal = false; Vertical = false}
             |> NoobishV2.setWantsToggle true
             |> NoobishV2.setToggled model.PrimaryPressed
+            |> NoobishV2.endButton
+        |> NoobishV2.beginButton "Show scrim" OverlayButtonId
+            |> NoobishV2.setMinHeight 48f
+            |> NoobishV2.setFill {Horizontal = false; Vertical = false}
             |> NoobishV2.endButton
 
 module CheckboxDemo =
@@ -373,10 +384,27 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
         | DemoSubModel.Scroll subModel ->
             ScrollDemo.buildUi subModel rootCtx
 
-    previewCtx
+    let endCtx =
+        previewCtx
         |> NoobishV2.endPanel
         |> NoobishV2.endStackHorizontal
-        |> NoobishV2.endFrame width height
+
+    let finalCtx =
+        if model.Buttons.ShowOverlay then
+            endCtx
+            |> NoobishV2.beginOverlayRoot ButtonsDemo.OverlayRootId
+                |> NoobishV2.beginGrid (9, 6)
+                    |> NoobishV2.beginSpace |> NoobishV2.setColspan 9 |> NoobishV2.endSpace
+                    |> NoobishV2.beginSpace |> NoobishV2.setRowspan 5 |> NoobishV2.endSpace
+                    |> NoobishV2.beginOverlayScrim ButtonsDemo.OverlayScrimId
+                        |> NoobishV2.setColspan 7 |> NoobishV2.setRowspan 4
+                        |> NoobishV2.endOverlayScrim
+                |> NoobishV2.endOverlayRoot
+        else
+            endCtx
+
+    finalCtx
+    |> NoobishV2.endFrame width height
 
 
 type SimpleDemoGame() as game =
@@ -445,6 +473,10 @@ type SimpleDemoGame() as game =
         | DemoPage.Buttons ->
             if inputBuffer.WasClicked ButtonsDemo.PrimaryButtonId then
                 demoModel.Buttons.PrimaryPressed <- not demoModel.Buttons.PrimaryPressed
+            if inputBuffer.WasClicked ButtonsDemo.OverlayButtonId then
+                demoModel.Buttons.ShowOverlay <- true
+            if inputBuffer.WasClicked ButtonsDemo.OverlayScrimId then
+                demoModel.Buttons.ShowOverlay <- false
         | DemoPage.Checkbox ->
             if inputBuffer.WasClicked CheckboxDemo.CheckboxId then
                 demoModel.Checkbox.IsChecked <- not demoModel.Checkbox.IsChecked
