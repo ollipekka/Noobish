@@ -10,7 +10,6 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="DictionaryExtensions.fs" />
     <Compile Include="Types.fs" />
-    <Compile Include="TypesV2.fs" />
     <Compile Include="Caret.fs" />
     <Compile Include="Localization.fs" />
     <Compile Include="LocalizationBundleReader.fs" />
@@ -21,23 +20,13 @@
     <Compile Include="StyleSheetExtensions.fs" />
     <Compile Include="NoobishFont.fs" />
     <Compile Include="MSDFFontReader.fs" />
-    <Compile Include="State.fs" />
     <Compile Include="InputState.fs" />
-    <Compile Include="NoobishComponents.fs" />
     <Compile Include="NoobishComponentsV2.fs" />
     <Compile Include="NoobishInputV2.fs" />
     <Compile Include="NoobishMeasureV2.fs" />
     <Compile Include="NoobishLayoutV2.fs" />
     <Compile Include="NoobishV2.fs" />
     <Compile Include="NoobishRenderV2.fs" />
-    <Compile Include="Noobish.fs" />
-    <Compile Include="Input.fs" />
-    <Compile Include="Combobox.fs" />
-    <Compile Include="List.fs" />
-    <Compile Include="Slider.fs" />
-    <Compile Include="Checkbox.fs" />
-    <Compile Include="ProgressBar.fs" />
-    <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>

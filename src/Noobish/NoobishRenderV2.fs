@@ -9,6 +9,139 @@ open Noobish.Internal
 open Noobish.Styles
 open Noobish.TextureAtlas
 
+
+module DrawUI = 
+    open Internal
+
+
+    let createRectangle (x: float32, y:float32, width: float32, height: float32) =
+        Rectangle (int (x), int (y), int (width), int (height))
+
+
+    let toRectangle (r: NoobishRectangle) =
+        Rectangle (int (r.X), int (r.Y), int (r.Width), int (r.Height))
+
+
+    let toRotatedRectangle (r: NoobishRectangle) (phi: float32) = 
+        if abs (phi) >= Single.Epsilon then 
+            let rotation = Matrix.CreateRotationZ phi
+            let halfWidth = r.Width / 2f
+            let halfHeight = r.Height / 2f
+            let center = Vector2(r.X + halfWidth, r.Y + halfHeight)
+            let p1 = Vector2.Transform(Vector2(-halfWidth, -halfHeight), rotation)
+            let p2 = Vector2.Transform(Vector2( halfWidth, -halfHeight), rotation)
+            let p3 = Vector2.Transform(Vector2( halfWidth,  halfHeight), rotation)
+            let p4 = Vector2.Transform(Vector2(-halfWidth,  halfHeight), rotation)
+
+            let minX = min p1.X (min p2.X (min p3.X p4.X))
+            let minY = min p1.Y (min p2.Y (min p3.Y p4.Y))
+            let maxX = max p1.X (max p2.X (max p3.X p4.X))
+            let maxY = max p1.Y (max p2.Y (max p3.Y p4.Y))
+            Rectangle (int (round (center.X + minX)), int (round(center.Y + minY)), int (round(maxX - minX)), int (round(maxY - minY)))
+        else 
+            toRectangle r
+
+    let calculateImageBounds (imageSize: NoobishImageSize) (imageAlign: NoobishAlignment) (bounds: NoobishRectangle) (textureWidth: int) (textureHeight: int) (scrollX: float32) (scrollY: float32) =
+        match imageSize with
+        | NoobishImageSize.Stretch ->
+            createRectangle
+                ((bounds.X + scrollX),
+                (bounds.Y + scrollY),
+                bounds.Width,
+                bounds.Height)
+
+        | NoobishImageSize.BestFitMax ->
+            let ratio = max (bounds.Width / float32 textureWidth) (bounds.Height / float32 textureHeight)
+            let width = ratio * float32 textureWidth
+            let height = ratio * float32 textureHeight
+            let padLeft = (bounds.Width - width) / 2.0f
+            let padTop = (bounds.Height - height) / 2.0f
+            createRectangle
+                ((bounds.X + scrollX + padLeft),
+                (bounds.Y + scrollY + padTop),
+                width,
+                height)
+
+        | NoobishImageSize.BestFitMin ->
+            let ratio = min (bounds.Width / float32 textureWidth) (bounds.Height / float32 textureHeight)
+            let width = ratio * float32 textureWidth
+            let height = ratio * float32 textureHeight
+            let padLeft = (bounds.Width - width) / 2.0f
+            let padTop = (bounds.Height - height) / 2.0f
+            createRectangle
+                ((bounds.X + scrollX + padLeft),
+                (bounds.Y + scrollY + padTop),
+                width,
+                height)
+
+        | NoobishImageSize.Original ->
+            createRectangle
+                ((bounds.X + scrollX),
+                (bounds.Y + scrollY),
+                bounds.Width,
+                bounds.Height)
+
+
+    let drawDrawable (textureAtlas: NoobishTextureAtlas) (spriteBatch: SpriteBatch)  (position: Vector2) (size: Vector2) (layer: float32) (color: Color) (drawables: NoobishDrawable[]) =
+        for drawable in drawables do
+            match drawable with
+            | NoobishDrawable.Texture _ -> failwith "Texture not supported for cursor."
+            | NoobishDrawable.NinePatch(tid) ->
+                let texture = textureAtlas.[tid]
+
+                spriteBatch.DrawAtlasNinePatch2(
+                    texture,
+                    Rectangle(int position.X, int position.Y, int size.X, int size.Y),
+                    color,
+                    layer)
+            | NoobishDrawable.NinePatchWithColor(tid, color) ->
+                let texture = textureAtlas.[tid]
+
+                spriteBatch.DrawAtlasNinePatch2(
+                    texture,
+                    Rectangle(int position.X, int position.Y, int size.X, int size.Y),
+                    color,
+                    layer)
+    let drawRectangle (spriteBatch: SpriteBatch) (pixel: Texture2D) (color: Color) (x: float32) (y:float32) (width: float32) (height: float32) =
+        let origin = Vector2(0.0f, 0.0f)
+        let startPos = Vector2(x, y)
+        let scale = Vector2(width / float32 pixel.Width, height / float32 pixel.Height)
+
+        spriteBatch.Draw(
+            pixel,
+            startPos,
+            Nullable(Rectangle(0, 0, pixel.Width, pixel.Height)),
+            color,
+            0.0f,
+            origin,
+            scale,
+            SpriteEffects.None,
+            1.0f)
+
+    let getTextureEfffect (t: NoobishTextureEffect) =
+        if t = NoobishTextureEffect.FlipHorizontally then
+            SpriteEffects.FlipHorizontally
+        else if t = NoobishTextureEffect.FlipVertically then
+            SpriteEffects.FlipVertically
+        else
+            SpriteEffects.None
+
+    let debugDrawBorders (spriteBatch: SpriteBatch) pixel (borderColor: Color) (bounds: NoobishRectangle) =
+        let borderSize = 2f
+        let widthWithoutBorders = float32 bounds.Width - borderSize
+
+        //Left
+        drawRectangle spriteBatch pixel borderColor (bounds.X) bounds.Y borderSize bounds.Height
+        // Right
+        drawRectangle spriteBatch pixel borderColor (bounds.X + bounds.Width - borderSize) bounds.Y  borderSize bounds.Height
+        // Top
+        drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) bounds.Y widthWithoutBorders borderSize
+        // Bottom
+        drawRectangle spriteBatch pixel borderColor (bounds.X + borderSize) ( bounds.Y + bounds.Height - borderSize) widthWithoutBorders borderSize
+
+
+
+
 module NoobishRenderV2 =
     let resolveState (enabled: bool) (toggled: bool) (hovered: bool) (focused: bool) =
         if not enabled then "disabled"

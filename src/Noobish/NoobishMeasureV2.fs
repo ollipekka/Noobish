@@ -2,6 +2,7 @@ namespace Noobish
 
 open System
 open Microsoft.Xna.Framework.Content
+
 open Noobish.Styles
 
 module NoobishMeasureV2 =
@@ -16,7 +17,7 @@ module NoobishMeasureV2 =
         else
             paddingSize
 
-    let internal computeContainerContentSize (layout: LayoutV2) (totalWidth: float32) (totalHeight: float32) (maxWidth: float32) (maxHeight: float32) =
+    let internal computeContainerContentSize (layout: LayoutV2) (totalWidth: float32) (totalHeight: float32) (maxWidth: float32) (maxHeight: float32): NoobishSize =
         match layout with
         | LayoutV2.LinearHorizontal -> {Width = totalWidth; Height = maxHeight}
         | LayoutV2.LinearVertical -> {Width = maxWidth; Height = totalHeight}
