@@ -2,10 +2,8 @@ module Noobish.Test.NoobishMeasureV2Tests
 
 open System.Collections.Generic
 open NUnit.Framework
-open Microsoft.Xna.Framework.Graphics
 open Noobish
 open Noobish.Styles
-open Microsoft.Xna.Framework
 
 let private createGlyph c =
     {
@@ -25,8 +23,24 @@ let private createFont () =
         Metrics = {EmSize = 1; LineHeight = 1.0f; Ascender = 0f; Descender = 0f; UnderlineY = 0f; UnderlineThickness = 0f}
         Glyphs = glyphs
         Kerning = Dictionary<char, IReadOnlyDictionary<char, float32>>() :> IReadOnlyDictionary<char, IReadOnlyDictionary<char, float32>>
-        Texture = Unchecked.defaultof<Texture2D>
     }
+
+let private getFontSize _ = 10
+
+let private measureSingleLineWith font _ size text =
+    NoobishFont.measureSingleLine font size text
+
+let private measureMultiLineWith font _ size maxWidth text =
+    NoobishFont.measureMultiLine font size maxWidth text
+
+let private createProvider (styleSheet: NoobishStyleSheet) (font: NoobishFont) =
+    { new INoobishMeasureProvider with
+        member _.GetFontSize themeId state = styleSheet.GetFontSize themeId state
+        member _.MeasureSingleLine _ _ size text = NoobishFont.measureSingleLine font size text
+        member _.MeasureMultiLine _ _ size maxWidth text = NoobishFont.measureMultiLine font size maxWidth text
+        member _.GetMargin themeId state = styleSheet.GetMargin themeId state
+        member _.GetPadding themeId state = styleSheet.GetPadding themeId state
+        member _.GetHeight themeId state = styleSheet.GetHeight themeId state }
 
 let private emptyNested<'T> () =
     Dictionary<string, IReadOnlyDictionary<string, 'T>>() :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, 'T>>
@@ -47,10 +61,10 @@ let private createStyleSheet (sliderHeight: float32) (pinHeight: float32) =
         Heights = heights :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
         Paddings = emptyNested<NoobishPadding>()
         Margins = emptyNested<NoobishMargin>()
-        Colors = emptyNested<Color>()
+        Colors = emptyNested<NoobishColor>()
         Fonts = emptyNested<string>()
         FontSizes = emptyNested<int>()
-        FontColors = emptyNested<Color>()
+        FontColors = emptyNested<NoobishColor>()
         TextAlignments = emptyNested<NoobishAlignment>()
         Drawables = emptyNested<NoobishDrawable[]>()
     }
@@ -65,10 +79,10 @@ let private createProgressStyleSheet (height: float32) =
         Heights = heights :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
         Paddings = emptyNested<NoobishPadding>()
         Margins = emptyNested<NoobishMargin>()
-        Colors = emptyNested<Color>()
+        Colors = emptyNested<NoobishColor>()
         Fonts = emptyNested<string>()
         FontSizes = emptyNested<int>()
-        FontColors = emptyNested<Color>()
+        FontColors = emptyNested<NoobishColor>()
         TextAlignments = emptyNested<NoobishAlignment>()
         Drawables = emptyNested<NoobishDrawable[]>()
     }
@@ -85,10 +99,10 @@ let private createSpacingStyleSheet (padding: NoobishPadding) (margin: NoobishMa
         Heights = emptyNested<float32>()
         Paddings = paddings :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishPadding>>
         Margins = margins :> IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishMargin>>
-        Colors = emptyNested<Color>()
+        Colors = emptyNested<NoobishColor>()
         Fonts = emptyNested<string>()
         FontSizes = emptyNested<int>()
-        FontColors = emptyNested<Color>()
+        FontColors = emptyNested<NoobishColor>()
         TextAlignments = emptyNested<NoobishAlignment>()
         Drawables = emptyNested<NoobishDrawable[]>()
     }
@@ -103,7 +117,7 @@ let ``measureFrameWith uses text width when wants text`` () =
     components.MinSize.[index] <- {Width = 0f; Height = 0f}
 
     let font = createFont ()
-    NoobishMeasureV2.measureFrameWith (fun _ -> font) (fun _ -> 10) components
+    NoobishMeasureV2.measureFrameWith getFontSize (measureSingleLineWith font) (measureMultiLineWith font) components
 
     Assert.Greater(components.ContentSize.[index].Width, 0f)
     Assert.Greater(components.ContentSize.[index].Height, 0f)
@@ -120,7 +134,7 @@ let ``measureFrameWith wraps text using bounds width when min width is zero`` ()
     components.Padding.[index] <- {NoobishPadding.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
 
     let font = createFont ()
-    NoobishMeasureV2.measureFrameWith (fun _ -> font) (fun _ -> 10) components
+    NoobishMeasureV2.measureFrameWith getFontSize (measureSingleLineWith font) (measureMultiLineWith font) components
 
     Assert.AreEqual(40f, components.ContentSize.[index].Width)
     Assert.Greater(components.ContentSize.[index].Height, 10f)
@@ -140,7 +154,7 @@ let ``measureFrameWith wraps text using parent bounds when available`` () =
     components.Margin.[childIndex] <- {NoobishMargin.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
 
     let font = createFont ()
-    NoobishMeasureV2.measureFrameWith (fun _ -> font) (fun _ -> 10) components
+    NoobishMeasureV2.measureFrameWith getFontSize (measureSingleLineWith font) (measureMultiLineWith font) components
 
     Assert.AreEqual(30f, components.ContentSize.[childIndex].Width)
     Assert.Greater(components.ContentSize.[childIndex].Height, 10f)
@@ -203,7 +217,7 @@ let ``measureFramePostLayoutWith wraps text using component bounds`` () =
     components.Padding.[index] <- {NoobishPadding.Top = 0f; Right = 0f; Bottom = 0f; Left = 0f}
 
     let font = createFont ()
-    NoobishMeasureV2.measureFramePostLayoutWith (fun _ -> font) (fun _ -> 10) components
+    NoobishMeasureV2.measureFramePostLayoutWith getFontSize (measureSingleLineWith font) (measureMultiLineWith font) components
 
     Assert.AreEqual(4f, components.ContentSize.[index].Width)
     Assert.Greater(components.ContentSize.[index].Height, 1f)
@@ -218,7 +232,8 @@ let ``measureFramePostLayout ignores non-wrapped text`` () =
     components.ContentSize.[index] <- {Width = 10f; Height = 5f}
 
     let styleSheet = createSpacingStyleSheet NoobishPadding.empty NoobishMargin.empty
-    NoobishMeasureV2.measureFramePostLayout Unchecked.defaultof<_> styleSheet components
+    let provider = createProvider styleSheet (createFont ())
+    NoobishMeasureV2.measureFramePostLayout provider components
 
     Assert.AreEqual(10f, components.ContentSize.[index].Width)
     Assert.AreEqual(5f, components.ContentSize.[index].Height)
@@ -238,7 +253,7 @@ let ``measureFrameWith sizes horizontal containers from children`` () =
     let rootId = rootCtx.ComponentId
 
     let font = createFont ()
-    NoobishMeasureV2.measureFrameWith (fun _ -> font) (fun _ -> 10) components
+    NoobishMeasureV2.measureFrameWith getFontSize (measureSingleLineWith font) (measureMultiLineWith font) components
 
     let rootSize = components.ContentSize.[int rootId.Index]
     let child1Size = components.ContentSize.[int child1Id.Index]
@@ -255,7 +270,7 @@ let ``measureFrameWith sizes checkbox box from padding`` () =
     components.Padding.[boxIndex] <- {NoobishPadding.Top = 2f; Right = 2f; Bottom = 2f; Left = 2f}
 
     let font = createFont ()
-    NoobishMeasureV2.measureFrameWith (fun _ -> font) (fun _ -> 10) components
+    NoobishMeasureV2.measureFrameWith getFontSize (measureSingleLineWith font) (measureMultiLineWith font) components
 
     let boxSize = components.ContentSize.[boxIndex]
     Assert.AreEqual(4f, boxSize.Width)
@@ -271,7 +286,7 @@ let ``measureFrameWith keeps checkbox box square for min height`` () =
     let boxIndex = int ctx.ComponentId.Index
 
     let font = createFont ()
-    NoobishMeasureV2.measureFrameWith (fun _ -> font) (fun _ -> 10) components
+    NoobishMeasureV2.measureFrameWith getFontSize (measureSingleLineWith font) (measureMultiLineWith font) components
 
     let boxSize = components.ContentSize.[boxIndex]
     Assert.AreEqual(20f, boxSize.Width)
@@ -286,8 +301,8 @@ let ``measureFrame applies slider height from style`` () =
     let index = int ctx.ComponentId.Index
     components.MinSize.[index] <- {Width = 0f; Height = 0f}
     let styleSheet = createStyleSheet 4f 16f
-
-    NoobishMeasureV2.measureFrame Unchecked.defaultof<_> styleSheet components
+    let provider = createProvider styleSheet (createFont ())
+    NoobishMeasureV2.measureFrame provider components
 
     Assert.AreEqual(16f, components.ContentSize.[index].Height)
 
@@ -299,8 +314,8 @@ let ``measureFrame applies progress bar height from style`` () =
         |> NoobishV2.beginProgressBar 0.5f
     let index = int ctx.ComponentId.Index
     let styleSheet = createProgressStyleSheet 12f
-
-    NoobishMeasureV2.measureFrame Unchecked.defaultof<_> styleSheet components
+    let provider = createProvider styleSheet (createFont ())
+    NoobishMeasureV2.measureFrame provider components
 
     Assert.AreEqual(12f, components.ContentSize.[index].Height)
 
@@ -314,8 +329,8 @@ let ``measureFrame applies style padding and margin defaults`` () =
     let padding = {NoobishPadding.Top = 2f; Right = 3f; Bottom = 4f; Left = 5f}
     let margin = {NoobishMargin.Top = 6f; Right = 7f; Bottom = 8f; Left = 9f}
     let styleSheet = createSpacingStyleSheet padding margin
-
-    NoobishMeasureV2.measureFrame Unchecked.defaultof<_> styleSheet components
+    let provider = createProvider styleSheet (createFont ())
+    NoobishMeasureV2.measureFrame provider components
 
     Assert.AreEqual(2f, components.Padding.[index].Top)
     Assert.AreEqual(3f, components.Padding.[index].Right)
@@ -338,8 +353,8 @@ let ``measureFrame keeps overridden padding and margin`` () =
     let padding = {NoobishPadding.Top = 9f; Right = 9f; Bottom = 9f; Left = 9f}
     let margin = {NoobishMargin.Top = 8f; Right = 8f; Bottom = 8f; Left = 8f}
     let styleSheet = createSpacingStyleSheet padding margin
-
-    NoobishMeasureV2.measureFrame Unchecked.defaultof<_> styleSheet components
+    let provider = createProvider styleSheet (createFont ())
+    NoobishMeasureV2.measureFrame provider components
 
     Assert.AreEqual(1f, components.Padding.[index].Top)
     Assert.AreEqual(1f, components.Padding.[index].Right)

@@ -310,7 +310,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: refactored `NoobishMeasureV2` helpers for testability and added coverage for wrap width and layout sizing branches.
 - Done: refactored `NoobishLayoutV2` helpers for testability and expanded layout helper test coverage.
 - Done: added V2 textbox focus, caret, and text input handling with render-time cursor support.
-- Done: added `NoobishV2.processFrame` convenience helper for measure/layout/input pipeline.
+- Done: added `NoobishV2MonoGame.processFrame` convenience helper for measure/layout/input pipeline in the MonoGame assembly.
 
 ## V1/V2 Parity Snapshot (Component + Behavior)
 V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (for example: any container can scroll, and there is no dedicated scrollable component).

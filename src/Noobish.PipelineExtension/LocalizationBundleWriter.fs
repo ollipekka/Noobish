@@ -18,4 +18,4 @@ type LocalizationBundleWriter () =
             writer.Write kvp.Value
 
 
-    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.PipelineExtension.LocalizationBundleReader, Noobish"
+    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.PipelineExtension.LocalizationBundleReader, Noobish.MonoGame"

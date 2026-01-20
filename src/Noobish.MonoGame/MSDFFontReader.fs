@@ -13,7 +13,7 @@ open Noobish
 
 
 type MSDFFontReader () =
-    inherit ContentTypeReader<NoobishFont>()
+    inherit ContentTypeReader<NoobishMonoGameFont>()
 
     let readAtlas (reader: ContentReader) =
         {
@@ -59,7 +59,7 @@ type MSDFFontReader () =
         let advance = reader.ReadSingle()
         struct(unicode1, unicode2, advance)
 
-    override s.Read(reader: ContentReader, input: NoobishFont) =
+    override s.Read(reader: ContentReader, input: NoobishMonoGameFont) =
 
         let texture = reader.ReadExternalReference<Texture2D>()
         let atlas = readAtlas reader
@@ -79,4 +79,5 @@ type MSDFFontReader () =
             let g = readGlyph reader kerning
             glyphs.[g.Unicode] <- g
 
-        {Atlas = atlas; Metrics = metrics; Glyphs = glyphs; Kerning = toReadOnlyDictionary kerning; Texture = texture}
+        let font = {Atlas = atlas; Metrics = metrics; Glyphs = glyphs; Kerning = toReadOnlyDictionary kerning}
+        {Font = font; Texture = texture}

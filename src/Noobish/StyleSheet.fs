@@ -3,16 +3,13 @@ namespace Noobish.Styles
 open Noobish
 
 open System.Collections.Generic
-open Microsoft.Xna.Framework
-open Microsoft.Xna.Framework.Graphics
-
 
 
 
 [<RequireQualifiedAccess>]
 type NoobishDrawable=
 | NinePatch of string
-| NinePatchWithColor of string*Color
+| NinePatchWithColor of string*NoobishColor
 | Texture of string
 
 
@@ -23,10 +20,10 @@ type NoobishStyleSheet = {
     Heights: IReadOnlyDictionary<string, IReadOnlyDictionary<string, float32>>
     Paddings: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishPadding>>
     Margins: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishMargin>>
-    Colors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, Color>>
+    Colors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishColor>>
     Fonts: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>
     FontSizes: IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>
-    FontColors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, Color>>
+    FontColors: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishColor>>
     TextAlignments: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishAlignment>>
     Drawables: IReadOnlyDictionary<string, IReadOnlyDictionary<string, NoobishDrawable[]>>
 } with
@@ -71,10 +68,10 @@ type NoobishStyleSheet = {
         NoobishStyleSheet.GetValue t.FontSizes cid state 25
 
     member t.GetFontColor (cid: string) (state: string) =
-        NoobishStyleSheet.GetValue t.FontColors cid state Color.White
+        NoobishStyleSheet.GetValue t.FontColors cid state NoobishColor.white
 
     member t.GetColor (cid: string) (state: string) =
-        NoobishStyleSheet.GetValue t.Colors cid state Color.White
+        NoobishStyleSheet.GetValue t.Colors cid state NoobishColor.white
 
     member t.GetPadding (cid: string) (state: string) =
         NoobishStyleSheet.GetValue t.Paddings cid state NoobishPadding.empty

@@ -1,6 +1,5 @@
 module Noobish.Test.NoobishRenderV2Tests
 
-open Microsoft.Xna.Framework
 open NUnit.Framework
 open Noobish
 open Noobish.Internal
@@ -132,22 +131,22 @@ let ``computeSliderTrackBounds uses full height when trackHeight non-positive`` 
     Assert.AreEqual(14f, result.Height)
 
 [<Test>]
-let ``toScissorRectangle floors and ceils bounds`` () =
+let ``computeScissorBounds floors and ceils bounds`` () =
     let bounds: NoobishRectangle = { X = 1.2f; Y = 2.8f; Width = 3.3f; Height = 4.1f }
-    let result = NoobishRenderV2.toScissorRectangle bounds
-    Assert.AreEqual(1, result.X)
-    Assert.AreEqual(2, result.Y)
-    Assert.AreEqual(4, result.Width)
-    Assert.AreEqual(5, result.Height)
+    let result = NoobishRenderV2.computeScissorBounds bounds
+    Assert.AreEqual(1f, result.X)
+    Assert.AreEqual(2f, result.Y)
+    Assert.AreEqual(4f, result.Width)
+    Assert.AreEqual(5f, result.Height)
 
 [<Test>]
-let ``toScissorRectangle clamps negative sizes`` () =
+let ``computeScissorBounds clamps negative sizes`` () =
     let bounds: NoobishRectangle = { X = 5f; Y = 6f; Width = -2f; Height = -3f }
-    let result = NoobishRenderV2.toScissorRectangle bounds
-    Assert.AreEqual(5, result.X)
-    Assert.AreEqual(6, result.Y)
-    Assert.AreEqual(0, result.Width)
-    Assert.AreEqual(0, result.Height)
+    let result = NoobishRenderV2.computeScissorBounds bounds
+    Assert.AreEqual(5f, result.X)
+    Assert.AreEqual(6f, result.Y)
+    Assert.AreEqual(0f, result.Width)
+    Assert.AreEqual(0f, result.Height)
 
 [<Test>]
 let ``resolveCaretBlinkStart persists local id start across frames`` () =

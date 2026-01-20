@@ -5,7 +5,7 @@ open System.IO
 open Microsoft.Xna.Framework.Content.Pipeline
 open System.Collections.Generic
 
-open Newtonsoft.Json
+open System.Text.Json
 
 
 [<ContentImporter( fileExtension=".txt", DefaultProcessor = "MSDFFontProcessor", DisplayName = "SDFont Importer" )>]
@@ -17,10 +17,8 @@ type MSDFFontImporter () =
 
         if not (File.Exists fileName) then failwith $"Missing file %s{fileName}."
 
-        use fileStream = File.OpenText(fileName)
-        use jsonReader = new JsonTextReader(fileStream)
-        let serializer = new JsonSerializer()
-        let font = serializer.Deserialize<MSDFFont>(jsonReader)
+        let json = File.ReadAllText fileName
+        let options = JsonSerializerOptions(PropertyNameCaseInsensitive = true)
+        let font = JsonSerializer.Deserialize<MSDFFont>(json, options)
 
         fileName, font
-

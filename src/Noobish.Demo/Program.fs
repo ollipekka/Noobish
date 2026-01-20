@@ -424,11 +424,14 @@ type SimpleDemoGame() as game =
 
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
     let mutable textBatch = Unchecked.defaultof<TextBatch>
+    let mutable renderContext = Unchecked.defaultof<NoobishMonoGameRenderContext>
 
     let demoModel = DemoModel()
 
     let styleSheetId = "Dark/Dark"
     let fontEffectId = "MSDFFontEffect"
+    let mutable styleSheet = Unchecked.defaultof<Noobish.Styles.NoobishStyleSheet>
+    let mutable measureProvider = Unchecked.defaultof<NoobishMonoGameMeasureProvider>
 
     do
         game.Content.RootDirectory <- "Content"
@@ -447,6 +450,9 @@ type SimpleDemoGame() as game =
         spriteBatch <- new SpriteBatch(game.GraphicsDevice)
         let fontEffect = game.Content.Load<Effect>(fontEffectId)
         textBatch <- new TextBatch(game.GraphicsDevice, struct(game.GraphicsDevice.Viewport.Width, game.GraphicsDevice.Viewport.Height), fontEffect, 1024)
+        renderContext <- new NoobishMonoGameRenderContext(game.GraphicsDevice, game.Content, spriteBatch, textBatch)
+        styleSheet <- game.Content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
+        measureProvider <- new NoobishMonoGameMeasureProvider(game.Content, styleSheet)
 
     override this.Update(gameTime) =
         inputState.Update()
@@ -502,11 +508,9 @@ type SimpleDemoGame() as game =
 
         let screenWidth = float32 game.GraphicsDevice.Viewport.Width
         let screenHeight = float32 game.GraphicsDevice.Viewport.Height
-        let styleSheet = game.Content.Load<Noobish.Styles.NoobishStyleSheet>(styleSheetId)
-
         buildUi components screenWidth screenHeight demoModel
-        NoobishV2.processFrame game.Content styleSheet components screenWidth screenHeight inputState inputBuffer
-        renderer.Draw components game.GraphicsDevice game.Content spriteBatch textBatch styleSheetId gameTime
+        NoobishV2MonoGame.processFrameWith measureProvider components screenWidth screenHeight inputState inputBuffer
+        renderer.Draw components renderContext styleSheetId gameTime
 
         base.Draw(gameTime)
 

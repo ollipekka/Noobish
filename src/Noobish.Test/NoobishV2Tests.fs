@@ -19,13 +19,22 @@ let private createEmptyStyleSheet () =
         Heights = emptyNested<float32>()
         Paddings = emptyNested<NoobishPadding>()
         Margins = emptyNested<NoobishMargin>()
-        Colors = emptyNested<Color>()
+        Colors = emptyNested<NoobishColor>()
         Fonts = emptyNested<string>()
         FontSizes = emptyNested<int>()
-        FontColors = emptyNested<Color>()
+        FontColors = emptyNested<NoobishColor>()
         TextAlignments = emptyNested<NoobishAlignment>()
         Drawables = emptyNested<NoobishDrawable[]>()
     }
+
+let private createMeasureProvider (styleSheet: NoobishStyleSheet) =
+    { new INoobishMeasureProvider with
+        member _.GetFontSize _ _ = 0
+        member _.MeasureSingleLine _ _ _ _ = struct(0f, 0f)
+        member _.MeasureMultiLine _ _ _ _ _ = struct(0f, 0f)
+        member _.GetMargin themeId state = styleSheet.GetMargin themeId state
+        member _.GetPadding themeId state = styleSheet.GetPadding themeId state
+        member _.GetHeight themeId state = styleSheet.GetHeight themeId state }
 
 [<Test>]
 let ``beginFrame resets context`` () =
@@ -67,7 +76,8 @@ let ``processFrame runs layout and input`` () =
         |> NoobishV2.setMinHeight 10f
     NoobishV2.endSlider ctx |> ignore
 
-    NoobishV2.processFrame Unchecked.defaultof<ContentManager> styleSheet components 100f 40f inputState inputBuffer
+    let provider = createMeasureProvider styleSheet
+    NoobishV2MonoGame.processFrameWith provider components 100f 40f inputState inputBuffer
 
     Assert.IsTrue(inputBuffer.LocalIdToIndex.ContainsKey sliderId)
     let bounds = components.Bounds.[0]

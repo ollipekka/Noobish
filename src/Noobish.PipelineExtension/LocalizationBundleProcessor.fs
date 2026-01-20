@@ -3,7 +3,7 @@ namespace Noobish.PipelineExtension
 open System.IO
 open System.Collections.Generic
 
-open Newtonsoft.Json
+open System.Text.Json
 
 open Microsoft.Xna.Framework.Content.Pipeline
 open Microsoft.Xna.Framework.Content.Pipeline.Graphics
@@ -21,13 +21,12 @@ type LocalizationBundleProcessor () =
 
         let result = Dictionary<string, string>()
 
-        let serializer = JsonSerializer()
-
         for file in files do
             printfn "processing %s" file
             context.AddDependency file
-            use fileStream = new JsonTextReader(File.OpenText file)
-            let input = serializer.Deserialize<Dictionary<string, string>>(fileStream)
+            let json = File.ReadAllText file
+            let options = JsonSerializerOptions(PropertyNameCaseInsensitive = true)
+            let input = JsonSerializer.Deserialize<Dictionary<string, string>>(json, options)
 
             for kvp in input do
                 result.Add(kvp.Key,kvp.Value)

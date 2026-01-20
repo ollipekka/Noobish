@@ -1,7 +1,6 @@
 ﻿namespace Noobish.PipelineExtension
 
 open System.IO
-open Newtonsoft.Json
 open SixLabors.ImageSharp
 open SixLabors.ImageSharp.PixelFormats
 open SixLabors.ImageSharp.Processing
@@ -129,7 +128,6 @@ type TextureAtlasJson = {
 }
 
 module Glob =
-    open Newtonsoft.Json
     open System.IO
     open Microsoft.Extensions.FileSystemGlobbing
     open Microsoft.Extensions.FileSystemGlobbing.Abstractions

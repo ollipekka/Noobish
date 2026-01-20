@@ -3,9 +3,7 @@ namespace Noobish.PipelineExtension
 open System
 open System.Collections.Generic
 
-open Microsoft.Xna.Framework;
 open Microsoft.Xna.Framework.Content;
-open Microsoft.Xna.Framework.Graphics;
 
 open Noobish
 open Noobish.TextureAtlas
@@ -14,13 +12,6 @@ open Noobish.Styles
 
 type StyleSheetReader () =
     inherit ContentTypeReader<NoobishStyleSheet>()
-
-    let toColor (v: int) =
-        let r = (v >>> 24) &&& 255;
-        let g = (v >>> 16) &&& 255;
-        let b = (v >>> 8) &&& 255;
-        let a = v &&& 255;
-        Color(r, g, b, a)
 
     let readFloat32Arrays (reader: ContentReader)  =
 
@@ -78,7 +69,7 @@ type StyleSheetReader () =
 
     let readColorArrays (reader: ContentReader)  =
 
-        let dict = Dictionary<string, Dictionary<string, Color>>()
+        let dict = Dictionary<string, Dictionary<string, NoobishColor>>()
         let count = reader.ReadInt32()
 
         for i = 0 to count - 1 do
@@ -91,7 +82,7 @@ type StyleSheetReader () =
                 let state = reader.ReadString()
                 let v = reader.ReadInt32()
 
-                dict2.[state] <- toColor v
+                dict2.[state] <- NoobishColor.fromRgba32 (uint32 v)
 
         toReadOnlyDictionary dict
 
@@ -119,7 +110,7 @@ type StyleSheetReader () =
                         if kind = 1 then
                             NoobishDrawable.NinePatch (reader.ReadString())
                         elif kind = 2 then
-                            NoobishDrawable.NinePatchWithColor (reader.ReadString(), reader.ReadInt32() |> toColor)
+                            NoobishDrawable.NinePatchWithColor (reader.ReadString(), reader.ReadInt32() |> uint32 |> NoobishColor.fromRgba32)
                         else
                             failwith "Mangled drawable."
 

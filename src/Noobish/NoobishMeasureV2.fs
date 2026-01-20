@@ -1,11 +1,17 @@
 namespace Noobish
 
 open System
-open Microsoft.Xna.Framework.Content
 
-open Noobish.Styles
+type INoobishMeasureProvider =
+    abstract GetFontSize: themeId: string -> state: string -> int
+    abstract MeasureSingleLine: themeId: string -> state: string -> fontSize: int -> text: string -> struct(float32 * float32)
+    abstract MeasureMultiLine: themeId: string -> state: string -> fontSize: int -> maxWidth: float32 -> text: string -> struct(float32 * float32)
+    abstract GetMargin: themeId: string -> state: string -> NoobishMargin
+    abstract GetPadding: themeId: string -> state: string -> NoobishPadding
+    abstract GetHeight: themeId: string -> state: string -> float32
 
 module NoobishMeasureV2 =
+    let private defaultState = "default"
     let internal computeCheckboxSquareSize (minSize: NoobishSize) (padding: NoobishPadding) =
         let paddingSize = max (padding.Left + padding.Right) (padding.Top + padding.Bottom)
         if minSize.Width > 0f && minSize.Height > 0f then
@@ -56,7 +62,7 @@ module NoobishMeasureV2 =
                 if squareSize > 0f then
                     components.MinSize.[i] <- {Width = squareSize; Height = squareSize}
 
-    let private computeContainerContentSizes (components: NoobishComponentsV2) =
+    let recomputeContainerContentSizes (components: NoobishComponentsV2) =
         for i = components.Count - 1 downto 0 do
             let children = components.Children.[i]
             if children.Count > 0 then
@@ -84,7 +90,11 @@ module NoobishMeasureV2 =
                         Height = max existing.Height computed.Height
                     }
 
-    let measureFrameWith (getFont: string -> NoobishFont) (getFontSize: string -> int) (components: NoobishComponentsV2) =
+    let measureFrameWith
+        (getFontSize: string -> int)
+        (measureSingleLine: string -> int -> string -> struct(float32 * float32))
+        (measureMultiLine: string -> int -> float32 -> string -> struct(float32 * float32))
+        (components: NoobishComponentsV2) =
         applyCheckboxMinSize components
         for i = 0 to components.Count - 1 do
             let minSize = components.MinSize.[i]
@@ -92,7 +102,6 @@ module NoobishMeasureV2 =
             let wantsText = components.WantsText.[i]
             if wantsText && not (String.IsNullOrWhiteSpace text) then
                 let themeId = components.ThemeId.[i]
-                let font = getFont themeId
                 let fontSize = getFontSize themeId
                 let wrap = components.Textwrap.[i]
                 let struct(textWidth, textHeight) =
@@ -102,58 +111,62 @@ module NoobishMeasureV2 =
                         let parentWidth = computeParentWrapWidth components i
                         let wrapWidth = resolveWrapWidth minSize.Width parentWidth boundsWidth padding
                         if wrapWidth > 0f then
-                            NoobishFont.measureMultiLine font fontSize wrapWidth text
+                            measureMultiLine themeId fontSize wrapWidth text
                         else
-                            NoobishFont.measureSingleLine font fontSize text
+                            measureSingleLine themeId fontSize text
                     else
-                        NoobishFont.measureSingleLine font fontSize text
+                        measureSingleLine themeId fontSize text
                 components.ContentSize.[i] <- {
                     Width = max minSize.Width (ceil textWidth)
                     Height = max minSize.Height (ceil textHeight)
                 }
             else
                 components.ContentSize.[i] <- minSize
-        computeContainerContentSizes components
+        recomputeContainerContentSizes components
 
-    let measureFramePostLayoutWith (getFont: string -> NoobishFont) (getFontSize: string -> int) (components: NoobishComponentsV2) =
+    let measureFramePostLayoutWith
+        (getFontSize: string -> int)
+        (measureSingleLine: string -> int -> string -> struct(float32 * float32))
+        (measureMultiLine: string -> int -> float32 -> string -> struct(float32 * float32))
+        (components: NoobishComponentsV2) =
         for i = 0 to components.Count - 1 do
             let text = components.Text.[i]
             if components.WantsText.[i] && components.Textwrap.[i] && not (String.IsNullOrWhiteSpace text) then
                 let themeId = components.ThemeId.[i]
-                let font = getFont themeId
                 let fontSize = getFontSize themeId
                 let bounds = components.Bounds.[i]
                 let padding = components.Padding.[i]
                 let wrapWidth = Internal.max0 (bounds.Width - padding.Left - padding.Right)
                 let struct(textWidth, textHeight) =
                     if wrapWidth > 0f then
-                        NoobishFont.measureMultiLine font fontSize wrapWidth text
+                        measureMultiLine themeId fontSize wrapWidth text
                     else
-                        NoobishFont.measureSingleLine font fontSize text
+                        measureSingleLine themeId fontSize text
                 let minSize = components.MinSize.[i]
                 components.ContentSize.[i] <- {
                     Width = max minSize.Width (ceil textWidth)
                     Height = max minSize.Height (ceil textHeight)
                 }
-        computeContainerContentSizes components
+        recomputeContainerContentSizes components
 
-    let measureFrame (content: ContentManager) (styleSheet: NoobishStyleSheet) (components: NoobishComponentsV2) =
-        let getFont themeId =
-            let fontId = styleSheet.GetFont themeId "default"
-            content.Load<NoobishFont> fontId
-        let getFontSize themeId = styleSheet.GetFontSize themeId "default"
+    let measureFrame (provider: INoobishMeasureProvider) (components: NoobishComponentsV2) =
+        let getFontSize themeId = provider.GetFontSize themeId defaultState
+        let measureSingleLine themeId fontSize text =
+            provider.MeasureSingleLine themeId defaultState fontSize text
+        let measureMultiLine themeId fontSize maxWidth text =
+            provider.MeasureMultiLine themeId defaultState fontSize maxWidth text
         for i = 0 to components.Count - 1 do
             let themeId = components.ThemeId.[i]
             if not components.MarginOverride.[i] then
-                components.Margin.[i] <- styleSheet.GetMargin themeId "default"
+                components.Margin.[i] <- provider.GetMargin themeId defaultState
             if not components.PaddingOverride.[i] then
-                components.Padding.[i] <- styleSheet.GetPadding themeId "default"
-        measureFrameWith getFont getFontSize components
+                components.Padding.[i] <- provider.GetPadding themeId defaultState
+        measureFrameWith getFontSize measureSingleLine measureMultiLine components
         for i = 0 to components.Count - 1 do
             if components.WantsSlider.[i] then
                 let minSize = components.MinSize.[i]
-                let sliderHeight = styleSheet.GetHeight components.ThemeId.[i] "default"
-                let pinHeight = styleSheet.GetHeight "SliderPin" "default"
+                let sliderHeight = provider.GetHeight components.ThemeId.[i] defaultState
+                let pinHeight = provider.GetHeight "SliderPin" defaultState
                 let desiredHeight = max sliderHeight pinHeight
                 if desiredHeight > 0f then
                     let size = components.ContentSize.[i]
@@ -164,9 +177,9 @@ module NoobishMeasureV2 =
             elif components.WantsProgress.[i] then
                 let minSize = components.MinSize.[i]
                 let themeId = components.ThemeId.[i]
-                let baseHeight = styleSheet.GetHeight themeId "default"
-                let dashHeight = styleSheet.GetHeight "ProgressBar-Dash" "default"
-                let progressHeight = styleSheet.GetHeight "ProgressBar-Progress" "default"
+                let baseHeight = provider.GetHeight themeId defaultState
+                let dashHeight = provider.GetHeight "ProgressBar-Dash" defaultState
+                let progressHeight = provider.GetHeight "ProgressBar-Progress" defaultState
                 let height = max baseHeight (max dashHeight progressHeight)
                 if height > 0f then
                     let size = components.ContentSize.[i]
@@ -174,11 +187,12 @@ module NoobishMeasureV2 =
                         Width = max size.Width minSize.Width
                         Height = max size.Height height
                     }
-        computeContainerContentSizes components
+        recomputeContainerContentSizes components
 
-    let measureFramePostLayout (content: ContentManager) (styleSheet: NoobishStyleSheet) (components: NoobishComponentsV2) =
-        let getFont themeId =
-            let fontId = styleSheet.GetFont themeId "default"
-            content.Load<NoobishFont> fontId
-        let getFontSize themeId = styleSheet.GetFontSize themeId "default"
-        measureFramePostLayoutWith getFont getFontSize components
+    let measureFramePostLayout (provider: INoobishMeasureProvider) (components: NoobishComponentsV2) =
+        let getFontSize themeId = provider.GetFontSize themeId defaultState
+        let measureSingleLine themeId fontSize text =
+            provider.MeasureSingleLine themeId defaultState fontSize text
+        let measureMultiLine themeId fontSize maxWidth text =
+            provider.MeasureMultiLine themeId defaultState fontSize maxWidth text
+        measureFramePostLayoutWith getFontSize measureSingleLine measureMultiLine components

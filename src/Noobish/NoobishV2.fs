@@ -1,8 +1,6 @@
 namespace Noobish
 
 open Noobish
-open Microsoft.Xna.Framework.Content
-open Noobish.Styles
 
 module NoobishV2 =
     let private overlayRootLayer = 200
@@ -21,21 +19,6 @@ module NoobishV2 =
 
     let endFrame (rootWidth: float32) (rootHeight: float32) (parentCtx: ComponentContextV2) =
         NoobishLayoutV2.layoutFrame parentCtx.Components rootWidth rootHeight
-
-    let processFrame
-        (content: ContentManager)
-        (styleSheet: NoobishStyleSheet)
-        (components: NoobishComponentsV2)
-        (rootWidth: float32)
-        (rootHeight: float32)
-        (inputState: INoobishInputState)
-        (inputBuffer: InputBufferV2) =
-        NoobishMeasureV2.measureFrame content styleSheet components
-        NoobishLayoutV2.layoutFrame components rootWidth rootHeight
-        NoobishMeasureV2.measureFramePostLayout content styleSheet components
-        NoobishLayoutV2.layoutFrame components rootWidth rootHeight
-        NoobishInputV2.ProcessInput inputState components inputBuffer
-        
 
     let private createId (parentCtx: ComponentContextV2) (index: int) (localId: uint16) =
         let generation = uint16 parentCtx.Components.RunningId

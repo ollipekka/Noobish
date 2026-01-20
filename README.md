@@ -138,6 +138,7 @@ Fonts are generated using msdf-atlas-gen.
 ## Project Layout
 
 * *Noobish:* The library project consumed by the user.
+* *Noobish.MonoGame:* MonoGame-specific integrations (rendering, content readers, input).
 * *Noobish.Test:* The tests of the library.
 * *Noobish.Demo:* Executable demo.
 * *Noobish.Demo.Content:* Content project for the Noobish.Demo.

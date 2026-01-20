@@ -10,28 +10,21 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="DictionaryExtensions.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="NoobishFont.fs" />
+    <Compile Include="InputState.fs" />
     <Compile Include="Caret.fs" />
     <Compile Include="Localization.fs" />
-    <Compile Include="LocalizationBundleReader.fs" />
-    <Compile Include="TextureAtlas.fs" />
-    <Compile Include="TextureAtlasReader.fs" />
     <Compile Include="StyleSheet.fs" />
-    <Compile Include="StyleSheetReader.fs" />
-    <Compile Include="StyleSheetExtensions.fs" />
-    <Compile Include="NoobishFont.fs" />
-    <Compile Include="MSDFFontReader.fs" />
-    <Compile Include="InputState.fs" />
     <Compile Include="NoobishComponentsV2.fs" />
     <Compile Include="NoobishInputV2.fs" />
     <Compile Include="NoobishMeasureV2.fs" />
+    <Compile Include="NoobishRenderV2.fs" />
     <Compile Include="NoobishLayoutV2.fs" />
     <Compile Include="NoobishV2.fs" />
-    <Compile Include="NoobishRenderV2.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Serilog" Version="3.1.1" />
-    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
   </ItemGroup>
 
 </Project>

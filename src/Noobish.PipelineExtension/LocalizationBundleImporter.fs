@@ -4,7 +4,7 @@ open System.IO
 
 open Microsoft.Xna.Framework.Content.Pipeline
 open System.Collections.Generic
-open Newtonsoft.Json
+open System.Text.Json
 
 type LocalizationBundleJson = {
     Name: string
@@ -21,17 +21,15 @@ type LocalizationBundleImporter () =
 
         if not (File.Exists filePath) then failwith $"Missing file %s{filePath}."
 
-
-        use fileStream = new JsonTextReader(File.OpenText filePath)
-        let serializer = JsonSerializer()
-        let input = serializer.Deserialize<LocalizationBundleJson>(fileStream)
+        let json = File.ReadAllText filePath
+        let options = JsonSerializerOptions(PropertyNameCaseInsensitive = true)
+        let input = JsonSerializer.Deserialize<LocalizationBundleJson>(json, options)
 
         let inputFilePath = Path.GetDirectoryName filePath
 
         let files = Glob.getFiles inputFilePath input.Include input.Exclude
 
         (inputFilePath, input.Name, files)
-
 
 
 

@@ -72,4 +72,6 @@ type MSDFFontWriter () =
 
 
 
-    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.PipelineExtension.MSDFFontReader, Noobish"
+    override s.GetRuntimeReader(targetPlatform: TargetPlatform) = "Noobish.PipelineExtension.MSDFFontReader, Noobish.MonoGame"
+
+    override _.GetRuntimeType(targetPlatform: TargetPlatform) = "Noobish.NoobishMonoGameFont, Noobish.MonoGame"

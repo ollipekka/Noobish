@@ -70,6 +70,27 @@ type NoobishSize = {Width: float32; Height: float32}
 [<Struct>]
 type NoobishPosition = {X: float32; Y: float32}
 
+[<Struct>]
+type NoobishColor = { R: byte; G: byte; B: byte; A: byte }
+
+module NoobishColor =
+    let fromRgba32 (rgba: uint32) =
+        {
+            R = byte (rgba >>> 24)
+            G = byte (rgba >>> 16)
+            B = byte (rgba >>> 8)
+            A = byte rgba
+        }
+
+    let toRgba32 (color: NoobishColor) =
+        (uint32 color.R <<< 24)
+        ||| (uint32 color.G <<< 16)
+        ||| (uint32 color.B <<< 8)
+        ||| uint32 color.A
+
+    let transparent: NoobishColor = { R = 0uy; G = 0uy; B = 0uy; A = 0uy }
+    let white: NoobishColor = { R = 255uy; G = 255uy; B = 255uy; A = 255uy }
+
 
 [<RequireQualifiedAccess>]
 type NoobishLayout =
