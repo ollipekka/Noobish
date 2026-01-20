@@ -92,6 +92,9 @@ type NoobishFont = {
 
 module NoobishFont =
 
+    let inline scaleFromFontSize (fontSize: int) =
+        float32 fontSize * 4f / 3f
+
     let getGlyph (f: NoobishFont) (c: char) = 
         let mutable v = Unchecked.defaultof<NoobishGlyph>
         let s = f.Glyphs.TryGetValue (c, &v)
@@ -109,7 +112,7 @@ module NoobishFont =
         let mutable nonWhiteSpaceFound = false
         let mutable i = startPos
         let mutable width = 0f
-        while i < text.Length - 1 && not nonWhiteSpaceFound do
+        while i < text.Length && not nonWhiteSpaceFound do
             let c = text.[i]
             if c = '\n' then
                 newLinePos <- i
@@ -127,12 +130,11 @@ module NoobishFont =
         struct(width, newLinePos, i - startPos)
 
     let measureNextWord (font:NoobishFont) (size: float32) (text: string) (startPos: int) =
-        let size = float32 size
         let mutable wordFound = false
         let mutable width = 0f
         let mutable i = startPos
 
-        while i < text.Length - 1 && not wordFound do
+        while i < text.Length && not wordFound do
             let c = text.[i]
             if c = ' ' || c = '\n' then
                 wordFound <- true
@@ -146,25 +148,30 @@ module NoobishFont =
 
     let measureSingleLineSegment (font: NoobishFont) (size: int) (startIndex: int) (count: int) (text: string) =
 
-        let size = float32 size * 4f / 3f
+        let size = scaleFromFontSize size
+        let lineHeight = font.Metrics.LineHeight * size
 
-        let mutable width = 0.0f
-        for i = 0 to count - 1 do
-            let c = text.[startIndex + i]
-            if c = '\n' then
-                ()
-            else
-                let g = getGlyph font c
-                width <- width + g.Advance * size
+        if startIndex < 0 || startIndex >= text.Length || count <= 0 then
+            struct(0.0f, lineHeight)
+        else
+            let safeCount = min count (text.Length - startIndex)
+            let mutable width = 0.0f
+            for i = 0 to safeCount - 1 do
+                let c = text.[startIndex + i]
+                if c = '\n' then
+                    ()
+                else
+                    let g = getGlyph font c
+                    width <- width + g.Advance * size
 
-        struct(width, font.Metrics.LineHeight * size)
+            struct(width, lineHeight)
 
 
     let measureSingleLine (font: NoobishFont) (size: int) (text: string) =
         measureSingleLineSegment font size 0 (text.Length) text
 
     let measureMultiLine (font: NoobishFont) (size: int) (maxWidth: float32) (text: string) =
-        let size = float32 size * 4f / 3f
+        let size = scaleFromFontSize size
         let lineHeight = font.Metrics.LineHeight * size
 
         let mutable x = 0f
@@ -172,7 +179,7 @@ module NoobishFont =
 
         let mutable i = 0
 
-        while i < text.Length - 1 do
+        while i < text.Length do
 
             let struct(wsWidth, wsLineEndPos, wsCount) = measureLeadingWhiteSpace font size text i
 
@@ -216,7 +223,7 @@ module NoobishFont =
         (cursorPosition: int)
         (text: string) =
 
-        let size = float32 fontSize * 4f / 3f
+        let size = scaleFromFontSize fontSize
         let struct(textSizeX, _) =
             if wrap then
                 failwith "Multiline text not supported yet."
@@ -264,7 +271,7 @@ module NoobishFont =
         let struct(textSizeX, _) =
                 measureSingleLineSegment font fontSize 0 text.Length text
 
-        let size = float32 fontSize * 4f / 3f
+        let size = scaleFromFontSize fontSize
         let textSizeY = size * font.Metrics.LineHeight
 
         let inline leftX () = bounds.X
@@ -287,7 +294,8 @@ module NoobishFont =
             | NoobishAlignment.BottomRight -> struct(rightX(), bottomY())
             | NoobishAlignment.None -> failwith "Can't be none here."
 
-        let mutable width = textStartX
+        let adjustedTextStartX = textStartX + scrollX
+        let mutable width = adjustedTextStartX
         let mutable i = 0
         while i < text.Length && width < relativeX do
             let c = text.[i]
