@@ -25,6 +25,8 @@
     <Compile Include="NoobishRenderV2Tests.fs"/>
     <Compile Include="NoobishV2Tests.fs"/>
     <Compile Include="TypesV2Tests.fs"/>
+    <Compile Include="DictionaryExtensionsTests.fs"/>
+    <Compile Include="StyleSheetTests.fs"/>
     <Compile Include="Program.fs"/>
   </ItemGroup>
 
