@@ -190,3 +190,193 @@ let ``InputBufferV2 query helpers allocate no managed memory`` () =
     components.ReleaseContext textboxCtx
     components.ReleaseContext buttonCtx
     components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 updateScroll allocates no managed memory`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let index = int ctx.ComponentId.Index
+    components.Bounds.[index] <- { Noobish.NoobishRectangle.X = 0f; Y = 0f; Width = 100f; Height = 100f }
+    components.ContentSize.[index] <- { Width = 100f; Height = 200f }
+    components.Scroll.[index] <- { Horizontal = false; Vertical = true }
+    components.Visible.[index] <- true
+    components.Enabled.[index] <- true
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 10f
+            member _.PointerY = 10f
+            member _.ScrollWheelDelta = 10f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
+
+    let inline measureLoop (iterations: int) (action: unit -> unit) =
+        action()
+        let before = GC.GetAllocatedBytesForCurrentThread()
+        for _ = 1 to iterations do
+            action()
+        GC.GetAllocatedBytesForCurrentThread() - before
+
+    let x = input.PointerX
+    let y = input.PointerY
+    let allocated = measureLoop 50 (fun () -> NoobishInputV2.updateScroll input components x y)
+
+    Assert.AreEqual(0L, allocated, $"Expected 0 allocations but got {allocated}.")
+
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 updateFocusFromClick allocates no managed memory`` () =
+    let components = NoobishComponentsV2(2)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let textboxCtx = NoobishV2.beginTextbox "Hi" 1us frameCtx
+    let index = int textboxCtx.ComponentId.Index
+    components.Bounds.[index] <- { Noobish.NoobishRectangle.X = 0f; Y = 0f; Width = 100f; Height = 20f }
+    components.Visible.[index] <- true
+    components.Enabled.[index] <- true
+    components.WantsTextChanged.[index] <- true
+    let buffer = InputBufferV2(2)
+    buffer.SetFocus(components, index, 2)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 200f
+            member _.PointerY = 200f
+            member _.ScrollWheelDelta = 0f
+            member _.IsPrimaryClick() = true
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
+
+    let inline measureLoop (iterations: int) (action: unit -> unit) =
+        action()
+        let before = GC.GetAllocatedBytesForCurrentThread()
+        for _ = 1 to iterations do
+            action()
+        GC.GetAllocatedBytesForCurrentThread() - before
+
+    let x = input.PointerX
+    let y = input.PointerY
+    let allocated = measureLoop 50 (fun () -> NoobishInputV2.updateFocusFromClick input components buffer x y)
+
+    Assert.AreEqual(0L, allocated, $"Expected 0 allocations but got {allocated}.")
+
+    components.ReleaseContext textboxCtx
+    components.ReleaseContext frameCtx
+
+[<Test>]
+let ``NoobishInputV2 updateCaretFromKeys allocates no managed memory`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let textboxCtx = NoobishV2.beginTextbox "Hello" 2us frameCtx
+    let index = int textboxCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.SetFocus(components, index, 5)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 0f
+            member _.PointerY = 0f
+            member _.ScrollWheelDelta = 0f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed keyId = keyId = NoobishKeyId.Left
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
+
+    let inline measureLoop (iterations: int) (action: unit -> unit) =
+        action()
+        let before = GC.GetAllocatedBytesForCurrentThread()
+        for _ = 1 to iterations do
+            action()
+        GC.GetAllocatedBytesForCurrentThread() - before
+
+    let allocated = measureLoop 50 (fun () -> NoobishInputV2.updateCaretFromKeys input components buffer)
+
+    Assert.AreEqual(0L, allocated, $"Expected 0 allocations but got {allocated}.")
+
+    components.ReleaseContext textboxCtx
+    components.ReleaseContext frameCtx
+
+[<Test>]
+let ``NoobishInputV2 updateTextInput no-op allocates no managed memory`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let textboxCtx = NoobishV2.beginTextbox "Hello" 3us frameCtx
+    let index = int textboxCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.SetFocus(components, index, 5)
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 0f
+            member _.PointerY = 0f
+            member _.ScrollWheelDelta = 0f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = false
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
+
+    let inline measureLoop (iterations: int) (action: unit -> unit) =
+        action()
+        let before = GC.GetAllocatedBytesForCurrentThread()
+        for _ = 1 to iterations do
+            action()
+        GC.GetAllocatedBytesForCurrentThread() - before
+
+    let allocated = measureLoop 50 (fun () -> NoobishInputV2.updateTextInput input components buffer)
+
+    Assert.AreEqual(0L, allocated, $"Expected 0 allocations but got {allocated}.")
+
+    components.ReleaseContext textboxCtx
+    components.ReleaseContext frameCtx
+
+[<Test>]
+let ``NoobishInputV2 updatePrimaryDown slider allocates no managed memory`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let sliderCtx = NoobishV2.beginSlider (0f, 10f) 1f 0f 4us frameCtx
+    let index = int sliderCtx.ComponentId.Index
+    components.Bounds.[index] <- { Noobish.NoobishRectangle.X = 0f; Y = 0f; Width = 10f; Height = 10f }
+    components.Visible.[index] <- true
+    components.Enabled.[index] <- true
+
+    let buffer = InputBufferV2(1)
+    buffer.SetDown index
+
+    let input =
+        { new INoobishInputState with
+            member _.PointerX = 5f
+            member _.PointerY = 5f
+            member _.ScrollWheelDelta = 0f
+            member _.IsPrimaryClick() = false
+            member _.IsPrimaryDown() = true
+            member _.IsSecondaryClick() = false
+            member _.IsKeyPressed _ = false
+            member _.ConsumeTextInput() = struct([||], 0)
+            }
+
+    let inline measureLoop (iterations: int) (action: unit -> unit) =
+        action()
+        let before = GC.GetAllocatedBytesForCurrentThread()
+        for _ = 1 to iterations do
+            action()
+        GC.GetAllocatedBytesForCurrentThread() - before
+
+    let x = input.PointerX
+    let y = input.PointerY
+    let allocated = measureLoop 50 (fun () -> NoobishInputV2.updatePrimaryDown components buffer x y)
+
+    Assert.AreEqual(0L, allocated, $"Expected 0 allocations but got {allocated}.")
+
+    components.ReleaseContext sliderCtx
+    components.ReleaseContext frameCtx

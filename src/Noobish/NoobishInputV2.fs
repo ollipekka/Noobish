@@ -339,7 +339,7 @@ module NoobishInputV2 =
             let minScroll = viewportHeight - contentHeight
             let nextScroll = components.ScrollY.[index] + delta
             components.ScrollY.[index] <- Math.Clamp(nextScroll, minScroll,0f)
-        if scroll.Horizontal && not scroll.Vertical && contentWidth > viewportWidth then
+        if scroll.Horizontal && contentWidth > viewportWidth then
             let minScroll = viewportWidth - contentWidth
             let nextScroll = components.ScrollX.[index] + delta
             components.ScrollX.[index] <- Math.Clamp(nextScroll, minScroll, 0f)
@@ -386,10 +386,38 @@ module NoobishInputV2 =
         let unclamped = rangeStart + relative * (rangeEnd - rangeStart)
         let stepped =
             if step > 0f then
-                MathF.Floor(unclamped / step) * step
+                MathF.Floor((unclamped - rangeStart) / step) * step + rangeStart
             else
                 unclamped
         Math.Clamp(stepped, rangeStart, rangeEnd)
+
+    let internal applyTextInput (text: string) (caret: int) (textBuffer: char[]) (textCount: int) =
+        let mutable updated = text
+        let mutable nextCaret = caret
+        let mutable changed = false
+        let mutable clearFocus = false
+
+        for i = 0 to textCount - 1 do
+            let c = textBuffer.[i]
+            if c = '\b' then
+                if nextCaret > 0 && updated.Length > 0 then
+                    updated <- updated.Remove(nextCaret - 1, 1)
+                    nextCaret <- nextCaret - 1
+                    changed <- true
+            elif c = '\r' || c = '\n' then
+                clearFocus <- true
+            elif c = '\u001b' then
+                clearFocus <- true
+            elif c = '\u007f' then
+                if nextCaret < updated.Length then
+                    updated <- updated.Remove(nextCaret, 1)
+                    changed <- true
+            elif not (Char.IsControl c) then
+                updated <- updated.Insert(nextCaret, string c)
+                nextCaret <- nextCaret + 1
+                changed <- true
+
+        struct(updated, nextCaret, changed, clearFocus)
 
     let internal updateHover (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         let hoverHit =
@@ -453,38 +481,16 @@ module NoobishInputV2 =
         let focusedIndex = buffer.FocusedIndex
         let struct(textBuffer, textCount) = input.ConsumeTextInput()
         if focusedIndex >= 0 && focusedIndex < components.Count && textCount > 0 then
-            let mutable text = components.Text.[focusedIndex]
             let initialCaret = buffer.CaretIndex
-            let mutable caret = initialCaret
-            let mutable changed = false
-            let mutable clearFocus = false
-
-            for i = 0 to textCount - 1 do
-                let c = textBuffer.[i]
-                if c = '\b' then
-                    if caret > 0 && text.Length > 0 then
-                        text <- text.Remove(caret - 1, 1)
-                        caret <- caret - 1
-                        changed <- true
-                elif c = '\r' || c = '\n' then
-                    clearFocus <- true
-                elif c = '\u001b' then
-                    clearFocus <- true
-                elif c = '\u007f' then
-                    if caret < text.Length then
-                        text <- text.Remove(caret, 1)
-                        changed <- true
-                elif not (Char.IsControl c) then
-                    text <- text.Insert(caret, string c)
-                    caret <- caret + 1
-                    changed <- true
-
+            let text = components.Text.[focusedIndex]
+            let struct(updatedText, nextCaret, changed, clearFocus) =
+                applyTextInput text initialCaret textBuffer textCount
             if changed then
-                components.Text.[focusedIndex] <- text
-                buffer.CaretIndex <- caret
-                components.CaretIndex.[focusedIndex] <- caret
-                buffer.MarkTextChanged(focusedIndex, text)
-                if caret <> initialCaret then
+                components.Text.[focusedIndex] <- updatedText
+                buffer.CaretIndex <- nextCaret
+                components.CaretIndex.[focusedIndex] <- nextCaret
+                buffer.MarkTextChanged(focusedIndex, updatedText)
+                if nextCaret <> initialCaret then
                     components.CaretBlinkReset.[focusedIndex] <- true
 
             if clearFocus then
