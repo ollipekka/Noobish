@@ -49,7 +49,7 @@ type MSDFFontReader () =
         let advance = reader.ReadSingle()
         let atlasBounds = readBounds (reader)
         let planeBounds = readBounds (reader)
-        let kerning = kerning.GetOrAdd unicode (fun _ -> Dictionary())
+        let kerning = kerning.GetOrAdd(unicode, fun () -> Dictionary())
 
         {Unicode = unicode; Advance = advance; AtlasBounds = atlasBounds; PlaneBounds = planeBounds; Kerning = kerning }
 
@@ -70,7 +70,7 @@ type MSDFFontReader () =
         for _i = 0 to kerningCount - 1 do
             let struct(u1, u2, advance) = readKerning reader
 
-            let glyphKerning = kerning.GetOrAdd u1 (fun _ -> Dictionary())
+            let glyphKerning = kerning.GetOrAdd(u1, fun () -> Dictionary())
             glyphKerning.[u2] <- advance
 
         let glyphCount = reader.ReadInt32()

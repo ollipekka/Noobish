@@ -14,7 +14,7 @@ module NoobishMeasureV2 =
     let private defaultState = "default"
     let internal computeCheckboxSquareSize (minSize: NoobishSize) (padding: NoobishPadding) =
         let paddingSize = max (padding.Left + padding.Right) (padding.Top + padding.Bottom)
-        if minSize.Width > 0f && minSize.Height > 0f then
+        if NoobishSize.hasArea minSize then
             max minSize.Width minSize.Height
         elif minSize.Height > 0f then
             minSize.Height
@@ -83,7 +83,7 @@ module NoobishMeasureV2 =
                     maxWidth <- max maxWidth childWidth
                     maxHeight <- max maxHeight childHeight
                 let computed = computeContainerContentSize components.Layout.[i] totalWidth totalHeight maxWidth maxHeight
-                if computed.Width > 0f || computed.Height > 0f then
+                if NoobishSize.hasExtent computed then
                     let existing = components.ContentSize.[i]
                     components.ContentSize.[i] <- {
                         Width = max existing.Width computed.Width

@@ -12,7 +12,7 @@ let ``Dictionary GetOrAdd returns existing value without calling init`` () =
         invoked <- true
         20
 
-    let value = dictionary.GetOrAdd"a" init
+    let value = dictionary.GetOrAdd("a", init)
 
     Assert.AreEqual(10, value)
     Assert.IsFalse(invoked)
@@ -25,7 +25,7 @@ let ``Dictionary GetOrAdd adds and returns value when missing`` () =
         invoked <- true
         30
 
-    let value = dictionary.GetOrAdd "b" init
+    let value = dictionary.GetOrAdd("b", init)
 
     Assert.AreEqual(30, value)
     Assert.IsTrue(invoked)

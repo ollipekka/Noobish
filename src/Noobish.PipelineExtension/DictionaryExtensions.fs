@@ -4,7 +4,7 @@ namespace System.Collections.Generic
 module DictionaryExtensions =
     type System.Collections.Generic.Dictionary<'TKey, 'TValue> with
 
-        member d.GetOrAdd (key: 'TKey) (init: unit -> 'TValue) =
+        member d.GetOrAdd (key: 'TKey, init: unit -> 'TValue) =
 
             let mutable value = Unchecked.defaultof<'TValue>
             let success = d.TryGetValue(key, &value)

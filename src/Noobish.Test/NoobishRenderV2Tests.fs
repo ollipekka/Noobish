@@ -159,6 +159,19 @@ let ``resolveCaretBlinkStart persists local id start across frames`` () =
     Assert.AreEqual(TimeSpan.FromSeconds 1.0, next)
 
 [<Test>]
+let ``resolveCaretBlinkStart stores local id when missing`` () =
+    let localMap = Dictionary<uint32, TimeSpan>()
+    let indexMap = Dictionary<int, TimeSpan>()
+    let componentId = UIComponentIdV2.create 2us 0us 0us 7us
+    let now = TimeSpan.FromSeconds 10.0
+
+    let start = NoobishRenderV2.resolveCaretBlinkStart localMap indexMap componentId 0 now false
+
+    let key = (uint32 componentId.Namespace <<< 16) ||| uint32 componentId.LocalId
+    Assert.AreEqual(now, start)
+    Assert.AreEqual(now, localMap.[key])
+
+[<Test>]
 let ``resolveCaretBlinkStart falls back to index when local id is zero`` () =
     let localMap = Dictionary<uint32, TimeSpan>()
     let indexMap = Dictionary<int, TimeSpan>()

@@ -67,6 +67,12 @@ type Scroll = {
 [<Struct>]
 type NoobishSize = {Width: float32; Height: float32}
 
+module NoobishSize =
+    let hasArea (size: NoobishSize) =
+        size.Width > 0f && size.Height > 0f
+    let hasExtent (size: NoobishSize) =
+        size.Width > 0f || size.Height > 0f
+
 [<Struct>]
 type NoobishPosition = {X: float32; Y: float32}
 
@@ -154,6 +160,12 @@ type NoobishRectangle = {
     member this.Contains  (x: float32) (y: float32) =
         x >= this.X && x <= this.X + this.Width
         && y >= this.Y && y <= this.Y + this.Height
+
+module NoobishRectangle =
+    let hasArea (bounds: NoobishRectangle) =
+        bounds.Width > 0f && bounds.Height > 0f
+    let hasExtent (bounds: NoobishRectangle) =
+        bounds.Width > 0f || bounds.Height > 0f
 
 [<Struct>]
 type NoobishMargin = {

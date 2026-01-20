@@ -49,19 +49,11 @@ module NoobishRenderV2 =
             let key = (uint32 componentId.Namespace <<< 16) ||| uint32 localId
             if reset then
                 byLocalId.[key] <- now
-            match byLocalId.TryGetValue key with
-            | true, value -> value
-            | false, _ ->
-                byLocalId.[key] <- now
-                now
+            byLocalId.GetOrAdd(key, fun () -> now)
         else
             if reset then
                 byIndex.[index] <- now
-            match byIndex.TryGetValue index with
-            | true, value -> value
-            | false, _ ->
-                byIndex.[index] <- now
-                now
+            byIndex.GetOrAdd(index, fun () -> now)
 
     let computeProgressSegmentWidth (contentWidth: float32) (segments: int) (gap: float32) =
         if segments <= 0 then

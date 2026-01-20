@@ -46,6 +46,18 @@ let ``Internal max0 clamps negatives`` () =
     Assert.AreEqual(2.5f, Internal.max0 2.5f)
 
 [<Test>]
+let ``NoobishSize hasExtent reports any positive dimension`` () =
+    Assert.IsFalse(NoobishSize.hasExtent { Width = 0f; Height = 0f })
+    Assert.IsTrue(NoobishSize.hasExtent { Width = 1f; Height = 0f })
+    Assert.IsTrue(NoobishSize.hasExtent { Width = 0f; Height = 2f })
+
+[<Test>]
+let ``NoobishRectangle hasExtent reports any positive dimension`` () =
+    Assert.IsFalse(NoobishRectangle.hasExtent { X = 0f; Y = 0f; Width = 0f; Height = 0f })
+    Assert.IsTrue(NoobishRectangle.hasExtent { X = 0f; Y = 0f; Width = 1f; Height = 0f })
+    Assert.IsTrue(NoobishRectangle.hasExtent { X = 0f; Y = 0f; Width = 0f; Height = 2f })
+
+[<Test>]
 let ``NoobishRectangle Contains checks bounds`` () =
     let bounds: NoobishRectangle = { X = 1f; Y = 2f; Width = 3f; Height = 4f }
     Assert.IsTrue(bounds.Contains 1f 2f)

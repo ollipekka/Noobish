@@ -40,56 +40,56 @@ type StyleSheetProcessor () =
                 match style.color with
                 | null -> ()
                 | color ->
-                    let colorsByComponent = colors.GetOrAdd name (fun () -> Dictionary())
+                    let colorsByComponent = colors.GetOrAdd(name, fun () -> Dictionary())
                     colorsByComponent.[stateId] <- color
 
                 match style.font with
                 | null -> ()
                 | font ->
-                    let fontByComponent = fonts.GetOrAdd name (fun () -> Dictionary())
+                    let fontByComponent = fonts.GetOrAdd(name, fun () -> Dictionary())
                     fontByComponent.[stateId] <- font
 
                 if style.fontSize > 0 then
-                    let fontSizesByComponent = fontSizes.GetOrAdd name (fun () -> Dictionary())
+                    let fontSizesByComponent = fontSizes.GetOrAdd(name, fun () -> Dictionary())
                     fontSizesByComponent.[stateId] <- style.fontSize
 
                 match style.fontColor with
                 | null -> ()
                 | fontColor ->
-                    let fontColorsByComponent = fontColors.GetOrAdd name (fun () -> Dictionary())
+                    let fontColorsByComponent = fontColors.GetOrAdd(name, fun () -> Dictionary())
                     fontColorsByComponent.[stateId] <- fontColor
 
                 match style.padding with
                 | null -> ()
                 | p ->
-                    let paddingsByComponent = paddings.GetOrAdd name (fun () -> Dictionary())
+                    let paddingsByComponent = paddings.GetOrAdd(name, fun () -> Dictionary())
                     paddingsByComponent.[stateId] <- (p.[0], p.[1], p.[2], p.[3])
 
                 match style.margin with
                 | null -> ()
                 | m ->
-                    let marginsByComponent = margins.GetOrAdd name (fun () -> Dictionary())
+                    let marginsByComponent = margins.GetOrAdd(name, fun () -> Dictionary())
                     marginsByComponent.[stateId] <- (m.[0], m.[1], m.[2], m.[3])
 
                 match style.drawables with
                 | null -> ()
                 | d ->
-                    let drawablesByComponent = drawables.GetOrAdd name (fun () -> Dictionary())
+                    let drawablesByComponent = drawables.GetOrAdd(name, fun () -> Dictionary())
                     drawablesByComponent.[stateId] <- d
 
                 match style.textAlign with
                 | null -> ()
                 | t ->
-                    let textAlignsByComponent = textAligns.GetOrAdd name (fun () -> Dictionary())
+                    let textAlignsByComponent = textAligns.GetOrAdd(name, fun () -> Dictionary())
                     textAlignsByComponent.[stateId] <- t
 
                 if style.width > 0 then
-                    let widthsByComponent = widths.GetOrAdd name (fun () -> Dictionary())
+                    let widthsByComponent = widths.GetOrAdd(name, fun () -> Dictionary())
                     widthsByComponent.[stateId] <- float32 style.width
 
 
                 if style.height > 0 then
-                    let heightsByComponent = heights.GetOrAdd name (fun () -> Dictionary())
+                    let heightsByComponent = heights.GetOrAdd(name, fun () -> Dictionary())
                     heightsByComponent.[stateId] <- float32 style.height
 
         let toArray (d: Dictionary<string, Dictionary<string, 'T>>) =

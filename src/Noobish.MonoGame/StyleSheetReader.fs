@@ -47,7 +47,7 @@ type StyleSheetReader () =
             let name = reader.ReadString()
             let count2 = reader.ReadInt32()
 
-            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+            let dict2 = dict.GetOrAdd(name, fun () -> Dictionary())
 
             for j = 0 to count2 - 1 do
                 let state = reader.ReadString()
@@ -65,7 +65,7 @@ type StyleSheetReader () =
             let name = reader.ReadString()
             let count2 = reader.ReadInt32()
 
-            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+            let dict2 = dict.GetOrAdd(name, fun () -> Dictionary())
 
             for j = 0 to count2 - 1 do
                 let state = reader.ReadString()
@@ -83,7 +83,7 @@ type StyleSheetReader () =
             let name = reader.ReadString()
             let count2 = reader.ReadInt32()
 
-            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+            let dict2 = dict.GetOrAdd(name, fun () -> Dictionary())
 
             for j = 0 to count2 - 1 do
                 let state = reader.ReadString()
@@ -101,7 +101,7 @@ type StyleSheetReader () =
             let name = reader.ReadString()
             let count2 = reader.ReadInt32()
 
-            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+            let dict2 = dict.GetOrAdd(name, fun () -> Dictionary())
 
             for j = 0 to count2 - 1 do
                 let state = reader.ReadString()
@@ -120,7 +120,7 @@ type StyleSheetReader () =
             let name = reader.ReadString()
             let count2 = reader.ReadInt32()
 
-            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+            let dict2 = dict.GetOrAdd(name, fun () -> Dictionary())
 
             for j = 0 to count2 - 1 do
                 let state = reader.ReadString()
@@ -154,7 +154,7 @@ type StyleSheetReader () =
             let name = reader.ReadString()
             let count2 = reader.ReadInt32()
 
-            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+            let dict2 = dict.GetOrAdd(name, fun () -> Dictionary())
 
             for j = 0 to count2 - 1 do
                 let state = reader.ReadString()
@@ -173,7 +173,7 @@ type StyleSheetReader () =
             let name = reader.ReadString()
             let count2 = reader.ReadInt32()
 
-            let dict2 = dict.GetOrAdd name (fun _ -> Dictionary())
+            let dict2 = dict.GetOrAdd(name, fun () -> Dictionary())
 
             for j = 0 to count2 - 1 do
                 let state = reader.ReadString()

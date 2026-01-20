@@ -367,7 +367,7 @@ module NoobishInputV2 =
         while i < count do
             if predicate i then
                 let bounds = boundsAt i
-                if bounds.Width > 0f && bounds.Height > 0f && bounds.Contains x y then
+                if NoobishRectangle.hasArea bounds && bounds.Contains x y then
                     let layer = layerAt i
                     if layer > hitLayer || (layer = hitLayer && i > hit) then
                         hit <- i

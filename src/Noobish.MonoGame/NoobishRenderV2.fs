@@ -21,6 +21,30 @@ type NoobishMonoGameRendererV2() =
 
     member val Debug = false with get, set
 
+    member private _.ResolveState (components: NoobishComponentsV2) (index: int) =
+        NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index] components.Focused.[index]
+
+    member private _.ResolveLayer (components: NoobishComponentsV2) (index: int) =
+        1f - float32 components.Layer.[index] / 255f
+
+    member private _.ResolveTextLayer (components: NoobishComponentsV2) (index: int) (offset: int) =
+        1f - float32 (components.Layer.[index] + offset) / 32768.0f
+
+    member private _.WithScissor (ctx: NoobishMonoGameRenderContext) (bounds: NoobishRectangle) (draw: unit -> unit) =
+        let graphics = ctx.Graphics
+        let oldScissorRect = graphics.ScissorRectangle
+        graphics.ScissorRectangle <- ctx.ToScissorRectangle bounds
+        try
+            draw()
+        finally
+            graphics.ScissorRectangle <- oldScissorRect
+
+    member private _.WithSpriteBatch (ctx: NoobishMonoGameRenderContext) (draw: unit -> unit) =
+        let spriteBatch = ctx.SpriteBatch
+        spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
+        draw()
+        spriteBatch.End()
+
     member private this.EnsureTextAlignment (components: NoobishComponentsV2) (styleSheet: NoobishStyleSheet) (index: int) =
         if components.TextAlign.[index] = NoobishAlignment.None then
             let themeId = components.ThemeId.[index]
@@ -33,10 +57,10 @@ type NoobishMonoGameRendererV2() =
         (textureAtlas: NoobishTextureAtlas)
         (bounds: NoobishRectangle)
         (index: int) =
-        let themeId = components.ThemeId.[index]
-        let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index] components.Focused.[index]
-        if bounds.Width > 0f && bounds.Height > 0f then
-            let layer = 1f - float32 components.Layer.[index] / 255f
+        if NoobishRectangle.hasArea bounds then
+            let themeId = components.ThemeId.[index]
+            let state = this.ResolveState components index
+            let layer = this.ResolveLayer components index
             let color = styleSheet.GetColor themeId state
             let drawables = styleSheet.GetDrawables themeId state
             let position = Vector2(bounds.X, bounds.Y)
@@ -50,8 +74,8 @@ type NoobishMonoGameRendererV2() =
         (textureAtlas: NoobishTextureAtlas)
         (bounds: NoobishRectangle)
         (index: int) =
-        if bounds.Width > 0f && bounds.Height > 0f then
-            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index] components.Focused.[index]
+        if NoobishRectangle.hasArea bounds then
+            let state = this.ResolveState components index
             let pinThemeId = "SliderPin"
             let pinWidth =
                 let width = styleSheet.GetWidth pinThemeId state
@@ -68,8 +92,8 @@ type NoobishMonoGameRendererV2() =
             let value = components.SliderValue.[index]
             let padding = components.Padding.[index]
             let pinBounds = NoobishRenderV2.computeSliderPinBounds bounds padding rangeStart rangeEnd value pinWidth pinHeight
-            if pinBounds.Width > 0f && pinBounds.Height > 0f then
-                let layer = 1f - float32 components.Layer.[index] / 255f
+            if NoobishRectangle.hasArea pinBounds then
+                let layer = this.ResolveLayer components index
                 let pinLayer = Internal.max0 (layer - 0.0001f)
                 let color = styleSheet.GetColor pinThemeId state
                 let drawables = styleSheet.GetDrawables pinThemeId state
@@ -84,14 +108,14 @@ type NoobishMonoGameRendererV2() =
         (textureAtlas: NoobishTextureAtlas)
         (bounds: NoobishRectangle)
         (index: int) =
-        if bounds.Width > 0f && bounds.Height > 0f then
-            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index] components.Focused.[index]
+        if NoobishRectangle.hasArea bounds then
+            let state = this.ResolveState components index
             let themeId = components.ThemeId.[index]
             let trackHeight = styleSheet.GetHeight themeId state
             let padding = components.Padding.[index]
             let trackBounds = NoobishRenderV2.computeSliderTrackBounds bounds padding trackHeight
-            if trackBounds.Width > 0f && trackBounds.Height > 0f then
-                let layer = 1f - float32 components.Layer.[index] / 255f
+            if NoobishRectangle.hasArea trackBounds then
+                let layer = this.ResolveLayer components index
                 let color = styleSheet.GetColor themeId state
                 let drawables = styleSheet.GetDrawables themeId state
                 let position = Vector2(trackBounds.X, trackBounds.Y)
@@ -105,14 +129,14 @@ type NoobishMonoGameRendererV2() =
         (textureAtlas: NoobishTextureAtlas)
         (bounds: NoobishRectangle)
         (index: int) =
-        if bounds.Width > 0f && bounds.Height > 0f then
-            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index] components.Focused.[index]
+        if NoobishRectangle.hasArea bounds then
+            let state = this.ResolveState components index
             let padding = components.Padding.[index]
             let progress = components.ProgressValue.[index]
             let fillBounds = NoobishRenderV2.computeProgressBounds bounds padding progress
-            if fillBounds.Width > 0f && fillBounds.Height > 0f then
+            if NoobishRectangle.hasArea fillBounds then
                 let themeId = "ProgressBar-Progress"
-                let layer = 1f - float32 components.Layer.[index] / 255f
+                let layer = this.ResolveLayer components index
                 let color = styleSheet.GetColor themeId state
                 let drawables = styleSheet.GetDrawables themeId state
                 let position = Vector2(fillBounds.X, fillBounds.Y)
@@ -126,8 +150,8 @@ type NoobishMonoGameRendererV2() =
         (textureAtlas: NoobishTextureAtlas)
         (bounds: NoobishRectangle)
         (index: int) =
-        if bounds.Width > 0f && bounds.Height > 0f then
-            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index] components.Focused.[index]
+        if NoobishRectangle.hasArea bounds then
+            let state = this.ResolveState components index
             let padding = components.Padding.[index]
             let content = NoobishRenderV2.computeTextBounds bounds padding
             let segments = max 1 components.ProgressSegments.[index]
@@ -139,6 +163,7 @@ type NoobishMonoGameRendererV2() =
             let dashDrawables = styleSheet.GetDrawables dashThemeId state
             let dashPadding = styleSheet.GetPadding dashThemeId "default"
             let progress = components.ProgressValue.[index]
+            let layer = this.ResolveLayer components index
 
             for s = 0 to segments - 1 do
                 let segmentX = content.X + float32 s * (segmentWidth + gap)
@@ -148,8 +173,7 @@ type NoobishMonoGameRendererV2() =
                     Width = segmentWidth
                     Height = content.Height
                 }
-                if segmentBounds.Width > 0f && segmentBounds.Height > 0f then
-                    let layer = 1f - float32 components.Layer.[index] / 255f
+                if NoobishRectangle.hasArea segmentBounds then
                     let position = Vector2(segmentBounds.X, segmentBounds.Y)
                     let size = Vector2(segmentBounds.Width, segmentBounds.Height)
                     ctx.DrawDrawable textureAtlas position size layer dashColor dashDrawables
@@ -175,7 +199,7 @@ type NoobishMonoGameRendererV2() =
         let text = components.Text.[index]
         if not (String.IsNullOrWhiteSpace text) then
             let themeId = components.ThemeId.[index]
-            let state = NoobishRenderV2.resolveState components.Enabled.[index] components.Toggled.[index] components.Hovered.[index] components.Focused.[index]
+            let state = this.ResolveState components index
             this.EnsureTextAlignment components styleSheet index
 
             let fontId = styleSheet.GetFont themeId state
@@ -188,7 +212,7 @@ type NoobishMonoGameRendererV2() =
             let textAlign = components.TextAlign.[index]
             let textWrap = components.Textwrap.[index]
             let textBounds = NoobishFont.calculateBounds font.Font fontSize textWrap textBounds 0f 0f textAlign text
-            let layer = 1f - float32 (components.Layer.[index] + 1) / 32768.0f
+            let layer = this.ResolveTextLayer components index 1
 
             if textWrap then
                 ctx.TextBatch.DrawMultiLine font fontSize textBounds.Width (Vector2(textBounds.X, textBounds.Y)) layer textColor text
@@ -234,7 +258,7 @@ type NoobishMonoGameRendererV2() =
                 let baseColor = styleSheet.GetColor "Cursor" "default" |> toColor
                 let color = Color.Lerp(baseColor, Color.Transparent, blinkProgress)
                 let drawables = styleSheet.GetDrawables "Cursor" "default"
-                let layer = 1f - float32 (components.Layer.[index] + 2) / 32768.0f
+                let layer = this.ResolveTextLayer components index 2
                 let position = Vector2(caretBounds.X + caretBounds.Width, caretBounds.Y)
                 let size = Vector2(cursorWidth, caretBounds.Height)
                 ctx.DrawDrawable textureAtlas position size layer (color |> NoobishColorMonoGame.ofColor) drawables
@@ -252,50 +276,41 @@ type NoobishMonoGameRendererV2() =
         if components.Visible.[index] then
             let bounds = NoobishRenderV2.offsetBounds components.Bounds.[index] scrollX scrollY
             let clippedBounds = bounds.Clamp parentBounds
-            if clippedBounds.Width > 0f && clippedBounds.Height > 0f then
-                let graphics = ctx.Graphics
-                let spriteBatch = ctx.SpriteBatch
-                let oldScissorRect = graphics.ScissorRectangle
-                graphics.ScissorRectangle <- ctx.ToScissorRectangle clippedBounds
-
-                spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
-                if components.WantsSlider.[index] then
-                    this.DrawSliderTrack ctx components styleSheet textureAtlas bounds index
-                    this.DrawSliderPin ctx components styleSheet textureAtlas bounds index
-                elif components.WantsProgress.[index] then
-                    this.DrawBackground ctx components styleSheet textureAtlas bounds index
-                    if components.ProgressSegments.[index] > 1 then
-                        this.DrawProgressSegments ctx components styleSheet textureAtlas bounds index
-                    else
-                        this.DrawProgressFill ctx components styleSheet textureAtlas bounds index
-                else
-                    this.DrawBackground ctx components styleSheet textureAtlas bounds index
-                spriteBatch.End()
+            if NoobishRectangle.hasArea clippedBounds then
+                this.WithScissor ctx clippedBounds (fun () ->
+                    this.WithSpriteBatch ctx (fun () ->
+                        if components.WantsSlider.[index] then
+                            this.DrawSliderTrack ctx components styleSheet textureAtlas bounds index
+                            this.DrawSliderPin ctx components styleSheet textureAtlas bounds index
+                        elif components.WantsProgress.[index] then
+                            this.DrawBackground ctx components styleSheet textureAtlas bounds index
+                            if components.ProgressSegments.[index] > 1 then
+                                this.DrawProgressSegments ctx components styleSheet textureAtlas bounds index
+                            else
+                                this.DrawProgressFill ctx components styleSheet textureAtlas bounds index
+                        else
+                            this.DrawBackground ctx components styleSheet textureAtlas bounds index))
 
                 let textClip = NoobishRenderV2.computeTextBounds bounds components.Padding.[index]
                 let textClip = textClip.Clamp clippedBounds
-                if textClip.Width > 0f && textClip.Height > 0f then
-                    graphics.ScissorRectangle <- ctx.ToScissorRectangle textClip
-                    this.DrawText ctx components styleSheet bounds index
-                    if components.Focused.[index] && components.WantsTextChanged.[index] then
-                        spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
-                        this.DrawCaret ctx components styleSheet textureAtlas bounds index gameTime
-                        spriteBatch.End()
-
-                graphics.ScissorRectangle <- oldScissorRect
+                if NoobishRectangle.hasArea textClip then
+                    this.WithScissor ctx textClip (fun () ->
+                        this.DrawText ctx components styleSheet bounds index
+                        if components.Focused.[index] && components.WantsTextChanged.[index] then
+                            this.WithSpriteBatch ctx (fun () ->
+                                this.DrawCaret ctx components styleSheet textureAtlas bounds index gameTime))
 
                 if this.Debug then
                     let pixel = ctx.Content.Load<Texture2D> "Pixel"
                     let color = Color.Multiply(Color.Yellow, 0.1f)
-                    spriteBatch.Begin(rasterizerState = rasterizerState, samplerState = SamplerState.PointClamp)
-                    ctx.DrawRectangle pixel color bounds.X bounds.Y bounds.Width bounds.Height
-                    spriteBatch.End()
+                    this.WithSpriteBatch ctx (fun () ->
+                        ctx.DrawRectangle pixel color bounds.X bounds.Y bounds.Width bounds.Height)
 
                 let children = components.Children.[index]
                 if children.Count > 0 then
                     let contentBounds = NoobishRenderV2.computeTextBounds bounds components.Padding.[index]
                     let childClip = contentBounds.Clamp clippedBounds
-                    if childClip.Width > 0f && childClip.Height > 0f then
+                    if NoobishRectangle.hasArea childClip then
                         let scroll = components.Scroll.[index]
                         let childScrollX = scrollX + if scroll.Horizontal then components.ScrollX.[index] else 0f
                         let childScrollY = scrollY + if scroll.Vertical then components.ScrollY.[index] else 0f
