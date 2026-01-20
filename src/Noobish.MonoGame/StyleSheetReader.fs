@@ -10,8 +10,33 @@ open Noobish.TextureAtlas
 open Noobish.Styles
 
 
+module internal StyleSheetReaderHelpers =
+    let parseTextAlignment (value: string) =
+        match value with
+        | "TopLeft" | "topLeft" | "top_left" -> NoobishAlignment.TopLeft
+        | "TopCenter" | "topCenter" | "top_center" -> NoobishAlignment.TopCenter
+        | "TopRight" | "topRight" | "top_right" -> NoobishAlignment.TopRight
+        | "Left" | "left" -> NoobishAlignment.Left
+        | "Center" | "center" -> NoobishAlignment.Center
+        | "Right" | "right" -> NoobishAlignment.Right
+        | "BottomLeft" | "bottomLeft" | "bottom_left" -> NoobishAlignment.BottomLeft
+        | "BottomCenter" | "bottomCenter" | "bottom_center" -> NoobishAlignment.BottomCenter
+        | "BottomRight" | "bottomRight" | "bottom_right" -> NoobishAlignment.BottomRight
+        | _ -> failwith "Cannot parse text alignment"
+
+    let parseDrawable (kind: int) (name: string) (color: uint32) =
+        if kind = 1 then
+            NoobishDrawable.NinePatch name
+        elif kind = 2 then
+            NoobishDrawable.NinePatchWithColor (name, NoobishColor.fromRgba32 color)
+        else
+            failwith "Mangled drawable."
+
 type StyleSheetReader () =
     inherit ContentTypeReader<NoobishStyleSheet>()
+
+    let parseTextAlignment = StyleSheetReaderHelpers.parseTextAlignment
+    let parseDrawable = StyleSheetReaderHelpers.parseDrawable
 
     let readFloat32Arrays (reader: ContentReader)  =
 
@@ -108,11 +133,11 @@ type StyleSheetReader () =
                         let kind = reader.ReadInt32()
 
                         if kind = 1 then
-                            NoobishDrawable.NinePatch (reader.ReadString())
+                            parseDrawable kind (reader.ReadString()) 0u
                         elif kind = 2 then
-                            NoobishDrawable.NinePatchWithColor (reader.ReadString(), reader.ReadInt32() |> uint32 |> NoobishColor.fromRgba32)
+                            parseDrawable kind (reader.ReadString()) (reader.ReadInt32() |> uint32)
                         else
-                            failwith "Mangled drawable."
+                            parseDrawable kind "" 0u
 
                 )
 
@@ -135,18 +160,7 @@ type StyleSheetReader () =
                 let state = reader.ReadString()
                 let v = reader.ReadString()
 
-                dict2.[state] <-
-                    match v with
-                    | "TopLeft" | "topLeft" | "top_left" -> NoobishAlignment.TopLeft
-                    | "TopCenter" | "topCenter" | "top_center" -> NoobishAlignment.TopCenter
-                    | "TopRight" | "topRight" | "top_right" -> NoobishAlignment.TopRight
-                    | "Left" | "left" -> NoobishAlignment.Left
-                    | "Center" | "center" -> NoobishAlignment.Center
-                    | "Right" | "right" -> NoobishAlignment.Right
-                    | "BottomLeft" | "bottomLeft" | "bottom_left" -> NoobishAlignment.BottomLeft
-                    | "BottomCenter" | "bottomCenter" | "bottom_center" -> NoobishAlignment.BottomCenter
-                    | "BottomRight" | "bottomRight" | "bottom_right" -> NoobishAlignment.BottomRight
-                    | _ -> failwith "Cannot parse text alignment"
+                dict2.[state] <- parseTextAlignment v
 
         toReadOnlyDictionary dict
 

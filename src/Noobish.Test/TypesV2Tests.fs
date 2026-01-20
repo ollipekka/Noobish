@@ -11,6 +11,14 @@ let ``UIComponentIdV2 empty is empty`` () =
     Assert.IsTrue(UIComponentIdV2.isEmpty UIComponentIdV2.empty)
 
 [<Test>]
+let ``UIComponentIdV2 isEmpty returns false when any field differs`` () =
+    let baseline = UIComponentIdV2.empty
+    Assert.IsFalse(UIComponentIdV2.isEmpty { baseline with Namespace = 0us })
+    Assert.IsFalse(UIComponentIdV2.isEmpty { baseline with Version = 0us })
+    Assert.IsFalse(UIComponentIdV2.isEmpty { baseline with Index = 0us })
+    Assert.IsFalse(UIComponentIdV2.isEmpty { baseline with LocalId = 0us })
+
+[<Test>]
 let ``UIComponentIdV2 create sets fields`` () =
     let id = UIComponentIdV2.create 1us 2us 3us 4us
     Assert.AreEqual(1us, id.Namespace)
