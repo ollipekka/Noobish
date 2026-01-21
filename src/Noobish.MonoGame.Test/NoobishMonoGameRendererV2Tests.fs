@@ -558,3 +558,273 @@ let ``renderer draws horizontal scrollbars when enabled`` () =
                 | _ -> false))
         |> Seq.length
     Assert.AreEqual(2, scrollDrawablesCount)
+
+[<Test>]
+let ``renderer computes content extent from children`` () =
+    let drawables =
+        toThemes
+            [ ("ScrollBar", [ ("default", [| NoobishDrawable.NinePatch "track" |]) ])
+              ("ScrollBarPin", [ ("default", [| NoobishDrawable.NinePatch "pin" |]) ]) ]
+    let widths =
+        toThemes
+            [ ("ScrollBar", [ ("default", 8f) ])
+              ("ScrollBarPin", [ ("default", 8f) ]) ]
+    let styleSheet = createStyleSheetWithWidths drawables widths
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(2)
+    components.Count <- 2
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 100f; Height = 100f }
+    components.Bounds.[1] <- { X = 0f; Y = 150f; Width = 80f; Height = 40f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.Visible.[1] <- true
+    components.Enabled.[1] <- true
+    components.Scroll.[0] <- { Scroll.Horizontal = false; Vertical = true }
+    components.ContentSize.[0] <- { Width = 0f; Height = 0f }
+    components.Text.[0] <- ""
+    components.Text.[1] <- ""
+    let childId = UIComponentIdV2.create 1us 0us 1us 1us
+    components.Id.[1] <- childId
+    components.ParentId.[1] <- UIComponentIdV2.create 1us 0us 0us 0us
+    components.Children.[0].Add childId
+    components.ScrollY.[0] <- -25f
+
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 200, 200, createFontMap())
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime(TimeSpan.FromSeconds 0.2, TimeSpan.FromSeconds 0.2))
+
+    let scrollDrawablesCount =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.Drawable (_, _, _, drawables) -> Some drawables | _ -> None)
+        |> Seq.filter (fun drawables ->
+            drawables
+            |> Seq.exists (function
+                | NoobishDrawable.NinePatch "track"
+                | NoobishDrawable.NinePatch "pin" -> true
+                | _ -> false))
+        |> Seq.length
+    Assert.AreEqual(2, scrollDrawablesCount)
+
+[<Test>]
+let ``renderer skips background when bounds has no area`` () =
+    let drawables =
+        toThemes [ ("Panel", [ ("default", [| NoobishDrawable.NinePatch "bg" |]) ]) ]
+    let styleSheet = createStyleSheet drawables
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 0f; Height = 10f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.ThemeId.[0] <- "Panel"
+    components.Text.[0] <- ""
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 100, 100, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime())
+
+    let backgroundCount =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.Drawable (_, _, _, drawables) -> Some drawables | _ -> None)
+        |> Seq.filter (fun drawables ->
+            drawables
+            |> Seq.exists (function NoobishDrawable.NinePatch "bg" -> true | _ -> false))
+        |> Seq.length
+    Assert.AreEqual(0, backgroundCount)
+
+[<Test>]
+let ``renderer skips slider pin when pin bounds have no area`` () =
+    let drawables =
+        toThemes
+            [ ("Slider", [ ("default", [| NoobishDrawable.NinePatch "track" |]) ])
+              ("SliderPin", [ ("default", [| NoobishDrawable.NinePatch "pin" |]) ]) ]
+    let widths = toThemes [ ("SliderPin", [ ("default", 8f) ]) ]
+    let styleSheet = createStyleSheetWithWidths drawables widths
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 100f; Height = 0f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.ThemeId.[0] <- "Slider"
+    components.WantsSlider.[0] <- true
+    components.SliderMin.[0] <- 0f
+    components.SliderMax.[0] <- 10f
+    components.SliderValue.[0] <- 5f
+    components.Text.[0] <- ""
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 200, 50, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime())
+
+    let pinCount =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.Drawable (_, _, _, drawables) -> Some drawables | _ -> None)
+        |> Seq.filter (fun drawables ->
+            drawables
+            |> Seq.exists (function NoobishDrawable.NinePatch "pin" -> true | _ -> false))
+        |> Seq.length
+    Assert.AreEqual(0, pinCount)
+
+[<Test>]
+let ``renderer skips slider track when track bounds have no area`` () =
+    let drawables =
+        toThemes [ ("Slider", [ ("default", [| NoobishDrawable.NinePatch "track" |]) ]) ]
+    let styleSheet = createStyleSheet drawables
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 10f; Height = 10f }
+    components.Padding.[0] <- { NoobishPadding.Top = 5f; Right = 5f; Bottom = 5f; Left = 5f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.ThemeId.[0] <- "Slider"
+    components.WantsSlider.[0] <- true
+    components.Text.[0] <- ""
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 100, 100, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime())
+
+    let trackCount =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.Drawable (_, _, _, drawables) -> Some drawables | _ -> None)
+        |> Seq.filter (fun drawables ->
+            drawables
+            |> Seq.exists (function NoobishDrawable.NinePatch "track" -> true | _ -> false))
+        |> Seq.length
+    Assert.AreEqual(0, trackCount)
+
+[<Test>]
+let ``renderer skips progress fill when fill bounds have no area`` () =
+    let drawables =
+        toThemes
+            [ ("ProgressBar", [ ("default", [| NoobishDrawable.NinePatch "bg" |]) ])
+              ("ProgressBar-Progress", [ ("default", [| NoobishDrawable.NinePatch "fill" |]) ]) ]
+    let styleSheet = createStyleSheet drawables
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 10f; Height = 10f }
+    components.Padding.[0] <- { NoobishPadding.Top = 6f; Right = 6f; Bottom = 6f; Left = 6f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.ThemeId.[0] <- "ProgressBar"
+    components.WantsProgress.[0] <- true
+    components.ProgressValue.[0] <- 0.5f
+    components.Text.[0] <- ""
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 100, 100, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime())
+
+    let fillCount =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.Drawable (_, _, _, drawables) -> Some drawables | _ -> None)
+        |> Seq.filter (fun drawables ->
+            drawables
+            |> Seq.exists (function NoobishDrawable.NinePatch "fill" -> true | _ -> false))
+        |> Seq.length
+    Assert.AreEqual(0, fillCount)
+
+[<Test>]
+let ``renderer skips progress segments when content has no area`` () =
+    let drawables =
+        toThemes
+            [ ("ProgressBar", [ ("default", [| NoobishDrawable.NinePatch "bg" |]) ])
+              ("ProgressBar-Dash", [ ("default", [| NoobishDrawable.NinePatch "dash" |]) ])
+              ("ProgressBar-Progress", [ ("default", [| NoobishDrawable.NinePatch "fill" |]) ]) ]
+    let styleSheet = createStyleSheet drawables
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 10f; Height = 10f }
+    components.Padding.[0] <- { NoobishPadding.Top = 6f; Right = 6f; Bottom = 6f; Left = 6f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.ThemeId.[0] <- "ProgressBar"
+    components.WantsProgress.[0] <- true
+    components.ProgressSegments.[0] <- 3
+    components.ProgressValue.[0] <- 0.5f
+    components.Text.[0] <- ""
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 100, 100, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime())
+
+    let segmentCount =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.Drawable (_, _, _, drawables) -> Some drawables | _ -> None)
+        |> Seq.filter (fun drawables ->
+            drawables
+            |> Seq.exists (function
+                | NoobishDrawable.NinePatch "dash"
+                | NoobishDrawable.NinePatch "fill" -> true
+                | _ -> false))
+        |> Seq.length
+    Assert.AreEqual(0, segmentCount)
+
+[<Test>]
+let ``renderer skips scrollbars when content bounds have no area`` () =
+    let drawables =
+        toThemes
+            [ ("ScrollBar", [ ("default", [| NoobishDrawable.NinePatch "track" |]) ])
+              ("ScrollBarPin", [ ("default", [| NoobishDrawable.NinePatch "pin" |]) ]) ]
+    let widths =
+        toThemes
+            [ ("ScrollBar", [ ("default", 8f) ])
+              ("ScrollBarPin", [ ("default", 8f) ]) ]
+    let styleSheet = createStyleSheetWithWidths drawables widths
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 10f; Height = 10f }
+    components.Padding.[0] <- { NoobishPadding.Top = 6f; Right = 6f; Bottom = 6f; Left = 6f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.Scroll.[0] <- { Scroll.Horizontal = false; Vertical = true }
+    components.ContentSize.[0] <- { Width = 10f; Height = 100f }
+    components.ScrollY.[0] <- -10f
+    components.Text.[0] <- ""
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 100, 100, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime(TimeSpan.FromSeconds 0.2, TimeSpan.FromSeconds 0.2))
+
+    let scrollDrawablesCount =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.Drawable (_, _, _, drawables) -> Some drawables | _ -> None)
+        |> Seq.filter (fun drawables ->
+            drawables
+            |> Seq.exists (function
+                | NoobishDrawable.NinePatch "track"
+                | NoobishDrawable.NinePatch "pin" -> true
+                | _ -> false))
+        |> Seq.length
+    Assert.AreEqual(0, scrollDrawablesCount)
+
+[<Test>]
+let ``renderer skips scrollbars when track thickness is zero`` () =
+    let drawables =
+        toThemes
+            [ ("ScrollBar", [ ("default", [| NoobishDrawable.NinePatch "track" |]) ])
+              ("ScrollBarPin", [ ("default", [| NoobishDrawable.NinePatch "pin" |]) ]) ]
+    let styleSheet = createStyleSheet drawables
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 100f; Height = 100f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.Scroll.[0] <- { Scroll.Horizontal = false; Vertical = true }
+    components.ContentSize.[0] <- { Width = 100f; Height = 300f }
+    components.ScrollY.[0] <- -10f
+    components.Text.[0] <- ""
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 200, 200, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime(TimeSpan.FromSeconds 0.2, TimeSpan.FromSeconds 0.2))
+
+    let scrollDrawablesCount =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.Drawable (_, _, _, drawables) -> Some drawables | _ -> None)
+        |> Seq.filter (fun drawables ->
+            drawables
+            |> Seq.exists (function
+                | NoobishDrawable.NinePatch "track"
+                | NoobishDrawable.NinePatch "pin" -> true
+                | _ -> false))
+        |> Seq.length
+    Assert.AreEqual(0, scrollDrawablesCount)
