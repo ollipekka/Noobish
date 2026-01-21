@@ -314,6 +314,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: enabled horizontal scrolling when both axes are active, anchored slider stepping to range starts, extracted text-input helper, and expanded V2 input tests.
 - Done: added MonoGame test project plus StyleSheetReader helper parsing functions with tests.
 - Done: split test runs to apply coverlet only to core tests and exclude PipelineExtension from coverage collection.
+- Done: added V2 scrollbars with timed visibility in the MonoGame renderer plus supporting render helpers/tests.
 
 ## V1/V2 Parity Snapshot (Component + Behavior)
 V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (for example: any container can scroll, and there is no dedicated scrollable component).

@@ -9,6 +9,13 @@ open Noobish.Styles
 open Noobish.TextureAtlas
 open NoobishColorMonoGame
 
+[<Struct>]
+type ScrollActivity = {
+    ScrollX: float32
+    ScrollY: float32
+    LastActive: TimeSpan
+}
+
 type NoobishMonoGameRendererV2() =
     let rasterizerState =
         let state = new RasterizerState()
@@ -18,6 +25,9 @@ type NoobishMonoGameRendererV2() =
     let drawQueue = PriorityQueue<int, int>()
     let caretBlinkByLocalId = Dictionary<uint32, TimeSpan>()
     let caretBlinkByIndex = Dictionary<int, TimeSpan>()
+    let scrollActivityByLocalId = Dictionary<uint32, ScrollActivity>()
+    let scrollActivityByIndex = Dictionary<int, ScrollActivity>()
+    let scrollBarTimeout = TimeSpan.FromSeconds 1.0
 
     member val Debug = false with get, set
 
@@ -51,6 +61,65 @@ type NoobishMonoGameRendererV2() =
             let position = Vector2(bounds.X, bounds.Y)
             let size = Vector2(bounds.Width, bounds.Height)
             ctx.DrawDrawable textureAtlas position size layer color drawables
+
+    member private _.ComputeContentExtent (components: NoobishComponentsV2) (index: int) =
+        let bounds = components.Bounds.[index]
+        let padding = components.Padding.[index]
+        let contentX = bounds.X + padding.Left
+        let contentY = bounds.Y + padding.Top
+        let children = components.Children.[index]
+        if children.Count > 0 then
+            let mutable maxRight = contentX
+            let mutable maxBottom = contentY
+            for i = 0 to children.Count - 1 do
+                let childIndex = int children.[i].Index
+                let childBounds = components.Bounds.[childIndex]
+                let right = childBounds.X + childBounds.Width
+                let bottom = childBounds.Y + childBounds.Height
+                if right > maxRight then
+                    maxRight <- right
+                if bottom > maxBottom then
+                    maxBottom <- bottom
+            struct(Internal.max0 (maxRight - contentX), Internal.max0 (maxBottom - contentY))
+        else
+            let contentSize = components.ContentSize.[index]
+            struct(contentSize.Width, contentSize.Height)
+
+    member private _.UpdateScrollActivity (components: NoobishComponentsV2) (index: int) (now: TimeSpan) =
+        let scrollX = components.ScrollX.[index]
+        let scrollY = components.ScrollY.[index]
+        let componentId = components.Id.[index]
+        let initialActive = if scrollX <> 0f || scrollY <> 0f then now else TimeSpan.MinValue
+        if componentId.LocalId <> 0us then
+            let key = (uint32 componentId.Namespace <<< 16) ||| uint32 componentId.LocalId
+            let mutable activity = Unchecked.defaultof<ScrollActivity>
+            if scrollActivityByLocalId.TryGetValue(key, &activity) then
+                if activity.ScrollX <> scrollX || activity.ScrollY <> scrollY then
+                    let updated = { ScrollX = scrollX; ScrollY = scrollY; LastActive = now }
+                    scrollActivityByLocalId.[key] <- updated
+                    updated.LastActive
+                else
+                    activity.LastActive
+            else
+                let updated = { ScrollX = scrollX; ScrollY = scrollY; LastActive = initialActive }
+                scrollActivityByLocalId.[key] <- updated
+                updated.LastActive
+        else
+            let mutable activity = Unchecked.defaultof<ScrollActivity>
+            if scrollActivityByIndex.TryGetValue(index, &activity) then
+                if activity.ScrollX <> scrollX || activity.ScrollY <> scrollY then
+                    let updated = { ScrollX = scrollX; ScrollY = scrollY; LastActive = now }
+                    scrollActivityByIndex.[index] <- updated
+                    updated.LastActive
+                else
+                    activity.LastActive
+            else
+                let updated = { ScrollX = scrollX; ScrollY = scrollY; LastActive = initialActive }
+                scrollActivityByIndex.[index] <- updated
+                updated.LastActive
+
+    member private _.ShouldShowScrollBars (lastActive: TimeSpan) (now: TimeSpan) =
+        lastActive <> TimeSpan.MinValue && (now - lastActive) <= scrollBarTimeout
 
     member private this.DrawSliderPin
         (ctx: INoobishMonoGameRenderContext)
@@ -247,6 +316,88 @@ type NoobishMonoGameRendererV2() =
                 let size = Vector2(cursorWidth, caretBounds.Height)
                 ctx.DrawDrawable textureAtlas position size layer (color |> NoobishColorMonoGame.ofColor) drawables
 
+    member private this.DrawScrollBars
+        (ctx: INoobishMonoGameRenderContext)
+        (components: NoobishComponentsV2)
+        (styleSheet: NoobishStyleSheet)
+        (textureAtlas: NoobishTextureAtlas)
+        (bounds: NoobishRectangle)
+        (clippedBounds: NoobishRectangle)
+        (index: int)
+        (gameTime: GameTime) =
+        let scroll = components.Scroll.[index]
+        if scroll.Horizontal || scroll.Vertical then
+            let contentBounds = NoobishRenderV2.computeTextBounds bounds components.Padding.[index]
+            let contentBounds = contentBounds.Clamp clippedBounds
+            if NoobishRectangle.hasArea contentBounds then
+                let struct(contentWidth, contentHeight) = this.ComputeContentExtent components index
+                let viewportWidth = contentBounds.Width
+                let viewportHeight = contentBounds.Height
+                let canScrollVertical = scroll.Vertical && contentHeight > viewportHeight
+                let canScrollHorizontal = scroll.Horizontal && contentWidth > viewportWidth
+                if canScrollVertical || canScrollHorizontal then
+                    let lastActive = this.UpdateScrollActivity components index gameTime.TotalGameTime
+                    if this.ShouldShowScrollBars lastActive gameTime.TotalGameTime then
+                        let state = this.ResolveState components index
+                        let trackThickness =
+                            let width = styleSheet.GetWidth "ScrollBar" state
+                            if width > 0f then
+                                width
+                            else
+                                let height = styleSheet.GetHeight "ScrollBar" state
+                                if height > 0f then height else 0f
+                        let pinThickness =
+                            let width = styleSheet.GetWidth "ScrollBarPin" state
+                            if width > 0f then width else trackThickness
+                        let minPinLength =
+                            let height = styleSheet.GetHeight "ScrollBarPin" state
+                            if height > 0f then height else pinThickness
+                        if trackThickness > 0f && pinThickness > 0f then
+                            let layer = this.ResolveLayer components index
+                            let pinLayer = Internal.max0 (layer - 0.0001f)
+                            let trackColor = styleSheet.GetColor "ScrollBar" state
+                            let trackDrawables = styleSheet.GetDrawables "ScrollBar" state
+                            let pinColor = styleSheet.GetColor "ScrollBarPin" state
+                            let pinDrawables = styleSheet.GetDrawables "ScrollBarPin" state
+                            ctx.WithScissor contentBounds (fun () ->
+                                ctx.WithSpriteBatch rasterizerState SamplerState.PointClamp (fun () ->
+                                    if canScrollVertical then
+                                        let trackBounds = NoobishRenderV2.computeScrollTrackBounds contentBounds trackThickness false canScrollHorizontal
+                                        if NoobishRectangle.hasArea trackBounds then
+                                            let position = Vector2(trackBounds.X, trackBounds.Y)
+                                            let size = Vector2(trackBounds.Width, trackBounds.Height)
+                                            ctx.DrawDrawable textureAtlas position size layer trackColor trackDrawables
+                                            let pinBounds =
+                                                NoobishRenderV2.computeScrollPinBounds
+                                                    trackBounds
+                                                    viewportHeight
+                                                    contentHeight
+                                                    components.ScrollY.[index]
+                                                    minPinLength
+                                                    false
+                                            if NoobishRectangle.hasArea pinBounds then
+                                                let pinPosition = Vector2(pinBounds.X, pinBounds.Y)
+                                                let pinSize = Vector2(pinBounds.Width, pinBounds.Height)
+                                                ctx.DrawDrawable textureAtlas pinPosition pinSize pinLayer pinColor pinDrawables
+                                    if canScrollHorizontal then
+                                        let trackBounds = NoobishRenderV2.computeScrollTrackBounds contentBounds trackThickness true canScrollVertical
+                                        if NoobishRectangle.hasArea trackBounds then
+                                            let position = Vector2(trackBounds.X, trackBounds.Y)
+                                            let size = Vector2(trackBounds.Width, trackBounds.Height)
+                                            ctx.DrawDrawable textureAtlas position size layer trackColor trackDrawables
+                                            let pinBounds =
+                                                NoobishRenderV2.computeScrollPinBounds
+                                                    trackBounds
+                                                    viewportWidth
+                                                    contentWidth
+                                                    components.ScrollX.[index]
+                                                    minPinLength
+                                                    true
+                                            if NoobishRectangle.hasArea pinBounds then
+                                                let pinPosition = Vector2(pinBounds.X, pinBounds.Y)
+                                                let pinSize = Vector2(pinBounds.Width, pinBounds.Height)
+                                                ctx.DrawDrawable textureAtlas pinPosition pinSize pinLayer pinColor pinDrawables))
+
     member private this.DrawComponent
         (ctx: INoobishMonoGameRenderContext)
         (components: NoobishComponentsV2)
@@ -301,6 +452,7 @@ type NoobishMonoGameRendererV2() =
                         for i = 0 to children.Count - 1 do
                             let childIndex = int children.[i].Index
                             this.DrawComponent ctx components styleSheet textureAtlas childClip childScrollX childScrollY childIndex gameTime
+                this.DrawScrollBars ctx components styleSheet textureAtlas bounds clippedBounds index gameTime
 
     member internal this.DrawWithContext
         (components: NoobishComponentsV2)

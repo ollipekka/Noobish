@@ -180,3 +180,59 @@ let ``resolveCaretBlinkStart falls back to index when local id is zero`` () =
     let next = NoobishRenderV2.resolveCaretBlinkStart localMap indexMap componentId 4 (TimeSpan.FromSeconds 5.0) false
     Assert.AreEqual(TimeSpan.FromSeconds 2.0, start)
     Assert.AreEqual(TimeSpan.FromSeconds 2.0, next)
+
+[<Test>]
+let ``computeScrollTrackBounds reserves space for other axis`` () =
+    let content: NoobishRectangle = { X = 0f; Y = 0f; Width = 100f; Height = 200f }
+    let vertical = NoobishRenderV2.computeScrollTrackBounds content 8f false true
+    let horizontal = NoobishRenderV2.computeScrollTrackBounds content 8f true true
+    Assert.AreEqual(92f, vertical.X)
+    Assert.AreEqual(0f, vertical.Y)
+    Assert.AreEqual(8f, vertical.Width)
+    Assert.AreEqual(192f, vertical.Height)
+    Assert.AreEqual(0f, horizontal.X)
+    Assert.AreEqual(192f, horizontal.Y)
+    Assert.AreEqual(92f, horizontal.Width)
+    Assert.AreEqual(8f, horizontal.Height)
+
+[<Test>]
+let ``computeScrollTrackBounds returns empty when thickness is zero`` () =
+    let content: NoobishRectangle = { X = 10f; Y = 20f; Width = 100f; Height = 50f }
+    let horizontal = NoobishRenderV2.computeScrollTrackBounds content 0f true false
+    let vertical = NoobishRenderV2.computeScrollTrackBounds content 0f false false
+    Assert.AreEqual(0f, horizontal.Width)
+    Assert.AreEqual(0f, horizontal.Height)
+    Assert.AreEqual(0f, vertical.Width)
+    Assert.AreEqual(0f, vertical.Height)
+
+[<Test>]
+let ``computeScrollPinBounds positions pin based on scroll`` () =
+    let track: NoobishRectangle = { X = 0f; Y = 0f; Width = 8f; Height = 100f }
+    let pin = NoobishRenderV2.computeScrollPinBounds track 50f 100f -25f 10f false
+    Assert.AreEqual(0f, pin.X)
+    Assert.AreEqual(25f, pin.Y)
+    Assert.AreEqual(8f, pin.Width)
+    Assert.AreEqual(50f, pin.Height)
+
+[<Test>]
+let ``computeScrollPinBounds enforces minimum length`` () =
+    let track: NoobishRectangle = { X = 0f; Y = 0f; Width = 8f; Height = 100f }
+    let pin = NoobishRenderV2.computeScrollPinBounds track 10f 500f -245f 20f false
+    Assert.AreEqual(20f, pin.Height)
+    Assert.AreEqual(40f, pin.Y)
+
+[<Test>]
+let ``computeScrollPinBounds handles horizontal scroll`` () =
+    let track: NoobishRectangle = { X = 5f; Y = 7f; Width = 120f; Height = 6f }
+    let pin = NoobishRenderV2.computeScrollPinBounds track 60f 180f -30f 10f true
+    Assert.AreEqual(7f, pin.Y)
+    Assert.AreEqual(6f, pin.Height)
+    Assert.AreEqual(40f, pin.Width)
+    Assert.AreEqual(25f, pin.X)
+
+[<Test>]
+let ``computeScrollPinBounds returns empty when no overflow`` () =
+    let track: NoobishRectangle = { X = 0f; Y = 0f; Width = 8f; Height = 100f }
+    let pin = NoobishRenderV2.computeScrollPinBounds track 100f 100f 0f 10f false
+    Assert.AreEqual(0f, pin.Width)
+    Assert.AreEqual(0f, pin.Height)

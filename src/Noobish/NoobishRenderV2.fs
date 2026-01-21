@@ -114,3 +114,61 @@ module NoobishRenderV2 =
             Width = availableWidth
             Height = clampedHeight
         }
+
+    let computeScrollTrackBounds
+        (contentBounds: NoobishRectangle)
+        (thickness: float32)
+        (horizontal: bool)
+        (hasOtherAxis: bool) =
+        if thickness <= 0f then
+            { X = 0f; Y = 0f; Width = 0f; Height = 0f }
+        elif horizontal then
+            let width = Internal.max0 (contentBounds.Width - if hasOtherAxis then thickness else 0f)
+            {
+                X = contentBounds.X
+                Y = contentBounds.Y + contentBounds.Height - thickness
+                Width = width
+                Height = thickness
+            }
+        else
+            let height = Internal.max0 (contentBounds.Height - if hasOtherAxis then thickness else 0f)
+            {
+                X = contentBounds.X + contentBounds.Width - thickness
+                Y = contentBounds.Y
+                Width = thickness
+                Height = height
+            }
+
+    let computeScrollPinBounds
+        (trackBounds: NoobishRectangle)
+        (viewportSize: float32)
+        (contentSize: float32)
+        (scrollOffset: float32)
+        (minLength: float32)
+        (horizontal: bool) =
+        if viewportSize <= 0f || contentSize <= viewportSize || not (NoobishRectangle.hasArea trackBounds) then
+            { X = 0f; Y = 0f; Width = 0f; Height = 0f }
+        else
+            let trackLength = if horizontal then trackBounds.Width else trackBounds.Height
+            let thickness = if horizontal then trackBounds.Height else trackBounds.Width
+            let ratio = Math.Clamp(viewportSize / contentSize, 0f, 1f)
+            let rawLength = trackLength * ratio
+            let clampedMin = max minLength thickness
+            let length = Math.Clamp(max clampedMin rawLength, thickness, trackLength)
+            let range = Internal.max0 (trackLength - length)
+            let t = Math.Clamp((-scrollOffset) / (contentSize - viewportSize), 0f, 1f)
+            let offset = range * t
+            if horizontal then
+                {
+                    X = trackBounds.X + offset
+                    Y = trackBounds.Y
+                    Width = length
+                    Height = thickness
+                }
+            else
+                {
+                    X = trackBounds.X
+                    Y = trackBounds.Y + offset
+                    Width = thickness
+                    Height = length
+                }
