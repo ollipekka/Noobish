@@ -61,7 +61,7 @@ let ``layoutFrame stacks children to same bounds`` () =
     let child1 = child1Ctx.ComponentId
     let child2 = child2Ctx.ComponentId
 
-    NoobishLayoutV2.layoutFrame components 100f 60f
+    NoobishLayoutV2.layoutStack components 0f 0f 100f 60f (int rootId.Index)
 
     let child1Bounds = components.Bounds.[int child1.Index]
     let child2Bounds = components.Bounds.[int child2.Index]
@@ -83,7 +83,7 @@ let ``layoutFrame throws on non-positive grid size`` () =
     let index = int ctx.ComponentId.Index
     components.Layout.[index] <- LayoutV2.Grid(0, 2)
 
-    let ex = Assert.Throws<System.ArgumentException>(fun () -> NoobishLayoutV2.layoutFrame components 10f 10f |> ignore)
+    let ex = Assert.Throws<System.ArgumentException>(fun () -> NoobishLayoutV2.layoutGrid components 0f 0f 10f 10f index |> ignore)
     Assert.IsTrue(ex.Message.Contains("Grid layout requires positive columns and rows"))
 
 [<Test>]
@@ -103,7 +103,7 @@ let ``layoutFrame stacks vertical children and respects fill`` () =
     components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
     components.Fill.[int child2.Index] <- {Horizontal = true; Vertical = true}
 
-    NoobishLayoutV2.layoutFrame components 100f 60f
+    NoobishLayoutV2.layoutLinearVertical components 0f 0f 100f 60f (int rootId.Index)
 
     let child1Bounds = components.Bounds.[int child1.Index]
     let child2Bounds = components.Bounds.[int child2.Index]
@@ -130,7 +130,7 @@ let ``layoutFrame stacks horizontal children and respects fill`` () =
     components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
     components.Fill.[int child2.Index] <- {Horizontal = true; Vertical = false}
 
-    NoobishLayoutV2.layoutFrame components 100f 20f
+    NoobishLayoutV2.layoutLinearHorizontal components 0f 0f 100f 20f (int rootId.Index)
 
     let child1Bounds = components.Bounds.[int child1.Index]
     let child2Bounds = components.Bounds.[int child2.Index]
@@ -158,7 +158,7 @@ let ``layoutFrame places grid children by order`` () =
     components.Fill.[int child2.Index] <- {Horizontal = true; Vertical = true}
     components.Fill.[int child3.Index] <- {Horizontal = true; Vertical = true}
 
-    NoobishLayoutV2.layoutFrame components 100f 80f
+    NoobishLayoutV2.layoutGrid components 0f 0f 100f 80f (int rootId.Index)
 
     let bounds1 = components.Bounds.[int child1.Index]
     let bounds2 = components.Bounds.[int child2.Index]
@@ -186,7 +186,7 @@ let ``layoutFrame uses content size when not filling`` () =
     components.MinSize.[int childId.Index] <- {Width = 0f; Height = 0f}
     components.ContentSize.[int childId.Index] <- {Width = 42f; Height = 12f}
 
-    NoobishLayoutV2.layoutFrame components 100f 60f
+    NoobishLayoutV2.layoutLinearVertical components 0f 0f 100f 60f (int rootId.Index)
 
     let childBounds = components.Bounds.[int childId.Index]
     Assert.AreEqual(42f, childBounds.Width)
@@ -208,7 +208,7 @@ let ``layoutFrame clamps scroll containers to available space`` () =
     components.MinSize.[int childId.Index] <- {Width = 0f; Height = 0f}
     components.ContentSize.[int childId.Index] <- {Width = 50f; Height = 200f}
 
-    NoobishLayoutV2.layoutFrame components 100f 60f
+    NoobishLayoutV2.layoutLinearVertical components 0f 0f 100f 60f (int rootId.Index)
 
     let childBounds = components.Bounds.[int childId.Index]
     Assert.AreEqual(60f, childBounds.Height)
@@ -232,7 +232,7 @@ let ``layoutFrame scroll container height respects parent padding and child marg
     components.MinSize.[int childId.Index] <- {Width = 0f; Height = 0f}
     components.ContentSize.[int childId.Index] <- {Width = 50f; Height = 200f}
 
-    NoobishLayoutV2.layoutFrame components 100f 100f
+    NoobishLayoutV2.layoutLinearVertical components 0f 0f 100f 100f (int rootId.Index)
 
     let childBounds = components.Bounds.[int childId.Index]
     let expectedHeight = 100f - 6f - 10f - 3f - 5f
@@ -256,7 +256,7 @@ let ``layoutFrame scroll container height respects its own padding`` () =
     components.MinSize.[int childId.Index] <- {Width = 0f; Height = 0f}
     components.ContentSize.[int childId.Index] <- {Width = 50f; Height = 200f}
 
-    NoobishLayoutV2.layoutFrame components 100f 80f
+    NoobishLayoutV2.layoutLinearVertical components 0f 0f 100f 80f (int rootId.Index)
 
     let childBounds = components.Bounds.[int childId.Index]
     Assert.AreEqual(80f, childBounds.Height)
@@ -287,7 +287,7 @@ let ``layoutFrame nested scroll containers respect parent padding`` () =
     components.MinSize.[int innerId.Index] <- {Width = 0f; Height = 0f}
     components.ContentSize.[int innerId.Index] <- {Width = 50f; Height = 200f}
 
-    NoobishLayoutV2.layoutFrame components 100f 90f
+    NoobishLayoutV2.layoutLinearVertical components 0f 0f 100f 90f (int rootId.Index)
 
     let outerBounds = components.Bounds.[int outerId.Index]
     let innerBounds = components.Bounds.[int innerId.Index]
@@ -312,7 +312,7 @@ let ``layoutFrame stacks using content size`` () =
     components.ContentSize.[int child1.Index] <- {Width = 10f; Height = 12f}
     components.ContentSize.[int child2.Index] <- {Width = 10f; Height = 8f}
 
-    NoobishLayoutV2.layoutFrame components 100f 40f
+    NoobishLayoutV2.layoutLinearVertical components 0f 0f 100f 40f (int rootId.Index)
 
     let bounds1 = components.Bounds.[int child1.Index]
     let bounds2 = components.Bounds.[int child2.Index]
@@ -334,7 +334,7 @@ let ``layoutFrame applies margins once`` () =
 
     components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
 
-    NoobishLayoutV2.layoutFrame components 100f 40f
+    NoobishLayoutV2.layoutLinearVertical components 0f 0f 100f 40f (int rootId.Index)
 
     let childBounds = components.Bounds.[int childId.Index]
     Assert.AreEqual(5f, childBounds.Y)
@@ -355,7 +355,7 @@ let ``layoutFrame applies grid spans`` () =
         |> NoobishV2.setFill {Horizontal = true; Vertical = true}
     let childId = childCtx.ComponentId
 
-    NoobishLayoutV2.layoutFrame components 100f 80f
+    NoobishLayoutV2.layoutGrid components 0f 0f 100f 80f (int rootId.Index)
 
     let childBounds = components.Bounds.[int childId.Index]
     Assert.AreEqual(100f, childBounds.Width)
@@ -377,7 +377,7 @@ let ``layoutFrame places grid children after spans`` () =
     components.Fill.[int firstId.Index] <- {Horizontal = true; Vertical = true}
     components.Fill.[int secondId.Index] <- {Horizontal = true; Vertical = true}
 
-    NoobishLayoutV2.layoutFrame components 100f 80f
+    NoobishLayoutV2.layoutGrid components 0f 0f 100f 80f (int rootId.Index)
 
     let firstBounds = components.Bounds.[int firstId.Index]
     let secondBounds = components.Bounds.[int secondId.Index]
@@ -406,7 +406,7 @@ let ``layoutFrame reserves padding in horizontal layout`` () =
     components.Fill.[int rootId.Index] <- {Horizontal = true; Vertical = true}
     components.Fill.[int rightId.Index] <- {Horizontal = true; Vertical = true}
 
-    NoobishLayoutV2.layoutFrame components 120f 40f
+    NoobishLayoutV2.layoutLinearHorizontal components 0f 0f 120f 40f (int rootId.Index)
 
     let leftBounds = components.Bounds.[int leftId.Index]
     let rightBounds = components.Bounds.[int rightId.Index]
@@ -415,3 +415,67 @@ let ``layoutFrame reserves padding in horizontal layout`` () =
     Assert.AreEqual(40f, leftBounds.Width)
     Assert.AreEqual(40f, rightBounds.X)
     Assert.AreEqual(10f, buttonBounds.X - leftBounds.X)
+
+[<Test>]
+let ``layoutComponent handles all layout types`` () =
+    let layouts =
+        [ LayoutV2.LinearVertical
+          LayoutV2.LinearHorizontal
+          LayoutV2.Grid(1, 1)
+          LayoutV2.Stack
+          LayoutV2.Relative UIComponentIdV2.empty
+          LayoutV2.None ]
+
+    for layout in layouts do
+        let components = NoobishComponentsV2(2)
+        let rootCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+        let childCtx = NoobishV2.beginLabel "Child" rootCtx
+        let rootIndex = int rootCtx.ComponentId.Index
+        let childIndex = int childCtx.ComponentId.Index
+
+        components.Layout.[rootIndex] <- layout
+        components.Fill.[rootIndex] <- { Horizontal = true; Vertical = true }
+        components.Fill.[childIndex] <- { Horizontal = true; Vertical = true }
+
+        NoobishLayoutV2.layoutComponent components 0f 0f 50f 40f rootIndex
+
+        let rootBounds = components.Bounds.[rootIndex]
+        Assert.AreEqual(50f, rootBounds.Width)
+        Assert.AreEqual(40f, rootBounds.Height)
+
+        let childBounds = components.Bounds.[childIndex]
+        if layout = LayoutV2.None then
+            Assert.AreEqual(0f, childBounds.Width)
+            Assert.AreEqual(0f, childBounds.Height)
+        else
+            Assert.Greater(childBounds.Width, 0f)
+            Assert.Greater(childBounds.Height, 0f)
+
+        components.ReleaseContext childCtx
+        components.ReleaseContext rootCtx
+
+[<Test>]
+let ``layoutRelative lays out children within content bounds`` () =
+    let components = NoobishComponentsV2(2)
+    let rootCtx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+        |> NoobishV2.setPadding { NoobishPadding.Top = 2f; Right = 3f; Bottom = 4f; Left = 5f }
+    let childCtx = NoobishV2.beginLabel "Child" rootCtx
+    let rootIndex = int rootCtx.ComponentId.Index
+    let childIndex = int childCtx.ComponentId.Index
+
+    components.Layout.[rootIndex] <- LayoutV2.Relative UIComponentIdV2.empty
+    components.Fill.[rootIndex] <- { Horizontal = true; Vertical = true }
+    components.Fill.[childIndex] <- { Horizontal = true; Vertical = true }
+
+    NoobishLayoutV2.layoutRelative components 0f 0f 50f 40f rootIndex
+
+    let childBounds = components.Bounds.[childIndex]
+    Assert.AreEqual(5f, childBounds.X)
+    Assert.AreEqual(2f, childBounds.Y)
+    Assert.AreEqual(42f, childBounds.Width)
+    Assert.AreEqual(34f, childBounds.Height)
+
+    components.ReleaseContext childCtx
+    components.ReleaseContext rootCtx

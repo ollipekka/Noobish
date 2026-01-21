@@ -6,6 +6,105 @@ open System.Collections.Generic
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 
+module internal TextBatchHelpers =
+    type TextRenderInfo =
+        { Size: float32
+          Technique: string
+          Position: Vector2
+          AtlasSize: Vector2
+          ForegroundColor: Vector4
+          PxRange: float32
+          WorldViewProjection: Matrix }
+
+    let resolveTextRenderInfo
+        (font: NoobishFont)
+        (sizeInPt: int)
+        (position: Vector2)
+        (color: Color)
+        (textureWidth: int)
+        (textureHeight: int)
+        (worldViewProjection: Matrix) =
+        let size = float32 sizeInPt * 4f / 3f / float32 font.Metrics.EmSize
+        let technique = if size > 10.0f then "LargeText" else "SmallText"
+        let atlasSize = Vector2(float32 textureWidth, float32 textureHeight)
+        let position = position + Vector2(0f, font.Metrics.Descender * size)
+        { Size = size
+          Technique = technique
+          Position = position
+          AtlasSize = atlasSize
+          ForegroundColor = color.ToVector4()
+          PxRange = float32 font.Atlas.DistanceRange
+          WorldViewProjection = worldViewProjection }
+
+    let iterateGlyphPlacements
+        (font: NoobishFont)
+        (size: float32)
+        (position: Vector2)
+        (text: ReadOnlySpan<char>)
+        (handler: Vector2 -> Vector2 -> NoobishGlyph -> unit) =
+        let mutable nextPosX = position.X
+        for i = 0 to text.Length - 1 do
+            let c = text.[i]
+            let glyph = NoobishFont.getGlyph font c
+
+            let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) =
+                NoobishGlyph.getGlyphMetricsInPx size glyph
+
+            let kern =
+                if i + 1 < text.Length then
+                    glyph.Kerning.GetValueOrDefault (text.[i + 1], 0f) * size
+                else
+                    0f
+
+            let x = nextPosX + xOffset
+            let y = position.Y + (size * font.Metrics.LineHeight - glyphHeight) - yOffset
+
+            let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
+            let center = Vector2(x, y) + glyphHalfSize
+
+            handler center glyphHalfSize glyph
+
+            nextPosX <- nextPosX + advance + kern
+
+    let iterateMultiLineSegments
+        (font: NoobishFont)
+        (size: float32)
+        (maxWidth: float32)
+        (text: string)
+        (handler: int -> int -> Vector2 -> unit) =
+        let mutable nextPosX = 0f
+        let mutable nextPosY = 0f
+        let mutable i = 0
+
+        while i < text.Length do
+            let struct(wsWidth, wsNewLinePos, wsCount) = NoobishFont.measureLeadingWhiteSpace font size text i
+
+            if wsNewLinePos <> -1 then
+                nextPosX <- 0.0f
+                nextPosY <- nextPosY + font.Metrics.LineHeight * size
+                i <- i + wsCount
+            else
+                let struct(wordWidth, wordCount) = NoobishFont.measureNextWord font size text (i + wsCount)
+
+                if nextPosX + wsWidth + wordWidth > maxWidth then
+                    if nextPosX <= Single.Epsilon then
+                        failwith "Word is larger than line width. Use smaller font."
+                    nextPosX <- 0.0f
+                    nextPosY <- nextPosY + font.Metrics.LineHeight * size
+                else
+                    let struct(startPos, endPos, adjustedWidth) =
+                        if nextPosX < Single.Epsilon && wsCount > 0 then
+                            struct(i + wsCount, i + wsCount + wordCount, 0f)
+                        else
+                            struct(i, i + wsCount + wordCount, wsWidth)
+
+                    let length = endPos - startPos
+                    if length > 0 then
+                        handler startPos length (Vector2(nextPosX, nextPosY))
+
+                    nextPosX <- nextPosX + adjustedWidth + wordWidth
+                    i <- endPos
+
 
 [<Struct>]
 type NoobishMonoGameFont = {
@@ -74,32 +173,8 @@ type TextBatch (graphics: GraphicsDevice, resolution: struct(int*int), effect: E
 
     member s.DrawSubstring
         ((font: NoobishMonoGameFont), (size: float32), (position: Vector2), (layer: float32), (text: ReadOnlySpan<char>)) =
-
-        let fontData = font.Font
-        let mutable nextPosX = position.X
-
-        for i = 0 to text.Length - 1 do
-            let c = text.[i]
-            let glyph = NoobishFont.getGlyph fontData c
-
-            let struct(advance, xOffset, yOffset, glyphWidth, glyphHeight) =
-                NoobishGlyph.getGlyphMetricsInPx size glyph
-
-            let kern =
-                if i + 1 < text.Length then
-                    glyph.Kerning.GetValueOrDefault (text.[i + 1], 0f) * size
-                else
-                    0f
-
-            let x = nextPosX + xOffset
-            let y = position.Y + (size * fontData.Metrics.LineHeight - glyphHeight) - yOffset
-
-            let glyphHalfSize = Vector2(glyphWidth / 2f, glyphHeight / 2f)
-            let position = Vector2(x, y) + glyphHalfSize
-
-            s.DrawGlyph font position glyphHalfSize layer glyph
-
-            nextPosX <- nextPosX + advance + kern
+        TextBatchHelpers.iterateGlyphPlacements font.Font size position text (fun center halfSize glyph ->
+            s.DrawGlyph font center halfSize layer glyph)
 
     member s.DrawSingleLine
         (font: NoobishMonoGameFont)
@@ -110,24 +185,18 @@ type TextBatch (graphics: GraphicsDevice, resolution: struct(int*int), effect: E
         (text: string) =
 
         let fontData = font.Font
-        let size = float32 size * 4f / 3f / float32 fontData.Metrics.EmSize
-
         let wvp = s.World * s.View * s.Projection
-        effect.Parameters["WorldViewProjection"].SetValue(wvp)
+        let renderInfo =
+            TextBatchHelpers.resolveTextRenderInfo fontData size position color font.Texture.Width font.Texture.Height wvp
+
+        effect.Parameters["WorldViewProjection"].SetValue(renderInfo.WorldViewProjection)
         effect.Parameters["GlyphTexture"].SetValue(font.Texture)
-        effect.Parameters["PxRange"].SetValue(float32 fontData.Atlas.DistanceRange)
+        effect.Parameters["PxRange"].SetValue(renderInfo.PxRange)
+        effect.Parameters["TextureSize"].SetValue(renderInfo.AtlasSize)
+        effect.Parameters["ForegroundColor"].SetValue(renderInfo.ForegroundColor)
+        effect.CurrentTechnique <- effect.Techniques.[renderInfo.Technique]
 
-        let atlasSize = Vector2(float32 font.Texture.Width, float32 font.Texture.Height)
-        effect.Parameters["TextureSize"].SetValue(atlasSize)
-        effect.Parameters["ForegroundColor"].SetValue(color.ToVector4())
-        effect.CurrentTechnique <-
-            if size > 10.0f then
-                effect.Techniques["LargeText"]
-            else
-                effect.Techniques["SmallText"]
-
-        let position = position + Vector2(0f, fontData.Metrics.Descender * size)
-        s.DrawSubstring(font, size, position, layer, text.AsSpan())
+        s.DrawSubstring(font, renderInfo.Size, renderInfo.Position, layer, text.AsSpan())
 
         s.Flush()
 
@@ -141,56 +210,21 @@ type TextBatch (graphics: GraphicsDevice, resolution: struct(int*int), effect: E
         (text: string) =
 
         let fontData = font.Font
-        let size = float32 sizeInPt * 4f / 3f / float32 fontData.Metrics.EmSize
-
         let wvp = s.World * s.View * s.Projection
-        effect.Parameters["WorldViewProjection"].SetValue(wvp)
+        let renderInfo =
+            TextBatchHelpers.resolveTextRenderInfo fontData sizeInPt position color font.Texture.Width font.Texture.Height wvp
+
+        effect.Parameters["WorldViewProjection"].SetValue(renderInfo.WorldViewProjection)
         effect.Parameters["GlyphTexture"].SetValue(font.Texture)
-        effect.Parameters["PxRange"].SetValue(float32 fontData.Atlas.DistanceRange)
+        effect.Parameters["PxRange"].SetValue(renderInfo.PxRange)
+        effect.Parameters["TextureSize"].SetValue(renderInfo.AtlasSize)
+        effect.Parameters["ForegroundColor"].SetValue(renderInfo.ForegroundColor)
+        effect.CurrentTechnique <- effect.Techniques.[renderInfo.Technique]
 
-        let atlasSize = Vector2(float32 font.Texture.Width, float32 font.Texture.Height)
-        effect.Parameters["TextureSize"].SetValue(atlasSize)
-        effect.Parameters["ForegroundColor"].SetValue(color.ToVector4())
-        effect.CurrentTechnique <-
-            if size > 10.0f then
-                effect.Techniques["LargeText"]
-            else
-                effect.Techniques["SmallText"]
-
-        let position = position + Vector2(0f, fontData.Metrics.Descender * size)
-        let mutable nextPosX = 0f
-        let mutable nextPosY = 0f
-
-        let mutable i = 0
-        while i < text.Length - 1 do
-            let struct(wsWidth, wsNewLinePos, wsCount) = NoobishFont.measureLeadingWhiteSpace fontData size text i
-
-            if wsNewLinePos <> -1 then
-                nextPosX <- 0.0f
-                nextPosY <- nextPosY + fontData.Metrics.LineHeight * size
-                i <- i + wsCount
-            else
-                let struct(wordWidth, wordCount) = NoobishFont.measureNextWord fontData size text (i + wsCount)
-
-                if nextPosX + wsWidth + wordWidth > maxWidth then
-                    if nextPosX <= Single.Epsilon then
-                        failwith "Word is larger than line width. Use smaller font."
-                    nextPosX <- 0.0f
-                    nextPosY <- nextPosY + fontData.Metrics.LineHeight * size
-                else
-                    let struct(startPos, endPos, adjustedWidth) =
-                        if nextPosX < Single.Epsilon && wsCount > 0 then
-                            struct(i + wsCount, i + wsCount + wordCount, 0f)
-                        else
-                            struct(i, i + wsCount + wordCount, wsWidth)
-
-                    let nextPos = position + Vector2(nextPosX, nextPosY)
-                    let textSpan = text.AsSpan(startPos, endPos - startPos)
-                    s.DrawSubstring(font, size, nextPos, layer, textSpan)
-
-                    nextPosX <- nextPosX + adjustedWidth + wordWidth
-
-                    i <- endPos
+        TextBatchHelpers.iterateMultiLineSegments fontData renderInfo.Size maxWidth text (fun startPos length offset ->
+            let nextPos = renderInfo.Position + offset
+            let textSpan = text.AsSpan(startPos, length)
+            s.DrawSubstring(font, renderInfo.Size, nextPos, layer, textSpan))
 
         s.Flush()
 

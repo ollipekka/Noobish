@@ -1,0 +1,9 @@
+{
+  "solution": {
+    "path": "Noobish.sln",
+    "projects": [
+      "src/Noobish.Test/Noobish.Test.fsproj",
+      "src/Noobish.MonoGame.Test/Noobish.MonoGame.Test.fsproj"
+    ]
+  }
+}

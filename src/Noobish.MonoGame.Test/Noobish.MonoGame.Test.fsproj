@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <OutputPath>../../bin/</OutputPath>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
@@ -15,6 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="MockRenderContext.fs" />
+    <Compile Include="InputStateTests.fs" />
+    <Compile Include="TextBatchHelpersTests.fs" />
+    <Compile Include="NoobishMonoGameRendererV2Tests.fs" />
     <Compile Include="StyleSheetReaderTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

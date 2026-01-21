@@ -2,6 +2,50 @@ namespace Noobish
 
 open Microsoft.Xna.Framework.Input
 open Microsoft.Xna.Framework.Input.Touch
+open System.Collections.Generic
+
+module internal NoobishInputStateHelpers =
+    let private keyMap =
+        let dict = Dictionary<NoobishKeyId, Keys>()
+        dict.[NoobishKeyId.Escape] <- Keys.Escape
+        dict.[NoobishKeyId.Enter] <- Keys.Enter
+        dict.[NoobishKeyId.Space] <- Keys.Space
+        dict.[NoobishKeyId.A] <- Keys.A
+        dict.[NoobishKeyId.B] <- Keys.B
+        dict.[NoobishKeyId.C] <- Keys.C
+        dict.[NoobishKeyId.D] <- Keys.D
+        dict.[NoobishKeyId.E] <- Keys.E
+        dict.[NoobishKeyId.F] <- Keys.F
+        dict.[NoobishKeyId.G] <- Keys.G
+        dict.[NoobishKeyId.H] <- Keys.H
+        dict.[NoobishKeyId.I] <- Keys.I
+        dict.[NoobishKeyId.J] <- Keys.J
+        dict.[NoobishKeyId.K] <- Keys.K
+        dict.[NoobishKeyId.L] <- Keys.L
+        dict.[NoobishKeyId.M] <- Keys.M
+        dict.[NoobishKeyId.N] <- Keys.N
+        dict.[NoobishKeyId.O] <- Keys.O
+        dict.[NoobishKeyId.P] <- Keys.P
+        dict.[NoobishKeyId.Q] <- Keys.Q
+        dict.[NoobishKeyId.R] <- Keys.R
+        dict.[NoobishKeyId.S] <- Keys.S
+        dict.[NoobishKeyId.T] <- Keys.T
+        dict.[NoobishKeyId.U] <- Keys.U
+        dict.[NoobishKeyId.V] <- Keys.V
+        dict.[NoobishKeyId.W] <- Keys.W
+        dict.[NoobishKeyId.X] <- Keys.X
+        dict.[NoobishKeyId.Y] <- Keys.Y
+        dict.[NoobishKeyId.Z] <- Keys.Z
+        dict.[NoobishKeyId.Left] <- Keys.Left
+        dict.[NoobishKeyId.Right] <- Keys.Right
+        dict
+
+    let mapKeyId keyId =
+        let mutable value = Unchecked.defaultof<Keys>
+        if keyMap.TryGetValue(keyId, &value) then
+            ValueSome value
+        else
+            ValueNone
 
 type NoobishInputState() =
     let mutable keyboardCurrent = Keyboard.GetState()
@@ -13,40 +57,7 @@ type NoobishInputState() =
     let mutable textBuffer = Array.zeroCreate<char> 16
     let mutable textCount = 0
 
-    let mapKeyId keyId =
-        match keyId with
-        | NoobishKeyId.Escape -> ValueSome Keys.Escape
-        | NoobishKeyId.Enter -> ValueSome Keys.Enter
-        | NoobishKeyId.Space -> ValueSome Keys.Space
-        | NoobishKeyId.A -> ValueSome Keys.A
-        | NoobishKeyId.B -> ValueSome Keys.B
-        | NoobishKeyId.C -> ValueSome Keys.C
-        | NoobishKeyId.D -> ValueSome Keys.D
-        | NoobishKeyId.E -> ValueSome Keys.E
-        | NoobishKeyId.F -> ValueSome Keys.F
-        | NoobishKeyId.G -> ValueSome Keys.G
-        | NoobishKeyId.H -> ValueSome Keys.H
-        | NoobishKeyId.I -> ValueSome Keys.I
-        | NoobishKeyId.J -> ValueSome Keys.J
-        | NoobishKeyId.K -> ValueSome Keys.K
-        | NoobishKeyId.L -> ValueSome Keys.L
-        | NoobishKeyId.M -> ValueSome Keys.M
-        | NoobishKeyId.N -> ValueSome Keys.N
-        | NoobishKeyId.O -> ValueSome Keys.O
-        | NoobishKeyId.P -> ValueSome Keys.P
-        | NoobishKeyId.Q -> ValueSome Keys.Q
-        | NoobishKeyId.R -> ValueSome Keys.R
-        | NoobishKeyId.S -> ValueSome Keys.S
-        | NoobishKeyId.T -> ValueSome Keys.T
-        | NoobishKeyId.U -> ValueSome Keys.U
-        | NoobishKeyId.V -> ValueSome Keys.V
-        | NoobishKeyId.W -> ValueSome Keys.W
-        | NoobishKeyId.X -> ValueSome Keys.X
-        | NoobishKeyId.Y -> ValueSome Keys.Y
-        | NoobishKeyId.Z -> ValueSome Keys.Z
-        | NoobishKeyId.Left -> ValueSome Keys.Left
-        | NoobishKeyId.Right -> ValueSome Keys.Right
-        | NoobishKeyId.None -> ValueNone
+    let mapKeyId = NoobishInputStateHelpers.mapKeyId
 
     member _.Update() =
         keyboardPrevious <- keyboardCurrent

@@ -1025,6 +1025,17 @@ let ``NoobishInputV2 scroll uses child bounds over content size horizontally`` (
     components.ReleaseContext parentCtx
 
 [<Test>]
+let ``NoobishInputV2 tryFindScrollableAncestor returns -1 when no parent`` () =
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    let index = 0
+    components.ParentId.[index] <- UIComponentIdV2.empty
+    components.Scroll.[index] <- { Horizontal = false; Vertical = false }
+
+    let result = NoobishInputV2.tryFindScrollableAncestor components index
+    Assert.AreEqual(-1, result)
+
+[<Test>]
 let ``NoobishInputV2 scrolls horizontally when both axes enabled`` () =
     let components = NoobishComponentsV2(1)
     let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
@@ -1205,6 +1216,47 @@ let ``NoobishInputV2 ProcessInput clears focus on enter`` () =
 
     Assert.AreEqual(-1, buffer.FocusedIndex)
     Assert.IsFalse(components.Focused.[index])
+
+    components.ReleaseContext textboxCtx
+    components.ReleaseContext frameCtx
+
+[<Test>]
+let ``NoobishInputV2 ProcessInput clears focus on escape`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let textboxCtx = NoobishV2.beginTextbox "Hi" 18us frameCtx
+    let index = int textboxCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.SetFocus(components, index, 2)
+
+    let input =
+        createInput { defaultInputConfig with ConsumeTextInput = fun () -> struct([| '\u001b' |], 1) }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual(-1, buffer.FocusedIndex)
+    Assert.IsFalse(components.Focused.[index])
+
+    components.ReleaseContext textboxCtx
+    components.ReleaseContext frameCtx
+
+[<Test>]
+let ``NoobishInputV2 ProcessInput ignores control characters`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let textboxCtx = NoobishV2.beginTextbox "Hi" 19us frameCtx
+    let index = int textboxCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.SetFocus(components, index, 2)
+
+    let input =
+        createInput { defaultInputConfig with ConsumeTextInput = fun () -> struct([| '\u0001' |], 1) }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual("Hi", components.Text.[index])
+    Assert.IsTrue(ValueOption.isNone (buffer.TryGetTextChanged 19us))
+    Assert.AreEqual(2, components.CaretIndex.[index])
 
     components.ReleaseContext textboxCtx
     components.ReleaseContext frameCtx
