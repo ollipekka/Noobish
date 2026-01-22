@@ -1096,6 +1096,30 @@ let ``InputBufferV2 Reset restores focus by local id`` () =
     components.ReleaseContext frameCtx
 
 [<Test>]
+let ``InputBufferV2 SetFocus clears previous focus`` () =
+    let components = NoobishComponentsV2(2)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let textboxCtx1 = NoobishV2.beginTextbox "One" 1us frameCtx
+    let textboxCtx2 = NoobishV2.beginTextbox "Two" 2us frameCtx
+    let index1 = int textboxCtx1.ComponentId.Index
+    let index2 = int textboxCtx2.ComponentId.Index
+    let buffer = InputBufferV2(2)
+
+    buffer.SetFocus(components, index1, 0)
+    Assert.IsTrue(components.Focused.[index1])
+
+    buffer.SetFocus(components, index2, 1)
+
+    Assert.IsFalse(components.Focused.[index1])
+    Assert.IsTrue(components.Focused.[index2])
+    Assert.AreEqual(index2, buffer.FocusedIndex)
+    Assert.AreEqual(2us, buffer.LastFocusedLocalId)
+
+    components.ReleaseContext textboxCtx2
+    components.ReleaseContext textboxCtx1
+    components.ReleaseContext frameCtx
+
+[<Test>]
 let ``NoobishInputV2 ProcessInput updates text from text input`` () =
     let components = NoobishComponentsV2(1)
     let frameCtx = NoobishV2.beginFrame "Page" components

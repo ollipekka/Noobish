@@ -110,3 +110,35 @@ let ``iterateMultiLineSegments wraps when line is full`` () =
     Assert.AreEqual(0f, offset1.X)
     Assert.AreEqual(0f, offset2.X)
     Assert.Greater(offset2.Y, offset1.Y)
+
+[<Test>]
+let ``iterateMultiLineSegments moves to next line on newline whitespace`` () =
+    let font = createFont ()
+    let segments = ResizeArray<struct(int * int * Vector2)>()
+    iterateMultiLineSegments font 1f 100f "\nx" (fun start length offset ->
+        segments.Add(struct(start, length, offset)))
+
+    Assert.AreEqual(1, segments.Count)
+    let struct(start, length, offset) = segments.[0]
+    Assert.AreEqual(1, start)
+    Assert.AreEqual(1, length)
+    Assert.AreEqual(0f, offset.X)
+    Assert.AreEqual(1f, offset.Y)
+
+[<Test>]
+let ``iterateMultiLineSegments throws when word exceeds max width at line start`` () =
+    let font = createFont ()
+    let ex =
+        Assert.Throws<Exception>(fun () ->
+            iterateMultiLineSegments font 1f 3f "xx" (fun _ _ _ -> ()))
+
+    Assert.That(ex.Message, Does.Contain("Word is larger than line width"))
+
+[<Test>]
+let ``iterateMultiLineSegments ignores trailing whitespace`` () =
+    let font = createFont ()
+    let segments = ResizeArray<struct(int * int * Vector2)>()
+    iterateMultiLineSegments font 1f 100f " " (fun start length offset ->
+        segments.Add(struct(start, length, offset)))
+
+    Assert.AreEqual(0, segments.Count)

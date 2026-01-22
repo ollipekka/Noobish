@@ -47,25 +47,27 @@ module internal NoobishInputStateHelpers =
         else
             ValueNone
 
-type NoobishInputState() =
-    let mutable keyboardCurrent = Keyboard.GetState()
+type NoobishInputState internal (getKeyboardState: unit -> KeyboardState, getMouseState: unit -> MouseState, getTouchState: unit -> TouchCollection) =
+    let mutable keyboardCurrent = getKeyboardState()
     let mutable keyboardPrevious = keyboardCurrent
-    let mutable mouseCurrent = Mouse.GetState()
+    let mutable mouseCurrent = getMouseState()
     let mutable mousePrevious = mouseCurrent
-    let mutable touchCurrent = TouchPanel.GetState()
+    let mutable touchCurrent = getTouchState()
     let mutable touchPrevious = touchCurrent
     let mutable textBuffer = Array.zeroCreate<char> 16
     let mutable textCount = 0
 
     let mapKeyId = NoobishInputStateHelpers.mapKeyId
 
+    new () = NoobishInputState(Keyboard.GetState, Mouse.GetState, TouchPanel.GetState)
+
     member _.Update() =
         keyboardPrevious <- keyboardCurrent
-        keyboardCurrent <- Keyboard.GetState()
+        keyboardCurrent <- getKeyboardState()
         mousePrevious <- mouseCurrent
-        mouseCurrent <- Mouse.GetState()
+        mouseCurrent <- getMouseState()
         touchPrevious <- touchCurrent
-        touchCurrent <- TouchPanel.GetState()
+        touchCurrent <- getTouchState()
 
     member _.EnqueueTextInput(value: char) =
         if textCount >= textBuffer.Length then

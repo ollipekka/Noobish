@@ -146,7 +146,7 @@ type InputBufferV2(capacity: int) =
             components.Focused.[focusedIndex] <- false
         focusedIndex <- index
         let localId = components.Id.[index].LocalId
-        lastFocusedLocalId <- if localId <> 0us then localId else 0us
+        lastFocusedLocalId <- localId
         components.Focused.[index] <- true
         let textLength = components.Text.[index].Length
         caretIndex <- Math.Clamp(nextCaret, 0, textLength)
@@ -226,11 +226,7 @@ type InputBufferV2(capacity: int) =
             hoveredIndex <- nextIndex
             if hoveredIndex >= 0 then
                 components.Hovered.[hoveredIndex] <- true
-                let localId = components.Id.[hoveredIndex].LocalId
-                if localId <> 0us then
-                    lastHoveredLocalId <- localId
-                else
-                    lastHoveredLocalId <- 0us
+                lastHoveredLocalId <- components.Id.[hoveredIndex].LocalId
             else
                 lastHoveredLocalId <- 0us
 

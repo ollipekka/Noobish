@@ -87,6 +87,39 @@ let ``layoutFrame throws on non-positive grid size`` () =
     Assert.IsTrue(ex.Message.Contains("Grid layout requires positive columns and rows"))
 
 [<Test>]
+let ``layoutFrame throws when layoutGrid called on non-grid layout`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPanel
+    let index = int ctx.ComponentId.Index
+    components.Layout.[index] <- LayoutV2.Stack
+
+    let ex = Assert.Throws<System.ArgumentException>(fun () -> NoobishLayoutV2.layoutGrid components 0f 0f 10f 10f index |> ignore)
+    Assert.IsTrue(ex.Message.Contains("Grid layout requires Grid layout type."))
+
+[<Test>]
+let ``layoutFrame throws when grid child does not fill`` () =
+    let runCase fill =
+        let components = NoobishComponentsV2(2)
+        let rootCtx =
+            NoobishV2.beginFrame "Page" components
+            |> NoobishV2.beginGrid (1, 1)
+        let childCtx = NoobishV2.beginLabel "Child" rootCtx
+        let rootIndex = int rootCtx.ComponentId.Index
+        let childIndex = int childCtx.ComponentId.Index
+        components.Fill.[childIndex] <- fill
+
+        let ex = Assert.Throws<System.ArgumentException>(fun () -> NoobishLayoutV2.layoutGrid components 0f 0f 10f 10f rootIndex |> ignore)
+        Assert.IsTrue(ex.Message.Contains("Grid children must fill horizontally and vertically."))
+
+        components.ReleaseContext childCtx
+        components.ReleaseContext rootCtx
+
+    runCase {Horizontal = false; Vertical = true}
+    runCase {Horizontal = true; Vertical = false}
+
+[<Test>]
 let ``layoutFrame stacks vertical children and respects fill`` () =
     let components = NoobishComponentsV2(3)
     let rootCtx =

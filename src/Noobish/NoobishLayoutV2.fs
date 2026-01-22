@@ -2,7 +2,6 @@ namespace Noobish
 
 open System
 open System.Buffers
-open System.Diagnostics
 
 module NoobishLayoutV2 =
     let internal computeAvailableContent (availableWidth: float32) (availableHeight: float32) (margin: NoobishMargin) (padding: NoobishPadding) =
@@ -259,7 +258,8 @@ module NoobishLayoutV2 =
             for i = 0 to children.Count - 1 do
                 let childIndex = int children.[i].Index
                 let span = components.GridSpan.[childIndex]
-                Debug.Assert(components.Fill.[childIndex].Horizontal && components.Fill.[childIndex].Vertical, "Grid children must fill horizontally and vertically.")
+                if not (components.Fill.[childIndex].Horizontal && components.Fill.[childIndex].Vertical) then
+                    invalidArg "fill" "Grid children must fill horizontally and vertically."
                 let colspan = max 1 span.Colspan
                 let rowspan = max 1 span.Rowspan
                 let colspan = min colspan cols
