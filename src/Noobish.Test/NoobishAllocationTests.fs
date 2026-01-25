@@ -223,7 +223,8 @@ let ``NoobishInputV2 updateScroll allocates no managed memory`` () =
 
     let x = input.PointerX
     let y = input.PointerY
-    let allocated = measureLoop 50 (fun () -> NoobishInputV2.updateScroll input components x y)
+    let buffer = InputBufferV2(1)
+    let allocated = measureLoop 50 (fun () -> NoobishInputV2.updateScroll input components buffer x y)
 
     Assert.AreEqual(0L, allocated, $"Expected 0 allocations but got {allocated}.")
 

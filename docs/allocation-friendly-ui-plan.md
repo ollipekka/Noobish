@@ -292,6 +292,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: cached V2 namespace hash per frame; current hash is case/whitespace sensitive to avoid allocations.
 - Done: drafted V2 input API (`docs/input-api-v2.md`) for tick-time localId queries.
 - Done: added V2 input buffer scaffolding (`src/Noobish/NoobishInputV2.fs`) with basic tests.
+- Done: added V2 input consumed flags keyed off `Wants*` participation in `ProcessInput`.
 - Done: added slider input polling and drag processing in V2 input buffer.
 - Done: added V2 slider render pin placement and bounds helper with tests.
 - Done: V2 input API uses engine-agnostic interfaces; platform backends should remain separate from core.

@@ -163,6 +163,18 @@ let ``InputBufferV2 Reset clears active flags`` () =
     components.ReleaseContext ctx
 
 [<Test>]
+let ``InputBufferV2 Reset clears consumed flags`` () =
+    let components = NoobishComponentsV2(1)
+    let buffer = InputBufferV2(1)
+    buffer.PointerConsumed <- true
+    buffer.KeyboardConsumed <- true
+
+    buffer.Reset components
+
+    Assert.IsFalse(buffer.PointerConsumed)
+    Assert.IsFalse(buffer.KeyboardConsumed)
+
+[<Test>]
 let ``NoobishInputV2 clippedBounds clamps to parent`` () =
     let components = NoobishComponentsV2(2)
     let parentCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
@@ -355,8 +367,31 @@ let ``NoobishInputV2 ProcessInput marks pressed when primary down`` () =
     Assert.IsTrue(buffer.IsDown 22us)
     Assert.IsTrue(buffer.WasPressed 22us)
     Assert.AreEqual(22us, buffer.GetPressed())
+    Assert.IsTrue(buffer.PointerConsumed)
 
     components.ReleaseContext buttonCtx
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 ProcessInput leaves PointerConsumed false without wants hit`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let rootIndex = int ctx.ComponentId.Index
+
+    components.Bounds.[rootIndex] <- {X = 0f; Y = 0f; Width = 10f; Height = 10f}
+
+    let buffer = InputBufferV2(1)
+    let input =
+        createInput
+            { defaultInputConfig with
+                PointerX = 5f
+                PointerY = 5f
+                PrimaryDown = true }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.IsFalse(buffer.PointerConsumed)
+
     components.ReleaseContext ctx
 
 [<Test>]
@@ -1164,6 +1199,7 @@ let ``NoobishInputV2 ProcessInput updates text from text input`` () =
     Assert.AreEqual("Hia", components.Text.[index])
     Assert.AreEqual(ValueSome "Hia", buffer.TryGetTextChanged 10us)
     Assert.IsTrue(components.CaretBlinkReset.[index])
+    Assert.IsTrue(buffer.KeyboardConsumed)
 
     components.ReleaseContext textboxCtx
     components.ReleaseContext frameCtx
@@ -1185,6 +1221,7 @@ let ``NoobishInputV2 ProcessInput moves caret with arrow keys`` () =
 
     Assert.AreEqual(4, components.CaretIndex.[index])
     Assert.IsTrue(components.CaretBlinkReset.[index])
+    Assert.IsTrue(buffer.KeyboardConsumed)
 
     components.ReleaseContext textboxCtx
     components.ReleaseContext frameCtx

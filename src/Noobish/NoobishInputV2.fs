@@ -62,6 +62,8 @@ type InputBufferV2(capacity: int) =
     member _.CaretIndex
         with get() = caretIndex
         and set value = caretIndex <- value
+    member val PointerConsumed = false with get, set 
+    member val KeyboardConsumed = false with get, set
 
     member _.EnsureCapacity(count: int) =
         if count > clicked.Length then
@@ -71,6 +73,8 @@ type InputBufferV2(capacity: int) =
         this.EnsureCapacity components.Count
         lastClickedLocalId <- 0us
         lastPressedLocalId <- 0us
+        this.PointerConsumed <- false
+        this.KeyboardConsumed <- false
         for i = 0 to activeIndices.Count - 1 do
             let index = activeIndices.[i]
             clicked.[index] <- false
@@ -432,8 +436,10 @@ module NoobishInputV2 =
             if value <> components.SliderValue.[downIndex] then
                 components.SliderValue.[downIndex] <- value
                 buffer.MarkSliderChanged(downIndex, value)
+                if NoobishComponentsV2.wantsMouse components downIndex then
+                    buffer.PointerConsumed <- true
 
-    let internal updateScroll (input: INoobishInputState) (components: NoobishComponentsV2) (x: float32) (y: float32) =
+    let internal updateScroll (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         let scrollDelta = input.ScrollWheelDelta
         if scrollDelta <> 0f then
             let hitIndex =
@@ -443,6 +449,11 @@ module NoobishInputV2 =
             if scrollHit >= 0 then
                 let struct(viewportWidth, viewportHeight) = getViewportSize components scrollHit
                 let struct(contentWidth, contentHeight) = getContentExtent components scrollHit
+                let canScroll =
+                    (components.Scroll.[scrollHit].Vertical && contentHeight > viewportHeight)
+                    || (components.Scroll.[scrollHit].Horizontal && contentWidth > viewportWidth)
+                if canScroll && NoobishComponentsV2.wantsMouse components scrollHit then
+                    buffer.PointerConsumed <- true
                 let delta = -scrollDelta * 0.5f
                 applyScrollDelta components scrollHit delta viewportWidth viewportHeight contentWidth contentHeight
 
@@ -451,6 +462,8 @@ module NoobishInputV2 =
             let pressHit =
                 hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
                     NoobishComponentsV2.isPressable components i)
+            if pressHit >= 0 && NoobishComponentsV2.wantsMouse components pressHit then
+                buffer.PointerConsumed <- true
             buffer.UpdateDown(components, pressHit)
         if buffer.DownIndex >= 0 then
             updateSliderFromPointer components buffer x
@@ -459,6 +472,8 @@ module NoobishInputV2 =
         let clickHit =
             hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
                 NoobishComponentsV2.isClickable components i)
+        if clickHit >= 0 && NoobishComponentsV2.wantsMouse components clickHit then
+            buffer.PointerConsumed <- true
         buffer.Release(components, clickHit)
 
     let internal updateFocusFromClick (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
@@ -470,6 +485,8 @@ module NoobishInputV2 =
                 let textLength = components.Text.[focusHit].Length
                 buffer.SetFocus(components, focusHit, textLength)
                 components.CaretBlinkReset.[focusHit] <- true
+                if NoobishComponentsV2.wantsMouse components focusHit then
+                    buffer.PointerConsumed <- true
             else
                 buffer.ClearFocus components
 
@@ -481,6 +498,8 @@ module NoobishInputV2 =
             let text = components.Text.[focusedIndex]
             let struct(updatedText, nextCaret, changed, clearFocus) =
                 applyTextInput text initialCaret textBuffer textCount
+            if NoobishComponentsV2.wantsKeyboard components focusedIndex then
+                buffer.KeyboardConsumed <- true
             if changed then
                 components.Text.[focusedIndex] <- updatedText
                 buffer.CaretIndex <- nextCaret
@@ -505,6 +524,8 @@ module NoobishInputV2 =
                 buffer.CaretIndex <- caret
                 components.CaretIndex.[focusedIndex] <- caret
                 components.CaretBlinkReset.[focusedIndex] <- true
+                if NoobishComponentsV2.wantsKeyboard components focusedIndex then
+                    buffer.KeyboardConsumed <- true
 
     let ProcessInput (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
         buffer.Reset components
@@ -512,7 +533,7 @@ module NoobishInputV2 =
             buffer.ClearDown()
         let x = input.PointerX
         let y = input.PointerY
-        updateScroll input components x y
+        updateScroll input components buffer x y
         updateHover components buffer x y
         if input.IsPrimaryDown() then
             updatePrimaryDown components buffer x y

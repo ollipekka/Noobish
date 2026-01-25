@@ -134,6 +134,40 @@ let ``NoobishComponentsV2 isClickable and isPressable respect flags`` () =
     Assert.IsFalse(NoobishComponentsV2.isPressable components index)
 
 [<Test>]
+let ``NoobishComponentsV2 wantsMouse returns true when any mouse wants set`` () =
+    let components = NoobishComponentsV2(1)
+    let index = 0
+    Assert.IsFalse(NoobishComponentsV2.wantsMouse components index)
+
+    components.WantsToggle.[index] <- true
+    Assert.IsTrue(NoobishComponentsV2.wantsMouse components index)
+    components.WantsToggle.[index] <- false
+
+    components.WantsOnClick.[index] <- true
+    Assert.IsTrue(NoobishComponentsV2.wantsMouse components index)
+    components.WantsOnClick.[index] <- false
+
+    components.WantsOnPress.[index] <- true
+    Assert.IsTrue(NoobishComponentsV2.wantsMouse components index)
+    components.WantsOnPress.[index] <- false
+
+    components.WantsSlider.[index] <- true
+    Assert.IsTrue(NoobishComponentsV2.wantsMouse components index)
+    components.WantsSlider.[index] <- false
+
+    components.WantsProgress.[index] <- true
+    Assert.IsTrue(NoobishComponentsV2.wantsMouse components index)
+
+[<Test>]
+let ``NoobishComponentsV2 wantsKeyboard returns true when text changed wanted`` () =
+    let components = NoobishComponentsV2(1)
+    let index = 0
+    Assert.IsFalse(NoobishComponentsV2.wantsKeyboard components index)
+
+    components.WantsTextChanged.[index] <- true
+    Assert.IsTrue(NoobishComponentsV2.wantsKeyboard components index)
+
+[<Test>]
 let ``ComponentContextV2 reset updates frame data`` () =
     let components = NoobishComponentsV2(1)
     let ctx = ComponentContextV2(components)

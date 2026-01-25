@@ -245,3 +245,13 @@ module NoobishComponentsV2 =
         components.Visible.[index]
         && components.Enabled.[index]
         && components.WantsOnPress.[index]
+
+    let wantsMouse (components: NoobishComponentsV2) index =
+        components.WantsToggle.[index]
+        || components.WantsOnClick.[index]
+        || components.WantsOnPress.[index]
+        || components.WantsSlider.[index]
+        || components.WantsProgress.[index]
+
+    let wantsKeyboard (components: NoobishComponentsV2) index =
+        components.WantsTextChanged.[index]

@@ -22,6 +22,8 @@ type InputBufferV2(capacity: int) =
     member Pressed: bool[]
     member TextChanged: bool[]
     member TextPayload: string[]
+    member PointerConsumed: bool
+    member KeyboardConsumed: bool
     member ActiveIndices: ResizeArray<int>
     member LocalIdToIndex: System.Collections.Generic.Dictionary<uint16, int>
 
@@ -36,6 +38,7 @@ type InputBufferV2(capacity: int) =
 2. **Prepare mapping**: `Reset` clears only the active indices and rebuilds `LocalIdToIndex` from current components (no allocations when capacity is stable).
 3. **Process input**: `NoobishInputV2.process` walks visible components, computes hit tests, consumes text input, and marks `Clicked/Pressed/TextChanged`.
 4. **Tick**: game logic calls `WasClicked localId`, `WasPressed localId`, `TryGetTextChanged localId` in a tight loop.
+5. **Consume flags**: `PointerConsumed`/`KeyboardConsumed` indicate whether input was handled by components that opted in via `Wants*`.
 
 ## Proposed API surface (module)
 ```fsharp
