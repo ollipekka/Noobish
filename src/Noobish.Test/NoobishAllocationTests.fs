@@ -153,6 +153,7 @@ let ``InputBufferV2 query helpers allocate no managed memory`` () =
     let textboxCtx = NoobishV2.beginTextbox "Text" 6us ctx
     let buttonIndex = int buttonCtx.ComponentId.Index
     let textboxIndex = int textboxCtx.ComponentId.Index
+    components.Bounds.[buttonIndex] <- { Noobish.NoobishRectangle.X = 1f; Y = 2f; Width = 3f; Height = 4f }
     let buffer = InputBufferV2(2)
     buffer.Reset components
     buffer.MarkClicked buttonIndex
@@ -176,9 +177,11 @@ let ``InputBufferV2 query helpers allocate no managed memory`` () =
     let isDownAlloc = measureLoop iterations (fun () -> buffer.IsDown 5us |> ignore)
     let textChangedAlloc = measureLoop iterations (fun () -> buffer.TryGetTextChanged 6us |> ignore)
     let sliderChangedAlloc = measureLoop iterations (fun () -> buffer.TryGetSliderChanged 5us |> ignore)
+    let boundsAlloc = measureLoop iterations (fun () -> buffer.TryGetBounds(components, 5us) |> ignore)
+    let sizeAlloc = measureLoop iterations (fun () -> buffer.TryGetSize(components, 5us) |> ignore)
 
     let breakdown =
-        $"clicked={wasClickedAlloc}; pressed={wasPressedAlloc}; released={wasReleasedAlloc}; down={isDownAlloc}; text={textChangedAlloc}; slider={sliderChangedAlloc}"
+        $"clicked={wasClickedAlloc}; pressed={wasPressedAlloc}; released={wasReleasedAlloc}; down={isDownAlloc}; text={textChangedAlloc}; slider={sliderChangedAlloc}; bounds={boundsAlloc}; size={sizeAlloc}"
 
     Assert.AreEqual(0L, wasClickedAlloc, $"Expected 0 allocations but got {wasClickedAlloc}. Breakdown: {breakdown}")
     Assert.AreEqual(0L, wasPressedAlloc, $"Expected 0 allocations but got {wasPressedAlloc}. Breakdown: {breakdown}")
@@ -186,6 +189,8 @@ let ``InputBufferV2 query helpers allocate no managed memory`` () =
     Assert.AreEqual(0L, isDownAlloc, $"Expected 0 allocations but got {isDownAlloc}. Breakdown: {breakdown}")
     Assert.AreEqual(0L, textChangedAlloc, $"Expected 0 allocations but got {textChangedAlloc}. Breakdown: {breakdown}")
     Assert.AreEqual(0L, sliderChangedAlloc, $"Expected 0 allocations but got {sliderChangedAlloc}. Breakdown: {breakdown}")
+    Assert.AreEqual(0L, boundsAlloc, $"Expected 0 allocations but got {boundsAlloc}. Breakdown: {breakdown}")
+    Assert.AreEqual(0L, sizeAlloc, $"Expected 0 allocations but got {sizeAlloc}. Breakdown: {breakdown}")
 
     components.ReleaseContext textboxCtx
     components.ReleaseContext buttonCtx

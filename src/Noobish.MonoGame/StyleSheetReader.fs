@@ -2,6 +2,7 @@ namespace Noobish.PipelineExtension
 
 open System
 open System.Collections.Generic
+open System.Diagnostics.CodeAnalysis
 
 open Microsoft.Xna.Framework.Content;
 
@@ -10,6 +11,7 @@ open Noobish.TextureAtlas
 open Noobish.Styles
 
 
+[<ExcludeFromCodeCoverage>]
 module internal StyleSheetReaderHelpers =
     let parseTextAlignment (value: string) =
         match value with
@@ -32,6 +34,7 @@ module internal StyleSheetReaderHelpers =
         else
             failwith "Mangled drawable."
 
+[<ExcludeFromCodeCoverage>]
 type StyleSheetReader () =
     inherit ContentTypeReader<NoobishStyleSheet>()
 

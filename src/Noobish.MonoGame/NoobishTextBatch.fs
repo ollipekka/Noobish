@@ -88,9 +88,22 @@ module internal TextBatchHelpers =
 
                 if nextPosX + wsWidth + wordWidth > maxWidth then
                     if nextPosX <= Single.Epsilon then
-                        failwith "Word is larger than line width. Use smaller font."
-                    nextPosX <- 0.0f
-                    nextPosY <- nextPosY + font.Metrics.LineHeight * size
+                        let struct(startPos, endPos, adjustedWidth) =
+                            if wsCount > 0 then
+                                struct(i + wsCount, i + wsCount + wordCount, 0f)
+                            else
+                                struct(i, i + wordCount, 0f)
+
+                        let length = endPos - startPos
+                        if length > 0 then
+                            handler startPos length (Vector2(nextPosX, nextPosY))
+
+                        nextPosX <- 0.0f
+                        nextPosY <- nextPosY + font.Metrics.LineHeight * size
+                        i <- endPos
+                    else
+                        nextPosX <- 0.0f
+                        nextPosY <- nextPosY + font.Metrics.LineHeight * size
                 else
                     let struct(startPos, endPos, adjustedWidth) =
                         if nextPosX < Single.Epsilon && wsCount > 0 then

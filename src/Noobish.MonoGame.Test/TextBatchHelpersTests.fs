@@ -6,10 +6,10 @@ open NUnit.Framework
 open Noobish
 open Noobish.TextBatchHelpers
 
-let private createFont () =
+let private createFontWithAdvance advance =
     let glyph =
         { Unicode = 'x'
-          Advance = 2f
+          Advance = advance
           AtlasBounds = struct(1f, 1f, 0f, 0f)
           PlaneBounds = struct(1f, 1f, 0f, 0f)
           Kerning = Dictionary<char, float32>() :> IReadOnlyDictionary<_, _> }
@@ -31,6 +31,9 @@ let private createFont () =
           UnderlineThickness = 0f }
       Glyphs = glyphs :> IReadOnlyDictionary<_, _>
       Kerning = Dictionary<char, IReadOnlyDictionary<char, float32>>() :> IReadOnlyDictionary<_, _> }
+
+let private createFont () =
+    createFontWithAdvance 2f
 
 [<Test>]
 let ``resolveTextRenderInfo selects technique and applies descender`` () =
@@ -126,13 +129,30 @@ let ``iterateMultiLineSegments moves to next line on newline whitespace`` () =
     Assert.AreEqual(1f, offset.Y)
 
 [<Test>]
-let ``iterateMultiLineSegments throws when word exceeds max width at line start`` () =
+let ``iterateMultiLineSegments clips word when it exceeds max width at line start`` () =
     let font = createFont ()
-    let ex =
-        Assert.Throws<Exception>(fun () ->
-            iterateMultiLineSegments font 1f 3f "xx" (fun _ _ _ -> ()))
+    let segments = ResizeArray<struct(int * int * Vector2)>()
 
-    Assert.That(ex.Message, Does.Contain("Word is larger than line width"))
+    Assert.DoesNotThrow(fun () ->
+        iterateMultiLineSegments font 1f 3f "xx" (fun start length offset ->
+            segments.Add(struct(start, length, offset))))
+
+    Assert.AreEqual(1, segments.Count)
+    let struct(start, length, offset) = segments.[0]
+    Assert.AreEqual(0, start)
+    Assert.AreEqual(2, length)
+    Assert.AreEqual(0f, offset.X)
+
+[<Test>]
+let ``iterateMultiLineSegments allows clipped word in real text`` () =
+    let font = createFontWithAdvance 9f
+    let text = "Click a ConstructionVehicle to see abilities."
+    let segments = ResizeArray<struct(int * int * Vector2)>()
+    Assert.DoesNotThrow(fun () ->
+        iterateMultiLineSegments font 1f 148f text (fun start length offset ->
+            segments.Add(struct(start, length, offset))))
+
+    Assert.Greater(segments.Count, 0)
 
 [<Test>]
 let ``iterateMultiLineSegments ignores trailing whitespace`` () =

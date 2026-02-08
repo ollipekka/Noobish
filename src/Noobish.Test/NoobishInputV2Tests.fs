@@ -69,6 +69,33 @@ let ``InputBufferV2 marks and queries input`` () =
     components.ReleaseContext ctx
 
 [<Test>]
+let ``InputBufferV2 TryGetBounds returns layout info`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components
+    let buttonCtx = NoobishV2.beginButton "Ok" 2us ctx
+    let index = int buttonCtx.ComponentId.Index
+    components.Bounds.[index] <- { X = 10f; Y = 20f; Width = 30f; Height = 40f }
+    let buffer = InputBufferV2(1)
+    buffer.Reset components
+
+    match buffer.TryGetBounds(components, 2us) with
+    | ValueSome bounds ->
+        Assert.AreEqual(10f, bounds.Left)
+        Assert.AreEqual(40f, bounds.Right)
+        Assert.AreEqual(20f, bounds.Top)
+        Assert.AreEqual(60f, bounds.Bottom)
+        Assert.AreEqual(30f, bounds.Width)
+        Assert.AreEqual(40f, bounds.Height)
+    | ValueNone ->
+        Assert.Fail("Expected bounds for local id.")
+
+    Assert.AreEqual(ValueSome { Width = 30f; Height = 40f }, buffer.TryGetSize(components, 2us))
+    Assert.IsTrue(ValueOption.isNone (buffer.TryGetBounds(components, 99us)))
+
+    components.ReleaseContext buttonCtx
+    components.ReleaseContext ctx
+
+[<Test>]
 let ``InputBufferV2 GetClicked returns last clicked local id`` () =
     let components = NoobishComponentsV2(1)
     let ctx = NoobishV2.beginFrame "Page" components

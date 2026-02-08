@@ -23,6 +23,7 @@
     <Compile Include="NoobishInputV2Tests.fs"/>
     <Compile Include="NoobishRenderV2Tests.fs"/>
     <Compile Include="NoobishV2Tests.fs"/>
+    <Compile Include="NoobishUserInterfaceTests.fs"/>
     <Compile Include="TypesV2Tests.fs"/>
     <Compile Include="DictionaryExtensionsTests.fs"/>
     <Compile Include="StyleSheetTests.fs"/>

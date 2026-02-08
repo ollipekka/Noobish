@@ -11,6 +11,7 @@ type ComponentId =
 | Slider = 5us
 | Grid = 6us
 | Scroll = 7us
+| TextClip = 8us
 
 let loremIpsum1 =
     "Scroll me!\n\n Lorem\nipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -252,6 +253,36 @@ module ScrollDemo =
                 |> NoobishV2.endParagraph
             |> NoobishV2.endPanel
 
+module TextClipDemo =
+    type Model() =
+        member val Text = "Click a ConstructionVehicle to see abilities." with get, set
+        member val LongWordText = "Supercalifragilisticexpialidocious should clip." with get, set
+
+    let buildUi (model: Model) (parentCtx: ComponentContextV2) =
+        parentCtx
+        |> NoobishV2.beginStackHorizontal
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setMinWidth 148f
+                |> NoobishV2.setMinHeight 120f
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginHeader "Clipped Word"
+                    |> NoobishV2.endHeader
+                |> NoobishV2.beginParagraph model.Text
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.endParagraph
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setMinWidth 148f
+                |> NoobishV2.setMinHeight 120f
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginHeader "Very Long Word"
+                    |> NoobishV2.endHeader
+                |> NoobishV2.beginParagraph model.LongWordText
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.endParagraph
+                |> NoobishV2.endPanel
+            |> NoobishV2.endStackHorizontal
+
 [<RequireQualifiedAccess>]
 type DemoPage =
 | Text
@@ -261,6 +292,7 @@ type DemoPage =
 | Slider
 | Grid
 | Scroll
+| TextClip
 
 [<RequireQualifiedAccess>]
 type DemoSubModel =
@@ -271,6 +303,7 @@ type DemoSubModel =
 | Slider of SliderDemo.Model
 | Grid of GridDemo.Model
 | Scroll of ScrollDemo.Model
+| TextClip of TextClipDemo.Model
 
 type DemoModel () =
     let text = TextDemo.Model()
@@ -280,6 +313,7 @@ type DemoModel () =
     let slider = SliderDemo.Model()
     let grid = GridDemo.Model()
     let scroll = ScrollDemo.Model()
+    let textClip = TextClipDemo.Model()
     let mutable viewState = DemoPage.Text
     let mutable view = DemoSubModel.Text text
 
@@ -298,6 +332,7 @@ type DemoModel () =
     member _.Slider = slider
     member _.Grid = grid
     member _.Scroll = scroll
+    member _.TextClip = textClip
 
     member this.SetViewState(value: DemoPage) =
         viewState <- value
@@ -310,12 +345,12 @@ type DemoModel () =
             | DemoPage.Slider -> DemoSubModel.Slider slider
             | DemoPage.Grid -> DemoSubModel.Grid grid
             | DemoPage.Scroll -> DemoSubModel.Scroll scroll
+            | DemoPage.TextClip -> DemoSubModel.TextClip textClip
 
-let private buildUi (components: NoobishComponentsV2) (width: float32) (height: float32) (model: DemoModel)=
+let private buildUi (ui: NoobishUserInterface) (width: float32) (height: float32) (model: DemoModel)=
 
-    components.Clear()
     let rootCtx =
-        NoobishV2.beginFrame "Demo/Simple" components
+        ui.BeginFrame "Demo/Simple"
         |> NoobishV2.beginStackHorizontal
             
             |> NoobishV2.setFill {Horizontal = true; Vertical = true}
@@ -360,6 +395,11 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
                     |> NoobishV2.setWantsToggle true
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.Scroll)
                     |> NoobishV2.endButton
+                |> NoobishV2.beginButton "Text Clip" (ComponentId.toLocalId ComponentId.TextClip)
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.setWantsToggle true
+                    |> NoobishV2.setToggled (model.ViewState = DemoPage.TextClip)
+                    |> NoobishV2.endButton
                 |> NoobishV2.endPanel
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
@@ -383,6 +423,8 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
             GridDemo.buildUi subModel rootCtx
         | DemoSubModel.Scroll subModel ->
             ScrollDemo.buildUi subModel rootCtx
+        | DemoSubModel.TextClip subModel ->
+            TextClipDemo.buildUi subModel rootCtx
 
     let endCtx =
         previewCtx
@@ -403,8 +445,7 @@ let private buildUi (components: NoobishComponentsV2) (width: float32) (height: 
         else
             endCtx
 
-    finalCtx
-    |> NoobishV2.endFrame width height
+    ui.EndFrame(width, height, finalCtx)
 
 
 type SimpleDemoGame() as game =
@@ -417,9 +458,8 @@ type SimpleDemoGame() as game =
         gdm.PreferHalfPixelOffset <- true
         gdm
         
-    let components = NoobishComponentsV2(64)
+    let ui = NoobishUserInterface(64)
     let renderer = NoobishMonoGameRendererV2()
-    let inputBuffer = InputBufferV2(64)
     let inputState = NoobishInputState()
 
     let mutable spriteBatch = Unchecked.defaultof<SpriteBatch>
@@ -457,7 +497,7 @@ type SimpleDemoGame() as game =
     override this.Update(gameTime) =
         inputState.Update()
 
-        let lastClicked = ComponentId.ofLocalId inputBuffer.LastClickedLocalId
+        let lastClicked = ComponentId.ofLocalId (ui.GetClicked())
         match lastClicked with 
         | ComponentId.Text -> 
             demoModel.SetViewState DemoPage.Text
@@ -473,31 +513,34 @@ type SimpleDemoGame() as game =
             demoModel.SetViewState DemoPage.Grid
         | ComponentId.Scroll ->
             demoModel.SetViewState DemoPage.Scroll
+        | ComponentId.TextClip ->
+            demoModel.SetViewState DemoPage.TextClip
         | _ -> ()
 
         match demoModel.ViewState with
         | DemoPage.Buttons ->
-            if inputBuffer.WasClicked ButtonsDemo.PrimaryButtonId then
+            if ui.WasClicked ButtonsDemo.PrimaryButtonId then
                 demoModel.Buttons.PrimaryPressed <- not demoModel.Buttons.PrimaryPressed
-            if inputBuffer.WasClicked ButtonsDemo.OverlayButtonId then
+            if ui.WasClicked ButtonsDemo.OverlayButtonId then
                 demoModel.Buttons.ShowOverlay <- true
-            if inputBuffer.WasClicked ButtonsDemo.OverlayScrimId then
+            if ui.WasClicked ButtonsDemo.OverlayScrimId then
                 demoModel.Buttons.ShowOverlay <- false
         | DemoPage.Checkbox ->
-            if inputBuffer.WasClicked CheckboxDemo.CheckboxId then
+            if ui.WasClicked CheckboxDemo.CheckboxId then
                 demoModel.Checkbox.IsChecked <- not demoModel.Checkbox.IsChecked
         | DemoPage.Slider ->
-            match inputBuffer.TryGetSliderChanged SliderDemo.SliderId with
+            match ui.TryGetSliderChanged SliderDemo.SliderId with
             | ValueSome value -> demoModel.Slider.Value <- value
             | ValueNone -> ()
         | DemoPage.Grid -> ()
         | DemoPage.Scroll -> ()
         | DemoPage.Text -> ()
+        | DemoPage.TextClip -> ()
         | DemoPage.TextInput ->
-            match inputBuffer.TryGetTextChanged TextInputDemo.TopTextboxId with
+            match ui.TryGetTextChanged TextInputDemo.TopTextboxId with
             | ValueSome text -> demoModel.TextInput.TopText <- text
             | ValueNone -> ()
-            match inputBuffer.TryGetTextChanged TextInputDemo.BottomTextboxId with
+            match ui.TryGetTextChanged TextInputDemo.BottomTextboxId with
             | ValueSome text -> demoModel.TextInput.BottomText <- text
             | ValueNone -> ()
 
@@ -508,9 +551,9 @@ type SimpleDemoGame() as game =
 
         let screenWidth = float32 game.GraphicsDevice.Viewport.Width
         let screenHeight = float32 game.GraphicsDevice.Viewport.Height
-        buildUi components screenWidth screenHeight demoModel
-        NoobishV2MonoGame.processFrameWith measureProvider components screenWidth screenHeight inputState inputBuffer
-        renderer.Draw components renderContext styleSheetId gameTime
+        buildUi ui screenWidth screenHeight demoModel
+        NoobishV2MonoGame.processFrameWith measureProvider ui.Components screenWidth screenHeight inputState ui.InputBuffer
+        renderer.Draw ui.Components renderContext styleSheetId gameTime
 
         base.Draw(gameTime)
 

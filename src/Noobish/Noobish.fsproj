@@ -21,6 +21,7 @@
     <Compile Include="NoobishRenderV2.fs" />
     <Compile Include="NoobishLayoutV2.fs" />
     <Compile Include="NoobishV2.fs" />
+    <Compile Include="NoobishUserInterface.fs" />
   </ItemGroup>
 
   <ItemGroup>

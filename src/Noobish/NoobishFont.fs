@@ -196,7 +196,8 @@ module NoobishFont =
                 // End of the line.
                 elif x + wsWidth + wordWidth > maxWidth then
                     if wordWidth > maxWidth && x < System.Single.Epsilon then
-                        x <- wordWidth
+                        x <- 0f
+                        lineCount <- lineCount + 1
                         i <- i + wsCount + wordCount
                     else
                         x <- 0f

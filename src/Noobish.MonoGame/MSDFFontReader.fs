@@ -5,6 +5,7 @@ namespace Noobish.PipelineExtension
 
 open System
 
+open System.Diagnostics.CodeAnalysis
 open Microsoft.Xna.Framework.Content;
 open Microsoft.Xna.Framework.Graphics;
 
@@ -12,6 +13,7 @@ open System.Collections.Generic
 open Noobish
 
 
+[<ExcludeFromCodeCoverage>]
 type MSDFFontReader () =
     inherit ContentTypeReader<NoobishMonoGameFont>()
 

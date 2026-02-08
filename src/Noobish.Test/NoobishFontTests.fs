@@ -195,7 +195,7 @@ let ``measureMultiLine handles long word on empty line`` () =
     let font = createTestFont ()
     let size = NoobishFont.scaleFromFontSize 1
     let struct(_, height) = NoobishFont.measureMultiLine font 1 (size * 0.5f) "aaaa"
-    assertFloat size height
+    assertFloat (2.0f * size) height
 
 [<TestCaseSource(nameof alignmentCases)>]
 let ``calculateCursorPosition aligns text`` alignment =

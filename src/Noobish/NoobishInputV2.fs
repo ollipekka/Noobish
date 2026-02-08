@@ -212,6 +212,18 @@ type InputBufferV2(capacity: int) =
         else
             ValueNone
 
+    member this.TryGetBounds(components: NoobishComponentsV2, localId: uint16) =
+        let mutable index = 0
+        if localIdToIndex.TryGetValue(localId, &index) && index >= 0 && index < components.Count then
+            ValueSome components.Bounds.[index]
+        else
+            ValueNone
+
+    member this.TryGetSize(components: NoobishComponentsV2, localId: uint16) =
+        match this.TryGetBounds(components, localId) with
+        | ValueSome bounds -> ValueSome { Width = bounds.Width; Height = bounds.Height }
+        | ValueNone -> ValueNone
+
     member _.GetClicked() = lastClickedLocalId
 
     member _.GetPressed() = lastPressedLocalId

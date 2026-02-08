@@ -15,6 +15,19 @@ if inputBuffer.WasClicked 1us then
     // handle click in tick
 ```
 
+### C#-friendly wrapper
+```fsharp
+let ui = NoobishUserInterface(64)
+let frameCtx = ui.BeginFrame "Demo/Simple"
+NoobishV2.beginButton "Get Started" 1us frameCtx |> ui.ReleaseContext |> ignore
+ui.EndFrame(width, height, frameCtx)
+ui.ProcessInput inputState
+
+match ui.TryGetBounds 1us with
+| ValueSome bounds -> bounds.Width |> ignore
+| ValueNone -> ()
+```
+
 ## Proposed data structures
 ```fsharp
 type InputBufferV2(capacity: int) =
@@ -31,6 +44,24 @@ type InputBufferV2(capacity: int) =
     member WasClicked: uint16 -> bool
     member WasPressed: uint16 -> bool
     member TryGetTextChanged: uint16 -> voption<string>
+    member TryGetBounds: NoobishComponentsV2 * uint16 -> voption<NoobishRectangle>
+    member TryGetSize: NoobishComponentsV2 * uint16 -> voption<NoobishSize>
+
+type NoobishUserInterface(capacity: int) =
+    member Components: NoobishComponentsV2
+    member InputBuffer: InputBufferV2
+    member BeginFrame: string -> ComponentContextV2
+    member EndFrame: float32 * float32 * ComponentContextV2 -> unit
+    member ProcessInput: INoobishInputState -> unit
+    member ReleaseContext: ComponentContextV2 -> unit
+    member WasClicked: uint16 -> bool
+    member WasPressed: uint16 -> bool
+    member WasReleased: uint16 -> bool
+    member IsDown: uint16 -> bool
+    member TryGetTextChanged: uint16 -> voption<string>
+    member TryGetSliderChanged: uint16 -> voption<float32>
+    member TryGetBounds: uint16 -> voption<NoobishRectangle>
+    member TryGetSize: uint16 -> voption<NoobishSize>
 ```
 
 ## Proposed flow
@@ -38,6 +69,8 @@ type InputBufferV2(capacity: int) =
 2. **Prepare mapping**: `Reset` clears only the active indices and rebuilds `LocalIdToIndex` from current components (no allocations when capacity is stable).
 3. **Process input**: `NoobishInputV2.process` walks visible components, computes hit tests, consumes text input, and marks `Clicked/Pressed/TextChanged`.
 4. **Tick**: game logic calls `WasClicked localId`, `WasPressed localId`, `TryGetTextChanged localId` in a tight loop.
+   - Layout queries can call `TryGetBounds(components, localId)` to read `Left/Right/Top/Bottom/Width/Height` after layout.
+   - When using `NoobishUserInterface`, call `ProcessInput` before queries to refresh the localId map.
 5. **Consume flags**: `PointerConsumed`/`KeyboardConsumed` indicate whether input was handled by components that opted in via `Wants*`.
 
 ## Proposed API surface (module)
