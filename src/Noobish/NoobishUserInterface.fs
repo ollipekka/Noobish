@@ -26,20 +26,17 @@ type NoobishUserInterface(capacity: int) =
     member _.KeyboardConsumed
         with get() = inputBuffer.KeyboardConsumed
 
-    member _.WasClicked(localId: uint16) =
-        inputBuffer.WasClicked localId
-
     member _.WasClicked(localId: uint16, buttonId: NoobishMouseButtonId) =
         inputBuffer.WasClicked(localId, buttonId)
 
-    member _.WasPressed(localId: uint16) =
-        inputBuffer.WasPressed localId
+    member _.WasPressed(localId: uint16, buttonId: NoobishMouseButtonId) =
+        inputBuffer.WasPressed(localId, buttonId)
 
-    member _.WasReleased(localId: uint16) =
-        inputBuffer.WasReleased localId
+    member _.WasReleased(localId: uint16, buttonId: NoobishMouseButtonId) =
+        inputBuffer.WasReleased(localId, buttonId)
 
-    member _.IsDown(localId: uint16) =
-        inputBuffer.IsDown localId
+    member _.IsDown(localId: uint16, buttonId: NoobishMouseButtonId) =
+        inputBuffer.IsDown(localId, buttonId)
 
     member _.TryGetTextChanged(localId: uint16) =
         inputBuffer.TryGetTextChanged localId

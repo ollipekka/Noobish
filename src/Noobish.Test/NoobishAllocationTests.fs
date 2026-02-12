@@ -124,7 +124,7 @@ let ``NoobishInputV2 ProcessInput allocates no managed memory`` () =
             }
 
     NoobishInputV2.ProcessInput input components buffer
-    buffer.ClearDown()
+    buffer.ClearDown(NoobishMouseButtonId.Left)
     input |> ignore
 
     let inline measureLoop (iterations: int) (action: unit -> unit) =
@@ -140,15 +140,15 @@ let ``NoobishInputV2 ProcessInput allocates no managed memory`` () =
 
     let iterations = 50
     let resetAlloc = measureLoop iterations (fun () -> buffer.Reset components)
-    buffer.ClearDown()
+    buffer.ClearDown(NoobishMouseButtonId.Left)
     let hoverAlloc = measureLoop iterations (fun () -> NoobishInputV2.updateHover components buffer x y)
-    buffer.ClearDown()
+    buffer.ClearDown(NoobishMouseButtonId.Left)
     let primaryDownAlloc = measureLoop iterations (fun () -> NoobishInputV2.updatePrimaryDown components buffer x y)
-    buffer.ClearDown()
+    buffer.ClearDown(NoobishMouseButtonId.Left)
     let processAlloc = measureLoop iterations (fun () -> NoobishInputV2.ProcessInput input components buffer)
-    buffer.ClearDown()
-    buffer.SetDown buttonIndex
-    let clearDownAlloc = measureLoop iterations (fun () -> buffer.ClearDown())
+    buffer.ClearDown(NoobishMouseButtonId.Left)
+    buffer.SetDown(NoobishMouseButtonId.Left, buttonIndex)
+    let clearDownAlloc = measureLoop iterations (fun () -> buffer.ClearDown(NoobishMouseButtonId.Left))
 
     let breakdown =
         $"reset={resetAlloc}; hover={hoverAlloc}; primaryDown={primaryDownAlloc}; process={processAlloc}; clearDown={clearDownAlloc}"
@@ -170,9 +170,9 @@ let ``InputBufferV2 query helpers allocate no managed memory`` () =
     let buffer = InputBufferV2(2)
     buffer.Reset components
     buffer.MarkClicked (buttonIndex, NoobishMouseButtonId.Left) 
-    buffer.MarkPressed buttonIndex
-    buffer.MarkReleased buttonIndex
-    buffer.SetDown buttonIndex
+    buffer.MarkPressed(buttonIndex, NoobishMouseButtonId.Left)
+    buffer.MarkReleased(buttonIndex, NoobishMouseButtonId.Left)
+    buffer.SetDown(NoobishMouseButtonId.Left, buttonIndex)
     buffer.MarkTextChanged(textboxIndex, "Hello")
     buffer.MarkSliderChanged(buttonIndex, 4f)
 
@@ -184,10 +184,10 @@ let ``InputBufferV2 query helpers allocate no managed memory`` () =
         GC.GetAllocatedBytesForCurrentThread() - before
 
     let iterations = 50
-    let wasClickedAlloc = measureLoop iterations (fun () -> buffer.WasClicked 5us |> ignore)
-    let wasPressedAlloc = measureLoop iterations (fun () -> buffer.WasPressed 5us |> ignore)
-    let wasReleasedAlloc = measureLoop iterations (fun () -> buffer.WasReleased 5us |> ignore)
-    let isDownAlloc = measureLoop iterations (fun () -> buffer.IsDown 5us |> ignore)
+    let wasClickedAlloc = measureLoop iterations (fun () -> buffer.WasClicked(5us, NoobishMouseButtonId.Left) |> ignore)
+    let wasPressedAlloc = measureLoop iterations (fun () -> buffer.WasPressed(5us, NoobishMouseButtonId.Left) |> ignore)
+    let wasReleasedAlloc = measureLoop iterations (fun () -> buffer.WasReleased(5us, NoobishMouseButtonId.Left) |> ignore)
+    let isDownAlloc = measureLoop iterations (fun () -> buffer.IsDown(5us, NoobishMouseButtonId.Left) |> ignore)
     let textChangedAlloc = measureLoop iterations (fun () -> buffer.TryGetTextChanged 6us |> ignore)
     let sliderChangedAlloc = measureLoop iterations (fun () -> buffer.TryGetSliderChanged 5us |> ignore)
     let boundsAlloc = measureLoop iterations (fun () -> buffer.TryGetBounds(components, 5us) |> ignore)
@@ -422,7 +422,7 @@ let ``NoobishInputV2 updatePrimaryDown slider allocates no managed memory`` () =
     components.Enabled.[index] <- true
 
     let buffer = InputBufferV2(1)
-    buffer.SetDown index
+    buffer.SetDown(NoobishMouseButtonId.Left, index)
 
     let input =
         { new INoobishInputState with

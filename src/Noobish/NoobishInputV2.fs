@@ -1,6 +1,7 @@
 namespace Noobish
 
 open System
+open System.Numerics
 open System.Collections.Generic
 open Noobish.Internal
 
@@ -14,11 +15,21 @@ module internal NoobishInputV2Helpers =
         | NoobishMouseButtonId.XButton2 -> 16uy
         | NoobishMouseButtonId.None -> 0uy
 
+    let mouseButtonIndex buttonId =
+        let flag = mouseButtonFlag buttonId
+        if flag = 0uy then
+            -1
+        else
+            BitOperations.TrailingZeroCount(uint32 flag)
+
 type InputBufferV2(capacity: int) =
     let clicked = Array.create capacity 0uy
     let pressed = Array.create capacity false
+    let pressedMask = Array.create capacity 0uy
     let released = Array.create capacity false
+    let releasedMask = Array.create capacity 0uy
     let down = Array.create capacity false
+    let downMask = Array.create capacity 0uy
     let textChanged = Array.create capacity false
     let textPayload = Array.create capacity ""
     let sliderChanged = Array.create capacity false
@@ -26,7 +37,7 @@ type InputBufferV2(capacity: int) =
     let activeFlags = Array.create capacity false
     let activeIndices = ResizeArray<int>(capacity)
     let localIdToIndex = Dictionary<uint16, int>(capacity)
-    let mutable downIndex = -1
+    let downIndices = Array.create 8 -1
     let mutable hoveredIndex = -1
     let mutable lastHoveredLocalId = 0us
     let mutable lastClickedLocalId = 0us
@@ -50,7 +61,11 @@ type InputBufferV2(capacity: int) =
     member _.SliderPayload = sliderPayload
     member _.ActiveIndices = activeIndices
     member _.LocalIdToIndex = localIdToIndex
-    member _.DownIndex = downIndex
+    member _.DownIndex = downIndices.[NoobishInputV2Helpers.mouseButtonIndex NoobishMouseButtonId.Left]
+    member _.RightDownIndex = downIndices.[NoobishInputV2Helpers.mouseButtonIndex NoobishMouseButtonId.Right]
+    member _.GetDownIndex(buttonId: NoobishMouseButtonId) =
+        let buttonIndex = NoobishInputV2Helpers.mouseButtonIndex buttonId
+        if buttonIndex >= 0 then downIndices.[buttonIndex] else -1
     member _.HoveredIndex
         with get() = hoveredIndex
         and set value = hoveredIndex <- value
@@ -89,7 +104,11 @@ type InputBufferV2(capacity: int) =
             let index = activeIndices.[i]
             clicked.[index] <- 0uy
             pressed.[index] <- false
+            pressedMask.[index] <- 0uy
             released.[index] <- false
+            releasedMask.[index] <- 0uy
+            down.[index] <- false
+            downMask.[index] <- 0uy
             textChanged.[index] <- false
             textPayload.[index] <- ""
             sliderChanged.[index] <- false
@@ -130,13 +149,21 @@ type InputBufferV2(capacity: int) =
         ensureActive index
         clicked.[index] <- clicked.[index] ||| NoobishInputV2Helpers.mouseButtonFlag buttonId
 
-    member this.MarkPressed(index: int) =
+    member this.MarkPressed(index: int, buttonId: NoobishMouseButtonId) =
         ensureActive index
-        pressed.[index] <- true
+        let buttonFlag = NoobishInputV2Helpers.mouseButtonFlag buttonId
+        if buttonFlag <> 0uy then
+            pressedMask.[index] <- pressedMask.[index] ||| buttonFlag
+            if buttonId = NoobishMouseButtonId.Left then
+                pressed.[index] <- true
 
-    member this.MarkReleased(index: int) =
+    member this.MarkReleased(index: int, buttonId: NoobishMouseButtonId) =
         ensureActive index
-        released.[index] <- true
+        let buttonFlag = NoobishInputV2Helpers.mouseButtonFlag buttonId
+        if buttonFlag <> 0uy then
+            releasedMask.[index] <- releasedMask.[index] ||| buttonFlag
+            if buttonId = NoobishMouseButtonId.Left then
+                released.[index] <- true
 
     member this.MarkTextChanged(index: int, text: string) =
         ensureActive index
@@ -148,12 +175,19 @@ type InputBufferV2(capacity: int) =
         sliderChanged.[index] <- true
         sliderPayload.[index] <- value
 
-    member this.SetDown(index: int) =
-        if downIndex <> index then
-            if downIndex >= 0 then
-                down.[downIndex] <- false
-            downIndex <- index
-            down.[index] <- true
+    member _.SetDown(buttonId: NoobishMouseButtonId, index: int) =
+        let buttonFlag = NoobishInputV2Helpers.mouseButtonFlag buttonId
+        let buttonIndex = NoobishInputV2Helpers.mouseButtonIndex buttonId
+        if buttonFlag <> 0uy && buttonIndex >= 0 && downIndices.[buttonIndex] <> index then
+            let currentDownIndex = downIndices.[buttonIndex]
+            if currentDownIndex >= 0 then
+                downMask.[currentDownIndex] <- downMask.[currentDownIndex] &&& (~~~buttonFlag)
+                if buttonId = NoobishMouseButtonId.Left then
+                    down.[currentDownIndex] <- false
+            downIndices.[buttonIndex] <- index
+            downMask.[index] <- downMask.[index] ||| buttonFlag
+            if buttonId = NoobishMouseButtonId.Left then
+                down.[index] <- true
 
     member this.SetFocus(components: NoobishComponentsV2, index: int, nextCaret: int) =
         if focusedIndex >= 0 && focusedIndex < components.Count then
@@ -173,19 +207,17 @@ type InputBufferV2(capacity: int) =
         lastFocusedLocalId <- 0us
         caretIndex <- 0
 
-    member this.ClearDown() =
-        if downIndex >= 0 then
-            let index = downIndex
-            down.[index] <- false
-            downIndex <- -1
-            this.MarkReleased index
-
-    member this.WasClicked(localId: uint16) =
-        let mutable index = 0
-        if localIdToIndex.TryGetValue(localId, &index) then
-            clicked.[index] <> 0uy
-        else
-            false
+    member this.ClearDown(buttonId: NoobishMouseButtonId) =
+        let buttonFlag = NoobishInputV2Helpers.mouseButtonFlag buttonId
+        let buttonIndex = NoobishInputV2Helpers.mouseButtonIndex buttonId
+        if buttonFlag <> 0uy && buttonIndex >= 0 then
+            let currentDownIndex = downIndices.[buttonIndex]
+            if currentDownIndex >= 0 then
+                downMask.[currentDownIndex] <- downMask.[currentDownIndex] &&& (~~~buttonFlag)
+                if buttonId = NoobishMouseButtonId.Left then
+                    down.[currentDownIndex] <- false
+                this.MarkReleased(currentDownIndex, buttonId)
+                downIndices.[buttonIndex] <- -1
 
     member this.WasClicked(localId: uint16, buttonId: NoobishMouseButtonId) =
         let mutable index = 0
@@ -194,24 +226,27 @@ type InputBufferV2(capacity: int) =
         else
             false
 
-    member this.WasPressed(localId: uint16) =
+    member this.WasPressed(localId: uint16, buttonId: NoobishMouseButtonId) =
         let mutable index = 0
+        let buttonFlag = NoobishInputV2Helpers.mouseButtonFlag buttonId
         if localIdToIndex.TryGetValue(localId, &index) then
-            pressed.[index]
+            buttonFlag <> 0uy && (pressedMask.[index] &&& buttonFlag) <> 0uy
         else
             false
 
-    member this.WasReleased(localId: uint16) =
+    member this.WasReleased(localId: uint16, buttonId: NoobishMouseButtonId) =
         let mutable index = 0
+        let buttonFlag = NoobishInputV2Helpers.mouseButtonFlag buttonId
         if localIdToIndex.TryGetValue(localId, &index) then
-            released.[index]
+            buttonFlag <> 0uy && (releasedMask.[index] &&& buttonFlag) <> 0uy
         else
             false
 
-    member this.IsDown(localId: uint16) =
+    member this.IsDown(localId: uint16, buttonId: NoobishMouseButtonId) =
         let mutable index = 0
+        let buttonFlag = NoobishInputV2Helpers.mouseButtonFlag buttonId
         if localIdToIndex.TryGetValue(localId, &index) then
-            down.[index]
+            buttonFlag <> 0uy && (downMask.[index] &&& buttonFlag) <> 0uy
         else
             false
 
@@ -263,27 +298,38 @@ type InputBufferV2(capacity: int) =
             else
                 lastHoveredLocalId <- 0us
 
-    member this.UpdateDown(components: NoobishComponentsV2, hitIndex: int) =
-        if downIndex < 0 && hitIndex >= 0 && hitIndex < components.Count then
-            this.MarkPressed hitIndex
-            this.SetDown hitIndex
+    member this.UpdateDown(components: NoobishComponentsV2, hitIndex: int, buttonId: NoobishMouseButtonId) =
+        if this.GetDownIndex buttonId < 0 && hitIndex >= 0 && hitIndex < components.Count then
+            this.MarkPressed(hitIndex, buttonId)
+            this.SetDown(buttonId, hitIndex)
             let localId = components.Id.[hitIndex].LocalId
-            if localId <> 0us then
+            if buttonId = NoobishMouseButtonId.Left && localId <> 0us then
                 lastPressedLocalId <- localId
 
     member this.Release(components: NoobishComponentsV2, hitIndex: int, buttonId: NoobishMouseButtonId) =
-        if downIndex >= 0 && downIndex < components.Count then
-            if hitIndex = downIndex then
-                if NoobishComponentsV2.isClickable components downIndex then
-                    let localId = components.Id.[downIndex].LocalId
-                    this.MarkClicked(downIndex, buttonId)
+        let currentDownIndex = this.GetDownIndex buttonId
+        if currentDownIndex >= 0 && currentDownIndex < components.Count then
+            if hitIndex = currentDownIndex then
+                if NoobishComponentsV2.isClickable components currentDownIndex then
+                    let localId = components.Id.[currentDownIndex].LocalId
+                    this.MarkClicked(currentDownIndex, buttonId)
                     if localId <> 0us then
                         lastClickedLocalId <- localId
-                    if components.WantsToggle.[downIndex] then
-                        components.Toggled.[downIndex] <- not components.Toggled.[downIndex]
-            this.ClearDown()
+                    if buttonId = NoobishMouseButtonId.Left && components.WantsToggle.[currentDownIndex] then
+                        components.Toggled.[currentDownIndex] <- not components.Toggled.[currentDownIndex]
+            this.ClearDown buttonId
+
+    member this.ReleaseRight(components: NoobishComponentsV2, hitIndex: int, buttonId: NoobishMouseButtonId) =
+        this.Release(components, hitIndex, buttonId)
 
 module NoobishInputV2 =
+    let private trackedButtons =
+        [| NoobishMouseButtonId.Left
+           NoobishMouseButtonId.Right
+           NoobishMouseButtonId.Middle
+           NoobishMouseButtonId.XButton1
+           NoobishMouseButtonId.XButton2 |]
+
     let internal boundsWithAncestorScroll (components: NoobishComponentsV2) (index: int) =
         let mutable bounds = components.Bounds.[index]
         let mutable parentId = components.ParentId.[index]
@@ -492,9 +538,18 @@ module NoobishInputV2 =
                     NoobishComponentsV2.isPressable components i)
             if pressHit >= 0 && NoobishComponentsV2.wantsMouse components pressHit then
                 buffer.PointerConsumed <- true
-            buffer.UpdateDown(components, pressHit)
+            buffer.UpdateDown(components, pressHit, NoobishMouseButtonId.Left)
         if buffer.DownIndex >= 0 then
             updateSliderFromPointer components buffer x
+
+    let internal updateSecondaryDown (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
+        if buffer.RightDownIndex < 0 then
+            let pressHit =
+                hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
+                    NoobishComponentsV2.isPressable components i)
+            if pressHit >= 0 && NoobishComponentsV2.wantsMouse components pressHit then
+                buffer.PointerConsumed <- true
+            buffer.UpdateDown(components, pressHit, NoobishMouseButtonId.Right)
 
     let internal updateRelease (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) (buttonId: NoobishMouseButtonId) =
         let clickHit =
@@ -503,6 +558,14 @@ module NoobishInputV2 =
         if clickHit >= 0 && NoobishComponentsV2.wantsMouse components clickHit then
             buffer.PointerConsumed <- true
         buffer.Release(components, clickHit, buttonId)
+
+    let internal updateSecondaryRelease (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) (buttonId: NoobishMouseButtonId) =
+        let clickHit =
+            hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
+                NoobishComponentsV2.isClickable components i)
+        if clickHit >= 0 && NoobishComponentsV2.wantsMouse components clickHit then
+            buffer.PointerConsumed <- true
+        buffer.ReleaseRight(components, clickHit, buttonId)
 
     let internal updateFocusFromClick (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) (x: float32) (y: float32) =
         if input.IsMouseClick NoobishMouseButtonId.Left then
@@ -557,8 +620,10 @@ module NoobishInputV2 =
 
     let ProcessInput (input: INoobishInputState) (components: NoobishComponentsV2) (buffer: InputBufferV2) =
         buffer.Reset components
-        if buffer.DownIndex >= components.Count then
-            buffer.ClearDown()
+        for i = 0 to trackedButtons.Length - 1 do
+            let buttonId = trackedButtons.[i]
+            if buffer.GetDownIndex buttonId >= components.Count then
+                buffer.ClearDown buttonId
         let x = input.PointerX
         let y = input.PointerY
         updateScroll input components buffer x y
@@ -567,6 +632,10 @@ module NoobishInputV2 =
             updatePrimaryDown components buffer x y
         else
             updateRelease components buffer x y NoobishMouseButtonId.Left
+        if input.IsMouseDown NoobishMouseButtonId.Right then
+            updateSecondaryDown components buffer x y
+        else
+            updateSecondaryRelease components buffer x y NoobishMouseButtonId.Right
         updateFocusFromClick input components buffer x y
         updateTextInput input components buffer
         updateCaretFromKeys input components buffer

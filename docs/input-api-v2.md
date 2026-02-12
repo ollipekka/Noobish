@@ -11,7 +11,7 @@ NoobishV2.endFrame width height frameCtx
 
 NoobishInputV2.process inputState components inputBuffer
 
-if inputBuffer.WasClicked 1us then
+if inputBuffer.WasClicked(1us, NoobishMouseButtonId.Left) then
     // handle click in tick
 ```
 
@@ -41,8 +41,10 @@ type InputBufferV2(capacity: int) =
     member LocalIdToIndex: System.Collections.Generic.Dictionary<uint16, int>
 
     member Reset: NoobishComponentsV2 -> unit
-    member WasClicked: uint16 -> bool
-    member WasPressed: uint16 -> bool
+    member WasClicked: uint16 * NoobishMouseButtonId -> bool
+    member WasPressed: uint16 * NoobishMouseButtonId -> bool
+    member WasReleased: uint16 * NoobishMouseButtonId -> bool
+    member IsDown: uint16 * NoobishMouseButtonId -> bool
     member TryGetTextChanged: uint16 -> voption<string>
     member TryGetBounds: NoobishComponentsV2 * uint16 -> voption<NoobishRectangle>
     member TryGetSize: NoobishComponentsV2 * uint16 -> voption<NoobishSize>
@@ -54,10 +56,10 @@ type NoobishUserInterface(capacity: int) =
     member EndFrame: float32 * float32 * ComponentContextV2 -> unit
     member ProcessInput: INoobishInputState -> unit
     member ReleaseContext: ComponentContextV2 -> unit
-    member WasClicked: uint16 -> bool
-    member WasPressed: uint16 -> bool
-    member WasReleased: uint16 -> bool
-    member IsDown: uint16 -> bool
+    member WasClicked: uint16 * NoobishMouseButtonId -> bool
+    member WasPressed: uint16 * NoobishMouseButtonId -> bool
+    member WasReleased: uint16 * NoobishMouseButtonId -> bool
+    member IsDown: uint16 * NoobishMouseButtonId -> bool
     member TryGetTextChanged: uint16 -> voption<string>
     member TryGetSliderChanged: uint16 -> voption<float32>
     member TryGetBounds: uint16 -> voption<NoobishRectangle>
@@ -68,7 +70,7 @@ type NoobishUserInterface(capacity: int) =
 1. **Build UI** (V2 builder calls) and assign `localId` to any interactive element.
 2. **Prepare mapping**: `Reset` clears only the active indices and rebuilds `LocalIdToIndex` from current components (no allocations when capacity is stable).
 3. **Process input**: `NoobishInputV2.process` walks visible components, computes hit tests, consumes text input, and marks `Clicked/Pressed/TextChanged`.
-4. **Tick**: game logic calls `WasClicked localId`, `WasPressed localId`, `TryGetTextChanged localId` in a tight loop.
+4. **Tick**: game logic calls `WasClicked(localId, NoobishMouseButtonId.Left)`, `WasPressed(localId, NoobishMouseButtonId.Left)`, `TryGetTextChanged localId` in a tight loop.
    - Layout queries can call `TryGetBounds(components, localId)` to read `Left/Right/Top/Bottom/Width/Height` after layout.
    - When using `NoobishUserInterface`, call `ProcessInput` before queries to refresh the localId map.
 5. **Consume flags**: `PointerConsumed`/`KeyboardConsumed` indicate whether input was handled by components that opted in via `Wants*`.

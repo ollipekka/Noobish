@@ -79,13 +79,12 @@ let ``InputBufferV2 marks and queries input`` () =
     buffer.Reset components
 
     buffer.MarkClicked(index, NoobishMouseButtonId.Right)
-    buffer.MarkPressed index
+    buffer.MarkPressed(index, NoobishMouseButtonId.Left)
     buffer.MarkTextChanged(index, "Hello")
 
-    Assert.IsTrue(buffer.WasClicked 1us)
     Assert.IsTrue(buffer.WasClicked(1us, NoobishMouseButtonId.Right))
     Assert.IsFalse(buffer.WasClicked(1us, NoobishMouseButtonId.Left))
-    Assert.IsTrue(buffer.WasPressed 1us)
+    Assert.IsTrue(buffer.WasPressed(1us, NoobishMouseButtonId.Left))
     Assert.AreEqual(ValueSome "Hello", buffer.TryGetTextChanged 1us)
 
     components.ReleaseContext buttonCtx
@@ -157,7 +156,7 @@ let ``InputBufferV2 GetPressed returns last pressed local id`` () =
     let buffer = InputBufferV2(2)
     buffer.Reset components
 
-    buffer.MarkPressed index
+    buffer.MarkPressed(index, NoobishMouseButtonId.Left)
     buffer.LastPressedLocalId <- 9us
 
     Assert.AreEqual(9us, buffer.GetPressed())
@@ -202,12 +201,12 @@ let ``InputBufferV2 Reset clears active flags`` () =
     buffer.Reset components
 
     buffer.MarkClicked (index, NoobishMouseButtonId.Left)
-    Assert.IsTrue(buffer.WasClicked 1us)
+    Assert.IsTrue(buffer.WasClicked(1us, NoobishMouseButtonId.Left))
     Assert.Greater(buffer.ActiveIndices.Count, 0)
 
     buffer.Reset components
     Assert.AreEqual(0, buffer.ActiveIndices.Count)
-    Assert.IsFalse(buffer.WasClicked 1us)
+    Assert.IsFalse(buffer.WasClicked(1us, NoobishMouseButtonId.Left))
 
     components.ReleaseContext buttonCtx
     components.ReleaseContext ctx
@@ -379,15 +378,15 @@ let ``NoobishInputV2 ProcessInput clears down when not primary down`` () =
 
     let buffer = InputBufferV2(2)
     buffer.Reset components
-    buffer.SetDown buttonIndex
+    buffer.SetDown(NoobishMouseButtonId.Left, buttonIndex)
 
     let input = createInput { defaultInputConfig with PointerX = 50f; PointerY = 50f }
 
     NoobishInputV2.ProcessInput input components buffer
 
-    Assert.IsFalse(buffer.IsDown 21us)
-    Assert.IsTrue(buffer.WasReleased 21us)
-    Assert.IsFalse(buffer.WasClicked 21us)
+    Assert.IsFalse(buffer.IsDown(21us, NoobishMouseButtonId.Left))
+    Assert.IsTrue(buffer.WasReleased(21us, NoobishMouseButtonId.Left))
+    Assert.IsFalse(buffer.WasClicked(21us, NoobishMouseButtonId.Left))
     Assert.AreEqual(0us, buffer.GetClicked())
 
     components.ReleaseContext buttonCtx
@@ -414,8 +413,8 @@ let ``NoobishInputV2 ProcessInput marks pressed when primary down`` () =
 
     NoobishInputV2.ProcessInput input components buffer
 
-    Assert.IsTrue(buffer.IsDown 22us)
-    Assert.IsTrue(buffer.WasPressed 22us)
+    Assert.IsTrue(buffer.IsDown(22us, NoobishMouseButtonId.Left))
+    Assert.IsTrue(buffer.WasPressed(22us, NoobishMouseButtonId.Left))
     Assert.AreEqual(22us, buffer.GetPressed())
     Assert.IsTrue(buffer.PointerConsumed)
 
@@ -457,15 +456,15 @@ let ``NoobishInputV2 ProcessInput clicks on release over same component`` () =
     components.WantsOnClick.[buttonIndex] <- true
 
     let buffer = InputBufferV2(2)
-    buffer.SetDown buttonIndex
+    buffer.SetDown(NoobishMouseButtonId.Left, buttonIndex)
 
     let input = createInput { defaultInputConfig with PointerX = 5f; PointerY = 5f }
 
     NoobishInputV2.ProcessInput input components buffer
 
-    Assert.IsFalse(buffer.IsDown 23us)
+    Assert.IsFalse(buffer.IsDown(23us, NoobishMouseButtonId.Left))
     Assert.AreEqual(23us, buffer.GetClicked())
-    Assert.IsTrue(buffer.WasReleased 23us)
+    Assert.IsTrue(buffer.WasReleased(23us, NoobishMouseButtonId.Left))
 
     components.ReleaseContext buttonCtx
     components.ReleaseContext ctx
@@ -478,7 +477,7 @@ let ``NoobishInputV2 ProcessInput clears down when index out of range`` () =
     let index = int buttonCtx.ComponentId.Index
 
     let buffer = InputBufferV2(2)
-    buffer.SetDown index
+    buffer.SetDown(NoobishMouseButtonId.Left, index)
 
     components.Count <- 1
     let input = createInput { defaultInputConfig with PrimaryDown = true }
@@ -529,11 +528,11 @@ let ``InputBufferV2 UpdateDown and Release toggles when enabled`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.UpdateDown(components, index)
-    Assert.IsTrue(buffer.IsDown 3us)
+    buffer.UpdateDown(components, index, NoobishMouseButtonId.Left)
+    Assert.IsTrue(buffer.IsDown(3us, NoobishMouseButtonId.Left))
 
     buffer.Release(components, index, NoobishMouseButtonId.Left)
-    Assert.IsFalse(buffer.IsDown 3us)
+    Assert.IsFalse(buffer.IsDown(3us, NoobishMouseButtonId.Left))
     Assert.IsTrue(components.Toggled.[index])
     Assert.AreEqual(3us, buffer.GetClicked())
     Assert.AreEqual(3us, buffer.GetPressed())
@@ -549,10 +548,10 @@ let ``InputBufferV2 UpdateDown ignores invalid hit`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.UpdateDown(components, -1)
+    buffer.UpdateDown(components, -1, NoobishMouseButtonId.Left)
     Assert.AreEqual(0us, buffer.GetPressed())
 
-    buffer.UpdateDown(components, 2)
+    buffer.UpdateDown(components, 2, NoobishMouseButtonId.Left)
     Assert.AreEqual(0us, buffer.GetPressed())
 
     components.ReleaseContext ctx
@@ -568,11 +567,11 @@ let ``InputBufferV2 UpdateDown ignores when already down`` () =
     let buffer = InputBufferV2(2)
     buffer.Reset components
 
-    buffer.UpdateDown(components, firstIndex)
-    buffer.UpdateDown(components, secondIndex)
+    buffer.UpdateDown(components, firstIndex, NoobishMouseButtonId.Left)
+    buffer.UpdateDown(components, secondIndex, NoobishMouseButtonId.Left)
 
-    Assert.IsTrue(buffer.IsDown 4us)
-    Assert.IsFalse(buffer.IsDown 5us)
+    Assert.IsTrue(buffer.IsDown(4us, NoobishMouseButtonId.Left))
+    Assert.IsFalse(buffer.IsDown(5us, NoobishMouseButtonId.Left))
     Assert.AreEqual(4us, buffer.GetPressed())
 
     components.ReleaseContext first
@@ -593,7 +592,7 @@ let ``InputBufferV2 Release ignores non-matching hit`` () =
 
     let buffer = InputBufferV2(2)
     buffer.Reset components
-    buffer.UpdateDown(components, firstIndex)
+    buffer.UpdateDown(components, firstIndex, NoobishMouseButtonId.Left)
     buffer.Release(components, secondIndex, NoobishMouseButtonId.Left)
 
     Assert.IsFalse(components.Toggled.[firstIndex])
@@ -690,11 +689,11 @@ let ``InputBufferV2 ClearDown releases and marks released`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.SetDown index
-    buffer.ClearDown()
+    buffer.SetDown(NoobishMouseButtonId.Left, index)
+    buffer.ClearDown(NoobishMouseButtonId.Left)
 
-    Assert.IsFalse(buffer.IsDown 8us)
-    Assert.IsTrue(buffer.WasReleased 8us)
+    Assert.IsFalse(buffer.IsDown(8us, NoobishMouseButtonId.Left))
+    Assert.IsTrue(buffer.WasReleased(8us, NoobishMouseButtonId.Left))
 
     components.ReleaseContext buttonCtx
     components.ReleaseContext ctx
@@ -707,7 +706,7 @@ let ``InputBufferV2 ClearDown no-ops when no down`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.ClearDown()
+    buffer.ClearDown(NoobishMouseButtonId.Left)
     Assert.AreEqual(0us, buffer.GetPressed())
     Assert.AreEqual(0us, buffer.GetClicked())
 
@@ -722,7 +721,7 @@ let ``InputBufferV2 UpdateDown ignores zero localId`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.UpdateDown(components, index)
+    buffer.UpdateDown(components, index, NoobishMouseButtonId.Left)
 
     Assert.IsTrue(buffer.Pressed.[index])
     Assert.AreEqual(0us, buffer.GetPressed())
@@ -740,7 +739,7 @@ let ``InputBufferV2 Release ignores click when not clickable`` () =
     buffer.Reset components
 
     components.Enabled.[index] <- false
-    buffer.SetDown index
+    buffer.SetDown(NoobishMouseButtonId.Left, index)
     buffer.Release(components, index, NoobishMouseButtonId.Left)
 
     Assert.AreEqual(0us, buffer.GetClicked())
@@ -759,7 +758,7 @@ let ``InputBufferV2 Release ignores zero localId`` () =
     buffer.Reset components
     components.WantsToggle.[index] <- true
 
-    buffer.SetDown index
+    buffer.SetDown(NoobishMouseButtonId.Left, index)
     buffer.Release(components, index, NoobishMouseButtonId.Left)
 
     Assert.AreEqual(0us, buffer.GetClicked())
@@ -777,12 +776,12 @@ let ``InputBufferV2 wasclicked/waspressed/wasreleased reflect flags`` () =
     buffer.Reset components
 
     buffer.MarkClicked (index, NoobishMouseButtonId.Left)
-    buffer.MarkPressed index
-    buffer.MarkReleased index
+    buffer.MarkPressed(index, NoobishMouseButtonId.Left)
+    buffer.MarkReleased(index, NoobishMouseButtonId.Left)
 
-    Assert.IsTrue(buffer.WasClicked 9us)
-    Assert.IsTrue(buffer.WasPressed 9us)
-    Assert.IsTrue(buffer.WasReleased 9us)
+    Assert.IsTrue(buffer.WasClicked(9us, NoobishMouseButtonId.Left))
+    Assert.IsTrue(buffer.WasPressed(9us, NoobishMouseButtonId.Left))
+    Assert.IsTrue(buffer.WasReleased(9us, NoobishMouseButtonId.Left))
 
     components.ReleaseContext buttonCtx
     components.ReleaseContext ctx
@@ -795,12 +794,12 @@ let ``InputBufferV2 wasclicked/waspressed/wasreleased default false`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    Assert.IsFalse(buffer.WasClicked 9us)
-    Assert.IsFalse(buffer.WasPressed 9us)
-    Assert.IsFalse(buffer.WasReleased 9us)
-    Assert.IsFalse(buffer.WasClicked 99us)
-    Assert.IsFalse(buffer.WasPressed 99us)
-    Assert.IsFalse(buffer.WasReleased 99us)
+    Assert.IsFalse(buffer.WasClicked(9us, NoobishMouseButtonId.Left))
+    Assert.IsFalse(buffer.WasPressed(9us, NoobishMouseButtonId.Left))
+    Assert.IsFalse(buffer.WasReleased(9us, NoobishMouseButtonId.Left))
+    Assert.IsFalse(buffer.WasClicked(99us, NoobishMouseButtonId.Left))
+    Assert.IsFalse(buffer.WasPressed(99us, NoobishMouseButtonId.Left))
+    Assert.IsFalse(buffer.WasReleased(99us, NoobishMouseButtonId.Left))
 
     components.ReleaseContext ctx
 
@@ -813,17 +812,17 @@ let ``InputBufferV2 IsDown reflects down state`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.SetDown index
-    Assert.IsTrue(buffer.IsDown 10us)
+    buffer.SetDown(NoobishMouseButtonId.Left, index)
+    Assert.IsTrue(buffer.IsDown(10us, NoobishMouseButtonId.Left))
 
-    buffer.ClearDown()
-    Assert.IsFalse(buffer.IsDown 10us)
+    buffer.ClearDown(NoobishMouseButtonId.Left)
+    Assert.IsFalse(buffer.IsDown(10us, NoobishMouseButtonId.Left))
 
     components.ReleaseContext buttonCtx
     components.ReleaseContext ctx
 
 [<Test>]
-let ``InputBufferV2 SetDown updates existing down`` () =
+let ``InputBufferV2 SetDown(NoobishMouseButtonId.Left, updates) existing down`` () =
     let components = NoobishComponentsV2(2)
     let ctx = NoobishV2.beginFrame "Page" components
     let first = NoobishV2.beginButton "First" 12us ctx
@@ -833,16 +832,16 @@ let ``InputBufferV2 SetDown updates existing down`` () =
     let buffer = InputBufferV2(2)
     buffer.Reset components
 
-    buffer.SetDown firstIndex
-    Assert.IsTrue(buffer.IsDown 12us)
-    Assert.IsFalse(buffer.IsDown 13us)
+    buffer.SetDown(NoobishMouseButtonId.Left, firstIndex)
+    Assert.IsTrue(buffer.IsDown(12us, NoobishMouseButtonId.Left))
+    Assert.IsFalse(buffer.IsDown(13us, NoobishMouseButtonId.Left))
 
-    buffer.SetDown secondIndex
-    Assert.IsFalse(buffer.IsDown 12us)
-    Assert.IsTrue(buffer.IsDown 13us)
+    buffer.SetDown(NoobishMouseButtonId.Left, secondIndex)
+    Assert.IsFalse(buffer.IsDown(12us, NoobishMouseButtonId.Left))
+    Assert.IsTrue(buffer.IsDown(13us, NoobishMouseButtonId.Left))
 
-    buffer.SetDown secondIndex
-    Assert.IsTrue(buffer.IsDown 13us)
+    buffer.SetDown(NoobishMouseButtonId.Left, secondIndex)
+    Assert.IsTrue(buffer.IsDown(13us, NoobishMouseButtonId.Left))
 
     components.ReleaseContext first
     components.ReleaseContext second
@@ -856,8 +855,8 @@ let ``InputBufferV2 IsDown default false`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    Assert.IsFalse(buffer.IsDown 10us)
-    Assert.IsFalse(buffer.IsDown 99us)
+    Assert.IsFalse(buffer.IsDown(10us, NoobishMouseButtonId.Left))
+    Assert.IsFalse(buffer.IsDown(99us, NoobishMouseButtonId.Left))
 
     components.ReleaseContext ctx
 
@@ -954,11 +953,11 @@ let ``InputBufferV2 tracks down and release`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.SetDown index
-    Assert.IsTrue(buffer.IsDown 2us)
-    buffer.ClearDown()
-    Assert.IsFalse(buffer.IsDown 2us)
-    Assert.IsTrue(buffer.WasReleased 2us)
+    buffer.SetDown(NoobishMouseButtonId.Left, index)
+    Assert.IsTrue(buffer.IsDown(2us, NoobishMouseButtonId.Left))
+    buffer.ClearDown(NoobishMouseButtonId.Left)
+    Assert.IsFalse(buffer.IsDown(2us, NoobishMouseButtonId.Left))
+    Assert.IsTrue(buffer.WasReleased(2us, NoobishMouseButtonId.Left))
 
     components.ReleaseContext buttonCtx
     components.ReleaseContext ctx

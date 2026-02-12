@@ -121,6 +121,8 @@ module ButtonsDemo =
     [<Literal>]
     let OverlayButtonId = 102us
     [<Literal>]
+    let WasClickedButtonId = 105us
+    [<Literal>]
     let OverlayRootId = 103us
     [<Literal>]
     let OverlayScrimId = 104us
@@ -128,6 +130,7 @@ module ButtonsDemo =
     type Model() =
         member val PrimaryPressed = false with get, set
         member val ShowOverlay = false with get, set
+        member val WasClickedCount = 0 with get, set
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
@@ -138,6 +141,10 @@ module ButtonsDemo =
             |> NoobishV2.setToggled model.PrimaryPressed
             |> NoobishV2.endButton
         |> NoobishV2.beginButton "Show scrim" OverlayButtonId
+            |> NoobishV2.setMinHeight 48f
+            |> NoobishV2.setFill {Horizontal = false; Vertical = false}
+            |> NoobishV2.endButton
+        |> NoobishV2.beginButton $"WasClicked ({model.WasClickedCount})" WasClickedButtonId
             |> NoobishV2.setMinHeight 48f
             |> NoobishV2.setFill {Horizontal = false; Vertical = false}
             |> NoobishV2.endButton
@@ -519,14 +526,18 @@ type SimpleDemoGame() as game =
 
         match demoModel.ViewState with
         | DemoPage.Buttons ->
-            if ui.WasClicked ButtonsDemo.PrimaryButtonId then
+            if ui.WasClicked(ButtonsDemo.PrimaryButtonId, NoobishMouseButtonId.Left) then
                 demoModel.Buttons.PrimaryPressed <- not demoModel.Buttons.PrimaryPressed
-            if ui.WasClicked ButtonsDemo.OverlayButtonId then
+            if ui.WasClicked(ButtonsDemo.OverlayButtonId, NoobishMouseButtonId.Left) then
                 demoModel.Buttons.ShowOverlay <- true
-            if ui.WasClicked ButtonsDemo.OverlayScrimId then
+            if ui.WasClicked(ButtonsDemo.OverlayScrimId, NoobishMouseButtonId.Left) then
                 demoModel.Buttons.ShowOverlay <- false
+            if ui.WasClicked(ButtonsDemo.WasClickedButtonId, NoobishMouseButtonId.Left) then
+                demoModel.Buttons.WasClickedCount <- demoModel.Buttons.WasClickedCount + 1
+            if ui.WasClicked(ButtonsDemo.WasClickedButtonId, NoobishMouseButtonId.Right) then
+                demoModel.Buttons.WasClickedCount <- max 0 (demoModel.Buttons.WasClickedCount - 1)
         | DemoPage.Checkbox ->
-            if ui.WasClicked CheckboxDemo.CheckboxId then
+            if ui.WasClicked(CheckboxDemo.CheckboxId, NoobishMouseButtonId.Left) then
                 demoModel.Checkbox.IsChecked <- not demoModel.Checkbox.IsChecked
         | DemoPage.Slider ->
             match ui.TryGetSliderChanged SliderDemo.SliderId with
