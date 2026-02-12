@@ -10,6 +10,10 @@ type InputConfig =
       PrimaryClick: bool
       PrimaryDown: bool
       SecondaryClick: bool
+      MouseButton1Click: bool
+      MouseButton1Down: bool
+      MouseButton2Click: bool
+      MouseButton2Down: bool
       IsKeyPressed: NoobishKeyId -> bool
       ConsumeTextInput: unit -> struct(char[] * int) }
 
@@ -20,6 +24,10 @@ let defaultInputConfig =
       PrimaryClick = false
       PrimaryDown = false
       SecondaryClick = false
+      MouseButton1Click = false
+      MouseButton1Down = false
+      MouseButton2Click = false
+      MouseButton2Down = false
       IsKeyPressed = fun _ -> false
       ConsumeTextInput = fun () -> struct([||], 0) }
 
@@ -28,9 +36,22 @@ let createInput (config: InputConfig) =
         member _.PointerX = config.PointerX
         member _.PointerY = config.PointerY
         member _.ScrollWheelDelta = config.ScrollDelta
-        member _.IsPrimaryClick() = config.PrimaryClick
-        member _.IsPrimaryDown() = config.PrimaryDown
-        member _.IsSecondaryClick() = config.SecondaryClick
+        member _.IsMouseClick buttonId =
+            match buttonId with
+            | NoobishMouseButtonId.Left -> config.PrimaryClick
+            | NoobishMouseButtonId.Right -> config.SecondaryClick
+            | NoobishMouseButtonId.Middle -> false
+            | NoobishMouseButtonId.XButton1 -> config.MouseButton1Click
+            | NoobishMouseButtonId.XButton2 -> config.MouseButton2Click
+            | NoobishMouseButtonId.None -> false
+        member _.IsMouseDown buttonId =
+            match buttonId with
+            | NoobishMouseButtonId.Left -> config.PrimaryDown
+            | NoobishMouseButtonId.Right -> false
+            | NoobishMouseButtonId.Middle -> false
+            | NoobishMouseButtonId.XButton1 -> config.MouseButton1Down
+            | NoobishMouseButtonId.XButton2 -> config.MouseButton2Down
+            | NoobishMouseButtonId.None -> false
         member _.IsKeyPressed keyId = config.IsKeyPressed keyId
         member _.ConsumeTextInput() = config.ConsumeTextInput()
         }
@@ -57,11 +78,13 @@ let ``InputBufferV2 marks and queries input`` () =
     let buffer = InputBufferV2(2)
     buffer.Reset components
 
-    buffer.MarkClicked index
+    buffer.MarkClicked(index, NoobishMouseButtonId.Right)
     buffer.MarkPressed index
     buffer.MarkTextChanged(index, "Hello")
 
     Assert.IsTrue(buffer.WasClicked 1us)
+    Assert.IsTrue(buffer.WasClicked(1us, NoobishMouseButtonId.Right))
+    Assert.IsFalse(buffer.WasClicked(1us, NoobishMouseButtonId.Left))
     Assert.IsTrue(buffer.WasPressed 1us)
     Assert.AreEqual(ValueSome "Hello", buffer.TryGetTextChanged 1us)
 
@@ -104,7 +127,7 @@ let ``InputBufferV2 GetClicked returns last clicked local id`` () =
     let buffer = InputBufferV2(2)
     buffer.Reset components
 
-    buffer.MarkClicked index
+    buffer.MarkClicked (index, NoobishMouseButtonId.Left)
     buffer.LastClickedLocalId <- 7us
 
     Assert.AreEqual(7us, buffer.GetClicked())
@@ -178,7 +201,7 @@ let ``InputBufferV2 Reset clears active flags`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.MarkClicked index
+    buffer.MarkClicked (index, NoobishMouseButtonId.Left)
     Assert.IsTrue(buffer.WasClicked 1us)
     Assert.Greater(buffer.ActiveIndices.Count, 0)
 
@@ -509,7 +532,7 @@ let ``InputBufferV2 UpdateDown and Release toggles when enabled`` () =
     buffer.UpdateDown(components, index)
     Assert.IsTrue(buffer.IsDown 3us)
 
-    buffer.Release(components, index)
+    buffer.Release(components, index, NoobishMouseButtonId.Left)
     Assert.IsFalse(buffer.IsDown 3us)
     Assert.IsTrue(components.Toggled.[index])
     Assert.AreEqual(3us, buffer.GetClicked())
@@ -571,7 +594,7 @@ let ``InputBufferV2 Release ignores non-matching hit`` () =
     let buffer = InputBufferV2(2)
     buffer.Reset components
     buffer.UpdateDown(components, firstIndex)
-    buffer.Release(components, secondIndex)
+    buffer.Release(components, secondIndex, NoobishMouseButtonId.Left)
 
     Assert.IsFalse(components.Toggled.[firstIndex])
     Assert.AreEqual(0us, buffer.GetClicked())
@@ -589,7 +612,7 @@ let ``InputBufferV2 Release ignores when no down`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.Release(components, index)
+    buffer.Release(components, index, NoobishMouseButtonId.Left)
     Assert.AreEqual(0us, buffer.GetClicked())
     Assert.IsFalse(components.Toggled.[index])
 
@@ -718,7 +741,7 @@ let ``InputBufferV2 Release ignores click when not clickable`` () =
 
     components.Enabled.[index] <- false
     buffer.SetDown index
-    buffer.Release(components, index)
+    buffer.Release(components, index, NoobishMouseButtonId.Left)
 
     Assert.AreEqual(0us, buffer.GetClicked())
     Assert.IsFalse(components.Toggled.[index])
@@ -737,7 +760,7 @@ let ``InputBufferV2 Release ignores zero localId`` () =
     components.WantsToggle.[index] <- true
 
     buffer.SetDown index
-    buffer.Release(components, index)
+    buffer.Release(components, index, NoobishMouseButtonId.Left)
 
     Assert.AreEqual(0us, buffer.GetClicked())
     Assert.IsTrue(components.Toggled.[index])
@@ -753,7 +776,7 @@ let ``InputBufferV2 wasclicked/waspressed/wasreleased reflect flags`` () =
     let buffer = InputBufferV2(1)
     buffer.Reset components
 
-    buffer.MarkClicked index
+    buffer.MarkClicked (index, NoobishMouseButtonId.Left)
     buffer.MarkPressed index
     buffer.MarkReleased index
 

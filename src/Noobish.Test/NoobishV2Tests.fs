@@ -63,9 +63,8 @@ let ``processFrame runs layout and input`` () =
             member _.PointerX = 0f
             member _.PointerY = 0f
             member _.ScrollWheelDelta = 0f
-            member _.IsPrimaryClick() = false
-            member _.IsPrimaryDown() = false
-            member _.IsSecondaryClick() = false
+            member _.IsMouseClick _ = false
+            member _.IsMouseDown _ = false
             member _.IsKeyPressed _ = false
             member _.ConsumeTextInput() = struct([||], 0) }
 

@@ -103,9 +103,22 @@ let ``NoobishInputV2 ProcessInput allocates no managed memory`` () =
             member _.PointerX = 5f
             member _.PointerY = 5f
             member _.ScrollWheelDelta = 0f
-            member _.IsPrimaryClick() = false
-            member _.IsPrimaryDown() = true
-            member _.IsSecondaryClick() = false
+            member _.IsMouseClick buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> false
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
+            member _.IsMouseDown buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> true
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
             member _.IsKeyPressed _ = false
             member _.ConsumeTextInput() = struct([||], 0)
             }
@@ -156,7 +169,7 @@ let ``InputBufferV2 query helpers allocate no managed memory`` () =
     components.Bounds.[buttonIndex] <- { Noobish.NoobishRectangle.X = 1f; Y = 2f; Width = 3f; Height = 4f }
     let buffer = InputBufferV2(2)
     buffer.Reset components
-    buffer.MarkClicked buttonIndex
+    buffer.MarkClicked (buttonIndex, NoobishMouseButtonId.Left) 
     buffer.MarkPressed buttonIndex
     buffer.MarkReleased buttonIndex
     buffer.SetDown buttonIndex
@@ -212,9 +225,22 @@ let ``NoobishInputV2 updateScroll allocates no managed memory`` () =
             member _.PointerX = 10f
             member _.PointerY = 10f
             member _.ScrollWheelDelta = 10f
-            member _.IsPrimaryClick() = false
-            member _.IsPrimaryDown() = false
-            member _.IsSecondaryClick() = false
+            member _.IsMouseClick buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> false
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
+            member _.IsMouseDown buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> false
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
             member _.IsKeyPressed _ = false
             member _.ConsumeTextInput() = struct([||], 0)
             }
@@ -253,9 +279,22 @@ let ``NoobishInputV2 updateFocusFromClick allocates no managed memory`` () =
             member _.PointerX = 200f
             member _.PointerY = 200f
             member _.ScrollWheelDelta = 0f
-            member _.IsPrimaryClick() = true
-            member _.IsPrimaryDown() = false
-            member _.IsSecondaryClick() = false
+            member _.IsMouseClick buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> true
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
+            member _.IsMouseDown buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> false
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
             member _.IsKeyPressed _ = false
             member _.ConsumeTextInput() = struct([||], 0)
             }
@@ -290,9 +329,22 @@ let ``NoobishInputV2 updateCaretFromKeys allocates no managed memory`` () =
             member _.PointerX = 0f
             member _.PointerY = 0f
             member _.ScrollWheelDelta = 0f
-            member _.IsPrimaryClick() = false
-            member _.IsPrimaryDown() = false
-            member _.IsSecondaryClick() = false
+            member _.IsMouseClick buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> false
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
+            member _.IsMouseDown buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> false
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
             member _.IsKeyPressed keyId = keyId = NoobishKeyId.Left
             member _.ConsumeTextInput() = struct([||], 0)
             }
@@ -325,9 +377,22 @@ let ``NoobishInputV2 updateTextInput no-op allocates no managed memory`` () =
             member _.PointerX = 0f
             member _.PointerY = 0f
             member _.ScrollWheelDelta = 0f
-            member _.IsPrimaryClick() = false
-            member _.IsPrimaryDown() = false
-            member _.IsSecondaryClick() = false
+            member _.IsMouseClick buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> false
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
+            member _.IsMouseDown buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> false
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
             member _.IsKeyPressed _ = false
             member _.ConsumeTextInput() = struct([||], 0)
             }
@@ -364,9 +429,22 @@ let ``NoobishInputV2 updatePrimaryDown slider allocates no managed memory`` () =
             member _.PointerX = 5f
             member _.PointerY = 5f
             member _.ScrollWheelDelta = 0f
-            member _.IsPrimaryClick() = false
-            member _.IsPrimaryDown() = true
-            member _.IsSecondaryClick() = false
+            member _.IsMouseClick buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> false
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
+            member _.IsMouseDown buttonId =
+                match buttonId with
+                | NoobishMouseButtonId.Left -> true
+                | NoobishMouseButtonId.Right -> false
+                | NoobishMouseButtonId.Middle -> false
+                | NoobishMouseButtonId.XButton1 -> false
+                | NoobishMouseButtonId.XButton2 -> false
+                | NoobishMouseButtonId.None -> false
             member _.IsKeyPressed _ = false
             member _.ConsumeTextInput() = struct([||], 0)
             }

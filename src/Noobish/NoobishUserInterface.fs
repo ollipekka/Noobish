@@ -29,6 +29,9 @@ type NoobishUserInterface(capacity: int) =
     member _.WasClicked(localId: uint16) =
         inputBuffer.WasClicked localId
 
+    member _.WasClicked(localId: uint16, buttonId: NoobishMouseButtonId) =
+        inputBuffer.WasClicked(localId, buttonId)
+
     member _.WasPressed(localId: uint16) =
         inputBuffer.WasPressed localId
 

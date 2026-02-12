@@ -227,8 +227,10 @@ type NoobishKeyId =
 [<RequireQualifiedAccess>]
 type NoobishMouseButtonId =
 | Left
-| Middle
 | Right
+| Middle
+| XButton1
+| XButton2
 | None
 
 [<RequireQualifiedAccess>]

@@ -40,12 +40,37 @@ module internal NoobishInputStateHelpers =
         dict.[NoobishKeyId.Right] <- Keys.Right
         dict
 
+    let private mouseButtonMap =
+        let dict = Dictionary<NoobishMouseButtonId, byte>()
+        dict.[NoobishMouseButtonId.Left] <- 1uy
+        dict.[NoobishMouseButtonId.Right] <- 2uy
+        dict.[NoobishMouseButtonId.Middle] <- 4uy
+        dict.[NoobishMouseButtonId.XButton1] <- 8uy
+        dict.[NoobishMouseButtonId.XButton2] <- 16uy
+        dict
+
     let mapKeyId keyId =
         let mutable value = Unchecked.defaultof<Keys>
         if keyMap.TryGetValue(keyId, &value) then
             ValueSome value
         else
             ValueNone
+
+    let mapMouseButtonId buttonId =
+        let mutable value = 0uy
+        if mouseButtonMap.TryGetValue(buttonId, &value) then
+            ValueSome value
+        else
+            ValueNone
+
+    let isMouseButtonDown (state: MouseState) buttonId =
+        match buttonId with
+        | NoobishMouseButtonId.Left -> state.LeftButton = ButtonState.Pressed
+        | NoobishMouseButtonId.Right -> state.RightButton = ButtonState.Pressed
+        | NoobishMouseButtonId.Middle -> state.MiddleButton = ButtonState.Pressed
+        | NoobishMouseButtonId.XButton1 -> state.XButton1 = ButtonState.Pressed
+        | NoobishMouseButtonId.XButton2 -> state.XButton2 = ButtonState.Pressed
+        | NoobishMouseButtonId.None -> false
 
 type NoobishInputState internal (getKeyboardState: unit -> KeyboardState, getMouseState: unit -> MouseState, getTouchState: unit -> TouchCollection) =
     let mutable keyboardCurrent = getKeyboardState()
@@ -58,6 +83,7 @@ type NoobishInputState internal (getKeyboardState: unit -> KeyboardState, getMou
     let mutable textCount = 0
 
     let mapKeyId = NoobishInputStateHelpers.mapKeyId
+    let isMouseButtonDown = NoobishInputStateHelpers.isMouseButtonDown
 
     new () = NoobishInputState(Keyboard.GetState, Mouse.GetState, TouchPanel.GetState)
 
@@ -80,14 +106,11 @@ type NoobishInputState internal (getKeyboardState: unit -> KeyboardState, getMou
     member _.PointerY = float32 mouseCurrent.Y
     member _.ScrollWheelDelta = float32 (mouseCurrent.ScrollWheelValue - mousePrevious.ScrollWheelValue)
 
-    member _.IsPrimaryClick() =
-        mousePrevious.LeftButton = ButtonState.Pressed && mouseCurrent.LeftButton = ButtonState.Released
+    member _.IsMouseClick(buttonId: NoobishMouseButtonId) =
+        isMouseButtonDown mousePrevious buttonId && not (isMouseButtonDown mouseCurrent buttonId)
 
-    member _.IsPrimaryDown() =
-        mouseCurrent.LeftButton = ButtonState.Pressed
-
-    member _.IsSecondaryClick() =
-        mousePrevious.RightButton = ButtonState.Pressed && mouseCurrent.RightButton = ButtonState.Released
+    member _.IsMouseDown(buttonId: NoobishMouseButtonId) =
+        isMouseButtonDown mouseCurrent buttonId
 
     member _.IsKeyPressed(keyId: NoobishKeyId) =
         match mapKeyId keyId with
@@ -103,8 +126,7 @@ type NoobishInputState internal (getKeyboardState: unit -> KeyboardState, getMou
         member this.PointerX = this.PointerX
         member this.PointerY = this.PointerY
         member this.ScrollWheelDelta = this.ScrollWheelDelta
-        member this.IsPrimaryClick() = this.IsPrimaryClick()
-        member this.IsPrimaryDown() = this.IsPrimaryDown()
-        member this.IsSecondaryClick() = this.IsSecondaryClick()
+        member this.IsMouseClick buttonId = this.IsMouseClick buttonId
+        member this.IsMouseDown buttonId = this.IsMouseDown buttonId
         member this.IsKeyPressed keyId = this.IsKeyPressed keyId
         member this.ConsumeTextInput() = this.ConsumeTextInput()
