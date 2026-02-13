@@ -12,6 +12,7 @@ type ComponentId =
 | Grid = 6us
 | Scroll = 7us
 | TextClip = 8us
+| Mouse = 9us
 
 let loremIpsum1 =
     "Scroll me!\n\n Lorem\nipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -290,6 +291,49 @@ module TextClipDemo =
                 |> NoobishV2.endPanel
             |> NoobishV2.endStackHorizontal
 
+module MouseDemo =
+    [<Literal>]
+    let LeftButtonId = 701us
+    [<Literal>]
+    let RightButtonId = 702us
+    [<Literal>]
+    let MiddleButtonId = 703us
+    [<Literal>]
+    let XButton1Id = 704us
+    [<Literal>]
+    let XButton2Id = 705us
+
+    type Model() =
+        member val LeftCount = 0 with get, set
+        member val RightCount = 0 with get, set
+        member val MiddleCount = 0 with get, set
+        member val XButton1Count = 0 with get, set
+        member val XButton2Count = 0 with get, set
+
+    let buildUi (model: Model) (parentCtx: ComponentContextV2) =
+        parentCtx
+        |> NoobishV2.beginPanel
+            |> NoobishV2.setFill { Horizontal = true; Vertical = true }
+            |> NoobishV2.setPadding { NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f }
+            |> NoobishV2.beginParagraph "Click each button with the matching mouse button."
+                |> NoobishV2.endParagraph
+            |> NoobishV2.beginButton $"Left ({model.LeftCount})" LeftButtonId
+                |> NoobishV2.setMinHeight 42f
+                |> NoobishV2.endButton
+            |> NoobishV2.beginButton $"Right ({model.RightCount})" RightButtonId
+                |> NoobishV2.setMinHeight 42f
+                |> NoobishV2.endButton
+            |> NoobishV2.beginButton $"Middle ({model.MiddleCount})" MiddleButtonId
+                |> NoobishV2.setMinHeight 42f
+                |> NoobishV2.endButton
+            |> NoobishV2.beginButton $"XButton1 ({model.XButton1Count})" XButton1Id
+                |> NoobishV2.setMinHeight 42f
+                |> NoobishV2.endButton
+            |> NoobishV2.beginButton $"XButton2 ({model.XButton2Count})" XButton2Id
+                |> NoobishV2.setMinHeight 42f
+                |> NoobishV2.endButton
+            |> NoobishV2.endPanel
+
 [<RequireQualifiedAccess>]
 type DemoPage =
 | Text
@@ -300,6 +344,7 @@ type DemoPage =
 | Grid
 | Scroll
 | TextClip
+| Mouse
 
 [<RequireQualifiedAccess>]
 type DemoSubModel =
@@ -311,6 +356,7 @@ type DemoSubModel =
 | Grid of GridDemo.Model
 | Scroll of ScrollDemo.Model
 | TextClip of TextClipDemo.Model
+| Mouse of MouseDemo.Model
 
 type DemoModel () =
     let text = TextDemo.Model()
@@ -321,6 +367,7 @@ type DemoModel () =
     let grid = GridDemo.Model()
     let scroll = ScrollDemo.Model()
     let textClip = TextClipDemo.Model()
+    let mouse = MouseDemo.Model()
     let mutable viewState = DemoPage.Text
     let mutable view = DemoSubModel.Text text
 
@@ -340,6 +387,7 @@ type DemoModel () =
     member _.Grid = grid
     member _.Scroll = scroll
     member _.TextClip = textClip
+    member _.Mouse = mouse
 
     member this.SetViewState(value: DemoPage) =
         viewState <- value
@@ -353,6 +401,7 @@ type DemoModel () =
             | DemoPage.Grid -> DemoSubModel.Grid grid
             | DemoPage.Scroll -> DemoSubModel.Scroll scroll
             | DemoPage.TextClip -> DemoSubModel.TextClip textClip
+            | DemoPage.Mouse -> DemoSubModel.Mouse mouse
 
 let private buildUi (ui: NoobishUserInterface) (width: float32) (height: float32) (model: DemoModel)=
 
@@ -407,6 +456,11 @@ let private buildUi (ui: NoobishUserInterface) (width: float32) (height: float32
                     |> NoobishV2.setWantsToggle true
                     |> NoobishV2.setToggled (model.ViewState = DemoPage.TextClip)
                     |> NoobishV2.endButton
+                |> NoobishV2.beginButton "Mouse" (ComponentId.toLocalId ComponentId.Mouse)
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.setWantsToggle true
+                    |> NoobishV2.setToggled (model.ViewState = DemoPage.Mouse)
+                    |> NoobishV2.endButton
                 |> NoobishV2.endPanel
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
@@ -432,6 +486,8 @@ let private buildUi (ui: NoobishUserInterface) (width: float32) (height: float32
             ScrollDemo.buildUi subModel rootCtx
         | DemoSubModel.TextClip subModel ->
             TextClipDemo.buildUi subModel rootCtx
+        | DemoSubModel.Mouse subModel ->
+            MouseDemo.buildUi subModel rootCtx
 
     let endCtx =
         previewCtx
@@ -522,6 +578,8 @@ type SimpleDemoGame() as game =
             demoModel.SetViewState DemoPage.Scroll
         | ComponentId.TextClip ->
             demoModel.SetViewState DemoPage.TextClip
+        | ComponentId.Mouse ->
+            demoModel.SetViewState DemoPage.Mouse
         | _ -> ()
 
         match demoModel.ViewState with
@@ -547,6 +605,17 @@ type SimpleDemoGame() as game =
         | DemoPage.Scroll -> ()
         | DemoPage.Text -> ()
         | DemoPage.TextClip -> ()
+        | DemoPage.Mouse ->
+            if ui.WasClicked(MouseDemo.LeftButtonId, NoobishMouseButtonId.Left) then
+                demoModel.Mouse.LeftCount <- demoModel.Mouse.LeftCount + 1
+            if ui.WasClicked(MouseDemo.RightButtonId, NoobishMouseButtonId.Right) then
+                demoModel.Mouse.RightCount <- demoModel.Mouse.RightCount + 1
+            if ui.WasClicked(MouseDemo.MiddleButtonId, NoobishMouseButtonId.Middle) then
+                demoModel.Mouse.MiddleCount <- demoModel.Mouse.MiddleCount + 1
+            if ui.WasClicked(MouseDemo.XButton1Id, NoobishMouseButtonId.XButton1) then
+                demoModel.Mouse.XButton1Count <- demoModel.Mouse.XButton1Count + 1
+            if ui.WasClicked(MouseDemo.XButton2Id, NoobishMouseButtonId.XButton2) then
+                demoModel.Mouse.XButton2Count <- demoModel.Mouse.XButton2Count + 1
         | DemoPage.TextInput ->
             match ui.TryGetTextChanged TextInputDemo.TopTextboxId with
             | ValueSome text -> demoModel.TextInput.TopText <- text
