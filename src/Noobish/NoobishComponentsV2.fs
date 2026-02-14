@@ -74,6 +74,7 @@ and INoobishComponents2 =
     abstract WantsProgress: bool[] with get
     abstract ProgressValue: float32[] with get
     abstract ProgressSegments: int[] with get
+    abstract ProgressStyle: NoobishProgressStyle[] with get
 
 
 /// ECS-style storage for UI components (V2).
@@ -126,6 +127,7 @@ type NoobishComponentsV2(count: int) =
     member val WantsProgress = Array.create count false
     member val ProgressValue = Array.create count 0f
     member val ProgressSegments = Array.create count 1
+    member val ProgressStyle = Array.create count NoobishProgressStyle.None
 
     member private this.CreateContext() =
         ComponentContextV2(this)
@@ -185,6 +187,7 @@ type NoobishComponentsV2(count: int) =
             this.WantsProgress.[i] <- false
             this.ProgressValue.[i] <- 0f
             this.ProgressSegments.[i] <- 1
+            this.ProgressStyle.[i] <- NoobishProgressStyle.None
         this.Count <- 0
 
     interface INoobishComponents2 with
@@ -234,6 +237,7 @@ type NoobishComponentsV2(count: int) =
         member this.WantsProgress = this.WantsProgress
         member this.ProgressValue = this.ProgressValue
         member this.ProgressSegments = this.ProgressSegments
+        member this.ProgressStyle = this.ProgressStyle
 
 module NoobishComponentsV2 =
     let isClickable (components: NoobishComponentsV2) index =

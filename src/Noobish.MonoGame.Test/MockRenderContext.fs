@@ -11,6 +11,7 @@ type RenderCommand =
     | Scissor of NoobishRectangle
     | Drawable of NoobishRectangle * float32 * NoobishColor * NoobishDrawable[]
     | Rectangle of NoobishRectangle * Color
+    | Triangle of Vector2 * Vector2 * Vector2 * float32 * Color
     | TextSingle of string
     | TextMulti of string
 
@@ -43,6 +44,8 @@ type MockRenderContext
         member _.DrawRectangle _ color x y width height =
             let bounds = { X = x; Y = y; Width = width; Height = height }
             commands.Add(Rectangle(bounds, color))
+        member _.DrawTriangle p1 p2 p3 layer color =
+            commands.Add(Triangle(p1, p2, p3, layer, color))
         member _.DrawTextSingleLine _ _ _ _ _ text =
             commands.Add(TextSingle text)
         member _.DrawTextMultiLine _ _ _ _ _ _ text =

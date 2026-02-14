@@ -536,6 +536,41 @@ let ``setProgressSegments keeps positive values`` () =
     Assert.AreEqual(3, components.ProgressSegments.[index])
 
 [<Test>]
+let ``setProgress enables progress rendering on buttons`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginButton "Build Unit" 1us
+        |> NoobishV2.setProgress 0.6f
+    let index = int ctx.ComponentId.Index
+    Assert.IsTrue(components.WantsOnClick.[index])
+    Assert.IsTrue(components.WantsOnPress.[index])
+    Assert.IsTrue(components.WantsProgress.[index])
+    Assert.AreEqual(0.6f, components.ProgressValue.[index])
+
+[<Test>]
+let ``setProgressStyle stores radial style`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginButton "Build Unit" 1us
+        |> NoobishV2.setProgressStyle NoobishProgressStyle.Radial
+    let index = int ctx.ComponentId.Index
+    Assert.IsTrue(components.WantsProgress.[index])
+    Assert.AreEqual(NoobishProgressStyle.Radial, components.ProgressStyle.[index])
+
+[<Test>]
+let ``setProgressStyle stores square radial style`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginButton "Build Unit" 1us
+        |> NoobishV2.setProgressStyle NoobishProgressStyle.RadialSquare
+    let index = int ctx.ComponentId.Index
+    Assert.IsTrue(components.WantsProgress.[index])
+    Assert.AreEqual(NoobishProgressStyle.RadialSquare, components.ProgressStyle.[index])
+
+[<Test>]
 let ``horizontalRule fills horizontally and blocks`` () =
     let components = NoobishComponentsV2(1)
     let ctx =

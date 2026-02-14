@@ -195,6 +195,102 @@ type NoobishMonoGameRendererV2() =
             let size = Vector2(fillBounds.Width, fillBounds.Height)
             ctx.DrawDrawable textureAtlas position size layer color drawables
 
+    member private this.DrawProgressRadial
+        (ctx: INoobishMonoGameRenderContext)
+        (components: NoobishComponentsV2)
+        (styleSheet: NoobishStyleSheet)
+        (bounds: NoobishRectangle)
+        (index: int) =
+        let padding = components.Padding.[index]
+        let content = NoobishRenderV2.computeTextBounds bounds padding
+        let progress = Math.Clamp(components.ProgressValue.[index], 0f, 1f)
+        if NoobishRectangle.hasArea content && progress > 0f then
+            let centerX = content.X + content.Width * 0.5f
+            let centerY = content.Y + content.Height * 0.5f
+            let radiusX = content.Width * 0.5f
+            let radiusY = content.Height * 0.5f
+            if radiusX > 0f && radiusY > 0f then
+                let state = this.ResolveState components index
+                let fillThemeId = "ProgressBar-Progress"
+                let fillColor = styleSheet.GetColor fillThemeId state |> toColor
+                let layer = this.ResolveLayer components index
+                let startAngle = -MathF.PI * 0.5f
+                let fullSweep = MathF.PI * 2f
+                let sweep = progress * fullSweep
+                let center = Vector2(centerX, centerY)
+                let pointAt angle =
+                    Vector2(centerX + MathF.Cos(angle) * radiusX, centerY + MathF.Sin(angle) * radiusY)
+                let maxRadius = max radiusX radiusY
+                let triangleCount =
+                    let fullTriangles = Math.Clamp(int (MathF.Ceiling(maxRadius * 0.8f)), 16, 128)
+                    max 1 (int (MathF.Ceiling(sweep / fullSweep * float32 fullTriangles)))
+                let step = sweep / float32 triangleCount
+                for i = 0 to triangleCount - 1 do
+                    let angle1 = startAngle + float32 i * step
+                    let angle2 = startAngle + float32 (i + 1) * step
+                    let p1 = pointAt angle1
+                    let p2 = pointAt angle2
+                    ctx.DrawTriangle center p1 p2 layer fillColor
+
+    member private this.DrawProgressRadialSquare
+        (ctx: INoobishMonoGameRenderContext)
+        (components: NoobishComponentsV2)
+        (styleSheet: NoobishStyleSheet)
+        (bounds: NoobishRectangle)
+        (index: int) =
+        let padding = components.Padding.[index]
+        let content = NoobishRenderV2.computeTextBounds bounds padding
+        let progress = Math.Clamp(components.ProgressValue.[index], 0f, 1f)
+        if NoobishRectangle.hasArea content && progress > 0f then
+            let centerX = content.X + content.Width * 0.5f
+            let centerY = content.Y + content.Height * 0.5f
+            let state = this.ResolveState components index
+            let fillThemeId = "ProgressBar-Progress"
+            let fillColor = styleSheet.GetColor fillThemeId state |> toColor
+            let layer = this.ResolveLayer components index
+            let startAngle = -MathF.PI * 0.5f
+            let fullSweep = MathF.PI * 2f
+            let sweep = progress * fullSweep
+            let halfWidth = content.Width * 0.5f
+            let halfHeight = content.Height * 0.5f
+            if halfWidth > 0f && halfHeight > 0f then
+                let center = Vector2(centerX, centerY)
+                let pointAt angle =
+                    let dx = MathF.Cos angle
+                    let dy = MathF.Sin angle
+                    let tx = if MathF.Abs(dx) < 0.0001f then Single.PositiveInfinity else halfWidth / MathF.Abs dx
+                    let ty = if MathF.Abs(dy) < 0.0001f then Single.PositiveInfinity else halfHeight / MathF.Abs dy
+                    let t = min tx ty
+                    Vector2(centerX + dx * t, centerY + dy * t)
+                let normalizeAngle (angle: float32) =
+                    let mutable wrapped = angle % fullSweep
+                    if wrapped < 0f then
+                        wrapped <- wrapped + fullSweep
+                    wrapped
+                let corners =
+                    [|
+                        Vector2(centerX + halfWidth, centerY - halfHeight) // top-right
+                        Vector2(centerX + halfWidth, centerY + halfHeight) // bottom-right
+                        Vector2(centerX - halfWidth, centerY + halfHeight) // bottom-left
+                        Vector2(centerX - halfWidth, centerY - halfHeight) // top-left
+                    |]
+                let cornerAngles = corners |> Array.map (fun c -> normalizeAngle (MathF.Atan2(c.Y - centerY, c.X - centerX)))
+                let angleEpsilon = 0.0001f
+                let startPoint = pointAt startAngle
+                let endPoint = pointAt (startAngle + sweep)
+                let vertices = ResizeArray<Vector2>(8)
+                vertices.Add startPoint
+                for i = 0 to cornerAngles.Length - 1 do
+                    let cornerAngle = cornerAngles.[i]
+                    let cornerRelative = normalizeAngle (cornerAngle - startAngle)
+                    if cornerRelative >= -angleEpsilon && cornerRelative <= sweep + angleEpsilon then
+                        vertices.Add corners.[i]
+                vertices.Add endPoint
+                for i = 0 to vertices.Count - 2 do
+                    let p1 = vertices.[i]
+                    let p2 = vertices.[i + 1]
+                    ctx.DrawTriangle center p1 p2 layer fillColor
+
     member private this.DrawProgressSegments
         (ctx: INoobishMonoGameRenderContext)
         (components: NoobishComponentsV2)
@@ -413,17 +509,32 @@ type NoobishMonoGameRendererV2() =
             let clippedBounds = bounds.Clamp parentBounds
             if NoobishRectangle.hasArea clippedBounds then
                 ctx.WithScissor clippedBounds (fun () ->
-                    ctx.WithSpriteBatch rasterizerState SamplerState.PointClamp (fun () ->
-                        if components.WantsSlider.[index] then
+                    if components.WantsSlider.[index] then
+                        ctx.WithSpriteBatch rasterizerState SamplerState.PointClamp (fun () ->
                             this.DrawSliderTrack ctx components styleSheet textureAtlas bounds index
-                            this.DrawSliderPin ctx components styleSheet textureAtlas bounds index
-                        elif components.WantsProgress.[index] then
-                            this.DrawBackground ctx components styleSheet textureAtlas bounds index
-                            if components.ProgressSegments.[index] > 1 then
-                                this.DrawProgressSegments ctx components styleSheet textureAtlas bounds index
-                            else
-                                this.DrawProgressFill ctx components styleSheet textureAtlas bounds index
-                        else
+                            this.DrawSliderPin ctx components styleSheet textureAtlas bounds index)
+                    elif components.WantsProgress.[index] then
+                        match components.ProgressStyle.[index] with
+                        | NoobishProgressStyle.None ->
+                            ctx.WithSpriteBatch rasterizerState SamplerState.PointClamp (fun () ->
+                                this.DrawBackground ctx components styleSheet textureAtlas bounds index)
+                        | NoobishProgressStyle.Radial ->
+                            ctx.WithSpriteBatch rasterizerState SamplerState.PointClamp (fun () ->
+                                this.DrawBackground ctx components styleSheet textureAtlas bounds index)
+                            this.DrawProgressRadial ctx components styleSheet bounds index
+                        | NoobishProgressStyle.RadialSquare ->
+                            ctx.WithSpriteBatch rasterizerState SamplerState.PointClamp (fun () ->
+                                this.DrawBackground ctx components styleSheet textureAtlas bounds index)
+                            this.DrawProgressRadialSquare ctx components styleSheet bounds index
+                        | NoobishProgressStyle.Bar ->
+                            ctx.WithSpriteBatch rasterizerState SamplerState.PointClamp (fun () ->
+                                this.DrawBackground ctx components styleSheet textureAtlas bounds index
+                                if components.ProgressSegments.[index] > 1 then
+                                    this.DrawProgressSegments ctx components styleSheet textureAtlas bounds index
+                                else
+                                    this.DrawProgressFill ctx components styleSheet textureAtlas bounds index)
+                    else
+                        ctx.WithSpriteBatch rasterizerState SamplerState.PointClamp (fun () ->
                             this.DrawBackground ctx components styleSheet textureAtlas bounds index))
 
                 let textClip = NoobishRenderV2.computeTextBounds bounds components.Padding.[index]

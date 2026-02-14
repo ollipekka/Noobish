@@ -234,6 +234,13 @@ type NoobishMouseButtonId =
 | None
 
 [<RequireQualifiedAccess>]
+type NoobishProgressStyle =
+| None
+| Bar
+| Radial
+| RadialSquare
+
+[<RequireQualifiedAccess>]
 type NoobishKeyboardShortcut =
 | KeyPressed of pressed: NoobishKeyId
 | CtrlKeyPressed of pressed: NoobishKeyId

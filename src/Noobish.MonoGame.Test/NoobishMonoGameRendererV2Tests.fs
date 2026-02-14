@@ -157,6 +157,7 @@ let ``renderer draws progress segments and fills`` () =
     components.Enabled.[0] <- true
     components.ThemeId.[0] <- "ProgressBar"
     components.WantsProgress.[0] <- true
+    components.ProgressStyle.[0] <- NoobishProgressStyle.Bar
     components.ProgressSegments.[0] <- 2
     components.ProgressValue.[0] <- 0.6f
     components.Text.[0] <- ""
@@ -185,6 +186,7 @@ let ``renderer draws progress fill when segments are not enabled`` () =
     components.Enabled.[0] <- true
     components.ThemeId.[0] <- "ProgressBar"
     components.WantsProgress.[0] <- true
+    components.ProgressStyle.[0] <- NoobishProgressStyle.Bar
     components.ProgressSegments.[0] <- 1
     components.ProgressValue.[0] <- 0.5f
     components.Text.[0] <- ""
@@ -197,6 +199,60 @@ let ``renderer draws progress fill when segments are not enabled`` () =
         |> Seq.filter (function RenderCommand.Drawable _ -> true | _ -> false)
         |> Seq.length
     Assert.AreEqual(2, drawablesCount)
+
+[<Test>]
+let ``renderer draws radial progress using triangles`` () =
+    let drawables =
+        toThemes
+            [ ("ProgressBar", [ ("default", [| NoobishDrawable.NinePatch "bg" |]) ]) ]
+    let styleSheet = createStyleSheet drawables
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 64f; Height = 64f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.ThemeId.[0] <- "ProgressBar"
+    components.WantsProgress.[0] <- true
+    components.ProgressStyle.[0] <- NoobishProgressStyle.Radial
+    components.ProgressValue.[0] <- 0.5f
+    components.Text.[0] <- ""
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 128, 128, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime())
+
+    let triangleCount =
+        ctx.Commands
+        |> Seq.filter (function RenderCommand.Triangle _ -> true | _ -> false)
+        |> Seq.length
+    Assert.Greater(triangleCount, 0)
+
+[<Test>]
+let ``renderer draws square radial progress using triangles`` () =
+    let drawables =
+        toThemes
+            [ ("ProgressBar", [ ("default", [| NoobishDrawable.NinePatch "bg" |]) ]) ]
+    let styleSheet = createStyleSheet drawables
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 64f; Height = 64f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.ThemeId.[0] <- "ProgressBar"
+    components.WantsProgress.[0] <- true
+    components.ProgressStyle.[0] <- NoobishProgressStyle.RadialSquare
+    components.ProgressValue.[0] <- 0.5f
+    components.Text.[0] <- ""
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 128, 128, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime())
+
+    let triangleCount =
+        ctx.Commands
+        |> Seq.filter (function RenderCommand.Triangle _ -> true | _ -> false)
+        |> Seq.length
+    Assert.Greater(triangleCount, 0)
 
 [<Test>]
 let ``renderer logs debug rectangle when debug enabled`` () =

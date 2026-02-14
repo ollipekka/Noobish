@@ -271,6 +271,7 @@ module NoobishV2 =
         ctx.Components.WantsProgress.[index] <- true
         ctx.Components.ProgressValue.[index] <- value
         ctx.Components.ProgressSegments.[index] <- 1
+        ctx.Components.ProgressStyle.[index] <- NoobishProgressStyle.Bar
         ctx
 
     let endProgressBar (ctx: ComponentContextV2) =
@@ -281,12 +282,20 @@ module NoobishV2 =
 
     let setProgress (value: float32) (ctx: ComponentContextV2) =
         let index = int ctx.ComponentId.Index
+        ctx.Components.WantsProgress.[index] <- true
+        ctx.Components.ProgressStyle.[index] <- NoobishProgressStyle.Bar
         ctx.Components.ProgressValue.[index] <- value
         ctx
 
     let setProgressSegments (segments: int) (ctx: ComponentContextV2) =
         let index = int ctx.ComponentId.Index
         ctx.Components.ProgressSegments.[index] <- if segments < 1 then 1 else segments
+        ctx
+
+    let setProgressStyle (style: NoobishProgressStyle) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.WantsProgress.[index] <- true
+        ctx.Components.ProgressStyle.[index] <- style
         ctx
 
     let beginSpace (parentCtx: ComponentContextV2) =

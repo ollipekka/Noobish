@@ -19,6 +19,7 @@ type internal INoobishMonoGameRenderContext =
     abstract member WithSpriteBatch: RasterizerState -> SamplerState -> (unit -> unit) -> unit
     abstract member DrawDrawable: NoobishTextureAtlas -> Vector2 -> Vector2 -> float32 -> NoobishColor -> NoobishDrawable[] -> unit
     abstract member DrawRectangle: Texture2D -> Color -> float32 -> float32 -> float32 -> float32 -> unit
+    abstract member DrawTriangle: Vector2 -> Vector2 -> Vector2 -> float32 -> Color -> unit
     abstract member DrawTextSingleLine: NoobishMonoGameFont -> int -> Vector2 -> float32 -> Color -> string -> unit
     abstract member DrawTextMultiLine: NoobishMonoGameFont -> int -> float32 -> Vector2 -> float32 -> Color -> string -> unit
 
@@ -27,7 +28,12 @@ type NoobishMonoGameRenderContext
      content: ContentManager,
      spriteBatch: SpriteBatch,
      textBatch: TextBatch) =
-
+    let triangleEffect = new BasicEffect(graphics)
+    let triangleRasterizer =
+        let state = new RasterizerState()
+        state.CullMode <- CullMode.CullCounterClockwiseFace
+        state.ScissorTestEnable <- true
+        state
     member _.Graphics = graphics
     member _.Content = content
     member _.SpriteBatch = spriteBatch
@@ -85,6 +91,43 @@ type NoobishMonoGameRenderContext
             SpriteEffects.None,
             1.0f)
 
+    member _.DrawTriangle
+        (p1: Vector2)
+        (p2: Vector2)
+        (p3: Vector2)
+        (layer: float32)
+        (color: Color) =
+        let oldBlend = graphics.BlendState
+        let oldDepth = graphics.DepthStencilState
+        let oldRasterizer = graphics.RasterizerState
+
+        let viewport = graphics.Viewport
+        triangleEffect.World <- Matrix.Identity
+        triangleEffect.View <- Matrix.Identity
+        triangleEffect.Projection <- Matrix.CreateOrthographicOffCenter(0.0f, float32 viewport.Width, float32 viewport.Height, 0.0f, 0.0f, -1.0f)
+        triangleEffect.VertexColorEnabled <- true
+        triangleEffect.TextureEnabled <- false
+
+        let z = 0.0f
+        let vertices = [|
+            VertexPositionColor(Vector3(p1.X, p1.Y, z), color)
+            VertexPositionColor(Vector3(p2.X, p2.Y, z), color)
+            VertexPositionColor(Vector3(p3.X, p3.Y, z), color)
+        |]
+
+        graphics.BlendState <- BlendState.AlphaBlend
+        graphics.DepthStencilState <- DepthStencilState.None
+        graphics.RasterizerState <- triangleRasterizer
+
+        try
+            for pass in triangleEffect.CurrentTechnique.Passes do
+                pass.Apply()
+                graphics.DrawUserPrimitives(PrimitiveType.TriangleList, vertices, 0, 1)
+        finally
+            graphics.BlendState <- oldBlend
+            graphics.DepthStencilState <- oldDepth
+            graphics.RasterizerState <- oldRasterizer
+
     interface INoobishMonoGameRenderContext with
         member _.ViewportWidth = graphics.Viewport.Width
         member _.ViewportHeight = graphics.Viewport.Height
@@ -107,6 +150,8 @@ type NoobishMonoGameRenderContext
             this.DrawDrawable atlas position size layer color drawables
         member this.DrawRectangle pixel color x y width height =
             this.DrawRectangle pixel color x y width height
+        member this.DrawTriangle p1 p2 p3 layer color =
+            this.DrawTriangle p1 p2 p3 layer color
         member _.DrawTextSingleLine font size position layer color text =
             textBatch.DrawSingleLine font size position layer color text
         member _.DrawTextMultiLine font size width position layer color text =

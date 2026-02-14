@@ -122,8 +122,6 @@ module ButtonsDemo =
     [<Literal>]
     let OverlayButtonId = 102us
     [<Literal>]
-    let WasClickedButtonId = 105us
-    [<Literal>]
     let OverlayRootId = 103us
     [<Literal>]
     let OverlayScrimId = 104us
@@ -131,7 +129,6 @@ module ButtonsDemo =
     type Model() =
         member val PrimaryPressed = false with get, set
         member val ShowOverlay = false with get, set
-        member val WasClickedCount = 0 with get, set
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
@@ -142,10 +139,6 @@ module ButtonsDemo =
             |> NoobishV2.setToggled model.PrimaryPressed
             |> NoobishV2.endButton
         |> NoobishV2.beginButton "Show scrim" OverlayButtonId
-            |> NoobishV2.setMinHeight 48f
-            |> NoobishV2.setFill {Horizontal = false; Vertical = false}
-            |> NoobishV2.endButton
-        |> NoobishV2.beginButton $"WasClicked ({model.WasClickedCount})" WasClickedButtonId
             |> NoobishV2.setMinHeight 48f
             |> NoobishV2.setFill {Horizontal = false; Vertical = false}
             |> NoobishV2.endButton
@@ -166,13 +159,21 @@ module CheckboxDemo =
 module SliderDemo =
     [<Literal>]
     let SliderId = 301us
+    [<Literal>]
+    let ProgressButtonId = 302us
+    [<Literal>]
+    let SquareProgressButtonId = 303us
 
     type Model() =
         member val Value = 50f with get, set
+        member val ProgressButtonCount = 0 with get, set
+        member val ProgressButtonValue = 0f with get, set
+        member val SquareProgressButtonCount = 0 with get, set
+        member val SquareProgressButtonValue = 0f with get, set
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
-        |> NoobishV2.beginGrid (2, 2)
+        |> NoobishV2.beginGrid (2, 3)
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
                 |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
@@ -204,6 +205,23 @@ module SliderDemo =
                     |> NoobishV2.setProgressSegments 10
                     |> NoobishV2.endProgressBar
                 |> NoobishV2.endPanel
+                |> NoobishV2.beginGrid (2, 1)
+                    |> NoobishV2.setColspan 2
+                    |> NoobishV2.beginButton $"Radial Progress ({model.ProgressButtonCount})" ProgressButtonId
+                        |> NoobishV2.setMinHeight 72f
+                        |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                        |> NoobishV2.setProgress model.ProgressButtonValue
+                        |> NoobishV2.setProgressStyle NoobishProgressStyle.Radial
+                        |> NoobishV2.setProgressSegments 4
+                        |> NoobishV2.endButton
+                    |> NoobishV2.beginButton $"Square Pie Progress ({model.SquareProgressButtonCount})" SquareProgressButtonId
+                        |> NoobishV2.setMinHeight 72f
+                        |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                        |> NoobishV2.setProgress model.SquareProgressButtonValue
+                        |> NoobishV2.setProgressStyle NoobishProgressStyle.RadialSquare
+                        |> NoobishV2.setProgressSegments 8
+                        |> NoobishV2.endButton
+                |> NoobishV2.endGrid
             |> NoobishV2.endGrid
 
 module GridDemo =
@@ -590,10 +608,6 @@ type SimpleDemoGame() as game =
                 demoModel.Buttons.ShowOverlay <- true
             if ui.WasClicked(ButtonsDemo.OverlayScrimId, NoobishMouseButtonId.Left) then
                 demoModel.Buttons.ShowOverlay <- false
-            if ui.WasClicked(ButtonsDemo.WasClickedButtonId, NoobishMouseButtonId.Left) then
-                demoModel.Buttons.WasClickedCount <- demoModel.Buttons.WasClickedCount + 1
-            if ui.WasClicked(ButtonsDemo.WasClickedButtonId, NoobishMouseButtonId.Right) then
-                demoModel.Buttons.WasClickedCount <- max 0 (demoModel.Buttons.WasClickedCount - 1)
         | DemoPage.Checkbox ->
             if ui.WasClicked(CheckboxDemo.CheckboxId, NoobishMouseButtonId.Left) then
                 demoModel.Checkbox.IsChecked <- not demoModel.Checkbox.IsChecked
@@ -601,6 +615,18 @@ type SimpleDemoGame() as game =
             match ui.TryGetSliderChanged SliderDemo.SliderId with
             | ValueSome value -> demoModel.Slider.Value <- value
             | ValueNone -> ()
+            if ui.WasClicked(SliderDemo.ProgressButtonId, NoobishMouseButtonId.Left) then
+                demoModel.Slider.ProgressButtonCount <- min 10 (demoModel.Slider.ProgressButtonCount + 1)
+                demoModel.Slider.ProgressButtonValue <- min 1f (demoModel.Slider.ProgressButtonValue + 0.1f)
+            if ui.WasClicked(SliderDemo.ProgressButtonId, NoobishMouseButtonId.Right) then
+                demoModel.Slider.ProgressButtonCount <- max 0 (demoModel.Slider.ProgressButtonCount - 1)
+                demoModel.Slider.ProgressButtonValue <- max 0f (demoModel.Slider.ProgressButtonValue - 0.1f)
+            if ui.WasClicked(SliderDemo.SquareProgressButtonId, NoobishMouseButtonId.Left) then
+                demoModel.Slider.SquareProgressButtonCount <- min 10 (demoModel.Slider.SquareProgressButtonCount + 1)
+                demoModel.Slider.SquareProgressButtonValue <- min 1f (demoModel.Slider.SquareProgressButtonValue + 0.1f)
+            if ui.WasClicked(SliderDemo.SquareProgressButtonId, NoobishMouseButtonId.Right) then
+                demoModel.Slider.SquareProgressButtonCount <- max 0 (demoModel.Slider.SquareProgressButtonCount - 1)
+                demoModel.Slider.SquareProgressButtonValue <- max 0f (demoModel.Slider.SquareProgressButtonValue - 0.1f)
         | DemoPage.Grid -> ()
         | DemoPage.Scroll -> ()
         | DemoPage.Text -> ()
