@@ -318,6 +318,7 @@ Payloads can be stored in parallel arrays (e.g., `TextPayload: string[]`) and in
 - Done: added V2 scrollbars with timed visibility in the MonoGame renderer plus supporting render helpers/tests.
 - Done: added InputBufferV2 layout query helpers for bounds/size with tests.
 - Done: added `NoobishUserInterface` wrapper to own V2 components + input buffer with ergonomic query helpers.
+- Done: added `NoobishV2.setEnabled` API with unit test coverage.
 
 ## V1/V2 Parity Snapshot (Component + Behavior)
 V2 is not aiming for 1:1 parity. Some behaviors are intentionally redesigned (for example: any container can scroll, and there is no dedicated scrollable component).

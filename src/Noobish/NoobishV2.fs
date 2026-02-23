@@ -76,6 +76,11 @@ module NoobishV2 =
         ctx.Components.Layer.[index] <- layer
         ctx
 
+    let setEnabled (value: bool) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.Enabled.[index] <- value
+        ctx
+
     let setScroll (scroll: Scroll) (ctx: ComponentContextV2) =
         let index = int ctx.ComponentId.Index
         ctx.Components.Scroll.[index] <- scroll

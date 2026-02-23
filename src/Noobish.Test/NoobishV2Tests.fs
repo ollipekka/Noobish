@@ -139,6 +139,14 @@ let ``setLayer updates component layer`` () =
     Assert.AreEqual(42, components.Layer.[index])
 
 [<Test>]
+let ``setEnabled updates component enabled flag`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginButton "Start" 1us
+    let index = int ctx.ComponentId.Index
+    let _ = NoobishV2.setEnabled false ctx
+    Assert.IsFalse(components.Enabled.[index])
+
+[<Test>]
 let ``endPanel returns parent context`` () =
     let components = NoobishComponentsV2(3)
     let rootCtx =
