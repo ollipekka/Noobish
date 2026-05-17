@@ -22,6 +22,10 @@ Since Noobish is initially designed for Elmish, the element tree is rebuilt on e
 * **div** and **panel** provide a simple block layout.
 * **grid** creates a complex layout.
 
+## Input consumption
+
+`NoobishUserInterface.PointerConsumed` and `KeyboardConsumed` report current-frame input handled by UI. `ScrollConsumed` is set when wheel input is over a scrollable component whose content overflows, so game code can skip world zoom or panning while UI consumes scroll.
+
 ## Attributes
 
 * ToDo

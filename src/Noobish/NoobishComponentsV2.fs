@@ -250,12 +250,17 @@ module NoobishComponentsV2 =
         && components.Enabled.[index]
         && components.WantsOnPress.[index]
 
+    let wantsScroll (components: NoobishComponentsV2) index =
+        let scroll = components.Scroll.[index]
+        scroll.Horizontal || scroll.Vertical
+
     let wantsMouse (components: NoobishComponentsV2) index =
         components.WantsToggle.[index]
         || components.WantsOnClick.[index]
         || components.WantsOnPress.[index]
         || components.WantsSlider.[index]
         || components.WantsProgress.[index]
+        || wantsScroll components index
 
     let wantsKeyboard (components: NoobishComponentsV2) index =
         components.WantsTextChanged.[index]

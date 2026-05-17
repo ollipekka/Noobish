@@ -88,6 +88,7 @@ type InputBufferV2(capacity: int) =
         with get() = caretIndex
         and set value = caretIndex <- value
     member val PointerConsumed = false with get, set 
+    member val ScrollConsumed = false with get, set
     member val KeyboardConsumed = false with get, set
 
     member _.EnsureCapacity(count: int) =
@@ -99,6 +100,7 @@ type InputBufferV2(capacity: int) =
         lastClickedLocalId <- 0us
         lastPressedLocalId <- 0us
         this.PointerConsumed <- false
+        this.ScrollConsumed <- false
         this.KeyboardConsumed <- false
         for i = 0 to activeIndices.Count - 1 do
             let index = activeIndices.[i]
@@ -400,6 +402,39 @@ module NoobishInputV2 =
             let contentSize = components.ContentSize.[index]
             struct(contentSize.Width, contentSize.Height)
 
+    let internal canScroll
+        (components: NoobishComponentsV2)
+        (index: int)
+        (viewportWidth: float32)
+        (viewportHeight: float32)
+        (contentWidth: float32)
+        (contentHeight: float32) =
+        let scroll = components.Scroll.[index]
+        (scroll.Vertical && contentHeight > viewportHeight)
+        || (scroll.Horizontal && contentWidth > viewportWidth)
+
+    let internal expectsScroll (components: NoobishComponentsV2) (index: int) =
+        if NoobishComponentsV2.wantsScroll components index then
+            let struct(viewportWidth, viewportHeight) = getViewportSize components index
+            let struct(contentWidth, contentHeight) = getContentExtent components index
+            canScroll components index viewportWidth viewportHeight contentWidth contentHeight
+        else
+            false
+
+    let internal tryFindScrollConsumer (components: NoobishComponentsV2) (index: int) =
+        let mutable current = index
+        let mutable found = -1
+        while current >= 0 && found < 0 do
+            if expectsScroll components current then
+                found <- current
+            else
+                let parentId = components.ParentId.[current]
+                if parentId = UIComponentIdV2.empty then
+                    current <- -1
+                else
+                    current <- int parentId.Index
+        found
+
     let internal applyScrollDelta
         (components: NoobishComponentsV2)
         (index: int)
@@ -519,15 +554,12 @@ module NoobishInputV2 =
             let hitIndex =
                 hitTestWith components.Count (fun i -> clippedBounds components i) (fun i -> components.Layer.[i]) x y (fun i ->
                     components.Visible.[i] && components.Enabled.[i])
-            let scrollHit = if hitIndex >= 0 then tryFindScrollableAncestor components hitIndex else -1
+            let scrollHit = if hitIndex >= 0 then tryFindScrollConsumer components hitIndex else -1
             if scrollHit >= 0 then
                 let struct(viewportWidth, viewportHeight) = getViewportSize components scrollHit
                 let struct(contentWidth, contentHeight) = getContentExtent components scrollHit
-                let canScroll =
-                    (components.Scroll.[scrollHit].Vertical && contentHeight > viewportHeight)
-                    || (components.Scroll.[scrollHit].Horizontal && contentWidth > viewportWidth)
-                if canScroll && NoobishComponentsV2.wantsMouse components scrollHit then
-                    buffer.PointerConsumed <- true
+                buffer.ScrollConsumed <- true
+                buffer.PointerConsumed <- true
                 let delta = -scrollDelta * 0.5f
                 applyScrollDelta components scrollHit delta viewportWidth viewportHeight contentWidth contentHeight
 

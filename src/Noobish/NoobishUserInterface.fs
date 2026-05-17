@@ -23,6 +23,9 @@ type NoobishUserInterface(capacity: int) =
     member _.PointerConsumed
         with get() = inputBuffer.PointerConsumed
 
+    member _.ScrollConsumed
+        with get() = inputBuffer.ScrollConsumed
+
     member _.KeyboardConsumed
         with get() = inputBuffer.KeyboardConsumed
 

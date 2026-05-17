@@ -157,6 +157,11 @@ let ``NoobishComponentsV2 wantsMouse returns true when any mouse wants set`` () 
 
     components.WantsProgress.[index] <- true
     Assert.IsTrue(NoobishComponentsV2.wantsMouse components index)
+    components.WantsProgress.[index] <- false
+
+    components.Scroll.[index] <- {Horizontal = false; Vertical = true}
+    Assert.IsTrue(NoobishComponentsV2.wantsScroll components index)
+    Assert.IsTrue(NoobishComponentsV2.wantsMouse components index)
 
 [<Test>]
 let ``NoobishComponentsV2 wantsKeyboard returns true when text changed wanted`` () =

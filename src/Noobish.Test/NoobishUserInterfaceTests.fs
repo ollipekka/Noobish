@@ -14,6 +14,17 @@ let private createInput () =
         member _.ConsumeTextInput() = struct([||], 0)
         }
 
+let private createScrollInput () =
+    { new INoobishInputState with
+        member _.PointerX = 10f
+        member _.PointerY = 10f
+        member _.ScrollWheelDelta = 10f
+        member _.IsMouseClick _ = false
+        member _.IsMouseDown _ = false
+        member _.IsKeyPressed _ = false
+        member _.ConsumeTextInput() = struct([||], 0)
+        }
+
 [<Test>]
 let ``NoobishUserInterface BeginFrame clears components`` () =
     let ui = NoobishUserInterface(4)
@@ -52,4 +63,24 @@ let ``NoobishUserInterface queries bounds by local id`` () =
     Assert.IsTrue(ValueOption.isNone (ui.TryGetBounds 99us))
 
     ui.ReleaseContext buttonCtx
+    ui.ReleaseContext frameCtx
+
+[<Test>]
+let ``NoobishUserInterface exposes scroll consumption`` () =
+    let ui = NoobishUserInterface(1)
+    let frameCtx = ui.BeginFrame "Page"
+    let panelCtx =
+        frameCtx
+        |> NoobishV2.beginPanel
+        |> NoobishV2.setScrollVertical
+    let index = int panelCtx.ComponentId.Index
+
+    ui.Components.Bounds.[index] <- { X = 0f; Y = 0f; Width = 100f; Height = 100f }
+    ui.Components.ContentSize.[index] <- { Width = 100f; Height = 200f }
+    ui.ProcessInput(createScrollInput())
+
+    Assert.IsTrue(ui.ScrollConsumed)
+    Assert.IsTrue(ui.PointerConsumed)
+
+    ui.ReleaseContext panelCtx
     ui.ReleaseContext frameCtx

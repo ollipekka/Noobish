@@ -216,11 +216,13 @@ let ``InputBufferV2 Reset clears consumed flags`` () =
     let components = NoobishComponentsV2(1)
     let buffer = InputBufferV2(1)
     buffer.PointerConsumed <- true
+    buffer.ScrollConsumed <- true
     buffer.KeyboardConsumed <- true
 
     buffer.Reset components
 
     Assert.IsFalse(buffer.PointerConsumed)
+    Assert.IsFalse(buffer.ScrollConsumed)
     Assert.IsFalse(buffer.KeyboardConsumed)
 
 [<Test>]
@@ -1024,6 +1026,8 @@ let ``NoobishInputV2 ProcessInput scrolls vertical containers`` () =
     NoobishInputV2.ProcessInput input components buffer
 
     Assert.AreEqual(-5f, components.ScrollY.[index])
+    Assert.IsTrue(buffer.ScrollConsumed)
+    Assert.IsTrue(buffer.PointerConsumed)
 
     components.ReleaseContext ctx
 
@@ -1050,6 +1054,58 @@ let ``NoobishInputV2 ProcessInput scrolls when hovering child`` () =
     NoobishInputV2.ProcessInput input components buffer
 
     Assert.AreEqual(-5f, components.ScrollY.[parentIndex])
+    Assert.IsTrue(buffer.ScrollConsumed)
+    Assert.IsTrue(buffer.PointerConsumed)
+
+    components.ReleaseContext childCtx
+    components.ReleaseContext parentCtx
+
+[<Test>]
+let ``NoobishInputV2 expectsScroll returns true only for overflowing scroll components`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let index = int ctx.ComponentId.Index
+    components.Bounds.[index] <- {X = 0f; Y = 0f; Width = 100f; Height = 100f}
+    components.ContentSize.[index] <- {Width = 100f; Height = 100f}
+    components.Scroll.[index] <- {Horizontal = false; Vertical = true}
+
+    Assert.IsFalse(NoobishInputV2.expectsScroll components index)
+
+    components.ContentSize.[index] <- {Width = 100f; Height = 200f}
+    Assert.IsTrue(NoobishInputV2.expectsScroll components index)
+
+    components.Scroll.[index] <- {Horizontal = false; Vertical = false}
+    Assert.IsFalse(NoobishInputV2.expectsScroll components index)
+
+    components.ReleaseContext ctx
+
+[<Test>]
+let ``NoobishInputV2 scroll uses overflowing parent when child scroll fits`` () =
+    let components = NoobishComponentsV2(2)
+    let parentCtx = NoobishV2.beginFrame "Page" components |> NoobishV2.beginPanel
+    let childCtx = NoobishV2.beginPanel parentCtx
+    let parentIndex = int parentCtx.ComponentId.Index
+    let childIndex = int childCtx.ComponentId.Index
+    components.Bounds.[parentIndex] <- {X = 0f; Y = 0f; Width = 100f; Height = 100f}
+    components.Bounds.[childIndex] <- {X = 0f; Y = 0f; Width = 100f; Height = 200f}
+    components.ContentSize.[parentIndex] <- {Width = 100f; Height = 200f}
+    components.ContentSize.[childIndex] <- {Width = 100f; Height = 50f}
+    components.Scroll.[parentIndex] <- {Horizontal = false; Vertical = true}
+    components.Scroll.[childIndex] <- {Horizontal = false; Vertical = true}
+    let buffer = InputBufferV2(2)
+
+    let input =
+        createInput
+            { defaultInputConfig with
+                PointerX = 10f
+                PointerY = 10f
+                ScrollDelta = 10f }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual(-5f, components.ScrollY.[parentIndex])
+    Assert.AreEqual(0f, components.ScrollY.[childIndex])
+    Assert.IsTrue(buffer.ScrollConsumed)
 
     components.ReleaseContext childCtx
     components.ReleaseContext parentCtx
@@ -1412,6 +1468,8 @@ let ``NoobishInputV2 ProcessInput does not scroll when content fits`` () =
     NoobishInputV2.ProcessInput input components buffer
 
     Assert.AreEqual(0f, components.ScrollY.[index])
+    Assert.IsFalse(buffer.ScrollConsumed)
+    Assert.IsFalse(buffer.PointerConsumed)
 
     components.ReleaseContext ctx
 
