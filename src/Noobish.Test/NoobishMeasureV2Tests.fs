@@ -144,6 +144,27 @@ let ``measureFrameWith uses masked display text`` () =
     Assert.AreEqual(3f, components.ContentSize.[index].Width)
 
 [<Test>]
+let ``measureFrameWith uses font height for empty textbox with horizontal fill`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginTextbox "" 1us
+        |> NoobishV2.setFillHorizontal
+    let index = int ctx.ComponentId.Index
+    components.MinSize.[index] <- {Width = 0f; Height = 0f}
+
+    let font = createFont ()
+    NoobishMeasureV2.measureFrameWith getFontSize (measureSingleLineWith font) (measureMultiLineWith font) components
+    NoobishLayoutV2.layoutFrame components 120f 80f
+
+    let expectedHeight = ceil (NoobishFont.scaleFromFontSize (getFontSize "TextBox"))
+    Assert.IsTrue(components.Fill.[index].Horizontal)
+    Assert.IsFalse(components.Fill.[index].Vertical)
+    Assert.AreEqual(expectedHeight, components.ContentSize.[index].Height)
+    Assert.AreEqual(120f, components.Bounds.[index].Width)
+    Assert.AreEqual(expectedHeight, components.Bounds.[index].Height)
+
+[<Test>]
 let ``measureFrameWith wraps text using bounds width when min width is zero`` () =
     let components = NoobishComponentsV2(1)
     let ctx =

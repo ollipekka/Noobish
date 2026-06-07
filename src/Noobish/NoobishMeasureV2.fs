@@ -12,6 +12,9 @@ type INoobishMeasureProvider =
 
 module NoobishMeasureV2 =
     let private defaultState = "default"
+    let private shouldMeasureText (themeId: string) (text: string) =
+        themeId = "TextBox" || not (String.IsNullOrWhiteSpace text)
+
     let internal computeCheckboxSquareSize (minSize: NoobishSize) (padding: NoobishPadding) =
         let paddingSize = max (padding.Left + padding.Right) (padding.Top + padding.Bottom)
         if NoobishSize.hasArea minSize then
@@ -100,8 +103,8 @@ module NoobishMeasureV2 =
             let minSize = components.MinSize.[i]
             let text = NoobishTextDisplay.resolve components.TextDisplayMode.[i] components.Text.[i]
             let wantsText = components.WantsText.[i]
-            if wantsText && not (String.IsNullOrWhiteSpace text) then
-                let themeId = components.ThemeId.[i]
+            let themeId = components.ThemeId.[i]
+            if wantsText && shouldMeasureText themeId text then
                 let fontSize = getFontSize themeId
                 let wrap = components.Textwrap.[i]
                 let struct(textWidth, textHeight) =
@@ -131,8 +134,8 @@ module NoobishMeasureV2 =
         (components: NoobishComponentsV2) =
         for i = 0 to components.Count - 1 do
             let text = NoobishTextDisplay.resolve components.TextDisplayMode.[i] components.Text.[i]
-            if components.WantsText.[i] && components.Textwrap.[i] && not (String.IsNullOrWhiteSpace text) then
-                let themeId = components.ThemeId.[i]
+            let themeId = components.ThemeId.[i]
+            if components.WantsText.[i] && components.Textwrap.[i] && shouldMeasureText themeId text then
                 let fontSize = getFontSize themeId
                 let bounds = components.Bounds.[i]
                 let padding = components.Padding.[i]
