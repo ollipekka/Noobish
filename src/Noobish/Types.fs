@@ -1,6 +1,7 @@
 namespace Noobish
 
 open System
+open System.Collections.Generic
 
 [<Struct>]
 type UIComponentIdV2 = {
@@ -63,6 +64,36 @@ type Scroll = {
     Horizontal: bool
     Vertical: bool
 }
+
+[<RequireQualifiedAccess>]
+type NoobishTextDisplayMode =
+| Plain
+| Masked
+
+module NoobishTextDisplay =
+    let private maskCharacter = '*'
+    let private maskedByLength = Dictionary<int, string>()
+
+    let maskedText length =
+        if length <= 0 then
+            ""
+        else
+            let mutable text = ""
+            if maskedByLength.TryGetValue(length, &text) then
+                text
+            else
+                text <- String(maskCharacter, length)
+                maskedByLength.[length] <- text
+                text
+
+    let resolve mode (text: string) =
+        match mode with
+        | NoobishTextDisplayMode.Plain -> text
+        | NoobishTextDisplayMode.Masked ->
+            if String.IsNullOrWhiteSpace text then
+                text
+            else
+                maskedText text.Length
 
 [<Struct>]
 type NoobishSize = {Width: float32; Height: float32}

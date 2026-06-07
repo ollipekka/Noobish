@@ -12,6 +12,7 @@ let ``NoobishComponentsV2 initializes arrays`` () =
     Assert.AreEqual(4, components.Layout.Length)
     Assert.AreEqual(4, components.Text.Length)
     Assert.AreEqual(4, components.WantsText.Length)
+    Assert.AreEqual(4, components.TextDisplayMode.Length)
     Assert.AreEqual(4, components.Focused.Length)
     Assert.AreEqual(4, components.CaretIndex.Length)
     Assert.AreEqual(4, components.WantsSlider.Length)
@@ -65,6 +66,7 @@ let ``NoobishComponentsV2 clear resets state`` () =
     components.WantsText.[index] <- true
     components.Textwrap.[index] <- true
     components.TextAlign.[index] <- NoobishAlignment.Center
+    components.TextDisplayMode.[index] <- NoobishTextDisplayMode.Masked
     components.Focused.[index] <- true
     components.CaretIndex.[index] <- 4
     components.WantsOnClick.[index] <- true
@@ -91,6 +93,7 @@ let ``NoobishComponentsV2 clear resets state`` () =
     Assert.AreEqual("", components.Text.[index])
     Assert.IsFalse(components.Textwrap.[index])
     Assert.AreEqual(NoobishAlignment.None, components.TextAlign.[index])
+    Assert.AreEqual(NoobishTextDisplayMode.Plain, components.TextDisplayMode.[index])
     Assert.IsFalse(components.Focused.[index])
     Assert.AreEqual(0, components.CaretIndex.[index])
     Assert.IsFalse(components.WantsOnClick.[index])

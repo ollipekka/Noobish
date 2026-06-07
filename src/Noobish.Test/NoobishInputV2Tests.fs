@@ -1310,6 +1310,54 @@ let ``NoobishInputV2 ProcessInput updates text from text input`` () =
     components.ReleaseContext frameCtx
 
 [<Test>]
+let ``NoobishInputV2 ProcessInput updates masked password with real text`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let passwordCtx = NoobishV2.beginPasswordBox "Hi" 20us frameCtx
+    let index = int passwordCtx.ComponentId.Index
+    components.Bounds.[index] <- { X = 0f; Y = 0f; Width = 100f; Height = 20f }
+    let buffer = InputBufferV2(1)
+
+    let mutable click = true
+    let mutable textBuffer = [||]
+    let mutable textCount = 0
+    let input =
+        createInput
+            { defaultInputConfig with
+                PointerX = 5f
+                PointerY = 5f
+                PrimaryClick = click
+                ConsumeTextInput =
+                    fun () ->
+                        let count = textCount
+                        textCount <- 0
+                        struct(textBuffer, count) }
+
+    NoobishInputV2.ProcessInput input components buffer
+    click <- false
+    textBuffer <- [| 'a' |]
+    textCount <- 1
+    let inputAfterClick =
+        createInput
+            { defaultInputConfig with
+                PointerX = 5f
+                PointerY = 5f
+                PrimaryClick = click
+                ConsumeTextInput =
+                    fun () ->
+                        let count = textCount
+                        textCount <- 0
+                        struct(textBuffer, count) }
+    NoobishInputV2.ProcessInput inputAfterClick components buffer
+
+    Assert.AreEqual("Hia", components.Text.[index])
+    Assert.AreEqual(NoobishTextDisplayMode.Masked, components.TextDisplayMode.[index])
+    Assert.AreEqual(ValueSome "Hia", buffer.TryGetTextChanged 20us)
+
+    components.ReleaseContext passwordCtx
+    components.ReleaseContext frameCtx
+
+[<Test>]
 let ``NoobishInputV2 ProcessInput moves caret with arrow keys`` () =
     let components = NoobishComponentsV2(1)
     let frameCtx = NoobishV2.beginFrame "Page" components
@@ -1446,6 +1494,25 @@ let ``NoobishInputV2 ProcessInput moves caret right with arrow keys`` () =
     Assert.IsTrue(components.CaretBlinkReset.[index])
 
     components.ReleaseContext textboxCtx
+    components.ReleaseContext frameCtx
+
+[<Test>]
+let ``NoobishInputV2 ProcessInput clamps masked password caret to real text length`` () =
+    let components = NoobishComponentsV2(1)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let passwordCtx = NoobishV2.beginPasswordBox "Hi" 21us frameCtx
+    let index = int passwordCtx.ComponentId.Index
+    let buffer = InputBufferV2(1)
+    buffer.SetFocus(components, index, 2)
+
+    let input =
+        createInput { defaultInputConfig with IsKeyPressed = fun keyId -> keyId = NoobishKeyId.Right }
+
+    NoobishInputV2.ProcessInput input components buffer
+
+    Assert.AreEqual(2, components.CaretIndex.[index])
+
+    components.ReleaseContext passwordCtx
     components.ReleaseContext frameCtx
 
 [<Test>]

@@ -123,6 +123,27 @@ let ``measureFrameWith uses text width when wants text`` () =
     Assert.Greater(components.ContentSize.[index].Height, 0f)
 
 [<Test>]
+let ``measureFrameWith uses masked display text`` () =
+    let components = NoobishComponentsV2(1)
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPasswordBox "cat" 1us
+    let index = int ctx.ComponentId.Index
+    let mutable measuredText = ""
+    let measureSingleLine _ _ text =
+        measuredText <- text
+        struct(float32 text.Length, 1f)
+    let measureMultiLine _ _ _ text =
+        measuredText <- text
+        struct(float32 text.Length, 1f)
+
+    NoobishMeasureV2.measureFrameWith getFontSize measureSingleLine measureMultiLine components
+
+    Assert.AreEqual("cat", components.Text.[index])
+    Assert.AreEqual("***", measuredText)
+    Assert.AreEqual(3f, components.ContentSize.[index].Width)
+
+[<Test>]
 let ``measureFrameWith wraps text using bounds width when min width is zero`` () =
     let components = NoobishComponentsV2(1)
     let ctx =

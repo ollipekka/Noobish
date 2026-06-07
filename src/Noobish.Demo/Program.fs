@@ -87,13 +87,17 @@ module TextInputDemo =
     [<Literal>]
     let BottomTextboxId = 402us
 
+    [<Literal>]
+    let PasswordTextboxId = 403us
+
     type Model() =
         member val TopText = "Type here..." with get, set
         member val BottomText = "Type here too..." with get, set
+        member val PasswordText = "secret" with get, set
 
     let buildUi (model: Model) (parentCtx: ComponentContextV2) =
         parentCtx
-        |> NoobishV2.beginGrid (1, 2)
+        |> NoobishV2.beginGrid (1, 3)
             |> NoobishV2.beginPanel
                 |> NoobishV2.setFill {Horizontal = true; Vertical = true}
                 |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
@@ -113,6 +117,16 @@ module TextInputDemo =
                     |> NoobishV2.setFillHorizontal
                     |> NoobishV2.setMinHeight 40f
                     |> NoobishV2.endTextbox
+                |> NoobishV2.endPanel
+            |> NoobishV2.beginPanel
+                |> NoobishV2.setFill {Horizontal = true; Vertical = true}
+                |> NoobishV2.setPadding {NoobishPadding.Top = 12f; Right = 12f; Bottom = 12f; Left = 12f}
+                |> NoobishV2.beginLabel "Password"
+                    |> NoobishV2.endLabel
+                |> NoobishV2.beginPasswordBox model.PasswordText PasswordTextboxId
+                    |> NoobishV2.setFillHorizontal
+                    |> NoobishV2.setMinHeight 40f
+                    |> NoobishV2.endPasswordBox
                 |> NoobishV2.endPanel
             |> NoobishV2.endGrid
 
@@ -648,6 +662,9 @@ type SimpleDemoGame() as game =
             | ValueNone -> ()
             match ui.TryGetTextChanged TextInputDemo.BottomTextboxId with
             | ValueSome text -> demoModel.TextInput.BottomText <- text
+            | ValueNone -> ()
+            match ui.TryGetTextChanged TextInputDemo.PasswordTextboxId with
+            | ValueSome text -> demoModel.TextInput.PasswordText <- text
             | ValueNone -> ()
 
         base.Update(gameTime)

@@ -57,16 +57,23 @@ let private createAtlas () =
     { Name = "Atlas"
       Textures = Dictionary<string, NoobishTexture>() :> IReadOnlyDictionary<_, _> }
 
+let private createGlyphWithAdvance c advance =
+    {
+        Unicode = c
+        Advance = advance
+        AtlasBounds = struct(1f, 1f, 0f, 0f)
+        PlaneBounds = struct(1f, 1f, 0f, 0f)
+        Kerning = Dictionary<char, float32>() :> IReadOnlyDictionary<_, _>
+    }
+
 let private createFont () =
-    let glyph =
-        { Unicode = 'x'
-          Advance = 1f
-          AtlasBounds = struct(1f, 1f, 0f, 0f)
-          PlaneBounds = struct(1f, 1f, 0f, 0f)
-          Kerning = Dictionary<char, float32>() :> IReadOnlyDictionary<_, _> }
     let glyphs = Dictionary<char, NoobishGlyph>()
-    glyphs.['x'] <- glyph
-    { Atlas =
+    for c in [| 'x'; '*' |] do
+        glyphs.[c] <- createGlyphWithAdvance c 1f
+    for c in [| 'c'; 'a'; 't' |] do
+        glyphs.[c] <- createGlyphWithAdvance c 5f
+    {
+      Atlas =
         { FontType = "Test"
           DistanceRange = 2f
           Size = 1f
@@ -348,6 +355,50 @@ let ``renderer draws text and caret`` () =
         |> Seq.exists (function RenderCommand.Drawable (bounds, _, _, _) -> bounds.Width = 2f | _ -> false)
     Assert.IsTrue(hasText)
     Assert.IsTrue(hasCursorDrawable)
+
+[<Test>]
+let ``renderer draws masked text and positions caret by mask`` () =
+    let drawables =
+        toThemes
+            [ ("TextBox", [ ("default", [| NoobishDrawable.NinePatch "bg" |]) ])
+              ("Cursor", [ ("default", [| NoobishDrawable.NinePatch "cursor" |]) ]) ]
+    let styleSheet =
+        { (createStyleSheet drawables) with
+            Fonts = toThemes [ ("TextBox", [ ("default", "Font") ]) ]
+            FontSizes = toThemes [ ("TextBox", [ ("default", 12) ]) ]
+            FontColors = toThemes [ ("TextBox", [ ("default", NoobishColor.white) ]) ]
+            TextAlignments = toThemes [ ("TextBox", [ ("default", NoobishAlignment.TopLeft) ]) ]
+            Widths = toThemes [ ("Cursor", [ ("default", 2f) ]) ]
+            Colors = toThemes [ ("Cursor", [ ("default", NoobishColor.white) ]) ] }
+    let renderer = NoobishMonoGameRendererV2()
+    let components = NoobishComponentsV2(1)
+    components.Count <- 1
+    components.Bounds.[0] <- { X = 0f; Y = 0f; Width = 100f; Height = 20f }
+    components.Visible.[0] <- true
+    components.Enabled.[0] <- true
+    components.ThemeId.[0] <- "TextBox"
+    components.Text.[0] <- "cat"
+    components.TextDisplayMode.[0] <- NoobishTextDisplayMode.Masked
+    components.Textwrap.[0] <- false
+    components.Focused.[0] <- true
+    components.WantsTextChanged.[0] <- true
+    components.CaretIndex.[0] <- 2
+    components.Id.[0] <- UIComponentIdV2.create 1us 0us 0us 8us
+    let ctx = MockRenderContext(styleSheet, createAtlas(), 100, 100, createFontMap())
+
+    renderer.DrawWithContext components (ctx :> INoobishMonoGameRenderContext) "Style" (Microsoft.Xna.Framework.GameTime())
+
+    let textCommands =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.TextSingle text -> Some text | _ -> None)
+        |> Seq.toList
+    let cursorBounds =
+        ctx.Commands
+        |> Seq.choose (function RenderCommand.Drawable (bounds, _, _, _) when bounds.Width = 2f -> Some bounds | _ -> None)
+        |> Seq.head
+
+    Assert.AreEqual([ "***" ], textCommands)
+    Assert.AreEqual(32f, cursorBounds.X)
 
 [<Test>]
 let ``renderer skips invisible components`` () =

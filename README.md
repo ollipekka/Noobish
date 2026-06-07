@@ -155,6 +155,7 @@ Noobish tracks identity of a component by its location. Noobish doesn't handle p
 ## ToDo
 
 * Textbox:
+  * Implemented: password masking is available through `NoobishV2.beginPasswordBox` and `NoobishV2.setTextMasked`; text change events still return the real value.
   * double click to clear and focus.
   * Three places for Text: Element, ElementState Model, Element Model.
 * Memoize support.

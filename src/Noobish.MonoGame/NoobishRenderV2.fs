@@ -345,7 +345,7 @@ type NoobishMonoGameRendererV2() =
         (styleSheet: NoobishStyleSheet)
         (bounds: NoobishRectangle)
         (index: int) =
-        let text = components.Text.[index]
+        let text = NoobishTextDisplay.resolve components.TextDisplayMode.[index] components.Text.[index]
         if not (String.IsNullOrWhiteSpace text) then
             let themeId = components.ThemeId.[index]
             let state = this.ResolveState components index
@@ -387,7 +387,7 @@ type NoobishMonoGameRendererV2() =
             let textAlign = components.TextAlign.[index]
             let textWrap = components.Textwrap.[index]
             let caretIndex = components.CaretIndex.[index]
-            let text = components.Text.[index]
+            let text = NoobishTextDisplay.resolve components.TextDisplayMode.[index] components.Text.[index]
             let caretBounds = NoobishFont.calculateCursorPosition font.Font fontSize textWrap textBounds 0f 0f textAlign caretIndex text
             let cursorWidth = styleSheet.GetWidth "Cursor" "default"
             if cursorWidth > 0f && caretBounds.Height > 0f then

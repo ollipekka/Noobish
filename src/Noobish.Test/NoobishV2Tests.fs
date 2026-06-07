@@ -213,6 +213,38 @@ let ``textbox stores text and local id`` () =
     Assert.AreEqual("Seed", components.Text.[index])
     Assert.AreEqual(localId, cid.LocalId)
     Assert.IsTrue(components.WantsTextChanged.[index])
+    Assert.AreEqual(NoobishTextDisplayMode.Plain, components.TextDisplayMode.[index])
+
+[<Test>]
+let ``password box stores real text and masks display`` () =
+    let components = NoobishComponentsV2(1)
+    let localId = 12us
+    let ctx =
+        NoobishV2.beginFrame "Page" components
+        |> NoobishV2.beginPasswordBox "Secret" localId
+    let cid = ctx.ComponentId
+    let index = int cid.Index
+    Assert.AreEqual("TextBox", components.ThemeId.[index])
+    Assert.AreEqual("Secret", components.Text.[index])
+    Assert.AreEqual(localId, cid.LocalId)
+    Assert.IsTrue(components.WantsText.[index])
+    Assert.IsTrue(components.WantsTextChanged.[index])
+    Assert.AreEqual(NoobishTextDisplayMode.Masked, components.TextDisplayMode.[index])
+
+[<Test>]
+let ``setTextMasked updates current component only`` () =
+    let components = NoobishComponentsV2(2)
+    let frameCtx = NoobishV2.beginFrame "Page" components
+    let firstCtx = NoobishV2.beginTextbox "First" 1us frameCtx
+    let firstIndex = int firstCtx.ComponentId.Index
+    let frameCtx = NoobishV2.endTextbox firstCtx
+    let secondCtx =
+        NoobishV2.beginTextbox "Second" 2us frameCtx
+        |> NoobishV2.setTextMasked
+    let secondIndex = int secondCtx.ComponentId.Index
+
+    Assert.AreEqual(NoobishTextDisplayMode.Plain, components.TextDisplayMode.[firstIndex])
+    Assert.AreEqual(NoobishTextDisplayMode.Masked, components.TextDisplayMode.[secondIndex])
 
 [<Test>]
 let ``button stores local id`` () =

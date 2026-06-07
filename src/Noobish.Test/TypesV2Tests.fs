@@ -40,6 +40,24 @@ let ``NamespaceHash fromPage folds fnv1a32`` () =
     Assert.LessOrEqual(ns, UInt16.MaxValue)
 
 [<Test>]
+let ``NoobishTextDisplay resolves plain and masked text`` () =
+    Assert.AreEqual("secret", NoobishTextDisplay.resolve NoobishTextDisplayMode.Plain "secret")
+    Assert.AreEqual("******", NoobishTextDisplay.resolve NoobishTextDisplayMode.Masked "secret")
+
+[<Test>]
+let ``NoobishTextDisplay preserves empty and whitespace text`` () =
+    Assert.AreEqual("", NoobishTextDisplay.resolve NoobishTextDisplayMode.Masked "")
+    Assert.AreEqual("   ", NoobishTextDisplay.resolve NoobishTextDisplayMode.Masked "   ")
+
+[<Test>]
+let ``NoobishTextDisplay reuses cached mask strings`` () =
+    Assert.AreEqual("", NoobishTextDisplay.maskedText 0)
+    let first = NoobishTextDisplay.maskedText 4
+    let second = NoobishTextDisplay.maskedText 4
+    Assert.AreEqual("****", first)
+    Assert.AreSame(first, second)
+
+[<Test>]
 let ``Internal max0 clamps negatives`` () =
     Assert.AreEqual(0f, Internal.max0 -1f)
     Assert.AreEqual(0f, Internal.max0 0f)

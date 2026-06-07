@@ -61,6 +61,7 @@ and INoobishComponents2 =
     abstract Text: string[] with get
     abstract Textwrap: bool[] with get
     abstract TextAlign: NoobishAlignment[] with get
+    abstract TextDisplayMode: NoobishTextDisplayMode[] with get
     abstract Focused: bool[] with get
     abstract CaretIndex: int[] with get
     abstract WantsOnClick: bool[] with get
@@ -112,6 +113,7 @@ type NoobishComponentsV2(count: int) =
     member val Text = Array.create count ""
     member val Textwrap = Array.create count false
     member val TextAlign = Array.create count NoobishAlignment.None
+    member val TextDisplayMode = Array.create count NoobishTextDisplayMode.Plain
     member val Focused = Array.create count false
     member val CaretIndex = Array.create count 0
     member val CaretBlinkStart = Array.create count TimeSpan.Zero
@@ -172,6 +174,7 @@ type NoobishComponentsV2(count: int) =
             this.Text.[i] <- ""
             this.Textwrap.[i] <- false
             this.TextAlign.[i] <- NoobishAlignment.None
+            this.TextDisplayMode.[i] <- NoobishTextDisplayMode.Plain
             this.Focused.[i] <- false
             this.CaretIndex.[i] <- 0
             this.CaretBlinkStart.[i] <- TimeSpan.Zero
@@ -224,6 +227,7 @@ type NoobishComponentsV2(count: int) =
         member this.Text = this.Text
         member this.Textwrap = this.Textwrap
         member this.TextAlign = this.TextAlign
+        member this.TextDisplayMode = this.TextDisplayMode
         member this.Focused = this.Focused
         member this.CaretIndex = this.CaretIndex
         member this.WantsOnClick = this.WantsOnClick

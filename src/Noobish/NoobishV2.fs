@@ -137,6 +137,14 @@ module NoobishV2 =
         ctx.Components.MinSize.[index] <- {size with Height = height}
         ctx
 
+    let setTextDisplayMode (mode: NoobishTextDisplayMode) (ctx: ComponentContextV2) =
+        let index = int ctx.ComponentId.Index
+        ctx.Components.TextDisplayMode.[index] <- mode
+        ctx
+
+    let setTextMasked (ctx: ComponentContextV2) =
+        setTextDisplayMode NoobishTextDisplayMode.Masked ctx
+
     let setRowspan (rowspan: int) (ctx: ComponentContextV2) =
         let index = int ctx.ComponentId.Index
         let span = ctx.Components.GridSpan.[index]
@@ -207,6 +215,16 @@ module NoobishV2 =
 
     let textbox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
         beginTextbox text localId parentCtx |> endTextbox
+
+    let beginPasswordBox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
+        beginTextbox text localId parentCtx
+        |> setTextMasked
+
+    let endPasswordBox (ctx: ComponentContextV2) =
+        endTextbox ctx
+
+    let passwordBox (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
+        beginPasswordBox text localId parentCtx |> endPasswordBox
 
     let beginButton (text: string) (localId: uint16) (parentCtx: ComponentContextV2) =
         let ctx = createComponent "Button" localId parentCtx
