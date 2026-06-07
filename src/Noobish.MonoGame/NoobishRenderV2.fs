@@ -388,9 +388,9 @@ type NoobishMonoGameRendererV2() =
             let textWrap = components.Textwrap.[index]
             let caretIndex = components.CaretIndex.[index]
             let text = NoobishTextDisplay.resolve components.TextDisplayMode.[index] components.Text.[index]
-            let caretBounds = NoobishFont.calculateCursorPosition font.Font fontSize textWrap textBounds 0f 0f textAlign caretIndex text
-            let cursorWidth = styleSheet.GetWidth "Cursor" "default"
-            if cursorWidth > 0f && caretBounds.Height > 0f then
+            let caretBounds = NoobishFont.calculateCaretPosition font.Font fontSize textWrap textBounds 0f 0f textAlign caretIndex text
+            let caretWidth = styleSheet.GetWidth "Caret" "default"
+            if caretWidth > 0f && caretBounds.Height > 0f then
                 let reset = components.CaretBlinkReset.[index]
                 let startTime =
                     NoobishRenderV2.resolveCaretBlinkStart
@@ -403,13 +403,13 @@ type NoobishMonoGameRendererV2() =
                 if reset then
                     components.CaretBlinkReset.[index] <- false
                 let elapsed = gameTime.TotalGameTime - startTime
-                let blinkProgress = Cursor.blink elapsed
-                let baseColor = styleSheet.GetColor "Cursor" "default" |> toColor
+                let blinkProgress = Caret.blink elapsed
+                let baseColor = styleSheet.GetColor "Caret" "default" |> toColor
                 let color = Color.Lerp(baseColor, Color.Transparent, blinkProgress)
-                let drawables = styleSheet.GetDrawables "Cursor" "default"
+                let drawables = styleSheet.GetDrawables "Caret" "default"
                 let layer = this.ResolveTextLayer components index 2
                 let position = Vector2(caretBounds.X + caretBounds.Width, caretBounds.Y)
-                let size = Vector2(cursorWidth, caretBounds.Height)
+                let size = Vector2(caretWidth, caretBounds.Height)
                 ctx.DrawDrawable textureAtlas position size layer (color |> NoobishColorMonoGame.ofColor) drawables
 
     member private this.DrawScrollBars

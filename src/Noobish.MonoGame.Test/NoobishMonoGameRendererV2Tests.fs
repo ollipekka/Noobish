@@ -321,15 +321,15 @@ let ``renderer draws text and caret`` () =
     let drawables =
         toThemes
             [ ("Label", [ ("default", [| NoobishDrawable.NinePatch "bg" |]) ])
-              ("Cursor", [ ("default", [| NoobishDrawable.NinePatch "cursor" |]) ]) ]
+              ("Caret", [ ("default", [| NoobishDrawable.NinePatch "caret" |]) ]) ]
     let styleSheet =
         { (createStyleSheet drawables) with
             Fonts = toThemes [ ("Label", [ ("default", "Font") ]) ]
             FontSizes = toThemes [ ("Label", [ ("default", 12) ]) ]
             FontColors = toThemes [ ("Label", [ ("default", NoobishColor.white) ]) ]
             TextAlignments = toThemes [ ("Label", [ ("default", NoobishAlignment.TopLeft) ]) ]
-            Widths = toThemes [ ("Cursor", [ ("default", 2f) ]) ]
-            Colors = toThemes [ ("Cursor", [ ("default", NoobishColor.white) ]) ] }
+            Widths = toThemes [ ("Caret", [ ("default", 2f) ]) ]
+            Colors = toThemes [ ("Caret", [ ("default", NoobishColor.white) ]) ] }
     let renderer = NoobishMonoGameRendererV2()
     let components = NoobishComponentsV2(1)
     components.Count <- 1
@@ -350,26 +350,26 @@ let ``renderer draws text and caret`` () =
     let hasText =
         ctx.Commands
         |> Seq.exists (function RenderCommand.TextSingle _ -> true | RenderCommand.TextMulti _ -> true | _ -> false)
-    let hasCursorDrawable =
+    let hasCaretDrawable =
         ctx.Commands
         |> Seq.exists (function RenderCommand.Drawable (bounds, _, _, _) -> bounds.Width = 2f | _ -> false)
     Assert.IsTrue(hasText)
-    Assert.IsTrue(hasCursorDrawable)
+    Assert.IsTrue(hasCaretDrawable)
 
 [<Test>]
 let ``renderer draws masked text and positions caret by mask`` () =
     let drawables =
         toThemes
             [ ("TextBox", [ ("default", [| NoobishDrawable.NinePatch "bg" |]) ])
-              ("Cursor", [ ("default", [| NoobishDrawable.NinePatch "cursor" |]) ]) ]
+              ("Caret", [ ("default", [| NoobishDrawable.NinePatch "caret" |]) ]) ]
     let styleSheet =
         { (createStyleSheet drawables) with
             Fonts = toThemes [ ("TextBox", [ ("default", "Font") ]) ]
             FontSizes = toThemes [ ("TextBox", [ ("default", 12) ]) ]
             FontColors = toThemes [ ("TextBox", [ ("default", NoobishColor.white) ]) ]
             TextAlignments = toThemes [ ("TextBox", [ ("default", NoobishAlignment.TopLeft) ]) ]
-            Widths = toThemes [ ("Cursor", [ ("default", 2f) ]) ]
-            Colors = toThemes [ ("Cursor", [ ("default", NoobishColor.white) ]) ] }
+            Widths = toThemes [ ("Caret", [ ("default", 2f) ]) ]
+            Colors = toThemes [ ("Caret", [ ("default", NoobishColor.white) ]) ] }
     let renderer = NoobishMonoGameRendererV2()
     let components = NoobishComponentsV2(1)
     components.Count <- 1
@@ -392,13 +392,13 @@ let ``renderer draws masked text and positions caret by mask`` () =
         ctx.Commands
         |> Seq.choose (function RenderCommand.TextSingle text -> Some text | _ -> None)
         |> Seq.toList
-    let cursorBounds =
+    let caretBounds =
         ctx.Commands
         |> Seq.choose (function RenderCommand.Drawable (bounds, _, _, _) when bounds.Width = 2f -> Some bounds | _ -> None)
         |> Seq.head
 
     Assert.AreEqual([ "***" ], textCommands)
-    Assert.AreEqual(32f, cursorBounds.X)
+    Assert.AreEqual(32f, caretBounds.X)
 
 [<Test>]
 let ``renderer skips invisible components`` () =

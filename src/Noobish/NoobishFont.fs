@@ -213,7 +213,7 @@ module NoobishFont =
         struct(maxWidth, height)
 
 
-    let calculateCursorPosition
+    let calculateCaretPosition
         (font: NoobishFont)
         (fontSize: int)
         (wrap: bool)
@@ -221,7 +221,7 @@ module NoobishFont =
         (scrollX: float32)
         (scrollY: float32)
         (textAlign: NoobishAlignment)
-        (cursorPosition: int)
+        (caretPosition: int)
         (text: string) =
 
         let size = scaleFromFontSize fontSize
@@ -229,7 +229,7 @@ module NoobishFont =
             if wrap then
                 failwith "Multiline text not supported yet."
             else
-                measureSingleLineSegment font fontSize 0 cursorPosition text
+                measureSingleLineSegment font fontSize 0 caretPosition text
 
         let textSizeY = size * font.Metrics.LineHeight
 
@@ -257,7 +257,7 @@ module NoobishFont =
 
 
 
-    let calculateCursorIndex
+    let calculateCaretIndex
         (font: NoobishFont)
         (fontSize: int)
         (wrap: bool)

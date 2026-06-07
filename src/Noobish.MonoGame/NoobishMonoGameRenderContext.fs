@@ -53,7 +53,7 @@ type NoobishMonoGameRenderContext
         let baseColor = toColor color
         for drawable in drawables do
             match drawable with
-            | NoobishDrawable.Texture _ -> failwith "Texture not supported for cursor."
+            | NoobishDrawable.Texture _ -> failwith "Texture not supported for drawable."
             | NoobishDrawable.NinePatch(tid) ->
                 let texture = textureAtlas.[tid]
                 spriteBatch.DrawAtlasNinePatch2(

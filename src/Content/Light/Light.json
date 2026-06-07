@@ -73,12 +73,12 @@
                 ]
             }
         },
-        "Cursor": {
+        "Caret": {
             "default": {
                 "width": 2,
                 "color": "df7126aa",
                 "drawables": [
-                    ["cursor.9"]
+                    ["caret.9"]
                 ]
             }
         },

@@ -1,4 +1,4 @@
-module Noobish.Cursor
+module Noobish.Caret
 
 open System
 let blinkInterval = TimeSpan.FromSeconds 1.2

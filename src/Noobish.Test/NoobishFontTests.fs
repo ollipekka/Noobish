@@ -198,7 +198,7 @@ let ``measureMultiLine handles long word on empty line`` () =
     assertFloat (2.0f * size) height
 
 [<TestCaseSource(nameof alignmentCases)>]
-let ``calculateCursorPosition aligns text`` alignment =
+let ``calculateCaretPosition aligns text`` alignment =
     let font = createTestFont ()
     let bounds = {X = 2f; Y = 3f; Width = 100f; Height = 50f}
     let scrollX = 4f
@@ -224,28 +224,28 @@ let ``calculateCursorPosition aligns text`` alignment =
         | NoobishAlignment.BottomRight -> struct(rightX, bottomY)
         | NoobishAlignment.None -> failwith "Unexpected."
     let boundsResult =
-        NoobishFont.calculateCursorPosition font 1 false bounds scrollX scrollY alignment 1 "ab"
+        NoobishFont.calculateCaretPosition font 1 false bounds scrollX scrollY alignment 1 "ab"
     assertFloat (expectedX + scrollX) boundsResult.X
     assertFloat (expectedY + scrollY) boundsResult.Y
 
 [<Test>]
-let ``calculateCursorPosition throws on wrap`` () =
+let ``calculateCaretPosition throws on wrap`` () =
     let font = createTestFont ()
     let bounds = {X = 0f; Y = 0f; Width = 100f; Height = 10f}
     Assert.Throws<System.Exception>(fun () ->
-        NoobishFont.calculateCursorPosition font 1 true bounds 0f 0f NoobishAlignment.TopLeft 0 "a"
+        NoobishFont.calculateCaretPosition font 1 true bounds 0f 0f NoobishAlignment.TopLeft 0 "a"
         |> ignore) |> ignore
 
 [<Test>]
-let ``calculateCursorPosition throws on none alignment`` () =
+let ``calculateCaretPosition throws on none alignment`` () =
     let font = createTestFont ()
     let bounds = {X = 0f; Y = 0f; Width = 100f; Height = 10f}
     Assert.Throws<System.Exception>(fun () ->
-        NoobishFont.calculateCursorPosition font 1 false bounds 0f 0f NoobishAlignment.None 0 "a"
+        NoobishFont.calculateCaretPosition font 1 false bounds 0f 0f NoobishAlignment.None 0 "a"
         |> ignore) |> ignore
 
 [<TestCaseSource(nameof alignmentCases)>]
-let ``calculateCursorIndex aligns text`` alignment =
+let ``calculateCaretIndex aligns text`` alignment =
     let font = createTestFont ()
     let bounds = {X = 2f; Y = 3f; Width = 100f; Height = 50f}
     let scrollX = 6f
@@ -273,7 +273,7 @@ let ``calculateCursorIndex aligns text`` alignment =
     let size = NoobishFont.scaleFromFontSize 1
     let relativeX = textStartX + scrollX + (size * 0.6f)
     let index =
-        NoobishFont.calculateCursorIndex
+        NoobishFont.calculateCaretIndex
             font
             1
             false
@@ -287,19 +287,19 @@ let ``calculateCursorIndex aligns text`` alignment =
     Assert.AreEqual(1, index)
 
 [<Test>]
-let ``calculateCursorIndex throws on wrap`` () =
+let ``calculateCaretIndex throws on wrap`` () =
     let font = createTestFont ()
     let bounds = {X = 0f; Y = 0f; Width = 100f; Height = 10f}
     Assert.Throws<System.Exception>(fun () ->
-        NoobishFont.calculateCursorIndex font 1 true bounds 0f 0f NoobishAlignment.TopLeft 0f 0f "a"
+        NoobishFont.calculateCaretIndex font 1 true bounds 0f 0f NoobishAlignment.TopLeft 0f 0f "a"
         |> ignore) |> ignore
 
 [<Test>]
-let ``calculateCursorIndex throws on none alignment`` () =
+let ``calculateCaretIndex throws on none alignment`` () =
     let font = createTestFont ()
     let bounds = {X = 0f; Y = 0f; Width = 100f; Height = 10f}
     Assert.Throws<System.Exception>(fun () ->
-        NoobishFont.calculateCursorIndex font 1 false bounds 0f 0f NoobishAlignment.None 0f 0f "a"
+        NoobishFont.calculateCaretIndex font 1 false bounds 0f 0f NoobishAlignment.None 0f 0f "a"
         |> ignore)|> ignore
 
 [<TestCaseSource(nameof alignmentCases)>]
@@ -352,11 +352,11 @@ let ``calculateBounds throws on none alignment`` () =
         |> ignore) |> ignore
 
 [<Test>]
-let ``calculateCursorIndex respects scrollX`` () =
+let ``calculateCaretIndex respects scrollX`` () =
     let font = createTestFont ()
     let bounds = {X = 0f; Y = 0f; Width = 100f; Height = 10f}
     let index =
-        NoobishFont.calculateCursorIndex
+        NoobishFont.calculateCaretIndex
             font
             1
             false

@@ -1,11 +1,11 @@
-module Noobish.Test.CursorTests
+module Noobish.Test.CaretTests
 
 open System
 open NUnit.Framework
-open Noobish.Cursor
+open Noobish.Caret
 
 [<Test>]
-let ``Cursor blink starts visible and stays visible for half interval`` () =
+let ``Caret blink starts visible and stays visible for half interval`` () =
     let half = blinkInterval.TotalSeconds * 0.6
     let epsilon = min 0.0001 (half * 0.1)
     Assert.AreEqual(0f, blink TimeSpan.Zero)
